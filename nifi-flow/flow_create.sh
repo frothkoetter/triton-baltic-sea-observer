@@ -1,0 +1,12 @@
+cdp df create-deployment \
+  --service-crn crn:cdp:df:us-west-1:558bc1d2-8867-4357-8524-311d51259233:service:d7f29c0b-771b-4178-928f-c2ad18796d6c \
+  --flow-version-crn "crn:cdp:df:us-west-1:558bc1d2-8867-4357-8524-311d51259233:flow:proj_triton/v.1" \
+  --deployment-name "proj_triton" \
+  --project-crn "crn:cdp:df:us-west-1:558bc1d2-8867-4357-8524-311d51259233:project:f840798d-7238-4292-9747-e626978f024b" \
+  --cfm-nifi-version 2.3.0.4.3.2.0-89 \
+  --no-auto-start-flow \
+  --cluster-size name=EXTRA_SMALL \
+  --static-node-count 1 \
+  --no-auto-scaling-enabled \
+  --custom-python-configuration "file://Users/frothkoetter/se-tools/github/triton/nifi-flow/triton-custom-python-config.json" \
+  --parameter-groups "file://Users/frothkoetter/se-tools/github/triton/nifi-flow/triton-parameter-groups.json"

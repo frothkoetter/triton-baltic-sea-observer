@@ -1,0 +1,90 @@
+DFS Deutsche Flugsicherung GmbH (German Air Navigation Services)
+Büro der Nachrichten für Luftfahrer (Aeronautical Publication Agency)
+Am DFS-Campus 7 · 63225 Langen · Germany
+Redaktion/Editorial office: desk@dfs.de
+https://dfs.de
+
+VFR 40/25
+21 AUG 2025
+
+Oktoberfest in München
+(20 SEP 2025 - 05 OCT 2025)
+1. Allgemeines
+Als Schutzmaßnahme anlässlich des Oktoberfestes in München wird vorübergehend ein Gebiet mit Flugbeschränkungen und ein Gebiet mit
+Funkkommunikations- und Transponderpflicht
+eingerichtet.
+2. Gebiet mit Flugbeschränkungen
+"ED-R München"
+2.1 Seitliche Begrenzung
+Kreis mit 3 NM Radius um
+48 07 59 N 011 33 53 E
+2.2 Vertikale Begrenzung
+GND - FL100
+2.3 Aktivierungszeiten
+20 SEP 2025 - 05 OCT 2025 täglich 0600-2330
+2.4 Art der Flugbeschränkungen
+In dem vorstehend beschriebenen Gebiet sind
+alle Flüge einschließlich des Betriebs von Flugmodellen und unbemannten Luftfahrtsystemen
+untersagt. Von den Flugbeschränkungen ausgenommen sind
+a) Flüge der Polizeien und im Auftrag der Polizeien,
+b) Flüge im Rettungs- und Katastrophenschutzeinsatz,
+c) Ambulanzflüge
+d) sowie Flüge nach Instrumentenflugregeln in
+Flughöhen von 5000 Fuß MSL und darüber
+mit der Verpflichtung, das Gebiet mit Flugbeschränkungen auf dem schnellstmöglichen
+Weg zu durchqueren.
+Alle berechtigen Ein-, Aus- oder Durchflüge sind bei
+Flügen nach Sichtflugregeln vorab bei der Polizeihubschrauberstaffel Bayern über die Frequenz
+135,600 MHz (POLICE INFO) anzumelden.
+Während des Aufenthalts im Gebiet mit Flugbeschränkungen ist eine dauernde Hörbereitschaft
+auf der 135,600 MHz (POLICE INFO) aufrechtzuerhalten.
+Durchfluggenehmigungen nach §17 LuftVO werden nicht erteilt.
+3. Gebiet mit Funkkommunikations- und
+Transponderpflicht "RMZ/TMZ München"
+3.1 Seitliche Begrenzung
+Kreis mit 12 NM Radius um
+48 07 59 N 011 33 53 E
+3.2 Vertikale Begrenzung
+Grund bis zur jeweiligen Untergrenze des Luftraums C München.
+3.3 Ausnahmen
+Von der "RMZ/TMZ München" ausgenommen
+sind die Lufträume D (Kontrollzone) München
+(EDDM) und Oberpfaffenhofen (EDMO), das
+Flugbeschränkungsgebiet "ED-R München",
+das Gebiet mit Funkkommunikationspflicht
+(RMZ) Oberschleißheim sowie der Platzrundenverkehr in Dachau-Gröbenried (EDMD) nach
+vorheriger telefonischer Anmeldung vor Flugbetriebsbeginn bei POLICE INFO.
+3.4 Aktivierungszeiten
+20 SEP 2025 - 05 OCT 2025 täglich 0600-2330
+3.5 Regelungen
+In der "RMZ/TMZ München" ist die Frequenz
+135,600 MHz, Rufzeichen "Police Info" zu nutzen und der Code A6375 unaufgefordert abzustrahlen. Ggf. weist "Police Info" einen
+alternativen SSR-Code zu.
+Vor Einflug in die RMZ/TMZ ist eine Erstmeldung
+erforderlich mit Angaben zu
+- Kennung der gerufenen Station,
+- Rufzeichen und Luftfahrzeugmuster,
+- Standort, Flughöhe und Flugabsichten.
+Während des Fluges in der RMZ/TMZ ist eine
+dauernde Hörbereitschaft aufrechtzuerhalten.
+Der Ausflug aus der RMZ/TMZ ist ebenfalls zu
+melden. Sofern seitens der gerufenen Station
+(Bodenfunkstelle) keine Antwort erfolgen sollte,
+kann der Flug durch die RMZ/TMZ trotzdem mit
+Aufrechterhaltung der Hörbereitschaft fortgesetzt werden.
+Die Sprechfunkmeldungen sind auch für den
+Fall abzugeben, dass seitens der Bodenfunkstelle keine Antwort erfolgt.
+Von den vorstehenden Regelungen ausgenommen sind
+a) Flüge der Polizeien und im Auftrag der Polizeien,
+b) Flüge im Rettungs- und Katastrophenschutzeinsatz,
+c) Ambulanzflüge sowie
+d) Flugmodelle und unbemannte Luftfahrtsysteme bis zu einer Flughöhe bis zu 120m über
+Grund.
+Im Bedarfsfall kann die Polizei Bayern weitere
+Ausnahmen von der Transponderpflicht zulassen.
+Hinweise:
+– Innerhalb der RMZ Oberschleißheim ist die
+Frequenz 131,130 MHz zu nutzen.
+– Flüge im Platzrundenverkehr Dachau-Gröbenried bleiben auf der veröffentlichten Platzfrequenz.
+– Flüge nach Instrumentenflugregeln sind von
+den Regelungen nicht betroffen.

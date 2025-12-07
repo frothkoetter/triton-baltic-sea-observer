@@ -1,0 +1,48 @@
+[
+  {
+    "name": "proj_triton",
+    "parameters": [
+      {
+        "name": "API Key",
+        "assetReferences": [],
+        "value": "something",
+        "sourceParameterGroupId": null
+      },
+      {
+        "name": "CDPEnvironment",
+        "assetReferences": [
+          "/home/nifi/additional/secret/env_config/core-site.xml",
+          "/home/nifi/additional/secret/env_config/hive-site.xml",
+          "/home/nifi/additional/secret/env_config/ssl-client.xml"
+        ],
+        "value": "",
+        "sourceParameterGroupId": null
+      },
+      {
+        "name": "access_token",
+        "assetReferences": [],
+        "value": "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",
+        "sourceParameterGroupId": null
+      },
+      {
+        "name": "cdp_workload_password",
+        "assetReferences": [],
+        "value": "SAX201linga",
+        "sourceParameterGroupId": null
+      },
+      {
+        "name": "cdp_workload_user",
+        "assetReferences": [],
+        "value": "frothkoetter",
+        "sourceParameterGroupId": null
+      },
+      {
+        "name": "num_msg",
+        "assetReferences": [],
+        "value": "10",
+        "sourceParameterGroupId": null
+      }
+    ],
+    "inheritedParameterGroups": []
+  }
+]

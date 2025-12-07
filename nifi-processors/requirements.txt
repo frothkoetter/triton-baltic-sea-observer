@@ -1,0 +1,3 @@
+	geohash2
+	numpy
+	faker

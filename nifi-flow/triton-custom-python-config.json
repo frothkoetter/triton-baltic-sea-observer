@@ -1,0 +1,6 @@
+{
+  "username": "frothkoetter",
+  "password": "SAX201linga",
+  "storageLocation": "s3a://goes-se-sandbox/data/geospatial/transformer/",
+  "configurationVersion": 0
+}
