@@ -812,3 +812,160 @@ CREATE TABLE Situation_Awareness_Summary
   summare_line INT,
   summary_text STRING)
 STORED BY Iceberg;
+
+CREATE VIEW defense.vessel_proximity AS
+WITH
+-- CTE 1: Find the latest (most recent) AIS event for every vessel
+latest_vessel_ref AS (
+    SELECT
+        CAST(mmsi AS STRING) AS vessel_mmsi,
+        a.event_timestamp AS vessel_time,
+        latitude AS vessel_lat,
+        longitude AS vessel_lon,
+        ROW_NUMBER() OVER (PARTITION BY a.mmsi ORDER BY a.event_timestamp DESC) AS rn
+    FROM
+        defense.ais_events_ice a
+    WHERE
+        -- Only consider events from the last 24 hours
+        CAST(a.event_timestamp AS TIMESTAMP) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 24 HOUR
+),
+
+-- CTE 2: Select only the very latest event for each vessel (rn = 1)
+vessel_ref AS (
+    SELECT
+        *
+    FROM
+        latest_vessel_ref
+    WHERE
+        rn = 1
+),
+
+-- CTE 3: Find the latest AIS events for ALL vessels relative to each vessel in vessel_ref,
+-- and calculate the geodesic distance between them.
+latest_ais_events AS (
+    SELECT
+        CAST(a.mmsi AS STRING) AS vessel_mmsi,
+        a.event_timestamp AS vessel_time,
+        a.latitude AS vessel_lat,
+        a.longitude AS vessel_lon,
+        -- Calculate distance in meters using the WGS84 great-circle method
+        ST_GEODESICLENGTHWGS84(
+            ST_SETSRID(
+                ST_LINESTRING(a.longitude, a.latitude, h.vessel_lon, h.vessel_lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY a.mmsi, h.vessel_mmsi ORDER BY a.event_timestamp DESC) AS rn,
+        h.vessel_mmsi AS ref_vessel_mmsi
+    FROM
+        defense.ais_events_ice a
+        -- Cross Join to compare every AIS event with every "reference" vessel
+        CROSS JOIN vessel_ref h
+    WHERE
+        -- Only consider events in the 4 hours leading up to the reference vessel's latest time
+        CAST(a.event_timestamp AS TIMESTAMP) >= CAST(h.vessel_time AS TIMESTAMP) - INTERVAL 4 HOUR
+),
+
+-- CTE 4: Select only the latest AIS event for each pair of (vessel, reference_vessel)
+filtered_ais_events AS (
+    SELECT
+        *
+    FROM
+        latest_ais_events
+    WHERE
+        rn = 1
+),
+
+-- CTE 5: Find the latest 'marine_vessel_status' events for all vessels,
+-- and calculate the geodesic distance to each reference vessel.
+latest_marine_status AS (
+    SELECT
+        v.mmsi AS marine_mmsi,
+        v.event_timestamp AS marine_time,
+        v.latitude AS marine_lat,
+        v.longitude AS marine_lon,
+        v.operational_status,
+        -- Calculate distance in meters using the WGS84 great-circle method
+        ST_GEODESICLENGTHWGS84(
+            ST_SETSRID(
+                ST_LINESTRING(v.longitude, v.latitude, h.vessel_lon, h.vessel_lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY v.mmsi, h.vessel_mmsi ORDER BY v.event_timestamp DESC) AS rn,
+        h.vessel_mmsi AS ref_vessel_mmsi
+    FROM
+        defense.marine_vessel_status v
+        CROSS JOIN vessel_ref h
+    WHERE
+        -- Only consider events from the last 4 hours
+        CAST(v.event_timestamp AS TIMESTAMP) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 4 HOUR
+),
+
+-- CTE 6: Select only the latest marine status event for each pair of (marine_vessel, reference_vessel)
+filtered_marine_status AS (
+    SELECT
+        *
+    FROM
+        latest_marine_status
+    WHERE
+        rn = 1
+)
+
+-- Final SELECT: Combine all proximity data sets
+SELECT
+    'REF' AS Data_Source,
+    vessel_mmsi,
+    vessel_time,
+    vessel_lon,
+    vessel_lat,
+    0 AS distance_m,
+    0 AS distance_km,
+    'Reference Vessel' AS "detail",
+    vessel_mmsi AS ref_vessel_mmsi
+FROM
+    vessel_ref
+WHERE
+    rn = 1 -- Redundant, but kept for consistency
+UNION ALL
+
+-- Proximity results from filtered AIS events
+SELECT
+    'AIS' AS Data_Source,
+    a.vessel_mmsi,
+    a.vessel_time,
+    a.vessel_lon,
+    a.vessel_lat,
+    a.distance_m,
+    ROUND(a.distance_m / 1000.0, 2) AS dist_km,
+    CONCAT(
+        'Distance: ',
+        CAST(ROUND(a.distance_m / 1000.0, 2) AS STRING),
+        ' km '
+    ) AS details,
+    a.ref_vessel_mmsi
+FROM
+    filtered_ais_events a
+UNION ALL
+
+-- Proximity results from filtered Marine Status events
+SELECT
+    'Fleet' AS Data_Source,
+    m.marine_mmsi,
+    m.marine_time,
+    m.marine_lon,
+    m.marine_lat,
+    m.distance_m,
+    ROUND(m.distance_m / 1000.0, 2) AS dist_km,
+    CONCAT(
+        'Distance: ',
+        CAST(ROUND(m.distance_m / 1000.0, 2) AS STRING),
+        ' km | ',
+        'Status: ',
+        m.operational_status
+    ) AS details,
+    m.ref_vessel_mmsi
+FROM
+    filtered_marine_status m
+ORDER BY
+    Data_Source DESC;
