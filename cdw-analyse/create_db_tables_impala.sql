@@ -969,3 +969,21 @@ FROM
     filtered_marine_status m
 ORDER BY
     Data_Source DESC;
+
+
+-- DDL: gps_jammer_events
+-- Diese Tabelle speichert die Integritätsdaten der Luftraumüberwachung
+DROP TABLE IF EXISTS gps_jammer_events;
+
+CREATE TABLE gps_jammer_events (
+    geohash STRING COMMENT '6-character geohash identifying the tile',
+    ts STRING COMMENT 'ISO 8601 Timestamp of the observation',
+    latitude DOUBLE COMMENT 'Latitude of the tile center',
+    longitude DOUBLE COMMENT 'Longitude of the tile center',
+    adsb_nic INT COMMENT 'Navigation Integrity Category (0-8)',
+    signal_integrity DOUBLE COMMENT 'Calculated signal integrity (0.05 - 0.90)',
+    jamming_indicator BOOLEAN COMMENT 'True if NIC < 5, indicating probable electronic warfare',
+    event_type STRING COMMENT 'Classification of the record (e.g., gps_jammer_event)'
+)
+PARTITIONED BY SPEC (TRUNCATE(10, ts)) -- Partitionierung nach Tag (YYYY-MM-DD)
+STORED BY ICEBERG;
