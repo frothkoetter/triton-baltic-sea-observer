@@ -164,6 +164,5 @@ GROUP BY
 * [cite_start]**SSB UI:** Verify that all four virtual tables (Kafka and Iceberg) are visible[cite: 22].
 * [cite_start]**Hue/SQL:** Query the Iceberg sink table to confirm rows are being ingested and distances are correctly calculated[cite: 22].
 
-**Would you like me to help you generate a sample Python script to simulate AIS Kafka messages for testing this pipeline?**
-
 ```
+![images](./images/pic12.png)
