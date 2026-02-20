@@ -11,15 +11,12 @@ The analytics engine is powered by a CSA Hub Cluster.
 *
 **Cluster Name:** `triton-csa`
 
-
-*
 **Runtime Version:** 7.3.1-1.cdh7.3.1.p700.74774806
 
-
-*
 **Key Services:** Flink, Streaming SQL Console, Kafka, and Ranger.
 
-
+![images](./images/pic3.png)
+![images](./images/pic4.png)
 
 ### Ranger Security Policies
 
@@ -45,13 +42,15 @@ Data is ingested into Kafka and then mapped to SSB Virtual Tables.
 
 1. Navigate to **Virtual Tables** and select **New Kafka Table**.
 
+![images](./images/pic5.png)
 
 2. Define the table (e.g., `ais_events_record`) and select the corresponding Kafka topic.
 
-
+![images](./images/pic6.png)
 3.
 **Schema Validation:** Use the "Detect Schema" feature to ensure the JSON/Avro payload is valid.
 
+![images](./images/pic7.png)
 
 
 ### Catalog Configuration
@@ -60,10 +59,11 @@ To interact with Iceberg tables, a Hive Catalog must be added:
 
 * Add a **New Catalog** of type `Hive`.
 
+![images](./images/pic8.png)
 
 * Validate the connection; it should successfully discover existing tables in the database.
 
-
+![images](./images/pic9.png)
 
 ---
 
@@ -75,13 +75,10 @@ To persist streaming data into Apache Iceberg, you must define your sink tables 
 
 To ensure data is committed to Iceberg, set the Flink job checkpointing interval:
 
-*
 **Interval:** `300000ms` (5 minutes).
-
-
-*
 **Mode:** At Least Once.
 
+![images](./images/pic10.png)
 
 
 ### Table Definitions (DDL)
@@ -124,6 +121,7 @@ WITH (
 
 ```
 
+![images](./images/pic11.png)
 ---
 
 ## 4. Geofence Analytics
