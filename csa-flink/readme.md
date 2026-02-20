@@ -119,8 +119,7 @@ WITH (
 
 ```
 
-![images](./images/pic11.png)
----
+-
 
 ## 4. Geofence Analytics
 
@@ -157,12 +156,14 @@ GROUP BY
     ports.latitude,
     ports.longitude;
 [cite_start]``` [cite: 22]
+```
 
----
 
 ## 5. Verification
-* [cite_start]**SSB UI:** Verify that all four virtual tables (Kafka and Iceberg) are visible[cite: 22].
-* [cite_start]**Hue/SQL:** Query the Iceberg sink table to confirm rows are being ingested and distances are correctly calculated[cite: 22].
+SSB UI:** Verify that all four virtual tables (Kafka and Iceberg) are visible.
 
-```
+![images](./images/pic11.png)
+
+Hue/SQL:** Query the Iceberg sink table to confirm rows are being ingested and distances are correctly calculated[.
+
 ![images](./images/pic12.png)
