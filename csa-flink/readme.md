@@ -8,7 +8,7 @@ This project demonstrates real-time geospatial analytics using **Cloudera Stream
 
 The analytics engine is powered by a CSA Hub Cluster.
 
-*
+
 **Cluster Name:** `triton-csa`
 
 **Runtime Version:** 7.3.1-1.cdh7.3.1.p700.74774806
@@ -22,12 +22,10 @@ The analytics engine is powered by a CSA Hub Cluster.
 
 Ensure the `ssb` user has the necessary permissions to access data layers:
 
-*
 **Hadoop SQL Policy:** Grant "All" permissions for Hive databases, tables, and columns.
 
 ![images](./images/pic1.png)
 
-*
 **S3 Policy:** Grant Read/Write access to the relevant S3 buckets and paths.
 
 ![images](./images/pic2.png)
