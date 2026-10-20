@@ -27,6 +27,7 @@ See `.env.example`. Credentials belong only in `.env.local`.
 | `IMPALA_AUTH_MECH` | `LDAP` (typical for AuthMech=12 workloads) |
 | `IMPALA_HTTP_PATH` | `cliservice` |
 | `TRITON_FORCE_SAMPLE_DATA` | `true` to skip Impala and use embedded demo data |
+| `PROXIMITY_ALERT_API_KEY` | SSB MVE key for Schiffsnähe (`GET /api/proximity-alerts`) |
 
 ## Impala notes
 
