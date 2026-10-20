@@ -293,6 +293,42 @@ a {
   color: var(--accent-amber);
 }
 
+.proximity-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.proximity-status-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.proximity-status-warn {
+  color: var(--accent-amber);
+}
+
 .proximity-legend {
   display: flex;
   flex-wrap: wrap;

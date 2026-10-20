@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import rawEvents from "../data/ship-proximity-events.json";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import fallbackEvents from "../data/ship-proximity-events.json";
+import { fetchProximityAlerts } from "../api";
 import { ProximityMap } from "../components/ProximityMap";
 import {
   distanceLineColor,
@@ -11,10 +12,45 @@ import {
 type SortKey = "event_time" | "distance_km" | "ship_a" | "ship_b";
 
 export function ProximityPage() {
-  const events = useMemo(
-    () => parseProximityEvents(rawEvents as ProximityEventRaw[]),
-    []
+  const [rawEvents, setRawEvents] = useState<ProximityEventRaw[]>(
+    fallbackEvents as ProximityEventRaw[]
   );
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<"live" | "sample" | null>(null);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+
+  const loadEvents = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetchProximityAlerts();
+      if (!res.ok || !res.events?.length) {
+        setRawEvents(fallbackEvents as ProximityEventRaw[]);
+        setDataSource("sample");
+        setFallbackReason(res.error ?? res.fallbackReason ?? "Empty API response");
+        setLoadError(res.error ?? "Using embedded sample data");
+        return;
+      }
+      setRawEvents(res.events);
+      setDataSource(res.source ?? "sample");
+      setFallbackReason(res.fallbackReason ?? null);
+    } catch (err) {
+      setRawEvents(fallbackEvents as ProximityEventRaw[]);
+      setDataSource("sample");
+      const message = err instanceof Error ? err.message : String(err);
+      setFallbackReason(message);
+      setLoadError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  const events = useMemo(() => parseProximityEvents(rawEvents), [rawEvents]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("distance_km");
   const [sortAsc, setSortAsc] = useState(true);
@@ -51,8 +87,30 @@ export function ProximityPage() {
     return sortAsc ? " ▲" : " ▼";
   }
 
+  const feedBadge =
+    dataSource === "live" ? (
+      <span className="status-ok">LIVE PROXIMITY API</span>
+    ) : dataSource === "sample" ? (
+      <span className="status-warn">SAMPLE / FALLBACK</span>
+    ) : null;
+
   return (
     <div>
+      <div className="proximity-toolbar">
+        {feedBadge}
+        <button type="button" className="btn-secondary" disabled={loading} onClick={() => void loadEvents()}>
+          {loading ? "Lädt…" : "Aktualisieren"}
+        </button>
+      </div>
+      {loading && events.length === 0 ? (
+        <p className="proximity-status-msg">Proximity-Daten werden geladen…</p>
+      ) : null}
+      {!loading && loadError && dataSource === "sample" ? (
+        <p className="proximity-status-msg proximity-status-warn" title={fallbackReason ?? undefined}>
+          API nicht erreichbar — eingebettete Beispieldaten ({events.length} Ereignisse).
+        </p>
+      ) : null}
+
       <div className="kpi-row">
         <div className="kpi">
           <div className="kpi-value">{events.length}</div>

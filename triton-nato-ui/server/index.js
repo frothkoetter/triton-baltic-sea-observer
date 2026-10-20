@@ -18,6 +18,7 @@ import {
   runQueryOrSample,
 } from "./impala.js";
 import { DATASET_STARTER_SQL } from "./queries.js";
+import { fetchProximityAlertsLive } from "./proximity-alerts.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -75,6 +76,11 @@ app.get("/api/analyses/surveillance", async (_req, res) => {
 
 app.get("/api/observation-areas", async (_req, res) => {
   res.json(await getObservationAreas());
+});
+
+app.get("/api/proximity-alerts", async (_req, res) => {
+  const result = await fetchProximityAlertsLive();
+  res.json(result);
 });
 
 app.post("/api/query", async (req, res) => {

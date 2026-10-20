@@ -1,3 +1,5 @@
+import type { ProximityEventRaw } from "./lib/proximity";
+
 export type QueryResult = {
   ok: boolean;
   columns?: string[];
@@ -19,4 +21,17 @@ export async function postQuery(sql: string): Promise<QueryResult> {
     body: JSON.stringify({ sql }),
   });
   return res.json() as Promise<QueryResult>;
+}
+
+export type ProximityAlertsResponse = {
+  ok: boolean;
+  source?: "live" | "sample";
+  events?: ProximityEventRaw[];
+  fallbackReason?: string;
+  error?: string;
+};
+
+export async function fetchProximityAlerts(): Promise<ProximityAlertsResponse> {
+  const res = await fetch("/api/proximity-alerts");
+  return res.json() as Promise<ProximityAlertsResponse>;
 }
