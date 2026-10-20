@@ -3,9 +3,23 @@ import { fetchJson } from "./api";
 import { FilterRail } from "./components/FilterRail";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
+import { ProximityPage } from "./pages/Proximity";
 import { SqlWorkspacePage } from "./pages/SqlWorkspace";
 
-type Zone = "lagebild" | "analysen" | "sql";
+type Zone = "lagebild" | "analysen" | "proximity" | "sql";
+
+const ZONE_HASH: Record<Zone, string> = {
+  lagebild: "",
+  analysen: "analysen",
+  proximity: "proximity",
+  sql: "sql",
+};
+
+function zoneFromHash(): Zone {
+  const h = window.location.hash.replace(/^#/, "");
+  if (h === "analysen" || h === "proximity" || h === "sql") return h;
+  return "lagebild";
+}
 
 type Health = {
   dataSource: string;
@@ -14,7 +28,19 @@ type Health = {
 };
 
 export default function App() {
-  const [zone, setZone] = useState<Zone>("lagebild");
+  const [zone, setZone] = useState<Zone>(() => zoneFromHash());
+
+  useEffect(() => {
+    const onHash = () => setZone(zoneFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  function navigate(next: Zone) {
+    setZone(next);
+    const hash = ZONE_HASH[next];
+    window.location.hash = hash ? `#${hash}` : "";
+  }
   const [health, setHealth] = useState<Health | null>(null);
   const [flag, setFlag] = useState("");
   const [vesselType, setVesselType] = useState("");
@@ -60,6 +86,7 @@ export default function App() {
             [
               ["lagebild", "Lagebild"],
               ["analysen", "Analysen"],
+              ["proximity", "Schiffsnähe"],
               ["sql", "SQL"],
             ] as const
           ).map(([id, label]) => (
@@ -67,7 +94,7 @@ export default function App() {
               key={id}
               type="button"
               className={`nav-btn ${zone === id ? "active" : ""}`}
-              onClick={() => setZone(id)}
+              onClick={() => navigate(id)}
             >
               {label}
             </button>
@@ -91,6 +118,7 @@ export default function App() {
         <main className="main-pane">
           {zone === "lagebild" && <LagebildPage />}
           {zone === "analysen" && <AnalysenPage />}
+          {zone === "proximity" && <ProximityPage />}
           {zone === "sql" && <SqlWorkspacePage />}
         </main>
       </div>

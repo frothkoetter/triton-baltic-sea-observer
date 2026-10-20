@@ -236,6 +236,112 @@ a {
   border: 1px solid var(--border-subtle);
 }
 
+.proximity-map-wrap {
+  height: 100%;
+  min-height: 360px;
+}
+
+.proximity-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 8px;
+  min-height: 480px;
+}
+
+.proximity-map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+.proximity-table-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.proximity-table-scroll {
+  overflow: auto;
+  flex: 1;
+  max-height: 520px;
+}
+
+.proximity-table tbody tr {
+  cursor: pointer;
+}
+
+.proximity-table tbody tr:hover {
+  background: var(--bg-elevated);
+}
+
+.proximity-row-selected {
+  background: var(--bg-elevated);
+  outline: 1px solid var(--accent-amber);
+}
+
+.sort-header {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sort-header:hover {
+  color: var(--accent-amber);
+}
+
+.proximity-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+}
+
+.legend-line {
+  width: 18px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.proximity-popup {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.proximity-mmsi-label.leaflet-tooltip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 10px;
+  padding: 2px 4px;
+  box-shadow: none;
+}
+
+@media (max-width: 1100px) {
+  .proximity-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .layer-toggles {
   display: flex;
   gap: 8px;
