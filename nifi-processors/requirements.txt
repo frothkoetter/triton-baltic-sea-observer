@@ -1,5 +1,5 @@
-	geohash2
-	numpy
-	faker
-	laspy
-	pyproj
+geohash2
+numpy
+faker
+laspy>=2.5.0
+pyproj>=3.6.0

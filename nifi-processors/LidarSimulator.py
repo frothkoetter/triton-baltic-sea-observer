@@ -3,6 +3,11 @@ NiFi LiDAR simulator: parametric Baltic fleet scene exported as LAS (EPSG:4326).
 
 Legacy box/submarine/sailing modes are replaced by analytic hull + superstructure
 sampling; see lidar_vessel_geometry.py for vessel builders.
+
+Local run (requires laspy, pyproj — see nifi-processors/requirements.txt):
+
+    python3 -m pip install -r requirements.txt
+    python3 LidarSimulator.py
 """
 
 from __future__ import annotations
