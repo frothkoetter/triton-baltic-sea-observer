@@ -16,12 +16,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-_SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(_SCRIPT_DIR))
+from paths import ROOT, install_import_path
 
-from paths import ROOT
-
-sys.path.insert(0, str(ROOT))
+install_import_path()
 
 _TRAIN_DEPS = ("joblib", "numpy", "pandas", "sklearn", "laspy", "boto3")
 

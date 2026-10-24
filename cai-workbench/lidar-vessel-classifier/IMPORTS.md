@@ -1,39 +1,36 @@
-# Imports in a CML code cell
+# Imports in a Cloudera AI Python session
 
-Add the **project root** (folder that contains `train.py` and `src/`), not only `src/`.
-
-## Option A — `from features import` (recommended)
+Set project root first (folder containing `train.py`):
 
 ```python
 import os, sys
 sys.path.insert(0, os.environ["CDSW_WORKING_DIRECTORY"])
+```
 
+### `from features import ...`
+
+```python
 from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-## Option B — `from src.features import`
-
-Same `sys.path` line (project root), then:
+### `from src.features import ...`
 
 ```python
 from src.features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-## If you only add `src/` to the path
-
-Use flat imports only (do not mix with Option A):
+### Project path without `__file__`
 
 ```python
-import sys
-sys.path.insert(0, "/home/cdsw/lidar-vessel-classifier/src")
-from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+from paths import ROOT
+_SCRIPT_DIR = ROOT
 ```
 
-## Training from a cell
+### Training
 
 ```python
-from train import main
-main()  # uses LIDAR_S3_PREFIX or default S3 path; kernel -f flags are ignored
+import train
+train.main()
 ```
 
-Or terminal: `python3 train.py --s3-prefix "s3://..."`
+Or use **Terminal**: `python3 train.py`
