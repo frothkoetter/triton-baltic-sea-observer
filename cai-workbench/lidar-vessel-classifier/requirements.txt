@@ -1,0 +1,7 @@
+boto3>=1.34.0
+joblib>=1.3.0
+laspy>=2.5.0
+numpy>=1.26.0
+pandas>=2.1.0
+scikit-learn>=1.4.0
+cmlapi>=2.0.0
