@@ -83,11 +83,12 @@ def _sample_hull_like(n: int, rng: np.random.Generator, length: float, beam: flo
     t = np.abs(x) / (length / 2)
     taper = np.clip(1.0 - t ** 1.8, 0.08, 1.0)
     half_beam = (beam / 2) * taper
-    # Cross-section ellipse: freeboard above z=0, draft below (waterline at z=0).
-    phi = rng.uniform(-np.pi / 2, np.pi / 2, n)
+    # Full port/starboard ellipse; waterline at z = 0.
+    phi = rng.uniform(0, 2 * np.pi, n)
     y = half_beam * np.cos(phi)
-    z = np.where(phi >= 0, freeboard * np.sin(phi), draft * np.sin(phi))
-    deck = (phi > np.pi / 4) & (np.abs(y) < half_beam * 0.92)
+    sin_phi = np.sin(phi)
+    z = np.where(sin_phi >= 0, freeboard * sin_phi, draft * sin_phi)
+    deck = (sin_phi > 0.65) & (np.abs(np.cos(phi)) < 0.9)
     z[deck] = freeboard
     return np.column_stack((x, y, z))
 
@@ -201,17 +202,40 @@ def build_ferry(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
 
 
 def build_sailing_vessel(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
+    """
+    Cruising yacht: L/B from spec; height_m is mast height above deck (not hull depth).
+    """
     L, B, H = spec.length_m, spec.beam_m, spec.height_m
     n = spec.point_count
-    n_hull = int(n * 0.5)
-    n_mast = int(n * 0.25)
-    n_boom = n - n_hull - n_mast
-    hull = _sample_hull_like(n_hull, rng, L, B, draft=H * 0.35, freeboard=H * 0.12)
-    mast = _sample_cylinder(n_mast, rng, length=H * 0.95, radius=B * 0.04, axis="z",
-                            center=(L * 0.02, 0.0, H * 0.12))
-    boom = _sample_cylinder(n_boom, rng, length=L * 0.35, radius=B * 0.025, axis="x",
-                            center=(L * 0.05, 0.0, H * 0.55))
-    return _concat([hull, mast, boom])
+    draft = min(2.8, L * 0.15)
+    freeboard = min(2.0, B * 0.38)
+    deck_z = freeboard * 0.92
+    mast_h = H
+    mast_x = L * 0.07
+
+    n_hull = int(n * 0.36)
+    n_keel = int(n * 0.12)
+    n_cabin = int(n * 0.14)
+    n_mast = int(n * 0.28)
+    n_boom = n - n_hull - n_keel - n_cabin - n_mast
+
+    hull = _sample_hull_like(n_hull, rng, L * 0.9, B, draft=draft, freeboard=freeboard)
+    keel = _sample_box_surface(
+        n_keel, rng, -L * 0.32, L * 0.04, -B * 0.07, B * 0.07, -draft - 1.6, -0.05
+    )
+    cabin = _sample_box_surface(
+        n_cabin, rng, -L * 0.26, -L * 0.02, -B * 0.24, B * 0.24, deck_z, deck_z + min(2.4, B * 0.5)
+    )
+    mast = _sample_cylinder(
+        n_mast, rng, length=mast_h, radius=max(0.09, B * 0.022), axis="z",
+        center=(mast_x, 0.0, deck_z + mast_h / 2),
+    )
+    boom_z = deck_z + mast_h * 0.58
+    boom = _sample_cylinder(
+        n_boom, rng, length=L * 0.45, radius=max(0.05, B * 0.012), axis="x",
+        center=(mast_x - L * 0.08, 0.0, boom_z),
+    )
+    return _concat([hull, keel, cabin, mast, boom])
 
 
 def build_corvette(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
