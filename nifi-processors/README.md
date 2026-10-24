@@ -12,7 +12,12 @@ python3 -m pip install -r requirements.txt
 python3 LidarSimulator.py
 ```
 
-`LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`). If you see `ModuleNotFoundError: No module named 'laspy'`, install dependencies with the command above.
+`LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`).
+
+| Error | Fix |
+|-------|-----|
+| `No module named 'laspy'` | `python3 -m pip install -r requirements.txt` |
+| `No module named 'pyproj'` but pip installed **pyroj** | Wrong package — `requirements.txt` line 5 must be `pyproj`, not `pyroj`. Run: `python3 -m pip uninstall pyroj -y && python3 -m pip install pyproj` |
 
 Output: `baltic_fleet.las` in the current directory.
 
