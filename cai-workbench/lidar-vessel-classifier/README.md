@@ -27,30 +27,30 @@ s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/
 
 Each `.las` file should carry **LAS classification** 1–9 (NiFi simulator) or a name like `sample_corvette.las`.
 
-**Session / job command:**
+**Run as a Python script** (CML session terminal or **Job**):
 
 ```bash
-export LIDAR_S3_PREFIX="s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
-python train.py
+cd /home/cdsw/lidar-vessel-classifier   # project files directory in Workbench
+python3 train.py --s3-prefix "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
 ```
 
-**Notebook (no `__file__`):** run from the project directory, or set the root once:
-
-```python
-import os
-os.environ["LIDAR_PROJECT_ROOT"] = "/home/cdsw/lidar-vessel-classifier"  # your project path
-%run train.py
-# or: from train import main; main()
-```
-
-Optional: `LIDAR_MAX_FILES=500` to cap download count.
-
-**Local test** (e.g. repo samples):
+Or use the job wrapper:
 
 ```bash
-export LIDAR_LOCAL_DIR="/path/to/nifi-processors/samples"
-python train.py
+./run_train.sh
 ```
+
+**CML Job:** Type = **Job**, Script = `run_train.sh` or `python3 train.py` with arguments, Engine = Python 3.
+
+```bash
+python3 train.py --help
+python3 train.py --max-files 500
+python3 train.py --local-dir /path/to/samples   # dev only
+```
+
+Do **not** paste `train.py` into notebook cells — use a Job or `python3 train.py` from the shell.
+
+Optional env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
 
 Outputs:
 
