@@ -113,10 +113,11 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
         cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         y_pred = cross_val_predict(pipeline, X, y, cv=cv)
         print(classification_report(y, y_pred))
-    else:
-        print(classification_report(y, pipeline.predict(X)))
 
     pipeline.fit(X, y)
+    if n_splits < 2:
+        print("Training set fit (no cross-validation):")
+        print(classification_report(y, pipeline.predict(X)))
 
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, ARTIFACT_DIR / "model.joblib")
