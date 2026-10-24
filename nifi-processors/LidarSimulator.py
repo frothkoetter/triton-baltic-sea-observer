@@ -318,7 +318,7 @@ class LidarSimulator(FlowFileTransform):
 
         return FlowFileTransformResult(
             relationship="success",
-            contents=io.BytesIO(payload),
+            contents=payload,
             attributes=attrs,
         )
 
