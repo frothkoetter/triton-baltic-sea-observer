@@ -16,7 +16,6 @@ import json
 import os
 from pathlib import Path
 
-import boto3
 import joblib
 import numpy as np
 
@@ -37,17 +36,33 @@ def _load():
         _LABELS = json.load(f)
 
 
+def _get_s3_client():
+    connection_name = os.environ.get("LIDAR_S3_CONNECTION_NAME", "S3 Object Store")
+    mode = os.environ.get("LIDAR_USE_CML_S3", "auto").lower()
+    if mode in ("1", "true", "yes", "auto"):
+        try:
+            import cml.data_v1 as cmldata
+
+            return cmldata.get_connection(connection_name).get_base_connection()
+        except Exception:
+            if mode in ("1", "true", "yes"):
+                raise
+    import boto3
+
+    return boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
+        region_name=os.environ.get("AWS_DEFAULT_REGION", "eu-central-1"),
+    )
+
+
 def _read_las_from_s3(s3_uri: str) -> bytes:
     uri = s3_uri.replace("s3a://", "s3://")
     if not uri.startswith("s3://"):
         raise ValueError("s3_uri must start with s3:// or s3a://")
     path = uri[5:]
     bucket, key = path.split("/", 1)
-    client = boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
-        region_name=os.environ.get("AWS_DEFAULT_REGION", "eu-central-1"),
-    )
+    client = _get_s3_client()
     return client.get_object(Bucket=bucket, Key=key)["Body"].read()
 
 

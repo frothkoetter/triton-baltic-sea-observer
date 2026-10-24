@@ -14,7 +14,7 @@ Train a scikit-learn model on `.las` point clouds in S3 and deploy it as a **CML
 ## 1. CML project setup
 
 1. Create a **Cloudera AI** project (or Workbench) and sync this directory (`cai-workbench/lidar-vessel-classifier/`).
-2. Ensure the project can read your object store (instance profile, HDFS/S3 credentials, or environment keys used by `boto3`).
+2. Add a project **Data Connection** named **S3 Object Store** (or set `LIDAR_S3_CONNECTION_NAME`). Training uses `cml.data_v1.get_connection(...).get_base_connection()` — the same client as the connector sample in the workbench. Set `LIDAR_USE_CML_S3=false` only if you want plain `boto3` instead.
 3. The first project build runs `cdsw-build.sh` → installs `requirements-train.txt`.
 
 See [RUNTIME.md](RUNTIME.md) for install and Job settings.

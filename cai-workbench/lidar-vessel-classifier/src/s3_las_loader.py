@@ -66,15 +66,10 @@ def iter_las_objects(
     NiFi/CDP uploads often use keys without a .las extension; those are detected
     via the LAS file signature ``LASF`` (first four bytes).
     """
-    import boto3
+    from .s3_client import get_s3_client
 
     bucket, prefix = _normalize_s3_uri(s3_prefix)
-    session = boto3.session.Session()
-    client = session.client(
-        "s3",
-        endpoint_url=os.environ.get("AWS_ENDPOINT_URL"),
-        region_name=os.environ.get("AWS_DEFAULT_REGION", "eu-central-1"),
-    )
+    client = get_s3_client()
     paginator = client.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
         for item in page.get("Contents", []):
