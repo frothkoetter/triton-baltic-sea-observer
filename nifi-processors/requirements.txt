@@ -1,3 +1,5 @@
 	geohash2
 	numpy
 	faker
+	laspy
+	pyproj
