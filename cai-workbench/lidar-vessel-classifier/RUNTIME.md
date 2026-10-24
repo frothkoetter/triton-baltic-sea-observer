@@ -43,6 +43,16 @@ After that, a **new** session can do:
 from features import extract_features_from_las_bytes
 ```
 
+## Jupyter / `%run train.py` in a session
+
+IPython passes `-f /tmp/.../kernel-….json` in `sys.argv`. `train.py` strips those flags automatically. You can run:
+
+```python
+%run train.py
+```
+
+or `from train import main; main()` after `cd` to the project directory.
+
 ## Interactive Python only when needed
 
 If you must use the Python runtime REPL after configuring `PYTHONPATH`:

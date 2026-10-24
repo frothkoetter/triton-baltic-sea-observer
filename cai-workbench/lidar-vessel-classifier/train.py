@@ -51,6 +51,26 @@ ARTIFACT_DIR = ROOT / "artifacts"
 DEPLOY_DIR = ROOT / "model-deployment"
 
 
+def _cli_argv() -> list[str]:
+    """Drop Jupyter/IPython kernel flags (-f kernel-….json) from sys.argv."""
+    argv = sys.argv[1:]
+    if not argv:
+        return []
+    cleaned: list[str] = []
+    skip_next = False
+    for i, arg in enumerate(argv):
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-f", "--f"):
+            skip_next = True
+            continue
+        if "ipykernel" in arg or "kernel-" in arg:
+            continue
+        cleaned.append(arg)
+    return cleaned
+
+
 def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.DataFrame:
     rows: list[dict] = []
     paths = sorted(local_dir.glob("**/*.las"))
@@ -187,7 +207,8 @@ def main(argv: list[str] | None = None) -> None:
         default=int(os.environ["LIDAR_MAX_FILES"]) if os.environ.get("LIDAR_MAX_FILES") else None,
         help="Limit number of files loaded",
     )
-    args = parser.parse_args(argv)
+    cli = argv if argv is not None else _cli_argv()
+    args, _unknown = parser.parse_known_args(cli)
 
     if args.local_dir:
         print(f"Training from local dir: {args.local_dir}")
