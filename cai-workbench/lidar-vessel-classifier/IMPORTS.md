@@ -1,22 +1,34 @@
 # Imports in a CML code cell
 
-Run **once** per session:
+Add the **project root** (folder that contains `train.py` and `src/`), not only `src/`.
+
+## Option A — `from features import` (recommended)
 
 ```python
 import os, sys
 sys.path.insert(0, os.environ["CDSW_WORKING_DIRECTORY"])
 
-from src.features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-Or:
+## Option B — `from src.features import`
+
+Same `sys.path` line (project root), then:
 
 ```python
-from paths import install_import_path
-install_import_path()
 from src.features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-(`paths` requires project root on `sys.path` first — use the `CDSW_WORKING_DIRECTORY` line above.)
+## If you only add `src/` to the path
 
-Training should still be: `python3 train.py` in the terminal.
+Use flat imports only (do not mix with Option A):
+
+```python
+import sys
+sys.path.insert(0, "/home/cdsw/lidar-vessel-classifier/src")
+from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+```
+
+## Training
+
+Use the terminal: `python3 train.py --s3-prefix "s3://..."`
