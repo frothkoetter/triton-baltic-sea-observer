@@ -1,0 +1,6 @@
+artifacts/
+model.pkl
+label_names.json
+__pycache__/
+*.pyc
+.pytest_cache/
