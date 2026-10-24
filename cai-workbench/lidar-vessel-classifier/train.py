@@ -5,6 +5,9 @@ Train a vessel-type classifier from LiDAR (.las) files in S3.
 Usage:
   python3 train.py --s3-prefix "s3://bucket/path/"
   python3 train.py --local-dir /path/to/las/files
+
+Cloudera AI Python (Cell In[n]): do NOT use Path(__file__). Run session_train.py
+or: import train; train.main()  (see RUNTIME.md).
 """
 
 from __future__ import annotations
