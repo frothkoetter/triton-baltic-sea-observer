@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cloudera AI Workbench / CML job entrypoint — run train.py as a script (not a notebook).
+# Cloudera AI / CML job entrypoint for train.py
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

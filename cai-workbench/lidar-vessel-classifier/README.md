@@ -15,9 +15,9 @@ Train a scikit-learn model on `.las` point clouds in S3 and deploy it as a **CML
 
 1. Create a **Cloudera AI** project (or Workbench) and sync this directory (`cai-workbench/lidar-vessel-classifier/`).
 2. Ensure the project can read your object store (instance profile, HDFS/S3 credentials, or environment keys used by `boto3`).
-3. The first project build runs `cdsw-build.sh` → installs `requirements.txt`.
+3. The first project build runs `cdsw-build.sh` → installs `requirements-train.txt`.
 
-**Python runtime (not notebook):** see [RUNTIME.md](RUNTIME.md) — run `python3 train.py` in the **terminal** or as a **Job**; do not paste `train.py` into the interactive Python pane.
+See [RUNTIME.md](RUNTIME.md) for install and Job settings.
 
 ## 2. Training data (S3)
 
@@ -29,60 +29,15 @@ s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/
 
 Objects may be named **`*.las`** or **extensionless** (e.g. NiFi UUID keys under `geospatial/`). Extensionless keys are accepted when the content starts with the LAS signature `LASF`. Each file should carry **LAS classification** 1–9 (NiFi simulator) or a name like `sample_corvette.las`.
 
-**Run as a Python script** (CML session terminal or **Job**):
-
 ```bash
-cd /home/cdsw/lidar-vessel-classifier   # project files directory in Workbench
+cd "${CDSW_WORKING_DIRECTORY}"
+python3 -m pip install --user -r requirements-train.txt
 python3 train.py --s3-prefix "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
 ```
 
-Or use the job wrapper:
+Or `./run_train.sh`. Options: `python3 train.py --help`
 
-```bash
-./run_train.sh
-```
-
-**CML Job:** Type = **Job**, Script = `run_train.sh` or `python3 train.py` with arguments, Engine = Python 3.
-
-```bash
-python3 train.py --help
-python3 train.py --max-files 500
-python3 train.py --local-dir /path/to/samples   # dev only
-```
-
-**Recommended:** use a Job or `python3 train.py` from the shell (not notebook cells).
-
-If you must use a **notebook**, `setup_project` is not on `PYTHONPATH` until you bootstrap.
-
-**First cell** (set your real path — often under `/home/cdsw/...`):
-
-```python
-import os
-os.environ["LIDAR_PROJECT_ROOT"] = "/home/cdsw/lidar-vessel-classifier"
-# whole repo clone: "/home/cdsw/triton-baltic-sea-observer/cai-workbench/lidar-vessel-classifier"
-
-%run /home/cdsw/lidar-vessel-classifier/notebook_bootstrap.py
-```
-
-Then:
-
-```python
-from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
-```
-
-Or without `%run`, one cell only:
-
-```python
-import os, sys
-from pathlib import Path
-ROOT = Path("/home/cdsw/lidar-vessel-classifier").resolve()
-sys.path[:0] = [str(ROOT), str(ROOT / "src")]
-from features import extract_features_from_las_bytes
-```
-
-Training: `%run train.py` after bootstrap, or use a **Job** with `python3 train.py`.
-
-Optional env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
+Env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
 
 Outputs:
 

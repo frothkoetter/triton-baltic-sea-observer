@@ -2,75 +2,55 @@
 """
 Train a vessel-type classifier from LiDAR (.las) files in S3.
 
-Run in Cloudera AI Workbench (session or job). Set LIDAR_S3_PREFIX to your bucket path.
+Usage:
+  python3 train.py --s3-prefix "s3://bucket/path/"
+  python3 train.py --local-dir /path/to/las/files
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-_TRAIN_DEPS = (
-    "joblib",
-    "numpy",
-    "pandas",
-    "sklearn",
-    "laspy",
-    "boto3",
-)
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "src"))
 
-
-def _bootstrap_sys_path() -> None:
-    """Ensure project root + src/ are importable when train.py is executed as a file."""
-    try:
-        root = Path(__file__).resolve().parent
-    except NameError:
-        return
-    for p in (root, root / "src"):
-        s = str(p)
-        if s not in sys.path:
-            sys.path.insert(0, s)
-
-
-_bootstrap_sys_path()
+_TRAIN_DEPS = ("joblib", "numpy", "pandas", "sklearn", "laspy", "boto3")
 
 
 def _requirements_file() -> Path:
-    try:
-        root = Path(__file__).resolve().parent
-    except NameError:
-        root = Path(os.environ.get("LIDAR_PROJECT_ROOT", Path.cwd()))
-    train_req = root / "requirements-train.txt"
-    if train_req.is_file():
-        return train_req
-    return root / "requirements.txt"
+    train_req = ROOT / "requirements-train.txt"
+    return train_req if train_req.is_file() else ROOT / "requirements.txt"
 
 
 def ensure_runtime_dependencies() -> None:
-    """Install training packages when missing (CML session before project build)."""
     if os.environ.get("LIDAR_SKIP_PIP_INSTALL", "").lower() in ("1", "true", "yes"):
         return
-    missing = []
-    for name in _TRAIN_DEPS:
-        try:
-            __import__(name)
-        except ImportError:
-            missing.append(name)
+    missing = [name for name in _TRAIN_DEPS if not _can_import(name)]
     if not missing:
         return
     req = _requirements_file()
     if not req.is_file():
         raise ModuleNotFoundError(
-            f"Missing Python packages: {', '.join(missing)}. "
+            f"Missing packages: {', '.join(missing)}. "
             f"Run: python3 -m pip install -r {req}"
         )
-    print(f"Installing training dependencies from {req} ({', '.join(missing)}) …")
+    print(f"Installing from {req} ({', '.join(missing)}) …")
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--user", "-r", str(req)],
     )
+
+
+def _can_import(name: str) -> bool:
+    try:
+        __import__(name)
+        return True
+    except ImportError:
+        return False
 
 
 ensure_runtime_dependencies()
@@ -80,43 +60,17 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-
-from setup_project import ensure_src_path, project_root
-
-ROOT = ensure_src_path()
 
 from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 from labels import FEATURE_NAMES
 from s3_las_loader import iter_las_objects, label_from_key
 
-DEFAULT_S3_PREFIX = (
-    "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
-)
+DEFAULT_S3_PREFIX = "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
 ARTIFACT_DIR = ROOT / "artifacts"
 DEPLOY_DIR = ROOT / "model-deployment"
-
-
-def _cli_argv() -> list[str]:
-    """Drop Jupyter/IPython kernel flags (-f kernel-….json) from sys.argv."""
-    argv = sys.argv[1:]
-    if not argv:
-        return []
-    cleaned: list[str] = []
-    skip_next = False
-    for i, arg in enumerate(argv):
-        if skip_next:
-            skip_next = False
-            continue
-        if arg in ("-f", "--f"):
-            skip_next = True
-            continue
-        if "ipykernel" in arg or "kernel-" in arg:
-            continue
-        cleaned.append(arg)
-    return cleaned
 
 
 def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.DataFrame:
@@ -127,9 +81,7 @@ def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.D
     for path in sorted(local_dir.rglob("*")):
         if not path.is_file():
             continue
-        if path.suffix.lower() == ".las":
-            candidates.append(path)
-        elif path.suffix == "":
+        if path.suffix.lower() == ".las" or path.suffix == "":
             candidates.append(path)
     for i, path in enumerate(candidates):
         if max_files is not None and i >= max_files:
@@ -149,7 +101,7 @@ def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.D
         rows.append(row)
         print(f"loaded {path} → {label}")
     if not rows:
-        raise RuntimeError(f"No labeled .las under {local_dir}")
+        raise RuntimeError(f"No labeled LAS files under {local_dir}")
     return pd.DataFrame(rows)
 
 
@@ -179,8 +131,7 @@ def load_training_table(
     if not rows:
         raise RuntimeError(
             f"No labeled LAS objects under {s3_prefix} "
-            "(.las or extensionless keys with LASF header). "
-            "Upload simulator output or ensure classification codes 1–9 are set."
+            "(.las or extensionless keys with LASF header)."
         )
     return pd.DataFrame(rows)
 
@@ -228,11 +179,7 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
         json.dump(labels, f, indent=2)
     with open(ARTIFACT_DIR / "training_meta.json", "w", encoding="utf-8") as f:
         json.dump(
-            {
-                "n_samples": len(df),
-                "labels": labels,
-                "feature_names": FEATURE_NAMES,
-            },
+            {"n_samples": len(df), "labels": labels, "feature_names": FEATURE_NAMES},
             f,
             indent=2,
         )
@@ -242,7 +189,6 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
 
 
 def package_deployment() -> None:
-    """Copy runtime files for CML Model Deployment."""
     import shutil
 
     DEPLOY_DIR.mkdir(parents=True, exist_ok=True)
@@ -253,21 +199,19 @@ def package_deployment() -> None:
     print(f"Packaged deployment dir: {DEPLOY_DIR}")
 
 
-def main(argv: list[str] | None = None) -> None:
-    import argparse
-
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Train LiDAR vessel classifier from .las files (S3 or local directory)."
+        description="Train LiDAR vessel classifier from LAS files (S3 or local directory)."
     )
     parser.add_argument(
         "--s3-prefix",
         default=os.environ.get("LIDAR_S3_PREFIX", DEFAULT_S3_PREFIX),
-        help="S3 prefix with training .las files (s3:// or s3a://)",
+        help="S3 prefix with training LAS objects",
     )
     parser.add_argument(
         "--local-dir",
         default=os.environ.get("LIDAR_LOCAL_DIR"),
-        help="Local directory of .las files (overrides --s3-prefix)",
+        help="Local directory (overrides --s3-prefix)",
     )
     parser.add_argument(
         "--max-files",
@@ -278,10 +222,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--no-las-magic-check",
         action="store_true",
-        help="Trust every extensionless S3 key under prefix (skip LASF header check)",
+        help="Skip LASF header check for extensionless S3 keys",
     )
-    cli = argv if argv is not None else _cli_argv()
-    args, _unknown = parser.parse_known_args(cli)
+    args = parser.parse_args()
 
     if args.local_dir:
         print(f"Training from local dir: {args.local_dir}")
