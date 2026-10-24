@@ -8,16 +8,12 @@ Paste this whole file into one cell and run it, or in Terminal:
 import os
 import sys
 
-ROOT = os.environ.get("CDSW_WORKING_DIRECTORY") or os.environ.get("LIDAR_PROJECT_ROOT")
-if not ROOT:
-    raise SystemExit(
-        "Set CDSW_WORKING_DIRECTORY to your lidar-vessel-classifier project folder "
-        "(Project Settings → Environment)."
-    )
+root = os.environ.get("CDSW_WORKING_DIRECTORY") or os.environ.get("LIDAR_PROJECT_ROOT")
+if not root:
+    raise SystemExit("Set CDSW_WORKING_DIRECTORY to the lidar-vessel-classifier folder.")
 
-os.chdir(ROOT)
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
+sys.path.insert(0, root)
+os.chdir(root)
 
 import train
 

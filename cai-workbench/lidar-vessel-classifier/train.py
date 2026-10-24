@@ -19,9 +19,33 @@ import subprocess
 import sys
 from pathlib import Path
 
-from paths import ROOT, install_import_path
 
-install_import_path()
+def _project_root() -> Path:
+    try:
+        root = Path(__file__).resolve().parent
+        if (root / "train.py").is_file():
+            return root
+    except NameError:
+        pass
+    for key in ("CDSW_WORKING_DIRECTORY", "LIDAR_PROJECT_ROOT"):
+        value = os.environ.get(key)
+        if value:
+            root = Path(value).expanduser().resolve()
+            if (root / "train.py").is_file():
+                return root
+    cwd = Path.cwd().resolve()
+    if (cwd / "train.py").is_file():
+        return cwd
+    raise RuntimeError(
+        "Cannot find project root. In a Python session run first:\n"
+        "  import os, sys; sys.path.insert(0, os.environ['CDSW_WORKING_DIRECTORY'])\n"
+        "Or in Terminal: cd $CDSW_WORKING_DIRECTORY && python3 train.py"
+    )
+
+
+ROOT = _project_root()
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 _TRAIN_DEPS = ("joblib", "numpy", "pandas", "sklearn", "laspy", "boto3")
 
