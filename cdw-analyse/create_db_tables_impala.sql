@@ -1004,10 +1004,10 @@ CREATE TABLE lidar_simulation_metadata (
   point_count BIGINT COMMENT 'Number of points in the LAS file (lidar.point_count).',
   vessel_name STRING COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
   vessel_type STRING COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
-  ingested_at STRING COMMENT 'ISO 8601 timestamp when the metadata row was recorded (set at ingest).'
+  ingested_at TIMESTAMP COMMENT 'When the metadata row was recorded (set at ingest).'
 )
 COMMENT 'Metadata for Baltic LiDAR vessel simulation LAS files'
-PARTITIONED BY SPEC (TRUNCATE(10, ingested_at))
+PARTITIONED BY SPEC (day(ingested_at))
 STORED BY ICEBERG;
 
 -- DML: example row (attributes from a LidarSimulator FlowFile)
@@ -1032,5 +1032,5 @@ INSERT INTO lidar_simulation_metadata (
   45000,
   'Corvette (Project 20380)',
   'corvette',
-  CAST(NOW() AS STRING)
+  CAST(NOW() AS TIMESTAMP)
 );
