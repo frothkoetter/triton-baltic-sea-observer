@@ -9,17 +9,18 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
-import joblib
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.model_selection import cross_val_predict, StratifiedKFold
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+_TRAIN_DEPS = (
+    "joblib",
+    "numpy",
+    "pandas",
+    "sklearn",
+    "laspy",
+    "boto3",
+)
 
 
 def _bootstrap_sys_path() -> None:
@@ -35,6 +36,53 @@ def _bootstrap_sys_path() -> None:
 
 
 _bootstrap_sys_path()
+
+
+def _requirements_file() -> Path:
+    try:
+        root = Path(__file__).resolve().parent
+    except NameError:
+        root = Path(os.environ.get("LIDAR_PROJECT_ROOT", Path.cwd()))
+    train_req = root / "requirements-train.txt"
+    if train_req.is_file():
+        return train_req
+    return root / "requirements.txt"
+
+
+def ensure_runtime_dependencies() -> None:
+    """Install training packages when missing (CML session before project build)."""
+    if os.environ.get("LIDAR_SKIP_PIP_INSTALL", "").lower() in ("1", "true", "yes"):
+        return
+    missing = []
+    for name in _TRAIN_DEPS:
+        try:
+            __import__(name)
+        except ImportError:
+            missing.append(name)
+    if not missing:
+        return
+    req = _requirements_file()
+    if not req.is_file():
+        raise ModuleNotFoundError(
+            f"Missing Python packages: {', '.join(missing)}. "
+            f"Run: python3 -m pip install -r {req}"
+        )
+    print(f"Installing training dependencies from {req} ({', '.join(missing)}) …")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "--user", "-r", str(req)],
+    )
+
+
+ensure_runtime_dependencies()
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from setup_project import ensure_src_path, project_root
 

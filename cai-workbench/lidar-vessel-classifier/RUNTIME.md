@@ -2,6 +2,17 @@
 
 In a **Python runtime session**, the interactive interpreter does **not** set `__file__` and does **not** add your project to `PYTHONPATH`. Pasting lines from `train.py` into the interpreter will fail.
 
+## Install Python packages (once per session)
+
+Project **build** runs `cdsw-build.sh`. If `joblib` / `sklearn` are missing in the runtime:
+
+```bash
+cd "${CDSW_WORKING_DIRECTORY}"
+python3 -m pip install --user -r requirements-train.txt
+```
+
+`train.py` can also auto-install from `requirements-train.txt` on first run (disable with `LIDAR_SKIP_PIP_INSTALL=1`).
+
 ## Correct: run `train.py` as a process
 
 Use the session **Terminal** (bash), not the Python input pane:
