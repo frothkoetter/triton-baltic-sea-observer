@@ -160,18 +160,36 @@ def package_deployment() -> None:
     print(f"Packaged deployment dir: {DEPLOY_DIR}")
 
 
-def main() -> None:
-    max_files = os.environ.get("LIDAR_MAX_FILES")
-    max_files_int = int(max_files) if max_files else None
-    local_dir = os.environ.get("LIDAR_LOCAL_DIR")
+def main(argv: list[str] | None = None) -> None:
+    import argparse
 
-    if local_dir:
-        print(f"Training from local dir: {local_dir}")
-        df = load_training_table_from_dir(Path(local_dir), max_files_int)
+    parser = argparse.ArgumentParser(
+        description="Train LiDAR vessel classifier from .las files (S3 or local directory)."
+    )
+    parser.add_argument(
+        "--s3-prefix",
+        default=os.environ.get("LIDAR_S3_PREFIX", DEFAULT_S3_PREFIX),
+        help="S3 prefix with training .las files (s3:// or s3a://)",
+    )
+    parser.add_argument(
+        "--local-dir",
+        default=os.environ.get("LIDAR_LOCAL_DIR"),
+        help="Local directory of .las files (overrides --s3-prefix)",
+    )
+    parser.add_argument(
+        "--max-files",
+        type=int,
+        default=int(os.environ["LIDAR_MAX_FILES"]) if os.environ.get("LIDAR_MAX_FILES") else None,
+        help="Limit number of files loaded",
+    )
+    args = parser.parse_args(argv)
+
+    if args.local_dir:
+        print(f"Training from local dir: {args.local_dir}")
+        df = load_training_table_from_dir(Path(args.local_dir), args.max_files)
     else:
-        s3_prefix = os.environ.get("LIDAR_S3_PREFIX", DEFAULT_S3_PREFIX)
-        print(f"Training from S3 prefix: {s3_prefix}")
-        df = load_training_table(s3_prefix, max_files_int)
+        print(f"Training from S3 prefix: {args.s3_prefix}")
+        df = load_training_table(args.s3_prefix, args.max_files)
     train_and_save(df)
     package_deployment()
 
