@@ -1,5 +1,4 @@
-# Train LiDAR vessel classifier (CML Experiment entry script).
-# Writes model.pkl + label_names.json in the project root for predict.py.
+# CML Experiment entry — trains and writes model.pkl for predict.py.
 import os
 import subprocess
 import sys
@@ -12,7 +11,6 @@ if _root not in sys.path:
     sys.path.insert(0, _root)
 
 import json
-import shutil
 from pathlib import Path
 
 import train
@@ -30,10 +28,6 @@ def main() -> None:
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         metrics.track_metric("n_samples", float(meta["n_samples"]))
         metrics.track_metric("n_labels", float(len(meta.get("labels", []))))
-
-    shutil.copy2("artifacts/model.joblib", "model.pkl")
-    shutil.copy2("artifacts/label_names.json", "label_names.json")
-    print("Wrote model.pkl and label_names.json (deploy with predict.py)")
 
 
 if __name__ == "__main__":

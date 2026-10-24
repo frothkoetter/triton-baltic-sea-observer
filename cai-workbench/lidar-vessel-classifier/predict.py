@@ -11,7 +11,7 @@ import joblib
 import numpy as np
 import cml.models_v1 as models
 
-from features import extract_features_from_las_bytes
+from src.features import extract_features_from_las_bytes
 from src.s3_client import get_s3_client
 
 _MODEL = joblib.load(os.path.join(_root, "model.pkl"))
