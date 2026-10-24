@@ -3,6 +3,9 @@ CREATE DATABASE IF NOT EXISTS defense;
 
 USE defense;
 
+-- LiDAR simulation metadata table: defense.lidar_simulation_metadata
+-- (full DDL at end of this file, or run cdw-analyse/lidar_simulation_metadata_impala.sql)
+
 -- DDL: ais_events_ice (External Table)
 DROP TABLE IF EXISTS ais_events_ice;
 CREATE  TABLE ais_events_ice(
