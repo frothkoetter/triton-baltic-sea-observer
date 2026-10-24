@@ -46,3 +46,7 @@ Creates `samples/sample_oil_tanker.las`, … `sample_landing_ship.las`, and `sam
 ## NiFi runtime
 
 On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi installs those packages for the Python processor bundle; a local venv is only for offline testing.
+
+The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
+
+Upload **`LidarSimulator.py`** and **`lidar_vessel_geometry.py`** to the deployment’s Python extensions path, then restart or reload extensions.

@@ -31,10 +31,15 @@ from lidar_vessel_geometry import (
 try:
     from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
     from nifiapi.properties import PropertyDescriptor, StandardValidators
+except ImportError:  # local CLI only — NiFi always provides nifiapi
+    FlowFileTransform = object  # type: ignore[misc, assignment]
+    FlowFileTransformResult = None  # type: ignore[misc, assignment]
 
-    _NIFI_AVAILABLE = True
-except ImportError:  # local / unit test without NiFi runtime
-    _NIFI_AVAILABLE = False
+    def PropertyDescriptor(**_kwargs):  # type: ignore[misc]
+        return None
+
+    class StandardValidators:  # type: ignore[no-redef]
+        NUMBER_VALIDATOR = INTEGER_VALIDATOR = NON_EMPTY_VALIDATOR = None
 
 _GEOD = Geod(ellps="WGS84")
 
@@ -216,98 +221,98 @@ def write_baltic_lidar_enu(
     return write_las_enu(filename, points, classification, utm_epsg=utm_epsg)
 
 
-if _NIFI_AVAILABLE:
+class LidarSimulator(FlowFileTransform):
+    """NiFi Python processor — class must be at module scope for extension discovery."""
 
-    class LidarSimulator(FlowFileTransform):
-        class Java:
-            implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
+    class Java:
+        implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
-        class ProcessorDetails:
-            version = "3.0.0"
-            description = (
-                "Generates a Baltic Sea LiDAR scene (LAS 1.4, EPSG:4326) with parametric "
-                "oil/gas tankers, container ship, ferry, sailing yacht, and Russian Navy "
-                "surface/combat logistics silhouettes (corvette, frigate, submarine, LST)."
-            )
-            dependencies = ["numpy", "laspy", "pyproj"]
-
-        BASE_LATITUDE = PropertyDescriptor(
-            name="Base Latitude",
-            description="Scene anchor latitude (degrees).",
-            validators=[StandardValidators.NUMBER_VALIDATOR],
-            default_value="59.0",
-            required=True,
+    class ProcessorDetails:
+        version = "3.0.0"
+        description = (
+            "Generates a Baltic Sea LiDAR scene (LAS 1.4, EPSG:4326) with parametric "
+            "oil/gas tankers, container ship, ferry, sailing yacht, and Russian Navy "
+            "surface/combat logistics silhouettes (corvette, frigate, submarine, LST)."
         )
-        BASE_LONGITUDE = PropertyDescriptor(
-            name="Base Longitude",
-            description="Scene anchor longitude (degrees).",
-            validators=[StandardValidators.NUMBER_VALIDATOR],
-            default_value="19.0",
-            required=True,
+        dependencies = ["numpy", "laspy", "pyproj"]
+
+    BASE_LATITUDE = PropertyDescriptor(
+        name="Base Latitude",
+        description="Scene anchor latitude (degrees).",
+        validators=[StandardValidators.NUMBER_VALIDATOR],
+        default_value="59.0",
+        required=True,
+    )
+    BASE_LONGITUDE = PropertyDescriptor(
+        name="Base Longitude",
+        description="Scene anchor longitude (degrees).",
+        validators=[StandardValidators.NUMBER_VALIDATOR],
+        default_value="19.0",
+        required=True,
+    )
+    RANDOM_SEED = PropertyDescriptor(
+        name="Random Seed",
+        description="Optional seed for reproducible point placement (empty = nondeterministic).",
+        validators=[StandardValidators.INTEGER_VALIDATOR],
+        required=False,
+    )
+    OUTPUT_BASENAME = PropertyDescriptor(
+        name="Output Basename",
+        description="Filename for the generated .las file in the flowfile temp directory.",
+        validators=[StandardValidators.NON_EMPTY_VALIDATOR],
+        default_value="baltic_fleet.las",
+        required=True,
+    )
+
+    def __init__(self, **kwargs):
+        kwargs.pop("jvm", None)
+        super().__init__(**kwargs)
+        self.descriptors = [
+            self.BASE_LATITUDE,
+            self.BASE_LONGITUDE,
+            self.RANDOM_SEED,
+            self.OUTPUT_BASENAME,
+        ]
+
+    def getPropertyDescriptors(self):
+        return self.descriptors
+
+    def transform(self, context, flowfile):
+        base_lat = float(context.getProperty(self.BASE_LATITUDE))
+        base_lon = float(context.getProperty(self.BASE_LONGITUDE))
+        seed_raw = context.getProperty(self.RANDOM_SEED)
+        seed = int(seed_raw) if seed_raw else None
+        basename = context.getProperty(self.OUTPUT_BASENAME)
+        if not basename.lower().endswith(".las"):
+            basename = f"{basename}.las"
+
+        tmp_dir = tempfile.mkdtemp(prefix="lidar_sim_")
+        out_path = os.path.join(tmp_dir, basename)
+        points, classification = build_scene_points(base_lon, base_lat, seed=seed)
+        write_baltic_lidar(
+            out_path,
+            base_lon=base_lon,
+            base_lat=base_lat,
+            points=points,
+            classification=classification,
         )
-        RANDOM_SEED = PropertyDescriptor(
-            name="Random Seed",
-            description="Optional seed for reproducible point placement (empty = nondeterministic).",
-            validators=[StandardValidators.INTEGER_VALIDATOR],
-            required=False,
+
+        with open(out_path, "rb") as f:
+            payload = f.read()
+
+        attrs = {
+            "mime.type": "application/octet-stream",
+            "lidar.point_count": str(len(points)),
+            "lidar.filename": basename,
+            "lidar.base.lat": str(base_lat),
+            "lidar.base.lon": str(base_lon),
+        }
+
+        return FlowFileTransformResult(
+            relationship="success",
+            contents=io.BytesIO(payload),
+            attributes=attrs,
         )
-        OUTPUT_BASENAME = PropertyDescriptor(
-            name="Output Basename",
-            description="Filename for the generated .las file in the flowfile temp directory.",
-            validators=[StandardValidators.NON_EMPTY_VALIDATOR],
-            default_value="baltic_fleet.las",
-            required=True,
-        )
-
-        def __init__(self, **kwargs):
-            kwargs.pop("jvm", None)
-            super().__init__(**kwargs)
-            self.descriptors = [
-                self.BASE_LATITUDE,
-                self.BASE_LONGITUDE,
-                self.RANDOM_SEED,
-                self.OUTPUT_BASENAME,
-            ]
-
-        def getPropertyDescriptors(self):
-            return self.descriptors
-
-        def transform(self, context, flowfile):
-            base_lat = float(context.getProperty(self.BASE_LATITUDE))
-            base_lon = float(context.getProperty(self.BASE_LONGITUDE))
-            seed_raw = context.getProperty(self.RANDOM_SEED)
-            seed = int(seed_raw) if seed_raw else None
-            basename = context.getProperty(self.OUTPUT_BASENAME)
-            if not basename.lower().endswith(".las"):
-                basename = f"{basename}.las"
-
-            tmp_dir = tempfile.mkdtemp(prefix="lidar_sim_")
-            out_path = os.path.join(tmp_dir, basename)
-            points, classification = build_scene_points(base_lon, base_lat, seed=seed)
-            write_baltic_lidar(
-                out_path,
-                base_lon=base_lon,
-                base_lat=base_lat,
-                points=points,
-                classification=classification,
-            )
-
-            with open(out_path, "rb") as f:
-                payload = f.read()
-
-            attrs = {
-                "mime.type": "application/octet-stream",
-                "lidar.point_count": str(len(points)),
-                "lidar.filename": basename,
-                "lidar.base.lat": str(base_lat),
-                "lidar.base.lon": str(base_lon),
-            }
-
-            return FlowFileTransformResult(
-                relationship="success",
-                contents=io.BytesIO(payload),
-                attributes=attrs,
-            )
 
 
 if __name__ == "__main__":
