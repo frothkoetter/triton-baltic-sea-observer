@@ -275,6 +275,19 @@ def build_landing_ship(spec: VesselSpec, rng: np.random.Generator) -> PointCloud
     return _concat([hull, cargo, ramp])
 
 
+VESSEL_TYPE_CODES: Dict[str, int] = {
+    "oil_tanker": 1,
+    "gas_tanker": 2,
+    "container_ship": 3,
+    "ferry": 4,
+    "sailing": 5,
+    "corvette": 6,
+    "frigate": 7,
+    "submarine": 8,
+    "landing_ship": 9,
+}
+
+
 BUILDERS: Dict[str, Callable[[VesselSpec, np.random.Generator], PointCloud]] = {
     "oil_tanker": build_oil_tanker,
     "gas_tanker": build_gas_tanker,

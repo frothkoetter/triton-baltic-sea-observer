@@ -34,6 +34,15 @@ Do **not** use a plain 3D plot of `baltic_fleet.las` with lon/lat on X/Y and hei
 
 The geometry is **parametric** (hull + superstructure silhouettes), not CAD mesh models of real vessels.
 
+### One LAS per vessel type
+
+```bash
+python3 export_vessel_samples.py
+ls samples/
+```
+
+Creates `samples/sample_oil_tanker.las`, … `sample_landing_ship.las`, and `samples/all_vessel_types_enu.las` (3×3 grid). Color by **Classification** 1–9 in CloudCompare.
+
 ## NiFi runtime
 
 On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi installs those packages for the Python processor bundle; a local venv is only for offline testing.

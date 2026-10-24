@@ -21,7 +21,12 @@ import laspy
 import numpy as np
 from pyproj import CRS, Geod, Transformer
 
-from lidar_vessel_geometry import VesselSpec, baltic_fleet_scene, vessel_local_points
+from lidar_vessel_geometry import (
+    VESSEL_TYPE_CODES,
+    VesselSpec,
+    baltic_fleet_scene,
+    vessel_local_points,
+)
 
 try:
     from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
@@ -83,17 +88,6 @@ def build_scene_points(
     fleet = fleet or baltic_fleet_scene()
     all_pts: List[np.ndarray] = []
     all_cls: List[np.ndarray] = []
-    type_codes = {
-        "oil_tanker": 1,
-        "gas_tanker": 2,
-        "container_ship": 3,
-        "ferry": 4,
-        "sailing": 5,
-        "corvette": 6,
-        "frigate": 7,
-        "submarine": 8,
-        "landing_ship": 9,
-    }
     for idx, spec in enumerate(fleet):
         east = (idx % 5) * 450.0
         north = (idx // 5) * 520.0
@@ -101,11 +95,35 @@ def build_scene_points(
         local = vessel_local_points(spec, rng)
         geo = _local_to_geographic(local, center_lon, center_lat, spec.heading_deg)
         all_pts.append(geo)
-        code = type_codes.get(spec.vessel_type, 0)
+        code = VESSEL_TYPE_CODES.get(spec.vessel_type, 0)
         all_cls.append(np.full(len(geo), code, dtype=np.uint16))
     points = np.vstack(all_pts) if all_pts else np.empty((0, 3))
     classification = np.concatenate(all_cls) if all_cls else np.empty(0, dtype=np.uint16)
     return points, classification
+
+
+def _utm_anchor(base_lon: float, base_lat: float, utm_epsg: int = 32635) -> Tuple[float, float]:
+    to_utm = Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True)
+    return to_utm.transform(base_lon, base_lat)
+
+
+def vessel_spec_to_enu(
+    spec: VesselSpec,
+    rng: np.random.Generator,
+    anchor_e: float,
+    anchor_n: float,
+    offset_east: float = 0.0,
+    offset_north: float = 0.0,
+    heading_deg: Optional[float] = None,
+) -> np.ndarray:
+    """Single vessel point cloud in UTM meters (bow along +north when heading_deg=0)."""
+    local = vessel_local_points(spec, rng)
+    h = np.radians(heading_deg if heading_deg is not None else spec.heading_deg)
+    east = local[:, 0] * np.sin(h) + local[:, 1] * np.cos(h)
+    north = local[:, 0] * np.cos(h) - local[:, 1] * np.sin(h)
+    x = anchor_e + offset_east + east
+    y = anchor_n + offset_north + north
+    return np.column_stack((x, y, local[:, 2]))
 
 
 def build_scene_points_enu(
@@ -124,32 +142,15 @@ def build_scene_points_enu(
     to_utm = Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True)
     anchor_e, anchor_n = to_utm.transform(base_lon, base_lat)
 
-    type_codes = {
-        "oil_tanker": 1,
-        "gas_tanker": 2,
-        "container_ship": 3,
-        "ferry": 4,
-        "sailing": 5,
-        "corvette": 6,
-        "frigate": 7,
-        "submarine": 8,
-        "landing_ship": 9,
-    }
     all_pts: List[np.ndarray] = []
     all_cls: List[np.ndarray] = []
     for idx, spec in enumerate(fleet):
         fleet_east = (idx % 5) * 450.0
         fleet_north = (idx // 5) * 520.0
-        local = vessel_local_points(spec, rng)
-        h = np.radians(spec.heading_deg)
-        east = local[:, 0] * np.sin(h) + local[:, 1] * np.cos(h)
-        north = local[:, 0] * np.cos(h) - local[:, 1] * np.sin(h)
-        x = anchor_e + fleet_east + east
-        y = anchor_n + fleet_north + north
-        z = local[:, 2]
-        all_pts.append(np.column_stack((x, y, z)))
-        code = type_codes.get(spec.vessel_type, 0)
-        all_cls.append(np.full(len(local), code, dtype=np.uint16))
+        pts = vessel_spec_to_enu(spec, rng, anchor_e, anchor_n, fleet_east, fleet_north)
+        all_pts.append(pts)
+        code = VESSEL_TYPE_CODES.get(spec.vessel_type, 0)
+        all_cls.append(np.full(len(pts), code, dtype=np.uint16))
     points = np.vstack(all_pts) if all_pts else np.empty((0, 3))
     classification = np.concatenate(all_cls) if all_cls else np.empty(0, dtype=np.uint16)
     return points, classification
@@ -178,6 +179,26 @@ def write_baltic_lidar(
     return filename
 
 
+def write_las_enu(
+    filename: str,
+    points: np.ndarray,
+    classification: np.ndarray,
+    utm_epsg: int = 32635,
+) -> str:
+    """Write a LAS file with x/y/z in UTM meters (EPSG:32635 by default)."""
+    header = laspy.LasHeader(point_format=3, version="1.4")
+    header.add_crs(CRS.from_epsg(utm_epsg))
+    header.scales = [0.01, 0.01, 0.01]
+    header.offsets = [float(points[:, 0].mean()), float(points[:, 1].mean()), 0.0]
+
+    las = laspy.LasData(header)
+    las.x, las.y, las.z = points[:, 0], points[:, 1], points[:, 2]
+    las.classification = classification
+    las.intensity = np.clip(80 + classification * 7, 0, 255).astype(np.uint16)
+    las.write(filename)
+    return filename
+
+
 def write_baltic_lidar_enu(
     filename: str,
     base_lon: float = 19.0,
@@ -192,17 +213,7 @@ def write_baltic_lidar_enu(
         points, classification = build_scene_points_enu(
             base_lon, base_lat, seed=seed, utm_epsg=utm_epsg
         )
-    header = laspy.LasHeader(point_format=3, version="1.4")
-    header.add_crs(CRS.from_epsg(utm_epsg))
-    header.scales = [0.01, 0.01, 0.01]
-    header.offsets = [points[:, 0].mean(), points[:, 1].mean(), 0.0]
-
-    las = laspy.LasData(header)
-    las.x, las.y, las.z = points[:, 0], points[:, 1], points[:, 2]
-    las.classification = classification
-    las.intensity = np.clip(80 + classification * 7, 0, 255).astype(np.uint16)
-    las.write(filename)
-    return filename
+    return write_las_enu(filename, points, classification, utm_epsg=utm_epsg)
 
 
 if _NIFI_AVAILABLE:
