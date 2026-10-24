@@ -21,9 +21,22 @@ train.main()
 
 Do **not** run `from paths import …` or `Path(__file__)` in separate cells before this.
 
+## Deploy model (one cell)
+
+```python
+import os, sys
+
+sys.path.insert(0, os.environ["CDSW_WORKING_DIRECTORY"])
+os.chdir(os.environ["CDSW_WORKING_DIRECTORY"])
+
+import deploy_cml_model
+deploy_cml_model.main()
+```
+
 ## Terminal (preferred)
 
 ```bash
 cd "${CDSW_WORKING_DIRECTORY}"
 python3 train.py --s3-prefix "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
+python3 deploy_cml_model.py
 ```

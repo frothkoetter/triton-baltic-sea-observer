@@ -24,7 +24,9 @@ from pathlib import Path
 import cmlapi
 from cmlapi.rest import ApiException
 
-ROOT = Path(__file__).resolve().parent
+from project_root import resolve_project_root
+
+ROOT = resolve_project_root()
 DEPLOY_DIR = ROOT / "model-deployment"
 
 
@@ -110,15 +112,15 @@ def create_deployment(
     return deployment
 
 
-def main() -> None:
+def main() -> int:
     project_id = os.environ.get("CDSW_PROJECT_ID")
     if not project_id:
         print("CDSW_PROJECT_ID is not set. Run this script from a CML Workbench job/session.")
-        sys.exit(1)
+        return 1
 
     if not (DEPLOY_DIR / "model.joblib").is_file():
-        print("Missing model.joblib — run train.py first.")
-        sys.exit(1)
+        print(f"Missing model.joblib under {DEPLOY_DIR} — run train.py first.")
+        return 1
 
     client = _client()
     model = register_model(client, project_id)
@@ -136,10 +138,11 @@ def main() -> None:
 
     if build.status != "success":
         print("Model build did not succeed; fix build logs before deploying.")
-        sys.exit(2)
+        return 2
 
     create_deployment(client, project_id, model.id, build.id)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
