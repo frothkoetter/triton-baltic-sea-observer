@@ -50,16 +50,35 @@ python3 train.py --local-dir /path/to/samples   # dev only
 
 **Recommended:** use a Job or `python3 train.py` from the shell (not notebook cells).
 
-If you must use a **notebook**, run this in the **first cell** (set path to your project):
+If you must use a **notebook**, `setup_project` is not on `PYTHONPATH` until you bootstrap.
+
+**First cell** (set your real path — often under `/home/cdsw/...`):
 
 ```python
 import os
 os.environ["LIDAR_PROJECT_ROOT"] = "/home/cdsw/lidar-vessel-classifier"
-%run setup_project.py
+# whole repo clone: "/home/cdsw/triton-baltic-sea-observer/cai-workbench/lidar-vessel-classifier"
+
+%run /home/cdsw/lidar-vessel-classifier/notebook_bootstrap.py
+```
+
+Then:
+
+```python
 from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-Or only: `%run train.py` after setting `LIDAR_PROJECT_ROOT`.
+Or without `%run`, one cell only:
+
+```python
+import os, sys
+from pathlib import Path
+ROOT = Path("/home/cdsw/lidar-vessel-classifier").resolve()
+sys.path[:0] = [str(ROOT), str(ROOT / "src")]
+from features import extract_features_from_las_bytes
+```
+
+Training: `%run train.py` after bootstrap, or use a **Job** with `python3 train.py`.
 
 Optional env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
 
