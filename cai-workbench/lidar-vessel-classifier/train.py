@@ -19,6 +19,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from cml_bootstrap import ensure_project_on_sys_path
+
+ensure_project_on_sys_path()
 
 from project_root import resolve_project_root
 

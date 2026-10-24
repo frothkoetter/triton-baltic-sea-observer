@@ -1,39 +1,24 @@
-# One cell — Cloudera AI Python (`Cell In[n]`)
+# Cloudera AI Python session (`Cell In[n]`)
 
-S3 reads use your workbench connection **S3 Object Store** (`cml.data_v1`), same as:
+**Do not** copy lines from `train.py` or `deploy_cml_model.py` into separate cells (`from project_root …`, `Path(__file__)`, etc.). That will fail.
 
-```python
-import cml.data_v1 as cmldata
-client = cmldata.get_connection("S3 Object Store").get_base_connection()
-```
-
-Run **all** of this in **one** cell (select all → run):
+## Train (one cell)
 
 ```python
-import os, sys
-
-sys.path.insert(0, os.environ["CDSW_WORKING_DIRECTORY"])
-os.environ.setdefault("LIDAR_S3_CONNECTION_NAME", "S3 Object Store")
-
-import train
-train.main()
+import os
+exec(open(os.path.join(os.environ["CDSW_WORKING_DIRECTORY"], "train_now.py")).read())
 ```
 
-Do **not** run `from paths import …` or `Path(__file__)` in separate cells before this.
-
-## Deploy model (one cell)
+## Deploy (one cell)
 
 ```python
-import os, sys
-
-sys.path.insert(0, os.environ["CDSW_WORKING_DIRECTORY"])
-os.chdir(os.environ["CDSW_WORKING_DIRECTORY"])
-
-import deploy_cml_model
-deploy_cml_model.main()
+import os
+exec(open(os.path.join(os.environ["CDSW_WORKING_DIRECTORY"], "deploy_now.py")).read())
 ```
 
-## Terminal (preferred)
+S3 training uses connection **S3 Object Store** (`LIDAR_S3_CONNECTION_NAME`).
+
+## Terminal (best)
 
 ```bash
 cd "${CDSW_WORKING_DIRECTORY}"

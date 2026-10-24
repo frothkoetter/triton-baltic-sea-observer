@@ -21,6 +21,10 @@ import os
 import sys
 from pathlib import Path
 
+from cml_bootstrap import ensure_project_on_sys_path
+
+ensure_project_on_sys_path()
+
 import cmlapi
 from cmlapi.rest import ApiException
 
