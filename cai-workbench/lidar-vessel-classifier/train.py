@@ -194,7 +194,10 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
             indent=2,
         )
     df.to_csv(ARTIFACT_DIR / "training_rows.csv", index=False)
-    print(f"Wrote model to {ARTIFACT_DIR / 'model.joblib'}")
+    joblib.dump(pipeline, ROOT / "model.pkl")
+    with open(ROOT / "label_names.json", "w", encoding="utf-8") as f:
+        json.dump(labels, f, indent=2)
+    print(f"Wrote model to {ARTIFACT_DIR / 'model.joblib'} and {ROOT / 'model.pkl'}")
     return pipeline
 
 
@@ -204,6 +207,8 @@ def package_deployment() -> None:
     DEPLOY_DIR.mkdir(parents=True, exist_ok=True)
     for name in ("model.joblib", "label_names.json", "training_meta.json"):
         shutil.copy2(ARTIFACT_DIR / name, DEPLOY_DIR / name)
+    if (ROOT / "model.pkl").is_file():
+        shutil.copy2(ROOT / "model.pkl", DEPLOY_DIR / "model.pkl")
     for mod in ("features.py", "labels.py"):
         shutil.copy2(ROOT / "src" / mod, DEPLOY_DIR / mod)
     print(f"Packaged deployment dir: {DEPLOY_DIR}")

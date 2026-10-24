@@ -1,13 +1,5 @@
-"""
-CML Model Deployment entrypoint.
-
-Request JSON (any of):
-  - {"s3_uri": "s3://bucket/path/file.las"}  (needs S3 credentials on deployment)
-  - {"las_bytes_base64": "<base64>"}
-
-Response:
-  {"vessel_type": "corvette", "confidence": 0.92, "probabilities": {...}}
-"""
+# Legacy bundle — prefer project-root predict.py for CML Models UI.
+# Kept for model-deployment/ folder builds; mirrors root predict.py API.
 
 from __future__ import annotations
 
@@ -20,20 +12,8 @@ import joblib
 import numpy as np
 
 from features import extract_features_from_las_bytes
-from labels import FEATURE_NAMES
 
-_MODEL = None
-_LABELS: list[str] | None = None
-
-
-def _load():
-    global _MODEL, _LABELS
-    if _MODEL is not None:
-        return
-    base = Path(__file__).resolve().parent
-    _MODEL = joblib.load(base / "model.joblib")
-    with open(base / "label_names.json", encoding="utf-8") as f:
-        _LABELS = json.load(f)
+_MODEL = joblib.load(Path(__file__).resolve().parent / "model.joblib")
 
 
 def _get_s3_client():
@@ -56,22 +36,13 @@ def _get_s3_client():
     )
 
 
-def _read_las_from_s3(s3_uri: str) -> bytes:
-    uri = s3_uri.replace("s3a://", "s3://")
-    if not uri.startswith("s3://"):
-        raise ValueError("s3_uri must start with s3:// or s3a://")
-    path = uri[5:]
-    bucket, key = path.split("/", 1)
-    client = _get_s3_client()
-    return client.get_object(Bucket=bucket, Key=key)["Body"].read()
-
-
 def predict(args: dict) -> dict:
-    _load()
     if "las_bytes_base64" in args:
         payload = base64.b64decode(args["las_bytes_base64"])
     elif "s3_uri" in args:
-        payload = _read_las_from_s3(args["s3_uri"])
+        uri = args["s3_uri"].replace("s3a://", "s3://")
+        bucket, key = uri[5:].split("/", 1)
+        payload = _get_s3_client().get_object(Bucket=bucket, Key=key)["Body"].read()
     else:
         raise ValueError("Provide las_bytes_base64 or s3_uri")
 
@@ -84,11 +55,4 @@ def predict(args: dict) -> dict:
         "vessel_type": classes[idx],
         "confidence": float(proba[idx]),
         "probabilities": {c: float(p) for c, p in zip(classes, proba)},
-        "feature_names": FEATURE_NAMES,
     }
-
-
-# CDSW / CML may call predict with a JSON string
-def predict_json(input_json: str) -> str:
-    result = predict(json.loads(input_json))
-    return json.dumps(result)

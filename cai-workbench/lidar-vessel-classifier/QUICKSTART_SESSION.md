@@ -1,36 +1,24 @@
-# Deploy / train in Cloudera AI Python (`Cell In[n]`)
+# Cloudera AI — use the CML template flow
 
-You are **not** running a notebook, but the UI still splits files into cells.  
-**Do not** open `deploy_cml_model.py` and run imports one by one — that causes `No module named 'project_root'`.
-
-## Deploy (do this)
-
-1. Open **`DEPLOY.py`** (not `deploy_cml_model.py`).
-2. **Select all** → **Run** (one shot).
-
-Or paste this **one** cell:
-
-```python
-import os, runpy
-runpy.run_path(os.environ["CDSW_WORKING_DIRECTORY"] + "/deploy_now.py", run_name="__main__")
-```
+Do **not** step through `deploy_cml_model.py` line by line.
 
 ## Train
 
-Open **`train_now.py`**, select all, run — or Terminal:
+Run an **Experiment** with **`fit.py`**, or one session cell:
 
-```bash
-cd "${CDSW_WORKING_DIRECTORY}"
-python3 train.py
+```python
+import os, runpy
+runpy.run_path(os.path.join(os.environ["CDSW_WORKING_DIRECTORY"], "fit.py"), run_name="__main__")
 ```
 
-## After git pull
+## Deploy
 
-Re-run project **Build** once (runs `cdsw-build.sh`) so IPython adds the project to `sys.path` on session start. Then **restart** the Python session.
+1. Models → Deploy Model → **`predict.py`** → function **`predict`**
+2. Requires `model.pkl` from a successful `fit.py` run.
 
-## Terminal (always works)
+## Terminal
 
 ```bash
 cd "${CDSW_WORKING_DIRECTORY}"
-python3 deploy_cml_model.py
+python3 fit.py
 ```
