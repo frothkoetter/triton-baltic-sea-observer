@@ -203,7 +203,24 @@ def package_deployment() -> None:
     print(f"Packaged deployment dir: {DEPLOY_DIR}")
 
 
-def main() -> None:
+def _filter_kernel_argv(argv: list[str]) -> list[str]:
+    """IPython/Jupyter passes ``-f /path/kernel-….json``; ignore for argparse."""
+    cleaned: list[str] = []
+    skip_next = False
+    for arg in argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-f", "--f"):
+            skip_next = True
+            continue
+        if "kernel-" in arg and arg.endswith(".json"):
+            continue
+        cleaned.append(arg)
+    return cleaned
+
+
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Train LiDAR vessel classifier from LAS files (S3 or local directory)."
     )
@@ -228,7 +245,8 @@ def main() -> None:
         action="store_true",
         help="Skip LASF header check for extensionless S3 keys",
     )
-    args = parser.parse_args()
+    cli = _filter_kernel_argv(argv if argv is not None else sys.argv[1:])
+    args = parser.parse_args(cli)
 
     if args.local_dir:
         print(f"Training from local dir: {args.local_dir}")

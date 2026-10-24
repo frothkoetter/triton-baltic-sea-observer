@@ -29,6 +29,11 @@ sys.path.insert(0, "/home/cdsw/lidar-vessel-classifier/src")
 from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
 ```
 
-## Training
+## Training from a cell
 
-Use the terminal: `python3 train.py --s3-prefix "s3://..."`
+```python
+from train import main
+main()  # uses LIDAR_S3_PREFIX or default S3 path; kernel -f flags are ignored
+```
+
+Or terminal: `python3 train.py --s3-prefix "s3://..."`
