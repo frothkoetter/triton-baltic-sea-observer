@@ -48,7 +48,18 @@ python3 train.py --max-files 500
 python3 train.py --local-dir /path/to/samples   # dev only
 ```
 
-Do **not** paste `train.py` into notebook cells — use a Job or `python3 train.py` from the shell.
+**Recommended:** use a Job or `python3 train.py` from the shell (not notebook cells).
+
+If you must use a **notebook**, run this in the **first cell** (set path to your project):
+
+```python
+import os
+os.environ["LIDAR_PROJECT_ROOT"] = "/home/cdsw/lidar-vessel-classifier"
+%run setup_project.py
+from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+```
+
+Or only: `%run train.py` after setting `LIDAR_PROJECT_ROOT`.
 
 Optional env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
 
