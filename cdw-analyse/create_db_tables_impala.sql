@@ -3,6 +3,9 @@ CREATE DATABASE IF NOT EXISTS defense;
 
 USE defense;
 
+-- LiDAR simulation metadata table: defense.lidar_simulation_metadata
+-- (full DDL at end of this file, or run cdw-analyse/lidar_simulation_metadata_impala.sql)
+
 -- DDL: ais_events_ice (External Table)
 DROP TABLE IF EXISTS ais_events_ice;
 CREATE  TABLE ais_events_ice(
@@ -986,4 +989,22 @@ CREATE TABLE gps_jammer_events (
     event_type STRING COMMENT 'Classification of the record (e.g., gps_jammer_event)'
 )
 PARTITIONED BY SPEC (TRUNCATE(10, ts)) -- Partitionierung nach Tag (YYYY-MM-DD)
+STORED BY ICEBERG;
+
+-- DDL: lidar_simulation_metadata
+-- One row per simulated LiDAR LAS object written by NiFi LidarSimulator (FlowFile attributes).
+DROP TABLE IF EXISTS lidar_simulation_metadata;
+CREATE TABLE lidar_simulation_metadata (
+  hadoop_file_url STRING COMMENT 'Object store URI of the LAS file (NiFi attribute hadoop.file.url), e.g. s3a://bucket/path/object.',
+  center_lat DOUBLE COMMENT 'Vessel scene center latitude in WGS84 (lidar.center.lat).',
+  center_lon DOUBLE COMMENT 'Vessel scene center longitude in WGS84 (lidar.center.lon).',
+  classification INT COMMENT 'LAS point class code for vessel type (lidar.classification); see VESSEL_TYPE_CODES in LidarSimulator.',
+  filename STRING COMMENT 'LAS basename written to object store (lidar.filename).',
+  heading_deg DOUBLE COMMENT 'Vessel heading in degrees clockwise from north (lidar.heading_deg).',
+  point_count BIGINT COMMENT 'Number of points in the LAS file (lidar.point_count).',
+  vessel_name STRING COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
+  vessel_type STRING COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
+  ingested_at TIMESTAMP COMMENT 'When the metadata row was recorded (set at ingest).'
+)
+PARTITIONED BY SPEC (day(ingested_at))
 STORED BY ICEBERG;
