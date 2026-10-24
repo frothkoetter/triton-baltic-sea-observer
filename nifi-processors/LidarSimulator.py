@@ -12,10 +12,10 @@ Local run (requires laspy, pyproj — see nifi-processors/requirements.txt):
 
 from __future__ import annotations
 
-import io
 import os
 import sys
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -50,6 +50,12 @@ except ImportError:  # local CLI only — NiFi always provides nifiapi
         NUMBER_VALIDATOR = INTEGER_VALIDATOR = NON_EMPTY_VALIDATOR = None
 
 _GEOD = Geod(ellps="WGS84")
+
+# Approximate Baltic Sea extent for random vessel placement (degrees WGS84).
+BALTIC_LON_MIN = 14.5
+BALTIC_LON_MAX = 26.0
+BALTIC_LAT_MIN = 54.0
+BALTIC_LAT_MAX = 60.5
 
 
 def _local_to_geographic(
@@ -86,6 +92,27 @@ def _offset_position(
     lon, lat, _ = _GEOD.fwd(base_lon, base_lat, 90.0, east_m)
     lon, lat, _ = _GEOD.fwd(lon, lat, 0.0, north_m)
     return lon, lat
+
+
+def build_single_vessel_points(
+    seed: Optional[int] = None,
+) -> Tuple[np.ndarray, np.ndarray, VesselSpec, float, float]:
+    """
+    Pick one vessel archetype from the fleet templates, random heading, random
+    position in the Baltic Sea. Returns geo points, classification, spec, lon, lat.
+    """
+    rng = np.random.default_rng(seed)
+    templates = baltic_fleet_scene()
+    template = templates[int(rng.integers(0, len(templates)))]
+    center_lon = float(rng.uniform(BALTIC_LON_MIN, BALTIC_LON_MAX))
+    center_lat = float(rng.uniform(BALTIC_LAT_MIN, BALTIC_LAT_MAX))
+    heading = float(rng.uniform(0.0, 360.0))
+    spec = replace(template, heading_deg=heading)
+    local = vessel_local_points(spec, rng)
+    geo = _local_to_geographic(local, center_lon, center_lat, spec.heading_deg)
+    code = VESSEL_TYPE_CODES.get(spec.vessel_type, 0)
+    classification = np.full(len(geo), code, dtype=np.uint16)
+    return geo, classification, spec, center_lon, center_lat
 
 
 def build_scene_points(
@@ -178,11 +205,18 @@ def write_baltic_lidar(
     classification: Optional[np.ndarray] = None,
 ) -> str:
     if points is None or classification is None:
-        points, classification = build_scene_points(base_lon, base_lat, seed=seed)
+        points, classification, _, center_lon, center_lat = build_single_vessel_points(
+            seed=seed
+        )
+        base_lon, base_lat = center_lon, center_lat
     header = laspy.LasHeader(point_format=3, version="1.4")
     header.add_crs(CRS.from_epsg(4326))
     header.scales = [1e-7, 1e-7, 0.01]
-    header.offsets = [base_lon, base_lat, 0.0]
+    header.offsets = [
+        float(np.mean(points[:, 0])),
+        float(np.mean(points[:, 1])),
+        0.0,
+    ]
 
     las = laspy.LasData(header)
     las.x, las.y, las.z = points[:, 0], points[:, 1], points[:, 2]
@@ -223,9 +257,10 @@ def write_baltic_lidar_enu(
 ) -> str:
     """LAS in UTM meters — recommended for CloudCompare / matplotlib 3D."""
     if points is None or classification is None:
-        points, classification = build_scene_points_enu(
-            base_lon, base_lat, seed=seed, utm_epsg=utm_epsg
-        )
+        points, classification, _, _, _ = build_single_vessel_points(seed=seed)
+        to_utm = Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True)
+        e, n = to_utm.transform(points[:, 0], points[:, 1])
+        points = np.column_stack((e, n, points[:, 2]))
     return write_las_enu(filename, points, classification, utm_epsg=utm_epsg)
 
 
@@ -236,31 +271,16 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "3.0.0"
+        version = "4.0.0"
         description = (
-            "Generates a Baltic Sea LiDAR scene (LAS 1.4, EPSG:4326) with parametric "
-            "oil/gas tankers, container ship, ferry, sailing yacht, and Russian Navy "
-            "surface/combat logistics silhouettes (corvette, frigate, submarine, LST)."
+            "Generates one random parametric vessel (tanker, ferry, warship, yacht, etc.) "
+            "as LAS 1.4 EPSG:4326 at a random position in the Baltic Sea."
         )
         dependencies = ["numpy", "laspy", "pyproj"]
 
-    BASE_LATITUDE = PropertyDescriptor(
-        name="Base Latitude",
-        description="Scene anchor latitude (degrees).",
-        validators=[StandardValidators.NUMBER_VALIDATOR],
-        default_value="59.0",
-        required=True,
-    )
-    BASE_LONGITUDE = PropertyDescriptor(
-        name="Base Longitude",
-        description="Scene anchor longitude (degrees).",
-        validators=[StandardValidators.NUMBER_VALIDATOR],
-        default_value="19.0",
-        required=True,
-    )
     RANDOM_SEED = PropertyDescriptor(
         name="Random Seed",
-        description="Optional seed for reproducible point placement (empty = nondeterministic).",
+        description="Optional seed for vessel type, position, heading, and points (empty = random each run).",
         validators=[StandardValidators.INTEGER_VALIDATOR],
         required=False,
     )
@@ -268,7 +288,7 @@ class LidarSimulator(FlowFileTransform):
         name="Output Basename",
         description="Filename for the generated .las file in the flowfile temp directory.",
         validators=[StandardValidators.NON_EMPTY_VALIDATOR],
-        default_value="baltic_fleet.las",
+        default_value="baltic_vessel.las",
         required=True,
     )
 
@@ -276,8 +296,6 @@ class LidarSimulator(FlowFileTransform):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
         self.descriptors = [
-            self.BASE_LATITUDE,
-            self.BASE_LONGITUDE,
             self.RANDOM_SEED,
             self.OUTPUT_BASENAME,
         ]
@@ -286,8 +304,6 @@ class LidarSimulator(FlowFileTransform):
         return self.descriptors
 
     def transform(self, context, flowfile):
-        base_lat = float(context.getProperty(self.BASE_LATITUDE.name).getValue())
-        base_lon = float(context.getProperty(self.BASE_LONGITUDE.name).getValue())
         seed_raw = context.getProperty(self.RANDOM_SEED.name).getValue()
         seed = int(seed_raw) if seed_raw and str(seed_raw).strip() else None
         basename = context.getProperty(self.OUTPUT_BASENAME.name).getValue()
@@ -296,11 +312,11 @@ class LidarSimulator(FlowFileTransform):
 
         tmp_dir = tempfile.mkdtemp(prefix="lidar_sim_")
         out_path = os.path.join(tmp_dir, basename)
-        points, classification = build_scene_points(base_lon, base_lat, seed=seed)
+        points, classification, spec, center_lon, center_lat = build_single_vessel_points(
+            seed=seed
+        )
         write_baltic_lidar(
             out_path,
-            base_lon=base_lon,
-            base_lat=base_lat,
             points=points,
             classification=classification,
         )
@@ -312,8 +328,12 @@ class LidarSimulator(FlowFileTransform):
             "mime.type": "application/octet-stream",
             "lidar.point_count": str(len(points)),
             "lidar.filename": basename,
-            "lidar.base.lat": str(base_lat),
-            "lidar.base.lon": str(base_lon),
+            "lidar.vessel_type": spec.vessel_type,
+            "lidar.vessel_name": spec.name,
+            "lidar.center.lat": str(center_lat),
+            "lidar.center.lon": str(center_lon),
+            "lidar.heading_deg": str(spec.heading_deg),
+            "lidar.classification": str(VESSEL_TYPE_CODES.get(spec.vessel_type, 0)),
         }
 
         return FlowFileTransformResult(
@@ -324,8 +344,9 @@ class LidarSimulator(FlowFileTransform):
 
 
 if __name__ == "__main__":
-    write_baltic_lidar("baltic_fleet.las")
-    write_baltic_lidar_enu("baltic_fleet_enu.las")
-    print("Generated Baltic Sea LiDAR:")
-    print("  baltic_fleet.las     — EPSG:4326 (NiFi / geo pipelines)")
-    print("  baltic_fleet_enu.las — EPSG:32635 UTM meters (CloudCompare / 3D view)")
+    write_baltic_lidar("baltic_vessel.las")
+    write_baltic_lidar_enu("baltic_vessel_enu.las")
+    pts, _, spec, lon, lat = build_single_vessel_points(seed=42)
+    print(f"Generated random vessel: {spec.name} ({spec.vessel_type}) at {lat:.4f}N {lon:.4f}E")
+    print("  baltic_vessel.las     — EPSG:4326 (NiFi / geo pipelines)")
+    print("  baltic_vessel_enu.las — EPSG:32635 UTM meters (CloudCompare / 3D view)")

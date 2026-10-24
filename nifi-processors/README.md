@@ -14,6 +14,8 @@ python3 LidarSimulator.py
 
 `LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`).
 
+Each run generates **one random vessel type** at a **random position** in the Baltic Sea (EPSG:4326 LAS). Optional **Random Seed** on the NiFi processor fixes type, place, and heading for repeatable tests.
+
 | Error | Fix |
 |-------|-----|
 | `No module named 'laspy'` | `python3 -m pip install -r requirements.txt` |
