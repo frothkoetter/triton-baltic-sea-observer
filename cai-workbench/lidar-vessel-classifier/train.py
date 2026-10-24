@@ -72,12 +72,24 @@ def _cli_argv() -> list[str]:
 
 
 def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.DataFrame:
+    from s3_las_loader import is_las_bytes
+
     rows: list[dict] = []
-    paths = sorted(local_dir.glob("**/*.las"))
-    for i, path in enumerate(paths):
+    candidates: list[Path] = []
+    for path in sorted(local_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() == ".las":
+            candidates.append(path)
+        elif path.suffix == "":
+            candidates.append(path)
+    for i, path in enumerate(candidates):
         if max_files is not None and i >= max_files:
             break
         body = path.read_bytes()
+        if not is_las_bytes(body):
+            print(f"skip (not LAS): {path}")
+            continue
         features = extract_features_from_las_bytes(body)
         label = ground_truth_label_from_las_bytes(body) or label_from_key(path.name)
         if not label:
@@ -93,9 +105,16 @@ def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.D
     return pd.DataFrame(rows)
 
 
-def load_training_table(s3_prefix: str, max_files: int | None) -> pd.DataFrame:
+def load_training_table(
+    s3_prefix: str,
+    max_files: int | None,
+    *,
+    require_las_magic: bool = True,
+) -> pd.DataFrame:
     rows: list[dict] = []
-    for i, obj in enumerate(iter_las_objects(s3_prefix)):
+    for i, obj in enumerate(
+        iter_las_objects(s3_prefix, require_las_magic=require_las_magic)
+    ):
         if max_files is not None and i >= max_files:
             break
         features = extract_features_from_las_bytes(obj.body)
@@ -111,8 +130,9 @@ def load_training_table(s3_prefix: str, max_files: int | None) -> pd.DataFrame:
 
     if not rows:
         raise RuntimeError(
-            f"No labeled .las files under {s3_prefix}. "
-            "Upload simulator samples or ensure classification codes 1–9 are set."
+            f"No labeled LAS objects under {s3_prefix} "
+            "(.las or extensionless keys with LASF header). "
+            "Upload simulator output or ensure classification codes 1–9 are set."
         )
     return pd.DataFrame(rows)
 
@@ -207,6 +227,11 @@ def main(argv: list[str] | None = None) -> None:
         default=int(os.environ["LIDAR_MAX_FILES"]) if os.environ.get("LIDAR_MAX_FILES") else None,
         help="Limit number of files loaded",
     )
+    parser.add_argument(
+        "--no-las-magic-check",
+        action="store_true",
+        help="Trust every extensionless S3 key under prefix (skip LASF header check)",
+    )
     cli = argv if argv is not None else _cli_argv()
     args, _unknown = parser.parse_known_args(cli)
 
@@ -215,7 +240,11 @@ def main(argv: list[str] | None = None) -> None:
         df = load_training_table_from_dir(Path(args.local_dir), args.max_files)
     else:
         print(f"Training from S3 prefix: {args.s3_prefix}")
-        df = load_training_table(args.s3_prefix, args.max_files)
+        df = load_training_table(
+            args.s3_prefix,
+            args.max_files,
+            require_las_magic=not args.no_las_magic_check,
+        )
     train_and_save(df)
     package_deployment()
 

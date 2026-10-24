@@ -27,7 +27,7 @@ Default prefix (override with `LIDAR_S3_PREFIX`):
 s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/
 ```
 
-Each `.las` file should carry **LAS classification** 1–9 (NiFi simulator) or a name like `sample_corvette.las`.
+Objects may be named **`*.las`** or **extensionless** (e.g. NiFi UUID keys under `geospatial/`). Extensionless keys are accepted when the content starts with the LAS signature `LASF`. Each file should carry **LAS classification** 1–9 (NiFi simulator) or a name like `sample_corvette.las`.
 
 **Run as a Python script** (CML session terminal or **Job**):
 
