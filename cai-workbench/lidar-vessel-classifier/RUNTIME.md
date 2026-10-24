@@ -1,5 +1,14 @@
 # Cloudera AI — run as a Python script
 
+If the UI shows **`Cell In[59]`**, you are in an **IPython cell**, not `python3 train.py`.
+`__file__` does not exist there. Do **not** paste lines from `train.py`.
+
+| Goal | Command |
+|------|---------|
+| Train | Terminal: `python3 train.py --s3-prefix "s3://..."` |
+| Train from a cell | `import subprocess, os; subprocess.run(["python3","train.py"], cwd=os.environ["CDSW_WORKING_DIRECTORY"], check=True)` |
+| Import `features` in a cell | `import sys; sys.path.insert(0,".../src"); from features import ...` or `from paths import ROOT, SRC` then add `SRC` to `sys.path` |
+
 ## Install dependencies (once)
 
 ```bash

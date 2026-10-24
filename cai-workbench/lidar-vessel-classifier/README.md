@@ -35,6 +35,8 @@ python3 -m pip install --user -r requirements-train.txt
 python3 train.py --s3-prefix "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
 ```
 
+**Not in a code cell:** `Cell In[n]` + `__file__` means IPython — use the terminal command above, or `from paths import ROOT` (never copy `ROOT = Path(__file__)…` into a cell).
+
 Or `./run_train.sh`. Options: `python3 train.py --help`
 
 Env vars: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
