@@ -17,17 +17,5 @@ CREATE TABLE lidar_simulation_metadata (
   vessel_type STRING COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
   ingested_at TIMESTAMP COMMENT 'When the metadata row was recorded (set at ingest).'
 )
-COMMENT 'Metadata for Baltic LiDAR vessel simulation LAS files'
 PARTITIONED BY SPEC (day(ingested_at))
 STORED BY ICEBERG;
-
--- Optional sample row
--- INSERT INTO lidar_simulation_metadata (
---   hadoop_file_url, center_lat, center_lon, classification,
---   filename, heading_deg, point_count, vessel_name, vessel_type, ingested_at
--- ) VALUES (
---   's3a://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/5c25859f-a527-4b34-8e73-654173d861b5',
---   59.25538758251504, 23.018171690628463, 6,
---   'baltic_fleet.las', 266.0833353866533, 45000,
---   'Corvette (Project 20380)', 'corvette', CAST(NOW() AS TIMESTAMP)
--- );
