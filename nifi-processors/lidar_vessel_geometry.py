@@ -83,12 +83,11 @@ def _sample_hull_like(n: int, rng: np.random.Generator, length: float, beam: flo
     t = np.abs(x) / (length / 2)
     taper = np.clip(1.0 - t ** 1.8, 0.08, 1.0)
     half_beam = (beam / 2) * taper
-    theta = rng.uniform(0, 2 * np.pi, n)
-    y = half_beam * np.sin(theta)
-    z_scale = np.where(theta >= 0, freeboard, draft)
-    z = z_scale * np.cos(theta)
-    # Flat deck band near the top
-    deck = (z > freeboard * 0.85) & (np.abs(y) < half_beam * 0.92)
+    # Cross-section ellipse: freeboard above z=0, draft below (waterline at z=0).
+    phi = rng.uniform(-np.pi / 2, np.pi / 2, n)
+    y = half_beam * np.cos(phi)
+    z = np.where(phi >= 0, freeboard * np.sin(phi), draft * np.sin(phi))
+    deck = (phi > np.pi / 4) & (np.abs(y) < half_beam * 0.92)
     z[deck] = freeboard
     return np.column_stack((x, y, z))
 
