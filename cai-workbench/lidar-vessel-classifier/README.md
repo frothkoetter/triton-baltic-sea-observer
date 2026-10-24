@@ -34,6 +34,15 @@ export LIDAR_S3_PREFIX="s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial
 python train.py
 ```
 
+**Notebook (no `__file__`):** run from the project directory, or set the root once:
+
+```python
+import os
+os.environ["LIDAR_PROJECT_ROOT"] = "/home/cdsw/lidar-vessel-classifier"  # your project path
+%run train.py
+# or: from train import main; main()
+```
+
 Optional: `LIDAR_MAX_FILES=500` to cap download count.
 
 **Local test** (e.g. repo samples):

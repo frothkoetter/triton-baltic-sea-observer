@@ -21,7 +21,19 @@ from sklearn.model_selection import cross_val_predict, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-ROOT = Path(__file__).resolve().parent
+
+def project_root() -> Path:
+    """Script dir, or CML/notebook working directory when __file__ is absent."""
+    try:
+        return Path(__file__).resolve().parent
+    except NameError:
+        env = os.environ.get("CDSW_WORKING_DIRECTORY") or os.environ.get("LIDAR_PROJECT_ROOT")
+        if env:
+            return Path(env).resolve()
+        return Path.cwd().resolve()
+
+
+ROOT = project_root()
 sys.path.insert(0, str(ROOT / "src"))
 
 from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
