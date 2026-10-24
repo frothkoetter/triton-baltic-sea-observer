@@ -16,9 +16,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from paths import ROOT, SRC
+_SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SCRIPT_DIR))
 
-sys.path.insert(0, str(SRC))
+from paths import ROOT
+
+sys.path.insert(0, str(ROOT))
 
 _TRAIN_DEPS = ("joblib", "numpy", "pandas", "sklearn", "laspy", "boto3")
 
@@ -65,9 +68,9 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
-from labels import FEATURE_NAMES
-from s3_las_loader import iter_las_objects, label_from_key
+from src.features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+from src.labels import FEATURE_NAMES
+from src.s3_las_loader import iter_las_objects, label_from_key
 
 DEFAULT_S3_PREFIX = "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
 ARTIFACT_DIR = ROOT / "artifacts"
@@ -75,7 +78,7 @@ DEPLOY_DIR = ROOT / "model-deployment"
 
 
 def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.DataFrame:
-    from s3_las_loader import is_las_bytes
+    from src.s3_las_loader import is_las_bytes
 
     rows: list[dict] = []
     candidates: list[Path] = []

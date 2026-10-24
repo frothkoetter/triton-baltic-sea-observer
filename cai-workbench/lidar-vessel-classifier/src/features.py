@@ -5,7 +5,7 @@ from typing import Tuple
 
 import numpy as np
 
-from labels import FEATURE_NAMES
+from .labels import FEATURE_NAMES
 
 
 def _shape_descriptors(cov: np.ndarray) -> Tuple[float, float, float]:
@@ -89,7 +89,7 @@ def ground_truth_label_from_las_bytes(payload: bytes) -> str | None:
     """Majority LAS classification code → vessel type name."""
     import laspy
 
-    from labels import CODE_TO_VESSEL_TYPE
+    from .labels import CODE_TO_VESSEL_TYPE
 
     with laspy.open(io.BytesIO(payload)) as reader:
         las = reader.read()

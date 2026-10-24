@@ -11,5 +11,16 @@ SRC = ROOT / "src"
 
 
 def root_from_env() -> Path:
-    """Fallback when only CDSW_WORKING_DIRECTORY is known."""
+    """Project directory (for interactive sessions without __file__)."""
     return Path(os.environ.get("CDSW_WORKING_DIRECTORY", ROOT)).resolve()
+
+
+def install_import_path() -> Path:
+    """Add project root to sys.path so ``from src.features import ...`` works."""
+    import sys
+
+    root = root_from_env()
+    s = str(root)
+    if s not in sys.path:
+        sys.path.insert(0, s)
+    return root
