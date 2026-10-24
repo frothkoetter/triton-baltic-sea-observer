@@ -14,8 +14,16 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import tempfile
+from pathlib import Path
 from typing import List, Optional, Tuple
+
+# NiFi loads this file from python/extensions but runs the processor in an isolated
+# venv; sibling modules are only importable if the extensions dir is on sys.path.
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
 
 import laspy
 import numpy as np

@@ -49,4 +49,4 @@ On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 
-Upload **`LidarSimulator.py`** and **`lidar_vessel_geometry.py`** to the deployment’s Python extensions path, then restart or reload extensions.
+Upload **`LidarSimulator.py`** and **`lidar_vessel_geometry.py`** to the **same** deployment Python extensions directory (S3 sync folder). Both files are required; `LidarSimulator` imports `lidar_vessel_geometry`. After upload, restart or reload extensions.
