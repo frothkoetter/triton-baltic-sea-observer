@@ -2,4 +2,5 @@ geohash2
 numpy
 faker
 laspy>=2.5.0
+# Geodesic/WGS84 transforms — PyPI package name is pyproj (not pyroj)
 pyproj>=3.6.0
