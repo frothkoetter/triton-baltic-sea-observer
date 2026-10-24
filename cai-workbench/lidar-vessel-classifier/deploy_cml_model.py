@@ -15,23 +15,47 @@ Environment:
   CML_DEPLOYMENT_REPLICAS default: 1
 """
 
+# Session users: open DEPLOY.py and run it — not this file line-by-line.
+
 from __future__ import annotations
 
 import os
 import sys
 from pathlib import Path
 
-from cml_bootstrap import ensure_project_on_sys_path
 
-ensure_project_on_sys_path()
+def _project_root() -> Path:
+    for key in ("CDSW_WORKING_DIRECTORY", "LIDAR_PROJECT_ROOT"):
+        value = os.environ.get(key)
+        if value:
+            root = Path(value).expanduser().resolve()
+            if (root / "train.py").is_file():
+                return root
+    try:
+        root = Path(__file__).resolve().parent
+        if (root / "train.py").is_file():
+            return root
+    except NameError:
+        pass
+    for candidate in (Path.cwd().resolve(), *Path.cwd().resolve().parents):
+        if (candidate / "train.py").is_file():
+            return candidate
+    raise RuntimeError(
+        "Open DEPLOY.py and run the whole file, or Terminal: python3 deploy_cml_model.py"
+    )
+
+
+ROOT = _project_root()
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+try:
+    os.chdir(ROOT)
+except OSError:
+    pass
+DEPLOY_DIR = ROOT / "model-deployment"
 
 import cmlapi
 from cmlapi.rest import ApiException
-
-from project_root import resolve_project_root
-
-ROOT = resolve_project_root()
-DEPLOY_DIR = ROOT / "model-deployment"
 
 
 def _client() -> cmlapi.CMLServiceApi:

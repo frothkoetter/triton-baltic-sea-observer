@@ -1,27 +1,36 @@
-# Cloudera AI Python session (`Cell In[n]`)
+# Deploy / train in Cloudera AI Python (`Cell In[n]`)
 
-**Do not** copy lines from `train.py` or `deploy_cml_model.py` into separate cells (`from project_root …`, `Path(__file__)`, etc.). That will fail.
+You are **not** running a notebook, but the UI still splits files into cells.  
+**Do not** open `deploy_cml_model.py` and run imports one by one — that causes `No module named 'project_root'`.
 
-## Train (one cell)
+## Deploy (do this)
+
+1. Open **`DEPLOY.py`** (not `deploy_cml_model.py`).
+2. **Select all** → **Run** (one shot).
+
+Or paste this **one** cell:
 
 ```python
-import os
-exec(open(os.path.join(os.environ["CDSW_WORKING_DIRECTORY"], "train_now.py")).read())
+import os, runpy
+runpy.run_path(os.environ["CDSW_WORKING_DIRECTORY"] + "/deploy_now.py", run_name="__main__")
 ```
 
-## Deploy (one cell)
+## Train
 
-```python
-import os
-exec(open(os.path.join(os.environ["CDSW_WORKING_DIRECTORY"], "deploy_now.py")).read())
-```
-
-S3 training uses connection **S3 Object Store** (`LIDAR_S3_CONNECTION_NAME`).
-
-## Terminal (best)
+Open **`train_now.py`**, select all, run — or Terminal:
 
 ```bash
 cd "${CDSW_WORKING_DIRECTORY}"
-python3 train.py --s3-prefix "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"
+python3 train.py
+```
+
+## After git pull
+
+Re-run project **Build** once (runs `cdsw-build.sh`) so IPython adds the project to `sys.path` on session start. Then **restart** the Python session.
+
+## Terminal (always works)
+
+```bash
+cd "${CDSW_WORKING_DIRECTORY}"
 python3 deploy_cml_model.py
 ```
