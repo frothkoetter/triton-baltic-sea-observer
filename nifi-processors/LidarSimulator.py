@@ -286,11 +286,11 @@ class LidarSimulator(FlowFileTransform):
         return self.descriptors
 
     def transform(self, context, flowfile):
-        base_lat = float(context.getProperty(self.BASE_LATITUDE))
-        base_lon = float(context.getProperty(self.BASE_LONGITUDE))
-        seed_raw = context.getProperty(self.RANDOM_SEED)
-        seed = int(seed_raw) if seed_raw else None
-        basename = context.getProperty(self.OUTPUT_BASENAME)
+        base_lat = float(context.getProperty(self.BASE_LATITUDE.name).getValue())
+        base_lon = float(context.getProperty(self.BASE_LONGITUDE.name).getValue())
+        seed_raw = context.getProperty(self.RANDOM_SEED.name).getValue()
+        seed = int(seed_raw) if seed_raw and str(seed_raw).strip() else None
+        basename = context.getProperty(self.OUTPUT_BASENAME.name).getValue()
         if not basename.lower().endswith(".las"):
             basename = f"{basename}.las"
 
