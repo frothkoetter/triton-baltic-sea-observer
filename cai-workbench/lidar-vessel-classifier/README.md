@@ -17,6 +17,8 @@ Train a scikit-learn model on `.las` point clouds in S3 and deploy it as a **CML
 2. Ensure the project can read your object store (instance profile, HDFS/S3 credentials, or environment keys used by `boto3`).
 3. The first project build runs `cdsw-build.sh` → installs `requirements.txt`.
 
+**Python runtime (not notebook):** see [RUNTIME.md](RUNTIME.md) — run `python3 train.py` in the **terminal** or as a **Job**; do not paste `train.py` into the interactive Python pane.
+
 ## 2. Training data (S3)
 
 Default prefix (override with `LIDAR_S3_PREFIX`):

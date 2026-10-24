@@ -22,6 +22,20 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
+def _bootstrap_sys_path() -> None:
+    """Ensure project root + src/ are importable when train.py is executed as a file."""
+    try:
+        root = Path(__file__).resolve().parent
+    except NameError:
+        return
+    for p in (root, root / "src"):
+        s = str(p)
+        if s not in sys.path:
+            sys.path.insert(0, s)
+
+
+_bootstrap_sys_path()
+
 from setup_project import ensure_src_path, project_root
 
 ROOT = ensure_src_path()
