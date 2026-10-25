@@ -65,13 +65,25 @@ OPEN_WATER_ZONES: List[Box] = [
 # Islands and archipelago cores (exclude; jitter from seeds may land here).
 ISLAND_BOXES: List[Box] = [
     (14.70, 15.35, 54.95, 55.40),  # Bornholm
-    (17.70, 19.40, 56.85, 57.95),  # Gotland
+    (15.05, 15.45, 55.18, 55.38),  # Ertholmene (east of Bornholm)
+    (17.70, 19.40, 56.85, 57.95),  # Gotland (+ Fårö)
+    (19.05, 19.55, 58.15, 58.55),  # Gotska Sandön (N of Gotland)
     (16.55, 17.25, 56.15, 56.55),  # Öland
-    (19.40, 20.20, 57.80, 58.20),  # Åland (main)
-    (22.80, 23.60, 58.70, 59.20),  # Hiiumaa
-    (22.00, 23.10, 58.10, 58.65),  # Saaremaa
+    (19.35, 21.15, 59.75, 60.35),  # Åland archipelago
+    (20.85, 21.25, 59.85, 60.15),  # Kökar / outer Åland
+    (21.85, 23.20, 57.90, 58.78),  # Saaremaa (+ Abruka)
+    (22.55, 23.70, 58.62, 59.38),  # Hiiumaa
+    (22.85, 23.45, 58.45, 58.75),  # Muhu
+    (23.72, 24.30, 57.95, 58.30),  # Kihnu
+    (24.62, 25.05, 57.70, 57.98),  # Ruhnu
+    (23.15, 23.45, 58.88, 59.08),  # Vormsi
     (13.30, 13.75, 54.95, 55.20),  # Fehmarn
-    (10.90, 11.40, 54.85, 55.10),  # Lolland/Falster gap
+    (12.35, 12.65, 54.82, 55.02),  # Mön
+    (13.25, 13.75, 54.25, 54.55),  # Rügen
+    (13.85, 14.25, 53.85, 54.12),  # Usedom
+    (14.45, 14.75, 54.28, 54.48),  # Wolin
+    (20.25, 20.75, 54.72, 55.05),  # Kotlin (Kaliningrad Bay)
+    (10.90, 11.40, 54.85, 55.10),  # Lolland (sounds)
 ]
 
 # Mainland / large coastal land (conservative; avoids Sweden, Finland, PL, DE, DK).
