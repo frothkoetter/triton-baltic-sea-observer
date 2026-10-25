@@ -15,6 +15,7 @@ import string
 import datetime
 
 from baltic_water_placement import sample_baltic_water_position
+from marine_fleet_registry import GERMAN_NAVAL_FLEET, load_simulated_ship_positions
 
 class StanagMessageGenerator(FlowFileTransform):
     """
@@ -25,10 +26,10 @@ class StanagMessageGenerator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.5'
+        version = '1.6.0'
         description = (
-            'Generates simulated STANAG-style naval surveillance reports; positions '
-            'are on Baltic Sea water only.'
+            'STANAG-style naval surveillance reports; POSITION matches the '
+            'MarineShipSimulator ship named in FROM (shared /tmp state).'
         )
         dependencies = ['numpy', 'pyproj>=3.6.0']
 
@@ -47,67 +48,6 @@ class StanagMessageGenerator(FlowFileTransform):
         # NEU: Die Eigenschaft für Naval Units wurde entfernt.
         self.descriptors = [self.NUM_MESSAGES]
         
-        # Vollständige Liste der Schiffe mit allen Details
-        # HINWEIS: MMSI-Nummern in diesem Beispiel sind fiktiv.
-        self.full_fleet = [
-            {'class': 'Fregatten', 'name': 'FGS Brandenburg', 'mmsi': 'MAR123400'},
-            {'class': 'Fregatten', 'name': 'FGS Schleswig-Holstein', 'mmsi': 'MAR123401'},
-            {'class': 'Fregatten', 'name': 'FGS Bayern', 'mmsi': 'MAR123402'},
-            {'class': 'Fregatten', 'name': 'FGS Mecklenburg-Vorpommern', 'mmsi': 'MAR123403'},
-            {'class': 'Fregatten', 'name': 'FGS Sachsen', 'mmsi': 'MAR123404'},
-            {'class': 'Fregatten', 'name': 'FGS Hamburg', 'mmsi': 'MAR123405'},
-            {'class': 'Fregatten', 'name': 'FGS Hessen', 'mmsi': 'MAR123406'},
-            {'class': 'Fregatten', 'name': 'FGS Baden-Württemberg', 'mmsi': 'MAR123407'},
-            {'class': 'Fregatten', 'name': 'FGS Nordrhein-Westfalen', 'mmsi': 'MAR123408'},
-            {'class': 'Fregatten', 'name': 'FGS Sachsen-Anhalt', 'mmsi': 'MAR123409'},
-            {'class': 'Fregatten', 'name': 'FGS Rheinland-Pfalz', 'mmsi': 'MAR123410'},
-            {'class': 'Korvetten', 'name': 'FGS Braunschweig', 'mmsi': 'MAR123411'},
-            {'class': 'Korvetten', 'name': 'FGS Magdeburg', 'mmsi': 'MAR123412'},
-            {'class': 'Korvetten', 'name': 'FGS Erfurt', 'mmsi': 'MAR123413'},
-            {'class': 'Korvetten', 'name': 'FGS Oldenburg', 'mmsi': 'MAR123414'},
-            {'class': 'Korvetten', 'name': 'FGS Ludwigshafen am Rhein', 'mmsi': 'MAR123415'},
-            {'class': 'U-Boote', 'name': 'U-31', 'mmsi': 'MAR123416'},
-            {'class': 'U-Boote', 'name': 'U-32', 'mmsi': 'MAR123417'},
-            {'class': 'U-Boote', 'name': 'U-33', 'mmsi': 'MAR123418'},
-            {'class': 'U-Boote', 'name': 'U-34', 'mmsi': 'MAR123419'},
-            {'class': 'U-Boote', 'name': 'U-35', 'mmsi': 'MAR123420'},
-            {'class': 'U-Boote', 'name': 'U-36', 'mmsi': 'MAR123421'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Fulda', 'mmsi': 'MAR123422'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Weilheim', 'mmsi': 'MAR123423'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Sulzbach-Rosenberg', 'mmsi': 'MAR123424'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Dillingen', 'mmsi': 'MAR123425'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Homburg', 'mmsi': 'MAR123426'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Siegburg', 'mmsi': 'MAR123427'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Auerbach/Oberpfalz', 'mmsi': 'MAR123428'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Pegnitz', 'mmsi': 'MAR123429'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Passau', 'mmsi': 'MAR123430'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Weiden', 'mmsi': 'MAR123431'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Ensdorf', 'mmsi': 'MAR123432'},
-            {'class': 'Minenabwehreinheiten', 'name': 'FGS Kühlungsborn', 'mmsi': 'MAR123433'},
-            {'class': 'Flottendienstboote', 'name': 'A52 Oste', 'mmsi': 'MAR123434'},
-            {'class': 'Flottendienstboote', 'name': 'A50 Oker', 'mmsi': 'MAR123435'},
-            {'class': 'Flottendienstboote', 'name': 'A53 Alster', 'mmsi': 'MAR123436'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A1411 Berlin', 'mmsi': 'MAR123437'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A1412 Frankfurt am Main', 'mmsi': 'MAR123438'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A1413 Bonn', 'mmsi': 'MAR123439'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A511 Elbe', 'mmsi': 'MAR123440'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A512 Mosel', 'mmsi': 'MAR123441'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A513 Rhein', 'mmsi': 'MAR123442'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A514 Werra', 'mmsi': 'MAR123443'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A515 Main', 'mmsi': 'MAR123444'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A516 Donau', 'mmsi': 'MAR123445'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A1442 Spessart', 'mmsi': 'MAR123446'},
-            {'class': 'Versorgungsschiffe/Tender', 'name': 'A1443 Rhön', 'mmsi': 'MAR123447'},
-            {'class': 'Sonstige', 'name': 'FGS Gorch Fock', 'mmsi': 'MAR123448'},
-            {'class': 'Sonstige', 'name': 'FGS Planet', 'mmsi': 'MAR123449'},
-            {'class': 'Sonstige', 'name': 'FGS Wangerooge', 'mmsi': 'MAR123450'},
-            {'class': 'Sonstige', 'name': 'FGS Baltrum', 'mmsi': 'MAR123451'},
-            {'class': 'Sonstige', 'name': 'FGS Borkum', 'mmsi': 'MAR123452'},
-            {'class': 'Sonstige', 'name': 'FGS Norderney', 'mmsi': 'MAR123453'},
-            {'class': 'Sonstige', 'name': 'FGS Juist', 'mmsi': 'MAR123454'},
-            {'class': 'Sonstige', 'name': 'FGS Langeoog', 'mmsi': 'MAR123455'}
-        ]
-        
         self.activities = ["patrolling", "shadowing", "intercepting", "escorting", "monitoring"]
         self.targets = ["unidentified vessel", "fishing trawler", "merchant ship", "submarine contact", "fast attack craft"]
         self.outcomes = [
@@ -125,24 +65,30 @@ class StanagMessageGenerator(FlowFileTransform):
 
     # Die Methode onPropertyModified() wurde entfernt, da keine dynamische Eigenschaft mehr vorhanden ist.
 
-    def _generate_baltic_coordinates(self):
-        """WGS84 position on Baltic Sea water (not land)."""
+    def _format_position(self, lat: float, lon: float) -> str:
+        return f"LAT {round(lat, 4)}°N, LON {round(lon, 4)}°E"
+
+    def _pick_reporting_unit(self):
+        """
+        Prefer a ship currently simulated by MarineShipSimulator so FROM and POSITION align.
+        """
+        active = load_simulated_ship_positions()
+        if active:
+            ship = random.choice(active)
+            return ship["name"], ship["lat"], ship["lon"]
+        unit_data = random.choice(GERMAN_NAVAL_FLEET)
         lon, lat = sample_baltic_water_position()
-        latitude = round(lat, 4)
-        longitude = round(lon, 4)
-        return f"LAT {latitude}°N, LON {longitude}°E"
+        return unit_data["name"], lat, lon
 
     def _generate_stanag_message(self):
-        # NEU: Wähle eine Einheit zufällig aus der gesamten Flottenliste
-        unit_data = random.choice(self.full_fleet)
-        unit_name = unit_data['name']
-        
+        unit_name, lat, lon = self._pick_reporting_unit()
+        location = self._format_position(lat, lon)
+
         dtg = datetime.datetime.utcnow().strftime("%d%H%MZ%b%y").upper()
         
         subject = random.choice(self.subjects)
 
         if subject == "MARITIME SURVEILLANCE REPORT":
-            location = self._generate_baltic_coordinates()
             activity = random.choice(self.activities)
             target = random.choice(self.targets)
             outcome = random.choice(self.outcomes)
@@ -150,7 +96,6 @@ class StanagMessageGenerator(FlowFileTransform):
             message_body = f"""POSITION/{location}\n\nTXT/{message_text}"""
         
         elif subject == "SICK REPORT":
-            location = self._generate_baltic_coordinates()
             illness = random.choice(self.illnesses)
             message_text = f"SICK REPORT: ONE CREWMEMBER ONBOARD {unit_name} HAS BEEN DIAGNOSED WITH {illness}. CONDITION IS STABLE. REQUESTING MEDICAL ADVICE."
             message_body = f"""POSITION/{location}\n\nTXT/{message_text}"""

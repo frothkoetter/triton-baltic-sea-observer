@@ -27,9 +27,14 @@ from baltic_water_placement import (
     sample_water_near_harbor,
     snap_to_baltic_water,
 )
+from marine_fleet_registry import (
+    MARINESHIP_STATE_FILE,
+    NAME_BY_MMSI,
+    fleet_unit_for_index,
+)
 
 # --- Konstanten ---
-STATE_FILE = "/tmp/marineship_state.json"
+STATE_FILE = MARINESHIP_STATE_FILE
 # Neu: Separate Datei, um die Anzahl der Schiffe zu verfolgen
 VERSION_STATE_FILE = "/tmp/marineship_version_state.json" 
 
@@ -70,6 +75,7 @@ def generate_ais_message(ship: Dict[str, Any]) -> Dict[str, Union[str, float, in
     """Generates a single AIS-like message for a specific ship."""
     message = {
         "MMSI": ship["MMSI"],
+        "message_from": ship.get("Name") or NAME_BY_MMSI.get(ship["MMSI"], ship["MMSI"]),
         "Event_Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
         "Latitude": round(ship["Latitude"], 5),
         "Longitude": round(ship["Longitude"], 5),
@@ -106,6 +112,8 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 ship["Operational_Status"] = random.choice(OPERATIONAL_STATUS_OPTIONS)
             if "System_Status" not in ship:
                 ship["System_Status"] = random.choice(SYSTEM_STATUS_OPTIONS)
+            if not ship.get("Name"):
+                ship["Name"] = NAME_BY_MMSI.get(ship.get("MMSI", ""), ship.get("MMSI", ""))
             lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
             if not is_baltic_water(lon0, lat0):
                 lon, lat = snap_to_baltic_water(lon0, lat0)
@@ -133,6 +141,7 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     """Initializes a new set of ships."""
     ships = []
     for i in range(num_ships):
+        unit = fleet_unit_for_index(i)
         destination = random.choice(HARBORS)
         initial_status = random.choice(["Underway using engine", "Underway", "Anchored", "Moored", "Not under command"])
         initial_depth = 0.0 if initial_status == "Moored" else random.uniform(5.0, 15.0)
@@ -143,7 +152,8 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             max_km=25.0,
         )
         ship = {
-            "MMSI": f"MAR{123400 + i}",
+            "Name": unit["name"],
+            "MMSI": unit["mmsi"],
             "Latitude": lat,
             "Longitude": lon,
             "Speed": random.uniform(1, 10),
@@ -218,7 +228,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.4'
+        version = '1.5.5'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
