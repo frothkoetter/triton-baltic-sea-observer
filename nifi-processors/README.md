@@ -14,7 +14,7 @@ python3 LidarSimulator.py
 
 `LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`).
 
-Each run generates **one random vessel type** at a **random position** in the Baltic Sea (EPSG:4326 LAS). Optional **Random Seed** on the NiFi processor fixes type, place, and heading for repeatable tests.
+Each run generates **one random vessel type** as EPSG:4326 LAS. About **10%** of runs are **unclassified** (LAS class `0`, `lidar.vessel_type` / `lidar.vessel_name` = `undefined`) with the scene center **5–20 km** from a major Baltic port; the rest use a random open-sea position. Optional **Random Seed** and **Unclassified Fraction** on the NiFi processor control repeatability and the unclassified rate.
 
 | Error | Fix |
 |-------|-----|
