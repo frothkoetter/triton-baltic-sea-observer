@@ -45,6 +45,8 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (24.5, 56.2),
     (27.5, 57.0),
     (28.5, 58.0),
+    (29.8, 59.85),  # Kotlin / E Gulf of Finland (Primorsk / SPB approaches)
+    (27.2, 60.15),  # W Gulf of Finland mid-channel
     (13.2, 54.6),
     (15.5, 54.8),
     (18.0, 54.5),
@@ -57,6 +59,7 @@ OPEN_WATER_ZONES: List[Box] = [
     (17.0, 20.5, 55.0, 56.8),
     (22.8, 24.9, 56.85, 57.95),  # Gulf of Riga (not all of Latvia)
     (23.5, 25.8, 59.0, 60.05),  # Gulf of Finland west
+    (26.0, 30.5, 59.45, 60.48),  # Gulf of Finland east (SPB / Primorsk lanes)
     (11.0, 13.5, 56.0, 57.8),
     (13.5, 15.5, 55.0, 56.2),
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
@@ -97,7 +100,7 @@ MAINLAND_BOXES: List[Box] = [
     (10.5, 16.8, 55.45, 58.85),
     (16.8, 18.05, 57.8, 60.6),
     (18.05, 21.5, 59.2, 60.6),
-    (21.5, 28.8, 59.8, 60.6),
+    (29.8, 30.4, 60.42, 60.5),  # NE Karelian coast (excludes Primorsk / Kotlin bays below 60.4°N)
     (14.0, 19.5, 53.5, 54.55),
     (19.5, 21.8, 53.8, 54.55),
     (21.8, 24.5, 53.9, 55.8),
@@ -116,6 +119,7 @@ MAINLAND_BOXES: List[Box] = [
     (21.5, 24.0, 55.45, 56.25),  # Lithuania inland (Telšių area)
     (26.0, 27.9, 58.05, 58.75),  # SE Estonia inland (Tartu belt)
     (18.0, 19.8, 54.55, 55.05),  # Kashubian coast hinterland (N of Gdynia)
+    (27.9, 29.35, 57.55, 58.25),  # Pskov / upper Velikaya (inland; not a sea lane)
 ]
 
 BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)

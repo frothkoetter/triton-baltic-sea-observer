@@ -16,7 +16,7 @@ import json
 import random
 import math
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Tuple
 
 from baltic_ship_routing import (
     advance_route_or_arrive,
@@ -51,7 +51,7 @@ HARBORS = [
     {"name": "Świnoujście", "Latitude": 53.9106, "Longitude": 14.2478},
     {"name": "Rostock", "Latitude": 54.0887, "Longitude": 12.1405},
     {"name": "Travemünde", "Latitude": 53.9624, "Longitude": 10.8672},
-    {"name": "St. Petersburg", "Latitude": 59.9343, "Longitude": 30.3351},
+    {"name": "St. Petersburg", "Latitude": 59.904, "Longitude": 29.773},
     {"name": "Karlskrona", "Latitude": 56.1612, "Longitude": 15.5869},
     {"name": "Kiel", "Latitude": 54.3233, "Longitude": 10.1228},
     {"name": "Wismar", "Latitude": 53.8934, "Longitude": 11.4536},
@@ -61,13 +61,12 @@ HARBORS = [
     {"name": "Nynäshamn", "Latitude": 58.9036, "Longitude": 17.9470},
     {"name": "Ustka", "Latitude": 54.5801, "Longitude": 16.8596},
     {"name": "Pori", "Latitude": 61.4847, "Longitude": 21.7976},
-    {"name": "Kemi", "Latitude": 65.7369, "Longitude": 24.5636},
     {"name": "Gdańsk", "Latitude": 54.3520, "Longitude": 18.6466},
     {"name": "Paldiski", "Latitude": 59.3567, "Longitude": 24.0539},
     {"name": "Rønne", "Latitude": 55.1037, "Longitude": 14.7065},
     {"name": "Visby", "Latitude": 57.6409, "Longitude": 18.2960},
     {"name": "Bolderāja", "Latitude": 56.9950, "Longitude": 24.0500},
-    {"name": "Primorsk", "Latitude": 60.3565, "Longitude": 28.6094}
+    {"name": "Primorsk", "Latitude": 60.338, "Longitude": 28.480}
 ]
 
 # Create a dictionary for quick harbor lookup by name
@@ -175,6 +174,24 @@ def move_towards(lat1: float, lon1: float, lat2: float, lon2: float, speed: floa
     ratio = min(1.0, move_deg / dist_deg) # Ensure we don't overshoot if very close
     return lat1 + delta_lat * ratio, lon1 + delta_lon * ratio
 
+
+def move_towards_on_water(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+    speed: float,
+    substeps: int = 5,
+) -> Tuple[float, float]:
+    """Step toward the waypoint in small increments; stay on water when possible."""
+    lat, lon = lat1, lon1
+    step_speed = speed / max(1, substeps)
+    for _ in range(substeps):
+        lat, lon = move_towards(lat, lon, lat2, lon2, step_speed)
+        if not is_baltic_water(lon, lat):
+            lon, lat = snap_to_baltic_water(lon, lat)
+    return lat, lon
+
 def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Updates the position, course, speed, and status of each ship."""
     for ship in ships:
@@ -186,7 +203,7 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             continue
         target_lat, target_lon = target
 
-        new_lat, new_lon = move_towards(
+        new_lat, new_lon = move_towards_on_water(
             ship["Latitude"],
             ship["Longitude"],
             target_lat,
@@ -219,7 +236,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.4'
+        version = '1.2.5'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )

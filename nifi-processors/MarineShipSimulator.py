@@ -184,6 +184,24 @@ def move_towards(lat1: float, lon1: float, lat2: float, lon2: float, speed: floa
 
     return lat1 + delta_lat * ratio, lon1 + delta_lon * ratio
 
+
+def move_towards_on_water(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+    speed: float,
+    substeps: int = 5,
+) -> tuple[float, float]:
+    lat, lon = lat1, lon1
+    step_speed = speed / max(1, substeps)
+    for _ in range(substeps):
+        lat, lon = move_towards(lat, lon, lat2, lon2, step_speed)
+        if not is_baltic_water(lon, lat):
+            lon, lat = snap_to_baltic_water(lon, lat)
+    return lat, lon
+
+
 def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Updates the position, course, speed, and status of each ship."""
     for ship in ships:
@@ -195,7 +213,7 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             continue
         target_lat, target_lon = target
 
-        new_lat, new_lon = move_towards(
+        new_lat, new_lon = move_towards_on_water(
             ship["Latitude"],
             ship["Longitude"],
             target_lat,
@@ -228,7 +246,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.5'
+        version = '1.5.6'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
