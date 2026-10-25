@@ -219,7 +219,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.3'
+        version = '1.2.4'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )
