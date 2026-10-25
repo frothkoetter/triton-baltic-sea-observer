@@ -218,11 +218,11 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.2'
+        version = '1.5.3'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
-        dependencies = ['numpy']
+        dependencies = ['numpy', 'pyproj>=3.6.0']
 
     NUM_SHIPS = PropertyDescriptor(
         name="Number of Ships",

@@ -198,12 +198,12 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.2'
+        version = '1.2.3'
         description = (
             'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
             '(baltic_water_placement), nahe NATO-Häfen.'
         )
-        dependencies = ['Faker==25.0.0', 'numpy']
+        dependencies = ['Faker==25.0.0', 'numpy', 'pyproj>=3.6.0']
 
     # Definiert eine Eigenschaft, um die Anzahl der zu generierenden Datensätze festzulegen.
     NUM_RECORDS = PropertyDescriptor(

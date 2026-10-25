@@ -219,11 +219,11 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.2'
+        version = '1.2.3'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )
-        dependencies = ['numpy']
+        dependencies = ['numpy', 'pyproj>=3.6.0']
 
     NUM_SHIPS = PropertyDescriptor(
         name="Number of Ships",

@@ -25,12 +25,12 @@ class StanagMessageGenerator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.3'
+        version = '1.5.4'
         description = (
             'Generates simulated STANAG-style naval surveillance reports; positions '
             'are on Baltic Sea water only.'
         )
-        dependencies = ['numpy']
+        dependencies = ['numpy', 'pyproj>=3.6.0']
 
     # --- Property Descriptors ---
     NUM_MESSAGES = PropertyDescriptor(
