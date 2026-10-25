@@ -1,4 +1,11 @@
-import _extension_path  # noqa: F401
+import sys
+from pathlib import Path
+
+# NiFi loads this file from python/extensions but runs the processor in an isolated
+# venv; sibling modules are only importable if the extensions dir is on sys.path.
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
 
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
@@ -18,7 +25,7 @@ class StanagMessageGenerator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.2'
+        version = '1.5.3'
         description = (
             'Generates simulated STANAG-style naval surveillance reports; positions '
             'are on Baltic Sea water only.'

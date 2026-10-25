@@ -51,6 +51,6 @@ On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 
-Upload **`baltic_water_placement.py`**, **`baltic_ship_routing.py`**, and **`_extension_path.py`** with processors that use them (`LidarSimulator.py`, `MarineShipSimulator.py`, `ShipSimulationRoutesGemini.py`, `STANAGSimulator.py`, `BojenSensorSimulator.py`, plus `lidar_vessel_geometry.py` for LiDAR). All files share one Python extensions directory. Restart or reload extensions after upload.
+Upload **`baltic_water_placement.py`** and **`baltic_ship_routing.py`** with processors that import them (`MarineShipSimulator.py`, `ShipSimulationRoutesGemini.py`, `STANAGSimulator.py`, `BojenSensorSimulator.py`, plus `lidar_vessel_geometry.py` for `LidarSimulator.py`). Each processor adds the extensions directory to `sys.path` on load (NiFi runs them in isolated venvs). All files share one Python extensions directory. Restart or reload extensions after upload.
 
-**Ship AIS:** `MarineShipSimulator` (1.5.0) and `ShipSimulationProcessor` in `ShipSimulationRoutesGemini.py` (1.2.0) route via offshore waypoints — not straight lines to harbor coordinates on land.
+**Ship AIS:** `MarineShipSimulator` (1.5.1) and `ShipSimulationProcessor` in `ShipSimulationRoutesGemini.py` (1.2.1) route via offshore waypoints — not straight lines to harbor coordinates on land.
