@@ -29,6 +29,11 @@ import laspy
 import numpy as np
 from pyproj import CRS, Geod, Transformer
 
+from baltic_water_placement import (
+    is_baltic_water,
+    random_baltic_water_position,
+    random_position_near_port_water,
+)
 from lidar_vessel_geometry import (
     LAS_CLASS_NEVER_CLASSIFIED,
     VESSEL_TYPE_CODES,
@@ -52,13 +57,7 @@ except ImportError:  # local CLI only — NiFi always provides nifiapi
 
 _GEOD = Geod(ellps="WGS84")
 
-# Approximate Baltic Sea extent for random vessel placement (degrees WGS84).
-BALTIC_LON_MIN = 14.5
-BALTIC_LON_MAX = 26.0
-BALTIC_LAT_MIN = 54.0
-BALTIC_LAT_MAX = 60.5
-
-# Major Baltic ports (WGS84) — unclassified contacts are placed 5–20 km away.
+# Major Baltic ports (WGS84) — unclassified contacts are placed 5–20 km offshore.
 BALTIC_PORTS: List[Tuple[str, float, float]] = [
     ("Hamburg", 9.973, 53.551),
     ("Rostock", 12.091, 54.088),
@@ -129,12 +128,9 @@ def _random_position_near_baltic_port(
     min_km: float = PORT_OFFSET_MIN_KM,
     max_km: float = PORT_OFFSET_MAX_KM,
 ) -> Tuple[float, float]:
-    """Random WGS84 point min_km–max_km from a random major Baltic port."""
+    """Random WGS84 water point min_km–max_km from a random major Baltic port."""
     _name, port_lon, port_lat = BALTIC_PORTS[int(rng.integers(0, len(BALTIC_PORTS)))]
-    dist_m = float(rng.uniform(min_km * 1000.0, max_km * 1000.0))
-    azimuth = float(rng.uniform(0.0, 360.0))
-    lon, lat, _ = _GEOD.fwd(port_lon, port_lat, azimuth, dist_m)
-    return float(lon), float(lat)
+    return random_position_near_port_water(rng, port_lon, port_lat, min_km, max_km)
 
 
 def build_single_vessel_points(
@@ -155,8 +151,7 @@ def build_single_vessel_points(
     if is_unclassified:
         center_lon, center_lat = _random_position_near_baltic_port(rng)
     else:
-        center_lon = float(rng.uniform(BALTIC_LON_MIN, BALTIC_LON_MAX))
-        center_lat = float(rng.uniform(BALTIC_LAT_MIN, BALTIC_LAT_MAX))
+        center_lon, center_lat = random_baltic_water_position(rng)
     heading = float(rng.uniform(0.0, 360.0))
     spec = replace(template, heading_deg=heading)
     local = vessel_local_points(spec, rng)
@@ -325,10 +320,11 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.1.0"
+        version = "4.2.0"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
-            "~10% unclassified (class 0) near Baltic ports (5–20 km); otherwise open sea."
+            "Positions are offshore Baltic water only. "
+            "~10% unclassified (class 0) near ports (5–20 km)."
         )
         dependencies = ["numpy", "laspy", "pyproj"]
 

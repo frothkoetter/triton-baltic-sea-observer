@@ -14,7 +14,7 @@ python3 LidarSimulator.py
 
 `LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`).
 
-Each run generates **one random vessel type** as EPSG:4326 LAS. About **10%** of runs are **unclassified** (LAS class `0`, `lidar.vessel_type` / `lidar.vessel_name` = `undefined`) with the scene center **5–20 km** from a major Baltic port; the rest use a random open-sea position. Optional **Random Seed** and **Unclassified Fraction** on the NiFi processor control repeatability and the unclassified rate.
+Each run generates **one random vessel type** as EPSG:4326 LAS. Scene centers are placed on **Baltic Sea water** (offshore seeds / sea zones; not uniform land boxes). About **10%** of runs are **unclassified** (LAS class `0`, `lidar.vessel_type` / `lidar.vessel_name` = `undefined`) with the center **5–20 km** offshore from a major port. Optional **Random Seed** and **Unclassified Fraction** control repeatability and the unclassified rate.
 
 | Error | Fix |
 |-------|-----|
@@ -51,4 +51,4 @@ On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 
-Upload **`LidarSimulator.py`** and **`lidar_vessel_geometry.py`** to the **same** deployment Python extensions directory (S3 sync folder). Both files are required; `LidarSimulator` imports `lidar_vessel_geometry`. After upload, restart or reload extensions.
+Upload **`LidarSimulator.py`**, **`lidar_vessel_geometry.py`**, and **`baltic_water_placement.py`** to the **same** deployment Python extensions directory (S3 sync folder). After upload, restart or reload extensions.
