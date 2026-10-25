@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+
+# NiFi loads this file from python/extensions but runs the processor in an isolated
+# venv; sibling modules are only importable if the extensions dir is on sys.path.
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
+
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 import json
@@ -5,6 +14,8 @@ import random
 import string
 from datetime import datetime, timezone
 from faker import Faker # Importiert die Faker-Bibliothek
+
+from baltic_water_placement import sample_water_near_harbor
 
 # --- Liste der NATO Marine Häfen aus der Quelle [12-14] ---
 HARBORS = [
@@ -187,9 +198,12 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.0'
-        description = 'Generiert simulierte MAD-Bojen-Sensordaten mit Objekterkennung und Positionen nahe NATO-Häfen. Das Ausgabeformat ist eine flache JSON-Struktur.'
-        dependencies = ['Faker==25.0.0']
+        version = '1.2.2'
+        description = (
+            'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
+            '(baltic_water_placement), nahe NATO-Häfen.'
+        )
+        dependencies = ['Faker==25.0.0', 'numpy']
 
     # Definiert eine Eigenschaft, um die Anzahl der zu generierenden Datensätze festzulegen.
     NUM_RECORDS = PropertyDescriptor(
@@ -220,21 +234,15 @@ class BuoySensorSimulator(FlowFileTransform):
         return datetime.now(timezone.utc).isoformat(timespec='milliseconds')[:-6] + 'Z'
 
     def _generate_position_near_nato_harbor(self):
-        """
-        Wählt einen zufälligen NATO-Hafen aus der HARBORS-Liste und generiert
-        eine Position in dessen geografischer Nähe.
-        """
+        """Random NATO harbor, position on offshore water (3–20 km)."""
         harbor = random.choice(HARBORS)
-        base_lat = harbor["Latitude"]
-        base_lon = harbor["Longitude"]
-
-        offset_lat = random.uniform(-0.1, 0.1)
-        offset_lon = random.uniform(-0.1, 0.1)
-
-        latitude = round(base_lat + offset_lat, 4)
-        longitude = round(base_lon + offset_lon, 4)
-
-        return {"lat": latitude, "lon": longitude}
+        lon, lat = sample_water_near_harbor(
+            harbor["Longitude"],
+            harbor["Latitude"],
+            min_km=3.0,
+            max_km=20.0,
+        )
+        return {"lat": round(lat, 4), "lon": round(lon, 4)}
 
     def _generate_altitude(self):
         """Generiert eine zufällige Flughöhe der Boje in Metern."""

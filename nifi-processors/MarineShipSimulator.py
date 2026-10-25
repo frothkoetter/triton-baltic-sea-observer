@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+
+# NiFi loads this file from python/extensions but runs the processor in an isolated
+# venv; sibling modules are only importable if the extensions dir is on sys.path.
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
+
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 import io
@@ -7,6 +16,13 @@ import random
 import math
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Union
+
+from baltic_ship_routing import (
+    advance_route_or_arrive,
+    ensure_ship_route,
+    route_target,
+)
+from baltic_water_placement import sample_water_near_harbor, snap_to_baltic_water
 
 # --- Konstanten ---
 STATE_FILE = "/tmp/marineship_state.json"
@@ -86,6 +102,7 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 ship["Operational_Status"] = random.choice(OPERATIONAL_STATUS_OPTIONS)
             if "System_Status" not in ship:
                 ship["System_Status"] = random.choice(SYSTEM_STATUS_OPTIONS)
+            ensure_ship_route(ship)
         return ships
     else:
         return initialize_ships(num_ships)
@@ -109,18 +126,27 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
         destination = random.choice(HARBORS)
         initial_status = random.choice(["Underway using engine", "Underway", "Anchored", "Moored", "Not under command"])
         initial_depth = 0.0 if initial_status == "Moored" else random.uniform(5.0, 15.0)
+        lon, lat = sample_water_near_harbor(
+            destination["Longitude"],
+            destination["Latitude"],
+            min_km=5.0,
+            max_km=25.0,
+        )
         ship = {
             "MMSI": f"MAR{123400 + i}",
-            "Latitude": destination["Latitude"] + random.uniform(-1.0, 1.0),
-            "Longitude": destination["Longitude"] + random.uniform(-1.0, 1.0),
+            "Latitude": lat,
+            "Longitude": lon,
             "Speed": random.uniform(1, 10),
             "Course": random.uniform(0, 360),
             "Status": initial_status,
             "Destination": destination,
             "Depth": initial_depth,
             "Operational_Status": random.choice(OPERATIONAL_STATUS_OPTIONS),
-            "System_Status": random.choice(SYSTEM_STATUS_OPTIONS)
+            "System_Status": random.choice(SYSTEM_STATUS_OPTIONS),
+            "RouteWaypoints": [],
+            "RouteIndex": 0,
         }
+        ensure_ship_route(ship)
         ships.append(ship)
     return ships
 
@@ -141,21 +167,29 @@ def move_towards(lat1: float, lon1: float, lat2: float, lon2: float, speed: floa
 def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Updates the position, course, speed, and status of each ship."""
     for ship in ships:
-        dest = ship["Destination"]
+        target = route_target(ship)
+        if target is None:
+            ensure_ship_route(ship)
+            target = route_target(ship)
+        if target is None:
+            continue
+        target_lat, target_lon = target
 
         new_lat, new_lon = move_towards(
-            ship["Latitude"], ship["Longitude"],
-            dest["Latitude"], dest["Longitude"],
-            ship["Speed"]
+            ship["Latitude"],
+            ship["Longitude"],
+            target_lat,
+            target_lon,
+            ship["Speed"],
         )
-        ship["Latitude"] = new_lat
-        ship["Longitude"] = new_lon
+        lon, lat = snap_to_baltic_water(new_lon, new_lat)
+        ship["Latitude"] = lat
+        ship["Longitude"] = lon
 
-        if abs(dest["Latitude"] - new_lat) > 1e-6 or abs(dest["Longitude"] - new_lon) > 1e-6:
-            ship["Course"] = (math.degrees(math.atan2(dest["Longitude"] - new_lon, dest["Latitude"] - new_lat)) + 360) % 360
-        else:
-            ship["Course"] = ship["Course"]
-
+        if abs(target_lat - lat) > 1e-6 or abs(target_lon - lon) > 1e-6:
+            ship["Course"] = (
+                math.degrees(math.atan2(target_lon - lon, target_lat - lat)) + 360
+            ) % 360
         ship["Speed"] = max(1.0, ship["Speed"] + random.uniform(-SPEED_FLUCTUATION, SPEED_FLUCTUATION))
 
         if ship["Status"] != "Moored":
@@ -164,13 +198,7 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         else:
             ship["Depth"] = 0.0
 
-        if abs(ship["Latitude"] - dest["Latitude"]) < PROXIMITY_THRESHOLD and \
-           abs(ship["Longitude"] - dest["Longitude"]) < PROXIMITY_THRESHOLD:
-            new_dest = random.choice([h for h in HARBORS if h["name"] != dest["name"]])
-            ship["Destination"] = new_dest
-            ship["Status"] = "Moored"
-            ship["Speed"] = 0.0
-            ship["Depth"] = 0.0
+        advance_route_or_arrive(ship, HARBORS, lat, lon)
 
     return ships
 
@@ -180,9 +208,11 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.0'
-        description = 'Simulates ship movements between Baltic Sea harbors using realistic routes and persistent state, including extended J2.2 status fields.'
-        dependencies = []
+        version = '1.5.1'
+        description = (
+            'Baltic harbor traffic with water-only waypoints (no overland routes).'
+        )
+        dependencies = ['numpy']
 
     NUM_SHIPS = PropertyDescriptor(
         name="Number of Ships",
