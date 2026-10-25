@@ -21,7 +21,7 @@ def build_sea_route(
     start_lat: float,
     harbor_lon: float,
     harbor_lat: float,
-    via_points: int = 3,
+    via_points: int = 5,
 ) -> List[Dict[str, float]]:
     """
     Water-only waypoints from start to an offshore point near ``harbor_*``.

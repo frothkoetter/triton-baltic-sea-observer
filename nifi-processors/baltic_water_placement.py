@@ -86,6 +86,13 @@ MAINLAND_BOXES: List[Box] = [
     (21.8, 24.5, 53.9, 55.8),
     (24.5, 28.5, 54.0, 57.5),
     (12.0, 14.8, 54.5, 55.55),
+    # Baltic states — inland cores only (gulfs/bays stay water via offshore seeds)
+    (24.2, 26.2, 58.35, 59.12),
+    (25.4, 27.9, 58.15, 58.95),
+    (25.0, 27.3, 59.12, 59.55),
+    (24.45, 25.25, 59.28, 59.52),
+    (23.6, 26.8, 55.85, 56.85),
+    (22.2, 25.8, 54.15, 55.75),
 ]
 
 BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)
@@ -101,13 +108,13 @@ def _in_any(lon: float, lat: float, boxes: Sequence[Box]) -> bool:
 
 
 def is_baltic_water(lon: float, lat: float) -> bool:
+    """Sea in the Baltic basin; inland EE/LV/LT cores are excluded before open-water zones."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
     if _in_any(lon, lat, MAINLAND_BOXES) or _in_any(lon, lat, ISLAND_BOXES):
         return False
     if _in_any(lon, lat, OPEN_WATER_ZONES):
         return True
-    # Near an offshore seed (within 45 km) counts as water if not on land/island.
     for slon, slat in OFFSHORE_SEEDS:
         _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
         if abs(dist_m) <= 45_000:
@@ -179,7 +186,21 @@ def sample_water_near_harbor(
 
 
 def snap_to_baltic_water(lon: float, lat: float) -> Tuple[float, float]:
-    """Keep position if on water; otherwise return a nearby water point."""
+    """Keep position if on water; otherwise move toward the nearest offshore seed."""
     if is_baltic_water(lon, lat):
         return float(lon), float(lat)
-    return sample_water_near_harbor(lon, lat, min_km=2.0, max_km=15.0)
+    best_lon, best_slat = OFFSHORE_SEEDS[0]
+    best_dist = 1e18
+    for slon, slat in OFFSHORE_SEEDS:
+        _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
+        d = abs(dist_m)
+        if d < best_dist:
+            best_dist = d
+            best_lon, best_slat = slon, slat
+    # Step from land toward open water along the bearing to the nearest seed.
+    fwd_az, _, dist_m = _GEOD.inv(lon, lat, best_lon, best_slat)
+    step_m = min(max(dist_m * 0.85, 15_000.0), 120_000.0)
+    snap_lon, snap_lat, _ = _GEOD.fwd(lon, lat, fwd_az, step_m)
+    if is_baltic_water(snap_lon, snap_lat):
+        return float(snap_lon), float(snap_lat)
+    return sample_baltic_water_position()

@@ -22,7 +22,11 @@ from baltic_ship_routing import (
     ensure_ship_route,
     route_target,
 )
-from baltic_water_placement import sample_water_near_harbor, snap_to_baltic_water
+from baltic_water_placement import (
+    is_baltic_water,
+    sample_water_near_harbor,
+    snap_to_baltic_water,
+)
 
 # --- Konstanten ---
 STATE_FILE = "/tmp/marineship_state.json"
@@ -102,6 +106,12 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 ship["Operational_Status"] = random.choice(OPERATIONAL_STATUS_OPTIONS)
             if "System_Status" not in ship:
                 ship["System_Status"] = random.choice(SYSTEM_STATUS_OPTIONS)
+            lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
+            if not is_baltic_water(lon0, lat0):
+                lon, lat = snap_to_baltic_water(lon0, lat0)
+                ship["Longitude"], ship["Latitude"] = lon, lat
+                ship["RouteWaypoints"] = []
+                ship["RouteIndex"] = 0
             ensure_ship_route(ship)
         return ships
     else:
@@ -208,7 +218,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.1'
+        version = '1.5.2'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
