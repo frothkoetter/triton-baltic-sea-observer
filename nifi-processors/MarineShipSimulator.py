@@ -1,3 +1,5 @@
+import _extension_path  # noqa: F401 — NiFi sibling imports
+
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 import io
@@ -7,6 +9,8 @@ import random
 import math
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Union
+
+from baltic_water_placement import sample_water_near_harbor, snap_to_baltic_water
 
 # --- Konstanten ---
 STATE_FILE = "/tmp/marineship_state.json"
@@ -109,10 +113,16 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
         destination = random.choice(HARBORS)
         initial_status = random.choice(["Underway using engine", "Underway", "Anchored", "Moored", "Not under command"])
         initial_depth = 0.0 if initial_status == "Moored" else random.uniform(5.0, 15.0)
+        lon, lat = sample_water_near_harbor(
+            destination["Longitude"],
+            destination["Latitude"],
+            min_km=5.0,
+            max_km=25.0,
+        )
         ship = {
             "MMSI": f"MAR{123400 + i}",
-            "Latitude": destination["Latitude"] + random.uniform(-1.0, 1.0),
-            "Longitude": destination["Longitude"] + random.uniform(-1.0, 1.0),
+            "Latitude": lat,
+            "Longitude": lon,
             "Speed": random.uniform(1, 10),
             "Course": random.uniform(0, 360),
             "Status": initial_status,
@@ -148,8 +158,9 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             dest["Latitude"], dest["Longitude"],
             ship["Speed"]
         )
-        ship["Latitude"] = new_lat
-        ship["Longitude"] = new_lon
+        lon, lat = snap_to_baltic_water(new_lon, new_lat)
+        ship["Latitude"] = lat
+        ship["Longitude"] = lon
 
         if abs(dest["Latitude"] - new_lat) > 1e-6 or abs(dest["Longitude"] - new_lon) > 1e-6:
             ship["Course"] = (math.degrees(math.atan2(dest["Longitude"] - new_lon, dest["Latitude"] - new_lat)) + 360) % 360
@@ -180,9 +191,12 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.0'
-        description = 'Simulates ship movements between Baltic Sea harbors using realistic routes and persistent state, including extended J2.2 status fields.'
-        dependencies = []
+        version = '1.4.0'
+        description = (
+            'Simulates ship movements between Baltic Sea harbors; positions stay on '
+            'offshore water (baltic_water_placement).'
+        )
+        dependencies = ['numpy']
 
     NUM_SHIPS = PropertyDescriptor(
         name="Number of Ships",

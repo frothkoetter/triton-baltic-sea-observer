@@ -152,3 +152,34 @@ def random_position_near_port_water(
         if is_baltic_water(lon, lat):
             return float(lon), float(lat)
     return random_baltic_water_position(rng)
+
+
+def _rng(seed: int | None = None) -> np.random.Generator:
+    if seed is None:
+        seed = int(np.random.randint(0, 2**31))
+    return np.random.default_rng(seed)
+
+
+def sample_baltic_water_position(seed: int | None = None) -> Tuple[float, float]:
+    """(lon, lat) on Baltic water — for simulators using the stdlib ``random`` module."""
+    return random_baltic_water_position(_rng(seed))
+
+
+def sample_water_near_harbor(
+    harbor_lon: float,
+    harbor_lat: float,
+    min_km: float = 5.0,
+    max_km: float = 25.0,
+    seed: int | None = None,
+) -> Tuple[float, float]:
+    """(lon, lat) in water near a harbor."""
+    return random_position_near_port_water(
+        _rng(seed), harbor_lon, harbor_lat, min_km, max_km
+    )
+
+
+def snap_to_baltic_water(lon: float, lat: float) -> Tuple[float, float]:
+    """Keep position if on water; otherwise return a nearby water point."""
+    if is_baltic_water(lon, lat):
+        return float(lon), float(lat)
+    return sample_water_near_harbor(lon, lat, min_km=2.0, max_km=15.0)

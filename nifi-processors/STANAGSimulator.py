@@ -1,9 +1,13 @@
+import _extension_path  # noqa: F401
+
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 import json
 import random
 import string
 import datetime
+
+from baltic_water_placement import sample_baltic_water_position
 
 class StanagMessageGenerator(FlowFileTransform):
     """
@@ -14,9 +18,12 @@ class StanagMessageGenerator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.1'
-        description = 'Generates simulated STANAG-style naval surveillance reports and other report types with units randomly selected from the entire German Navy fleet list.'
-        dependencies = []
+        version = '1.5.2'
+        description = (
+            'Generates simulated STANAG-style naval surveillance reports; positions '
+            'are on Baltic Sea water only.'
+        )
+        dependencies = ['numpy']
 
     # --- Property Descriptors ---
     NUM_MESSAGES = PropertyDescriptor(
@@ -112,13 +119,10 @@ class StanagMessageGenerator(FlowFileTransform):
     # Die Methode onPropertyModified() wurde entfernt, da keine dynamische Eigenschaft mehr vorhanden ist.
 
     def _generate_baltic_coordinates(self):
-        """Generiert zufällige Breitengrad- und Längengrad-Koordinaten in der Ostseeregion."""
-        min_lat, max_lat = 53.5, 65.8
-        min_lon, max_lon = 9.5, 30.2
-        
-        latitude = round(random.uniform(min_lat, max_lat), 4)
-        longitude = round(random.uniform(min_lon, max_lon), 4)
-        
+        """WGS84 position on Baltic Sea water (not land)."""
+        lon, lat = sample_baltic_water_position()
+        latitude = round(lat, 4)
+        longitude = round(lon, 4)
         return f"LAT {latitude}°N, LON {longitude}°E"
 
     def _generate_stanag_message(self):
