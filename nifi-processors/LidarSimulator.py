@@ -30,6 +30,7 @@ import numpy as np
 from pyproj import CRS, Geod, Transformer
 
 from lidar_vessel_geometry import (
+    LAS_CLASS_NEVER_CLASSIFIED,
     VESSEL_TYPE_CODES,
     VesselSpec,
     baltic_fleet_scene,
@@ -56,6 +57,35 @@ BALTIC_LON_MIN = 14.5
 BALTIC_LON_MAX = 26.0
 BALTIC_LAT_MIN = 54.0
 BALTIC_LAT_MAX = 60.5
+
+# Major Baltic ports (WGS84) — unclassified contacts are placed 5–20 km away.
+BALTIC_PORTS: List[Tuple[str, float, float]] = [
+    ("Hamburg", 9.973, 53.551),
+    ("Rostock", 12.091, 54.088),
+    ("Kiel", 10.122, 54.323),
+    ("Lübeck", 10.687, 53.869),
+    ("Gdansk", 18.660, 54.352),
+    ("Gdynia", 18.551, 54.530),
+    ("Szczecin", 14.552, 53.428),
+    ("Copenhagen", 12.568, 55.676),
+    ("Malmö", 13.004, 55.605),
+    ("Gothenburg", 11.974, 57.708),
+    ("Stockholm", 18.068, 59.329),
+    ("Helsinki", 24.938, 60.170),
+    ("Tallinn", 24.754, 59.437),
+    ("Riga", 24.105, 56.949),
+    ("Klaipeda", 21.135, 55.703),
+    ("Kaliningrad", 20.510, 54.710),
+    ("Saint Petersburg", 30.260, 59.934),
+    ("Turku", 22.228, 60.451),
+    ("Aarhus", 10.210, 56.150),
+    ("Esbjerg", 8.451, 55.467),
+]
+
+UNCLASSIFIED_FRACTION = 0.10
+PORT_OFFSET_MIN_KM = 5.0
+PORT_OFFSET_MAX_KM = 20.0
+UNDEFINED_VESSEL_LABEL = "undefined"
 
 
 def _local_to_geographic(
@@ -94,25 +124,49 @@ def _offset_position(
     return lon, lat
 
 
+def _random_position_near_baltic_port(
+    rng: np.random.Generator,
+    min_km: float = PORT_OFFSET_MIN_KM,
+    max_km: float = PORT_OFFSET_MAX_KM,
+) -> Tuple[float, float]:
+    """Random WGS84 point min_km–max_km from a random major Baltic port."""
+    _name, port_lon, port_lat = BALTIC_PORTS[int(rng.integers(0, len(BALTIC_PORTS)))]
+    dist_m = float(rng.uniform(min_km * 1000.0, max_km * 1000.0))
+    azimuth = float(rng.uniform(0.0, 360.0))
+    lon, lat, _ = _GEOD.fwd(port_lon, port_lat, azimuth, dist_m)
+    return float(lon), float(lat)
+
+
 def build_single_vessel_points(
     seed: Optional[int] = None,
-) -> Tuple[np.ndarray, np.ndarray, VesselSpec, float, float]:
+    unclassified_fraction: float = UNCLASSIFIED_FRACTION,
+) -> Tuple[np.ndarray, np.ndarray, VesselSpec, float, float, bool]:
     """
-    Pick one vessel archetype from the fleet templates, random heading, random
-    position in the Baltic Sea. Returns geo points, classification, spec, lon, lat.
+    Pick one vessel archetype, random heading, and Baltic position.
+
+    With probability ``unclassified_fraction`` (default 10%): LAS class 0 (never
+    classified), center 5–20 km from a Baltic port, metadata vessel type/name
+    ``undefined``. Otherwise random open-sea position and normal class 1–9.
     """
     rng = np.random.default_rng(seed)
     templates = baltic_fleet_scene()
     template = templates[int(rng.integers(0, len(templates)))]
-    center_lon = float(rng.uniform(BALTIC_LON_MIN, BALTIC_LON_MAX))
-    center_lat = float(rng.uniform(BALTIC_LAT_MIN, BALTIC_LAT_MAX))
+    is_unclassified = float(rng.random()) < float(unclassified_fraction)
+    if is_unclassified:
+        center_lon, center_lat = _random_position_near_baltic_port(rng)
+    else:
+        center_lon = float(rng.uniform(BALTIC_LON_MIN, BALTIC_LON_MAX))
+        center_lat = float(rng.uniform(BALTIC_LAT_MIN, BALTIC_LAT_MAX))
     heading = float(rng.uniform(0.0, 360.0))
     spec = replace(template, heading_deg=heading)
     local = vessel_local_points(spec, rng)
     geo = _local_to_geographic(local, center_lon, center_lat, spec.heading_deg)
-    code = VESSEL_TYPE_CODES.get(spec.vessel_type, 0)
+    if is_unclassified:
+        code = LAS_CLASS_NEVER_CLASSIFIED
+    else:
+        code = VESSEL_TYPE_CODES.get(spec.vessel_type, LAS_CLASS_NEVER_CLASSIFIED)
     classification = np.full(len(geo), code, dtype=np.uint16)
-    return geo, classification, spec, center_lon, center_lat
+    return geo, classification, spec, center_lon, center_lat, is_unclassified
 
 
 def build_scene_points(
@@ -205,7 +259,7 @@ def write_baltic_lidar(
     classification: Optional[np.ndarray] = None,
 ) -> str:
     if points is None or classification is None:
-        points, classification, _, center_lon, center_lat = build_single_vessel_points(
+        points, classification, _, center_lon, center_lat, _ = build_single_vessel_points(
             seed=seed
         )
         base_lon, base_lat = center_lon, center_lat
@@ -257,7 +311,7 @@ def write_baltic_lidar_enu(
 ) -> str:
     """LAS in UTM meters — recommended for CloudCompare / matplotlib 3D."""
     if points is None or classification is None:
-        points, classification, _, _, _ = build_single_vessel_points(seed=seed)
+        points, classification, _, _, _, _ = build_single_vessel_points(seed=seed)
         to_utm = Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True)
         e, n = to_utm.transform(points[:, 0], points[:, 1])
         points = np.column_stack((e, n, points[:, 2]))
@@ -271,10 +325,10 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.0.0"
+        version = "4.1.0"
         description = (
-            "Generates one random parametric vessel (tanker, ferry, warship, yacht, etc.) "
-            "as LAS 1.4 EPSG:4326 at a random position in the Baltic Sea."
+            "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
+            "~10% unclassified (class 0) near Baltic ports (5–20 km); otherwise open sea."
         )
         dependencies = ["numpy", "laspy", "pyproj"]
 
@@ -291,6 +345,16 @@ class LidarSimulator(FlowFileTransform):
         default_value="baltic_vessel.las",
         required=True,
     )
+    UNCLASSIFIED_FRACTION = PropertyDescriptor(
+        name="Unclassified Fraction",
+        description=(
+            "Probability (0–1) of emitting LAS class 0 with vessel_type/name undefined "
+            "and position 5–20 km from a Baltic port."
+        ),
+        validators=[StandardValidators.NUMBER_VALIDATOR],
+        default_value="0.1",
+        required=False,
+    )
 
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
@@ -298,6 +362,7 @@ class LidarSimulator(FlowFileTransform):
         self.descriptors = [
             self.RANDOM_SEED,
             self.OUTPUT_BASENAME,
+            self.UNCLASSIFIED_FRACTION,
         ]
 
     def getPropertyDescriptors(self):
@@ -312,8 +377,12 @@ class LidarSimulator(FlowFileTransform):
 
         tmp_dir = tempfile.mkdtemp(prefix="lidar_sim_")
         out_path = os.path.join(tmp_dir, basename)
-        points, classification, spec, center_lon, center_lat = build_single_vessel_points(
-            seed=seed
+        frac_raw = context.getProperty(self.UNCLASSIFIED_FRACTION.name).getValue()
+        unclassified_fraction = (
+            float(frac_raw) if frac_raw and str(frac_raw).strip() else UNCLASSIFIED_FRACTION
+        )
+        points, classification, spec, center_lon, center_lat, is_unclassified = (
+            build_single_vessel_points(seed=seed, unclassified_fraction=unclassified_fraction)
         )
         write_baltic_lidar(
             out_path,
@@ -324,16 +393,25 @@ class LidarSimulator(FlowFileTransform):
         with open(out_path, "rb") as f:
             payload = f.read()
 
+        if is_unclassified:
+            vessel_type = UNDEFINED_VESSEL_LABEL
+            vessel_name = UNDEFINED_VESSEL_LABEL
+            class_code = LAS_CLASS_NEVER_CLASSIFIED
+        else:
+            vessel_type = spec.vessel_type
+            vessel_name = spec.name
+            class_code = VESSEL_TYPE_CODES.get(spec.vessel_type, LAS_CLASS_NEVER_CLASSIFIED)
+
         attrs = {
             "mime.type": "application/octet-stream",
             "lidar.point_count": str(len(points)),
             "lidar.filename": basename,
-            "lidar.vessel_type": spec.vessel_type,
-            "lidar.vessel_name": spec.name,
+            "lidar.vessel_type": vessel_type,
+            "lidar.vessel_name": vessel_name,
             "lidar.center.lat": str(center_lat),
             "lidar.center.lon": str(center_lon),
             "lidar.heading_deg": str(spec.heading_deg),
-            "lidar.classification": str(VESSEL_TYPE_CODES.get(spec.vessel_type, 0)),
+            "lidar.classification": str(class_code),
         }
 
         return FlowFileTransformResult(
@@ -346,7 +424,8 @@ class LidarSimulator(FlowFileTransform):
 if __name__ == "__main__":
     write_baltic_lidar("baltic_vessel.las")
     write_baltic_lidar_enu("baltic_vessel_enu.las")
-    pts, _, spec, lon, lat = build_single_vessel_points(seed=42)
-    print(f"Generated random vessel: {spec.name} ({spec.vessel_type}) at {lat:.4f}N {lon:.4f}E")
+    pts, _, spec, lon, lat, uncl = build_single_vessel_points(seed=42)
+    label = UNDEFINED_VESSEL_LABEL if uncl else f"{spec.name} ({spec.vessel_type})"
+    print(f"Generated random vessel: {label} at {lat:.4f}N {lon:.4f}E")
     print("  baltic_vessel.las     — EPSG:4326 (NiFi / geo pipelines)")
     print("  baltic_vessel_enu.las — EPSG:32635 UTM meters (CloudCompare / 3D view)")
