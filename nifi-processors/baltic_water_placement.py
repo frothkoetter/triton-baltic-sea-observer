@@ -111,7 +111,8 @@ MAINLAND_BOXES: List[Box] = [
     (23.6, 26.8, 55.85, 56.85),
     (22.2, 25.8, 54.15, 55.75),
     (25.0, 27.2, 57.35, 58.05),  # N Latvia inland (e.g. Valmiera)
-    (21.5, 24.9, 56.15, 56.85),  # Latvia / Kurzeme inland
+    (21.5, 24.9, 56.15, 56.85),  # Latvia / Kurzeme inland (S)
+    (21.05, 23.55, 56.78, 57.58),  # Kurzeme hinterland (Dundaga, Valdemārpils, E of Pāvilosta)
     (21.5, 24.0, 55.45, 56.25),  # Lithuania inland (Telšių area)
     (26.0, 27.9, 58.05, 58.75),  # SE Estonia inland (Tartu belt)
     (18.0, 19.8, 54.55, 55.05),  # Kashubian coast hinterland (N of Gdynia)
