@@ -49,7 +49,9 @@ Creates `samples/sample_oil_tanker.las`, … `sample_landing_ship.las`, and `sam
 
 On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi also installs shared `requirements.txt` (keep it minimal — **numpy only**) plus those deps into each processor venv under `/var/opt/nifi/python/work/extensions/`.
 
-**LiDAR validation / `Failed to install requirements for LidarSimulator` (pip return code 1):** In `nifi-app.log`, scroll above the `RuntimeError` for `OSError: [Errno 28] No space left on device`. Fix: free disk on the NiFi node (often `rm -rf /var/opt/nifi/python/work/extensions/*/*` for stale venvs, then restart the processor), and avoid bloating `requirements.txt` (do not put laspy/faker/geohash2 there — they duplicate per processor and fill the volume).
+**LiDAR validation / `Failed to install requirements for LidarSimulator` (pip return code 1):** In `nifi-app.log`, scroll above the `RuntimeError` for `OSError: [Errno 28] No space left on device`. The main consumer is usually **Python processor venvs** under `/var/opt/nifi/python/work/extensions/` (pip installs numpy/laspy/pyproj per processor), not LAS output. Fix: free disk there (`rm -rf` stale version dirs), deploy minimal `requirements.txt`, restart the processor.
+
+**LiDAR temp files:** Each run writes one `.las` under a `lidar_sim_*` temp directory, loads it into the FlowFile, then deletes the directory (v4.2.1+). Older builds used `mkdtemp` without cleanup and could leak under `/tmp` if scheduled often. Downstream **PutHDFS / PutIceberg** storage is separate from the NiFi pod disk.
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 

@@ -320,7 +320,7 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.2.0"
+        version = "4.2.1"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
             "Positions are offshore Baltic water only. "
@@ -371,8 +371,6 @@ class LidarSimulator(FlowFileTransform):
         if not basename.lower().endswith(".las"):
             basename = f"{basename}.las"
 
-        tmp_dir = tempfile.mkdtemp(prefix="lidar_sim_")
-        out_path = os.path.join(tmp_dir, basename)
         frac_raw = context.getProperty(self.UNCLASSIFIED_FRACTION.name).getValue()
         unclassified_fraction = (
             float(frac_raw) if frac_raw and str(frac_raw).strip() else UNCLASSIFIED_FRACTION
@@ -380,14 +378,15 @@ class LidarSimulator(FlowFileTransform):
         points, classification, spec, center_lon, center_lat, is_unclassified = (
             build_single_vessel_points(seed=seed, unclassified_fraction=unclassified_fraction)
         )
-        write_baltic_lidar(
-            out_path,
-            points=points,
-            classification=classification,
-        )
-
-        with open(out_path, "rb") as f:
-            payload = f.read()
+        with tempfile.TemporaryDirectory(prefix="lidar_sim_") as tmp_dir:
+            out_path = os.path.join(tmp_dir, basename)
+            write_baltic_lidar(
+                out_path,
+                points=points,
+                classification=classification,
+            )
+            with open(out_path, "rb") as f:
+                payload = f.read()
 
         if is_unclassified:
             vessel_type = UNDEFINED_VESSEL_LABEL
