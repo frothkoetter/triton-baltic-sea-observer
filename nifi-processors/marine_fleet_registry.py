@@ -4,13 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional, TypedDict
-
-
-class FleetUnit(TypedDict):
-    class_: str  # noqa: A003 — stored as "class" in JSON-like dicts
-    name: str
-    mmsi: str
+from typing import Any, Dict, List
 
 
 MARINESHIP_STATE_FILE = "/tmp/marineship_state.json"

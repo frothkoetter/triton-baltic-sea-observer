@@ -1,0 +1,209 @@
+<!--
+  Cloudera Data Visualization — HTML visual (Iris-style detail panel)
+
+  Dataset: defense.lidar_simulation_metadata (or your CDW table with the same columns)
+
+  DASHBOARD SETUP
+  ---------------
+  1) Application parameters (Dashboard → Settings → Application Parameters):
+       lidar_vessel_name, lidar_vessel_type, lidar_classification,
+       lidar_center_lat, lidar_center_lon, lidar_heading_deg,
+       lidar_point_count, lidar_filename, lidar_hadoop_file_url, lidar_ingested_at
+     Set default to empty string.
+
+  2) Scatter visual (place LEFT, ~40% width):
+       X-axis: center_lon
+       Y-axis: center_lat
+       Color: vessel_type
+       Size (optional): point_count
+       Tooltip: vessel_name, filename, classification, heading_deg, ingested_at
+       Click behavior → "Update application parameters" → map each field to the
+       parameter names above (same spelling).
+
+  3) Paste this file into an HTML visual (place RIGHT or BELOW scatter).
+
+  Parameter placeholders use CDV triple-brace syntax: {{{parameter_name}}}
+-->
+<style>
+.lidar-example {
+  overflow: auto;
+  font-size: 14px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #1a1a1a;
+}
+.lidar-example img,
+.lidar-example .lidar-figure {
+  width: 35%;
+  vertical-align: top;
+  padding: 20px 10px 10px 10px;
+  display: inline-block;
+  box-sizing: border-box;
+}
+.lidar-example .lidar-figure svg {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: block;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  background: #0d1117;
+}
+.lidar-example .format-caption {
+  font-size: 11px;
+  color: #555;
+  margin: 8px 10px 0 10px;
+  line-height: 1.4;
+  max-width: 280px;
+}
+.lidar-example .format-caption code {
+  font-size: 10px;
+}
+.lidar-example .lidar-body {
+  display: inline-block;
+  width: 60%;
+  vertical-align: top;
+  padding: 10px 16px 10px 0;
+  box-sizing: border-box;
+}
+.lidar-example ul {
+  padding: 0 0 5px 0;
+  margin-left: 25px;
+  font-size: 15px;
+}
+.lidar-example li {
+  list-style: disc;
+  margin: 2px 0;
+}
+.lidar-example .meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.lidar-example .meta-table th {
+  text-align: left;
+  padding: 6px 8px 6px 0;
+  color: #555;
+  font-weight: 600;
+  width: 38%;
+  vertical-align: top;
+}
+.lidar-example .meta-table td {
+  padding: 6px 0;
+  word-break: break-word;
+}
+.lidar-example .hint {
+  font-size: 15px;
+  margin: 14px 0 8px 0;
+}
+.lidar-example .class-legend {
+  font-size: 12px;
+  color: #444;
+  margin-top: 10px;
+  line-height: 1.45;
+}
+.lidar-example .selected-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+}
+.lidar-example .type-pill {
+  display: inline-block;
+  background: #e8eef5;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+</style>
+
+<div class="lidar-example">
+  <div class="lidar-figure">
+    <!-- Inline: always renders in CDV (no hotlink). Stylized ASPRS-class point cloud. -->
+    <svg viewBox="0 0 280 200" role="img" aria-label="Stylized LAS point cloud with ASPRS classification colors">
+      <title>LAS point cloud (simulated vessel scene)</title>
+      <rect width="280" height="200" fill="#0d1117"/>
+      <!-- hull-class points (example classes 1–9) -->
+      <g fill="#4ea1ff" opacity="0.85"><circle cx="72" cy="118" r="1.2"/><circle cx="88" cy="112" r="1"/><circle cx="104" cy="108" r="1.1"/><circle cx="120" cy="105" r="1"/><circle cx="136" cy="104" r="1.2"/><circle cx="152" cy="106" r="1"/><circle cx="168" cy="110" r="1.1"/><circle cx="184" cy="116" r="1"/></g>
+      <g fill="#3fb950" opacity="0.9"><circle cx="95" cy="98" r="1"/><circle cx="110" cy="94" r="1.1"/><circle cx="125" cy="92" r="1"/><circle cx="140" cy="93" r="1"/><circle cx="155" cy="96" r="1"/></g>
+      <g fill="#f0883e" opacity="0.9"><circle cx="200" cy="102" r="1.1"/><circle cx="208" cy="108" r="1"/><circle cx="216" cy="114" r="1.2"/><circle cx="204" cy="118" r="1"/></g>
+      <g fill="#a371f7" opacity="0.85"><circle cx="58" cy="108" r="1"/><circle cx="62" cy="114" r="1.1"/><circle cx="66" cy="120" r="1"/></g>
+      <text x="8" y="16" fill="#8b949e" font-size="9" font-family="monospace">LAS 1.4 · WGS84</text>
+      <text x="8" y="28" fill="#8b949e" font-size="8" font-family="monospace">X Y Z Intensity Class</text>
+      <text x="8" y="188" fill="#6e7681" font-size="8" font-family="sans-serif">NiFi → s3a://…/*.las</text>
+    </svg>
+    <!-- Real LiDAR *data* preview (point cloud PNG, not a photo). Thumb 330px per w.wiki/GHai -->
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Ouster_OS1-64_lidar_point_cloud_of_intersection_of_Folsom_and_Dore_St%2C_San_Francisco.png/330px-Ouster_OS1-64_lidar_point_cloud_of_intersection_of_Folsom_and_Dore_St%2C_San_Francisco.png"
+      alt="Example LiDAR point cloud visualization (colored XYZ returns)"
+      loading="lazy"
+      style="margin-top:10px;max-width:280px;width:100%;"
+    />
+    <p class="format-caption">
+      Each catalog row is one <code>.las</code> file (point records + ASPRS
+      <code>classification</code>). Example render:
+      <a href="https://commons.wikimedia.org/wiki/File:Ouster_OS1-64_lidar_point_cloud_of_intersection_of_Folsom_and_Dore_St,_San_Francisco.png">Commons</a>
+      (CC BY-SA 4.0). Alt. USGS point cloud:
+      <a href="https://commons.wikimedia.org/wiki/File:Austin_Texas_LiDAR_Point_Cloud_(Highway_183).png">Austin LPC</a>.
+    </p>
+  </div>
+
+  <div class="lidar-body">
+    <p style="font-size: 18px; margin-top: 8px;">Baltic LiDAR vessel simulation catalog</p>
+    <p>
+      Each row is one simulated LAS scene from NiFi <em>LidarSimulator</em>: center position,
+      ASPRS classification code, vessel identity, and object-store path to the point cloud.
+    </p>
+    <p>Simulated vessel families in this stream:</p>
+    <ul>
+      <li>Merchant: oil_tanker, gas_tanker, container_ship, ferry, sailing</li>
+      <li>Naval silhouettes: corvette, frigate, submarine, landing_ship</li>
+      <li>Unclassified contacts: classification <strong>0</strong> (vessel_name / vessel_type undefined)</li>
+    </ul>
+
+    <p class="hint">
+      <strong>Click a point on the scatter plot to the left</strong> to load that scene’s metadata below.
+    </p>
+
+    <p class="selected-title">
+      {{{lidar_vessel_name}}}<span class="type-pill">{{{lidar_vessel_type}}}</span>
+    </p>
+
+    <table class="meta-table">
+      <tr>
+        <th>Classification (LAS)</th>
+        <td>{{{lidar_classification}}} — see legend below</td>
+      </tr>
+      <tr>
+        <th>Scene center</th>
+        <td>LAT {{{lidar_center_lat}}}°N, LON {{{lidar_center_lon}}}°E</td>
+      </tr>
+      <tr>
+        <th>Heading</th>
+        <td>{{{lidar_heading_deg}}}° clockwise from north</td>
+      </tr>
+      <tr>
+        <th>Point count</th>
+        <td>{{{lidar_point_count}}}</td>
+      </tr>
+      <tr>
+        <th>Filename</th>
+        <td>{{{lidar_filename}}}</td>
+      </tr>
+      <tr>
+        <th>Ingested at</th>
+        <td>{{{lidar_ingested_at}}}</td>
+      </tr>
+      <tr>
+        <th>Object store (LAS)</th>
+        <td><code style="font-size: 11px;">{{{lidar_hadoop_file_url}}}</code></td>
+      </tr>
+    </table>
+
+    <p class="class-legend">
+      <strong>Classification codes</strong> (NiFi simulator):
+      0 = unclassified / undefined · 1 = oil_tanker · 2 = gas_tanker · 3 = container_ship ·
+      4 = ferry · 5 = sailing · 6 = corvette · 7 = frigate · 8 = submarine · 9 = landing_ship
+    </p>
+  </div>
+</div>
