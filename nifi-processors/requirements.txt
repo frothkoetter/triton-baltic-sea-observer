@@ -1,6 +1,3 @@
-geohash2
+# NiFi runs: pip install --target <processor-venv> -r requirements.txt <ProcessorDetails.dependencies>
+# for EVERY Python processor in python/extensions/. Keep this file minimal to save disk.
 numpy
-faker
-laspy>=2.5.0
-# Geodesic/WGS84 transforms — PyPI package name is pyproj (not pyroj)
-pyproj>=3.6.0

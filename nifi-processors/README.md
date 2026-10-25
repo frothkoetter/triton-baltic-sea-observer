@@ -8,17 +8,17 @@ From the repository root, with your virtualenv activated:
 
 ```bash
 cd nifi-processors
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-dev.txt
 python3 LidarSimulator.py
 ```
 
-`LidarSimulator.py` needs **laspy** and **pyproj** (listed in `requirements.txt`).
+`LidarSimulator.py` needs **laspy** and **pyproj** (in `requirements-dev.txt`; NiFi installs them via `ProcessorDetails.dependencies`).
 
 Each run generates **one random vessel type** as EPSG:4326 LAS. Scene centers are placed on **Baltic Sea water** (offshore seeds / sea zones; not uniform land boxes). About **10%** of runs are **unclassified** (LAS class `0`, `lidar.vessel_type` / `lidar.vessel_name` = `undefined`) with the center **5–20 km** offshore from a major port. Optional **Random Seed** and **Unclassified Fraction** control repeatability and the unclassified rate.
 
 | Error | Fix |
 |-------|-----|
-| `No module named 'laspy'` | `python3 -m pip install -r requirements.txt` |
+| `No module named 'laspy'` | `python3 -m pip install -r requirements-dev.txt` |
 | `No module named 'pyproj'` but pip installed **pyroj** | Wrong package — `requirements.txt` line 5 must be `pyproj`, not `pyroj`. Run: `python3 -m pip uninstall pyroj -y && python3 -m pip install pyproj` |
 
 Output in the current directory:
@@ -47,7 +47,9 @@ Creates `samples/sample_oil_tanker.las`, … `sample_landing_ship.las`, and `sam
 
 ## NiFi runtime
 
-On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi installs those packages for the Python processor bundle; a local venv is only for offline testing.
+On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi also installs shared `requirements.txt` (keep it minimal — **numpy only**) plus those deps into each processor venv under `/var/opt/nifi/python/work/extensions/`.
+
+**LiDAR validation / `Failed to install requirements for LidarSimulator` (pip return code 1):** In `nifi-app.log`, scroll above the `RuntimeError` for `OSError: [Errno 28] No space left on device`. Fix: free disk on the NiFi node (often `rm -rf /var/opt/nifi/python/work/extensions/*/*` for stale venvs, then restart the processor), and avoid bloating `requirements.txt` (do not put laspy/faker/geohash2 there — they duplicate per processor and fill the volume).
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 
