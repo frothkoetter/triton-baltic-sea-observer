@@ -55,6 +55,8 @@ On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.
 
 The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
 
+`baltic_water_placement.py` uses coarse **MAINLAND_BOXES** and **ISLAND_BOXES** (Gotland, Åland, Saaremaa, Rügen, etc.) so open-water zones and random seeds do not treat islands as sea. Redeploy this file whenever placement logic changes.
+
 Upload **`baltic_water_placement.py`** and **`baltic_ship_routing.py`** with processors that import them (`MarineShipSimulator.py`, `ShipSimulationRoutesGemini.py`, `STANAGSimulator.py`, `BojenSensorSimulator.py`, plus `lidar_vessel_geometry.py` for `LidarSimulator.py`). Each processor adds the extensions directory to `sys.path` on load (NiFi runs them in isolated venvs). All files share one Python extensions directory. Restart or reload extensions after upload.
 
 **Ship AIS:** `MarineShipSimulator` (1.5.2) and `ShipSimulationProcessor` in `ShipSimulationRoutesGemini.py` (1.2.2) route via offshore waypoints. Deploy `baltic_water_placement.py` + `baltic_ship_routing.py` with them. After upgrade, delete stale state on NiFi nodes: `/tmp/ship_state.json`, `/tmp/marineship_state.json`.
