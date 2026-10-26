@@ -20,6 +20,7 @@ from typing import List, Dict, Any, Union
 from baltic_ship_routing import (
     advance_route_or_arrive,
     ensure_ship_route,
+    move_towards_on_water,
     route_target,
 )
 from baltic_water_placement import (
@@ -61,7 +62,7 @@ HARBORS = [
     {"name": "Turku", "Latitude": 60.4518, "Longitude": 22.2666},
     {"name": "Paldiski", "Latitude": 59.3567, "Longitude": 24.0539},
     {"name": "Liepāja", "Latitude": 56.5110, "Longitude": 21.0136},
-    {"name": "Ventspils", "Latitude": 57.3890, "Longitude": 21.5610},
+    {"name": "Ventspils", "Latitude": 57.395, "Longitude": 21.520},
     {"name": "Wismar", "Latitude": 53.8934, "Longitude": 11.4536},
     {"name": "Stralsund", "Latitude": 54.3091, "Longitude": 13.0810},
     {"name": "Sassnitz", "Latitude": 54.5183, "Longitude": 13.6414},
@@ -83,6 +84,11 @@ def generate_ais_message(ship: Dict[str, Any]) -> Dict[str, Union[str, float, in
         "Course": round(ship["Course"], 1),
         "Status": ship["Status"],
         "Destination": ship["Destination"]["name"],
+        "OriginPort": (
+            ship["OriginPort"]["name"]
+            if isinstance(ship.get("OriginPort"), dict)
+            else ship.get("OriginPort")
+        ),
         "Depth": round(ship["Depth"], 1),
         "Operational_Status": ship["Operational_Status"],
         "System_Status": ship["System_Status"]
@@ -114,6 +120,11 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 ship["System_Status"] = random.choice(SYSTEM_STATUS_OPTIONS)
             if not ship.get("Name"):
                 ship["Name"] = NAME_BY_MMSI.get(ship.get("MMSI", ""), ship.get("MMSI", ""))
+            origin_name = ship.get("OriginPort")
+            if isinstance(origin_name, str):
+                ship["OriginPort"] = HARBOR_LOOKUP.get(origin_name, ship["Destination"])
+            elif not isinstance(ship.get("OriginPort"), dict):
+                ship["OriginPort"] = ship["Destination"]
             lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
             if not is_baltic_water(lon0, lat0):
                 lon, lat = snap_to_baltic_water(lon0, lat0)
@@ -132,6 +143,8 @@ def save_ship_state(ships: List[Dict[str, Any]]):
         ship_copy = ship.copy()
         if isinstance(ship_copy["Destination"], dict):
             ship_copy["Destination"] = ship_copy["Destination"]["name"]
+        if isinstance(ship_copy.get("OriginPort"), dict):
+            ship_copy["OriginPort"] = ship_copy["OriginPort"]["name"]
         serializable_ships.append(ship_copy)
 
     with open(STATE_FILE, "w") as f:
@@ -142,12 +155,14 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     ships = []
     for i in range(num_ships):
         unit = fleet_unit_for_index(i)
-        destination = random.choice(HARBORS)
+        origin = random.choice(HARBORS)
+        others = [h for h in HARBORS if h["name"] != origin["name"]]
+        destination = random.choice(others)
         initial_status = random.choice(["Underway using engine", "Underway", "Anchored", "Moored", "Not under command"])
         initial_depth = 0.0 if initial_status == "Moored" else random.uniform(5.0, 15.0)
         lon, lat = sample_water_near_harbor(
-            destination["Longitude"],
-            destination["Latitude"],
+            origin["Longitude"],
+            origin["Latitude"],
             min_km=5.0,
             max_km=25.0,
         )
@@ -159,6 +174,7 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             "Speed": random.uniform(1, 10),
             "Course": random.uniform(0, 360),
             "Status": initial_status,
+            "OriginPort": origin,
             "Destination": destination,
             "Depth": initial_depth,
             "Operational_Status": random.choice(OPERATIONAL_STATUS_OPTIONS),
@@ -169,38 +185,6 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
         ensure_ship_route(ship)
         ships.append(ship)
     return ships
-
-def move_towards(lat1: float, lon1: float, lat2: float, lon2: float, speed: float) -> (float, float):
-    """Calculates the next position of a ship moving towards a destination."""
-    delta_lat = lat2 - lat1
-    delta_lon = lon2 - lon1
-    dist_deg = math.hypot(delta_lat, delta_lon)
-
-    if dist_deg == 0:
-        return lat2, lon2
-
-    move_deg = speed * NAUTICAL_MILE_TO_DEGREE_APPROX
-    ratio = min(1.0, move_deg / dist_deg)
-
-    return lat1 + delta_lat * ratio, lon1 + delta_lon * ratio
-
-
-def move_towards_on_water(
-    lat1: float,
-    lon1: float,
-    lat2: float,
-    lon2: float,
-    speed: float,
-    substeps: int = 5,
-) -> tuple[float, float]:
-    lat, lon = lat1, lon1
-    step_speed = speed / max(1, substeps)
-    for _ in range(substeps):
-        lat, lon = move_towards(lat, lon, lat2, lon2, step_speed)
-        if not is_baltic_water(lon, lat):
-            lon, lat = snap_to_baltic_water(lon, lat)
-    return lat, lon
-
 
 def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Updates the position, course, speed, and status of each ship."""
@@ -220,9 +204,10 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             target_lon,
             ship["Speed"],
         )
-        lon, lat = snap_to_baltic_water(new_lon, new_lat)
-        ship["Latitude"] = lat
-        ship["Longitude"] = lon
+        if is_baltic_water(new_lon, new_lat):
+            ship["Latitude"] = new_lat
+            ship["Longitude"] = new_lon
+        lat, lon = ship["Latitude"], ship["Longitude"]
 
         if abs(target_lat - lat) > 1e-6 or abs(target_lon - lon) > 1e-6:
             ship["Course"] = (
@@ -246,7 +231,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.6'
+        version = '1.5.7'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )

@@ -6,12 +6,23 @@ from __future__ import annotations
 import random
 import sys
 
-from baltic_ship_routing import build_sea_route, ensure_ship_route, route_target, advance_route_or_arrive
+from pyproj import Geod
+
+from baltic_ship_routing import (
+    build_sea_route,
+    ensure_ship_route,
+    move_towards_on_water,
+    route_path_valid,
+    route_target,
+    advance_route_or_arrive,
+)
 from baltic_water_placement import is_baltic_water, sample_water_near_harbor
+
+_GEOD = Geod(ellps="WGS84")
 
 # Subset of ShipSimulationRoutesGemini harbors (no nifiapi import).
 HARBORS = [
-    {"name": "Ventspils", "Latitude": 57.3890, "Longitude": 21.5610},
+    {"name": "Ventspils", "Latitude": 57.395, "Longitude": 21.520},
     {"name": "Primorsk", "Latitude": 60.338, "Longitude": 28.480},
     {"name": "St. Petersburg", "Latitude": 59.904, "Longitude": 29.773},
     {"name": "Liepāja", "Latitude": 56.5110, "Longitude": 21.0136},
@@ -20,35 +31,17 @@ HARBORS = [
     {"name": "Helsinki", "Latitude": 60.1695, "Longitude": 24.9354},
 ]
 
-NM_TO_DEG = 0.016666666666666666
-
-
-def _move_towards(lat1, lon1, lat2, lon2, speed):
-    dlat, dlon = lat2 - lat1, lon2 - lon1
-    dist = (dlat**2 + dlon**2) ** 0.5
-    if dist == 0:
-        return lat2, lon2
-    r = min(1.0, speed * NM_TO_DEG / dist)
-    return lat1 + dlat * r, lon1 + dlon * r
-
-
-def _move_on_water(lat1, lon1, lat2, lon2, speed):
-    from baltic_water_placement import snap_to_baltic_water
-
-    lat, lon = lat1, lon1
-    for _ in range(5):
-        lat, lon = _move_towards(lat, lon, lat2, lon2, speed / 5)
-        if not is_baltic_water(lon, lat):
-            lon, lat = snap_to_baltic_water(lon, lat)
-    return lat, lon
-
 
 def _simulate(ha, hb, ticks=600):
     lon, lat = sample_water_near_harbor(ha["Longitude"], ha["Latitude"], 5, 20, seed=1)
+    _, _, dist_km = _GEOD.inv(ha["Longitude"], ha["Latitude"], lon, lat)
+    if abs(dist_km) > 35_000:
+        print(f"WARN spawn far from {ha['name']}: {abs(dist_km)/1000:.0f} km")
     ship = {
         "Longitude": lon,
         "Latitude": lat,
         "Speed": 8.0,
+        "OriginPort": ha,
         "Destination": hb,
         "RouteWaypoints": [],
         "RouteIndex": 0,
@@ -60,7 +53,7 @@ def _simulate(ha, hb, ticks=600):
         if not tgt:
             break
         tlat, tlon = tgt
-        lat, lon = _move_on_water(ship["Latitude"], ship["Longitude"], tlat, tlon, ship["Speed"])
+        lat, lon = move_towards_on_water(ship["Latitude"], ship["Longitude"], tlat, tlon, ship["Speed"])
         if not is_baltic_water(lon, lat):
             land += 1
         ship["Latitude"], ship["Longitude"] = lat, lon
@@ -73,13 +66,15 @@ def main() -> int:
     for a, b in [
         ("Ventspils", "Primorsk"),
         ("Ventspils", "St. Petersburg"),
+        ("Ventspils", "Helsinki"),
         ("Liepāja", "Tallinn"),
         ("Riga", "Helsinki"),
     ]:
         ha = next(h for h in HARBORS if h["name"] == a)
         hb = next(h for h in HARBORS if h["name"] == b)
-        route = build_sea_route(ha["Longitude"], ha["Latitude"], hb["Longitude"], hb["Latitude"])
-        if not route or not all(is_baltic_water(w["lon"], w["lat"]) for w in route):
+        lon, lat = sample_water_near_harbor(ha["Longitude"], ha["Latitude"], 5, 20, seed=1)
+        route = build_sea_route(lon, lat, hb["Longitude"], hb["Latitude"])
+        if not route or not route_path_valid(lon, lat, route):
             print(f"FAIL waypoints {a} -> {b}")
             failures += 1
             continue
@@ -93,6 +88,13 @@ def main() -> int:
     if is_baltic_water(28.33, 57.81):
         print("FAIL Pskov should be land")
         failures += 1
+
+    for seed in range(10):
+        lon, lat = sample_water_near_harbor(21.5610, 57.3890, 5, 25, seed=seed)
+        _, _, d = _GEOD.inv(21.5610, 57.3890, lon, lat)
+        if abs(d) > 30_000:
+            print(f"FAIL Ventspils spawn seed={seed} dist={abs(d)/1000:.0f} km")
+            failures += 1
 
     random.seed(0)
     land_sum = sum(_simulate(*random.sample(HARBORS, 2), ticks=300) for _ in range(20))

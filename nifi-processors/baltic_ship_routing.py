@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import heapq
 import random
 from typing import Any, Dict, List, Tuple
 
@@ -21,7 +22,10 @@ _GEOD = Geod(ellps="WGS84")
 WAYPOINT_ARRIVAL_DEG = 0.06
 
 _MAX_SEED_HOP_M = 160_000
-_MAX_ROUTE_HOPS = 28
+_MAX_ROUTE_HOPS = 32
+_LEG_SAMPLES = 16
+_DENSIFY_STEP_M = 25_000
+_NM_TO_M = 1852.0
 
 
 def _route_waypoints_valid(waypoints: List[Dict[str, float]]) -> bool:
@@ -33,21 +37,160 @@ def _route_waypoints_valid(waypoints: List[Dict[str, float]]) -> bool:
     return True
 
 
-def _leg_samples_water(
+def leg_samples_water(
     lon1: float,
     lat1: float,
     lon2: float,
     lat2: float,
-    samples: int = 8,
+    samples: int = _LEG_SAMPLES,
 ) -> bool:
-    """True if geodesic samples between two water points stay on water."""
+    """True if geodesic samples between two points stay on Baltic water."""
+    az12, _, dist_m = _GEOD.inv(lon1, lat1, lon2, lat2)
+    dist_m = abs(dist_m)
+    if dist_m < 1.0:
+        return is_baltic_water(lon2, lat2)
     for i in range(1, samples):
         frac = i / samples
-        lon = lon1 + frac * (lon2 - lon1)
-        lat = lat1 + frac * (lat2 - lat1)
+        lon, lat, _ = _GEOD.fwd(lon1, lat1, az12, dist_m * frac)
         if not is_baltic_water(lon, lat):
             return False
     return True
+
+
+def route_path_valid(
+    start_lon: float,
+    start_lat: float,
+    waypoints: List[Dict[str, float]],
+) -> bool:
+    if not _route_waypoints_valid(waypoints):
+        return False
+    prev_lon, prev_lat = start_lon, start_lat
+    for wp in waypoints:
+        wlon, wlat = float(wp["lon"]), float(wp["lat"])
+        if not leg_samples_water(prev_lon, prev_lat, wlon, wlat):
+            return False
+        prev_lon, prev_lat = wlon, wlat
+    return True
+
+
+def densify_route(
+    start_lon: float,
+    start_lat: float,
+    waypoints: List[Dict[str, float]],
+    step_m: float = _DENSIFY_STEP_M,
+) -> List[Dict[str, float]]:
+    """Insert geodesic points along each leg for map polylines (~step_m apart)."""
+    if not waypoints:
+        return []
+    dense: List[Dict[str, float]] = []
+    prev_lon, prev_lat = start_lon, start_lat
+    for wp in waypoints:
+        wlon, wlat = float(wp["lon"]), float(wp["lat"])
+        az12, _, dist_m = _GEOD.inv(prev_lon, prev_lat, wlon, wlat)
+        dist_m = abs(dist_m)
+        steps = max(1, int(dist_m / step_m))
+        for i in range(1, steps + 1):
+            frac = i / steps
+            lon, lat, _ = _GEOD.fwd(prev_lon, prev_lat, az12, dist_m * frac)
+            if is_baltic_water(lon, lat):
+                dense.append({"lon": float(lon), "lat": float(lat)})
+        prev_lon, prev_lat = wlon, wlat
+    return dense
+
+
+def move_geodesic_knots(
+    lon1: float,
+    lat1: float,
+    lon2: float,
+    lat2: float,
+    speed_knots: float,
+    hours: float = 1.0,
+) -> Tuple[float, float]:
+    """One simulation tick: move from (lon1,lat1) toward (lon2,lat2) at ``speed_knots``."""
+    az12, _, dist_m = _GEOD.inv(lon1, lat1, lon2, lat2)
+    dist_m = abs(dist_m)
+    if dist_m < 1.0:
+        return lat2, lon2
+    step_m = min(dist_m, max(0.0, speed_knots) * _NM_TO_M * hours)
+    lon, lat, _ = _GEOD.fwd(lon1, lat1, az12, step_m)
+    return float(lat), float(lon)
+
+
+def move_towards_on_water(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+    speed_knots: float,
+    substeps: int = 8,
+) -> Tuple[float, float]:
+    """Step toward the waypoint along geodesics; never snap across land."""
+    lat, lon = lat1, lon1
+    step_speed = speed_knots / max(1, substeps)
+    for _ in range(substeps):
+        nlat, nlon = move_geodesic_knots(lon, lat, lon2, lat2, step_speed)
+        if is_baltic_water(nlon, nlat):
+            lat, lon = nlat, nlon
+        else:
+            break
+    return lat, lon
+
+
+def _water_graph_path(
+    start_lon: float,
+    start_lat: float,
+    goal_lon: float,
+    goal_lat: float,
+) -> List[Tuple[float, float]]:
+    """Shortest water-only path via offshore seeds (Dijkstra on validated edges)."""
+    nodes: List[Tuple[float, float]] = [(start_lon, start_lat)]
+    for slon, slat in OFFSHORE_SEEDS:
+        if is_baltic_water(slon, slat):
+            nodes.append((slon, slat))
+    nodes.append((goal_lon, goal_lat))
+    n = len(nodes)
+    goal_i = n - 1
+    adj: List[List[Tuple[int, float]]] = [[] for _ in range(n)]
+    for i in range(n):
+        lon1, lat1 = nodes[i]
+        for j in range(i + 1, n):
+            lon2, lat2 = nodes[j]
+            _, _, dist_m = _GEOD.inv(lon1, lat1, lon2, lat2)
+            if abs(dist_m) > _MAX_SEED_HOP_M:
+                continue
+            if not leg_samples_water(lon1, lat1, lon2, lat2):
+                continue
+            d = abs(dist_m)
+            adj[i].append((j, d))
+            adj[j].append((i, d))
+
+    dist = [1e18] * n
+    dist[0] = 0.0
+    prev = [-1] * n
+    heap: List[Tuple[float, int]] = [(0.0, 0)]
+    while heap:
+        d_u, u = heapq.heappop(heap)
+        if d_u > dist[u]:
+            continue
+        if u == goal_i:
+            break
+        for v, w in adj[u]:
+            nd = d_u + w
+            if nd < dist[v]:
+                dist[v] = nd
+                prev[v] = u
+                heapq.heappush(heap, (nd, v))
+
+    if dist[goal_i] >= 1e17:
+        return []
+
+    path: List[Tuple[float, float]] = []
+    cur = goal_i
+    while cur >= 0:
+        path.append(nodes[cur])
+        cur = prev[cur]
+    path.reverse()
+    return path
 
 
 def build_sea_route(
@@ -60,10 +203,9 @@ def build_sea_route(
     """
     Water-only waypoints from start to an offshore point near ``harbor_*``.
 
-    Uses greedy hops through ``OFFSHORE_SEEDS`` (progress toward goal), then
-    final offshore anchorage — not a straight chord across land.
+    Shortest path through ``OFFSHORE_SEEDS`` with geodesic leg checks (no land cuts).
     """
-    del via_points  # legacy arg; hop count is dynamic
+    del via_points  # legacy arg
     start_lon, start_lat = snap_to_baltic_water(start_lon, start_lat)
     end_lon, end_lat = sample_water_near_harbor(
         harbor_lon, harbor_lat, min_km=8.0, max_km=22.0
@@ -71,52 +213,18 @@ def build_sea_route(
     if not is_baltic_water(end_lon, end_lat):
         end_lon, end_lat = snap_to_baltic_water(end_lon, end_lat)
 
-    path: List[Tuple[float, float]] = [(start_lon, start_lat)]
-    current = (start_lon, start_lat)
-    goal = (end_lon, end_lat)
+    path = _water_graph_path(start_lon, start_lat, end_lon, end_lat)
+    sparse = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
+    if not route_path_valid(start_lon, start_lat, sparse):
+        sparse = _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
+    if not route_path_valid(start_lon, start_lat, sparse):
+        end_lon, end_lat = sample_water_near_harbor(harbor_lon, harbor_lat, 5.0, 18.0, seed=42)
+        path = _water_graph_path(start_lon, start_lat, end_lon, end_lat)
+        sparse = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
+    if not route_path_valid(start_lon, start_lat, sparse):
+        sparse = _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
 
-    for _ in range(_MAX_ROUTE_HOPS):
-        _, _, dist_goal_m = _GEOD.inv(current[0], current[1], goal[0], goal[1])
-        if abs(dist_goal_m) <= 35_000:
-            break
-
-        best: Tuple[float, float, float] | None = None
-        for slon, slat in OFFSHORE_SEEDS:
-            if not is_baltic_water(slon, slat):
-                continue
-            _, _, d_curr = _GEOD.inv(current[0], current[1], slon, slat)
-            if abs(d_curr) > _MAX_SEED_HOP_M:
-                continue
-            _, _, d_goal = _GEOD.inv(slon, slat, goal[0], goal[1])
-            if abs(d_goal) >= abs(dist_goal_m) - 500.0:
-                continue
-            if not _leg_samples_water(current[0], current[1], slon, slat, samples=6):
-                continue
-            score = abs(d_goal) + 0.15 * abs(d_curr)
-            if best is None or score < best[0]:
-                best = (score, slon, slat)
-
-        if best is None:
-            break
-        current = (best[1], best[2])
-        if path[-1] != current:
-            path.append(current)
-
-    if path[-1] != goal:
-        if _leg_samples_water(path[-1][0], path[-1][1], goal[0], goal[1], samples=10):
-            path.append(goal)
-        else:
-            mid_lon = (path[-1][0] + goal[0]) / 2.0
-            mid_lat = (path[-1][1] + goal[1]) / 2.0
-            mid_lon, mid_lat = snap_to_baltic_water(mid_lon, mid_lat)
-            if is_baltic_water(mid_lon, mid_lat):
-                path.append((mid_lon, mid_lat))
-            path.append(goal)
-
-    waypoints = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
-    if not _route_waypoints_valid(waypoints):
-        return _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
-    return waypoints
+    return densify_route(start_lon, start_lat, sparse)
 
 
 def _fallback_dense_route(
@@ -125,14 +233,15 @@ def _fallback_dense_route(
     end_lon: float,
     end_lat: float,
 ) -> List[Dict[str, float]]:
-    """Chord densification with snap — last resort if seed routing fails."""
+    """Geodesic chord densification with snap — only keeps water samples on each leg."""
     _, _, dist_m = _GEOD.inv(start_lon, start_lat, end_lon, end_lat)
-    steps = max(12, int(abs(dist_m) / 25_000) + 1)
+    steps = max(16, int(abs(dist_m) / 20_000) + 1)
+    az12, _, total_m = _GEOD.inv(start_lon, start_lat, end_lon, end_lat)
+    total_m = abs(total_m)
     route: List[Dict[str, float]] = []
     for i in range(1, steps + 1):
         frac = i / steps
-        lon = start_lon + frac * (end_lon - start_lon)
-        lat = start_lat + frac * (end_lat - start_lat)
+        lon, lat, _ = _GEOD.fwd(start_lon, start_lat, az12, total_m * frac)
         lon, lat = snap_to_baltic_water(lon, lat)
         if is_baltic_water(lon, lat):
             route.append({"lon": lon, "lat": lat})
@@ -147,12 +256,14 @@ def ensure_ship_route(ship: Dict[str, Any]) -> None:
     dest = ship.get("Destination")
     if not isinstance(dest, dict):
         return
+    start_lon = float(ship["Longitude"])
+    start_lat = float(ship["Latitude"])
     wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
-    if wps and _route_waypoints_valid(wps):
+    if wps and route_path_valid(start_lon, start_lat, wps):
         return
     ship["RouteWaypoints"] = build_sea_route(
-        float(ship["Longitude"]),
-        float(ship["Latitude"]),
+        start_lon,
+        start_lat,
         float(dest["Longitude"]),
         float(dest["Latitude"]),
     )
@@ -229,5 +340,12 @@ def advance_route_or_arrive(
     dest_name = dest.get("name") if isinstance(dest, dict) else dest
     candidates = [h for h in harbors if h.get("name") != dest_name]
     new_harbor = random.choice(candidates) if candidates else random.choice(harbors)
+    origin = ship.get("OriginPort")
+    if isinstance(origin, dict) and origin.get("name") == new_harbor.get("name"):
+        others = [h for h in candidates if h.get("name") != origin.get("name")]
+        if others:
+            new_harbor = random.choice(others)
+    if isinstance(dest, dict):
+        ship["OriginPort"] = dest
     assign_new_destination(ship, new_harbor, depart=True)
     return True

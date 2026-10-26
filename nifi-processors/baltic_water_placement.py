@@ -28,7 +28,20 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (17.2, 56.2),
     (18.5, 57.0),
     (19.8, 57.2),
+    (20.6, 57.15),  # Ventspils roads / W Kurzeme coast
+    (20.1, 56.55),  # W of Liepāja
     (21.2, 56.8),
+    (21.0, 57.32),  # Irbe Strait (W)
+    (21.45, 57.42),  # Irbe Strait (mid)
+    (21.9, 57.52),  # Irbe Strait (E)
+    (22.3, 57.55),  # Irbe exit / N Kurzeme
+    (21.6, 58.0),  # W Moonsund
+    (22.5, 58.8),  # E Moonsund / W Hiiumaa
+    (23.0, 58.9),  # W of Pakri
+    (23.8, 59.0),  # N of Pakri / Tallinn offshore
+    (24.5, 59.2),  # Gulf of Finland W lane
+    (25.5, 59.9),  # Gulf of Finland mid-channel
+    (26.2, 59.6),  # E Gulf of Finland
     (22.5, 57.5),
     (24.0, 57.8),
     (25.5, 58.2),
@@ -57,15 +70,28 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (13.6, 54.55),  # Sassnitz / Rügen sound
 ]
 
+# Narrow fairways — treated as sea for routing/placement (overrides island boxes).
+CHANNEL_BOXES: List[Box] = [
+    (21.55, 22.55, 58.02, 58.78),  # Moonsund (Väinameri)
+    (22.35, 23.25, 58.32, 58.98),  # Virtsu–Kuivastu / Muhu Väin
+    (24.35, 25.35, 59.05, 59.85),  # Tallinn–Helsinki mid-channel
+    (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
+    (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
+]
+
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
 OPEN_WATER_ZONES: List[Box] = [
     (15.2, 17.2, 54.55, 55.35),
     (17.0, 20.5, 55.0, 56.8),
+    (20.0, 22.8, 56.45, 57.95),  # W Latvia shelf (Ventspils / Liepāja approaches)
     (22.8, 24.9, 56.85, 57.95),  # Gulf of Riga (not all of Latvia)
     (23.5, 25.8, 59.0, 60.05),  # Gulf of Finland west
     (26.0, 30.5, 59.45, 60.48),  # Gulf of Finland east (SPB / Primorsk lanes)
     (11.0, 13.5, 56.0, 57.8),
     (13.5, 15.5, 55.0, 56.2),
+    (20.5, 23.8, 57.75, 59.05),  # Irbe / Moonsund / W Estonian lanes
+    (23.0, 25.5, 58.35, 59.35),  # N Gulf of Riga → Gulf of Finland
+    (24.2, 27.2, 58.15, 59.75),  # E Estonian / Finnish coastal lane
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
@@ -85,9 +111,9 @@ ISLAND_BOXES: List[Box] = [
     (16.55, 17.25, 56.15, 56.55),  # Öland
     (19.35, 21.15, 59.75, 60.35),  # Åland archipelago
     (20.85, 21.25, 59.85, 60.15),  # Kökar / outer Åland
-    (21.85, 23.20, 57.90, 58.78),  # Saaremaa (+ Abruka)
-    (22.55, 23.70, 58.62, 59.38),  # Hiiumaa
-    (22.85, 23.45, 58.45, 58.75),  # Muhu
+    (22.05, 23.05, 58.08, 58.62),  # Saaremaa land core (not Moonsund channels)
+    (22.75, 23.45, 58.78, 59.22),  # Hiiumaa land core
+    (22.95, 23.35, 58.52, 58.68),  # Muhu land core
     (23.72, 24.30, 57.95, 58.30),  # Kihnu
     (24.62, 25.05, 57.70, 57.98),  # Ruhnu
     (23.15, 23.45, 58.88, 59.08),  # Vormsi
@@ -122,7 +148,7 @@ MAINLAND_BOXES: List[Box] = [
     (22.2, 25.8, 54.15, 55.75),
     (25.0, 27.2, 57.35, 58.05),  # N Latvia inland (e.g. Valmiera)
     (21.5, 24.9, 56.15, 56.85),  # Latvia / Kurzeme inland (S)
-    (21.05, 23.55, 56.78, 57.58),  # Kurzeme hinterland (Dundaga, Valdemārpils, E of Pāvilosta)
+    (22.05, 23.55, 56.88, 57.52),  # Kurzeme hinterland (inland; not Irbe / Ventspils bay)
     (21.5, 24.0, 55.45, 56.25),  # Lithuania inland (Telšių area)
     (26.0, 27.9, 58.05, 58.75),  # SE Estonia inland (Tartu belt)
     (18.0, 19.8, 54.55, 55.05),  # Kashubian coast hinterland (N of Gdynia)
@@ -146,6 +172,8 @@ def is_baltic_water(lon: float, lat: float) -> bool:
     """Sea in the Baltic basin; inland EE/LV/LT cores are excluded before open-water zones."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
+    if _in_any(lon, lat, CHANNEL_BOXES):
+        return True
     if (
         _in_any(lon, lat, MAINLAND_BOXES)
         or _in_any(lon, lat, ISLAND_BOXES)
@@ -182,14 +210,21 @@ def random_baltic_water_position(
 
 
 def _seaward_azimuth_deg(port_lon: float, port_lat: float) -> float:
-    """Bearing from port toward the nearest offshore seed (open water)."""
-    best_az = 0.0
-    best_dist = 1e18
+    """Bearing from port toward open water (not the geographically nearest seed)."""
+    best_az = 270.0
+    best_score = -1.0
     for slon, slat in OFFSHORE_SEEDS:
+        if not is_baltic_water(slon, slat):
+            continue
         az, _, dist_m = _GEOD.inv(port_lon, port_lat, slon, slat)
         d = abs(dist_m)
-        if d < best_dist:
-            best_dist = d
+        if d < 25_000.0:
+            continue
+        probe_lon, probe_lat, _ = _GEOD.fwd(port_lon, port_lat, az, min(d * 0.12, 12_000.0))
+        if not is_baltic_water(probe_lon, probe_lat):
+            continue
+        if d > best_score:
+            best_score = d
             best_az = az
     return float(best_az)
 
@@ -203,17 +238,36 @@ def random_position_near_port_water(
     max_attempts: int = 96,
 ) -> Tuple[float, float]:
     """Offset from a port toward open water until ``is_baltic_water``."""
+    max_m = max_km * 1000.0 * 1.05
+    min_m = min_km * 1000.0
     seaward = _seaward_azimuth_deg(port_lon, port_lat)
+
+    def _accept(lon: float, lat: float) -> bool:
+        if not is_baltic_water(lon, lat):
+            return False
+        _, _, dist_m = _GEOD.inv(port_lon, port_lat, lon, lat)
+        return min_m <= abs(dist_m) <= max_m
+
     for attempt in range(max_attempts):
-        dist_m = float(rng.uniform(min_km * 1000.0, max_km * 1000.0))
+        dist_m = float(rng.uniform(min_m, max_km * 1000.0))
         if attempt < max_attempts * 2 // 3:
-            azimuth = seaward + float(rng.uniform(-70.0, 70.0))
+            azimuth = seaward + float(rng.uniform(-55.0, 55.0))
         else:
             azimuth = float(rng.uniform(0.0, 360.0))
         lon, lat, _ = _GEOD.fwd(port_lon, port_lat, azimuth, dist_m)
-        if is_baltic_water(lon, lat):
+        if _accept(lon, lat):
             return float(lon), float(lat)
-    return random_baltic_water_position(rng)
+
+    for dist_m in (min_m, (min_m + max_km * 1000.0) / 2.0, max_km * 1000.0):
+        for azimuth in np.linspace(0.0, 360.0, 24, endpoint=False):
+            lon, lat, _ = _GEOD.fwd(port_lon, port_lat, float(azimuth), float(dist_m))
+            if _accept(lon, lat):
+                return float(lon), float(lat)
+
+    lon, lat, _ = _GEOD.fwd(port_lon, port_lat, seaward, min_m)
+    if is_baltic_water(lon, lat):
+        return float(lon), float(lat)
+    return snap_to_baltic_water(port_lon, port_lat)
 
 
 def _rng(seed: int | None = None) -> np.random.Generator:
@@ -235,9 +289,16 @@ def sample_water_near_harbor(
     seed: int | None = None,
 ) -> Tuple[float, float]:
     """(lon, lat) in water near a harbor."""
-    return random_position_near_port_water(
-        _rng(seed), harbor_lon, harbor_lat, min_km, max_km
-    )
+    rng = _rng(seed)
+    for cap_km in (max_km, max(max_km, 35.0), 50.0):
+        lon, lat = random_position_near_port_water(
+            rng, harbor_lon, harbor_lat, min_km, cap_km
+        )
+        if is_baltic_water(lon, lat):
+            _, _, dist_m = _GEOD.inv(harbor_lon, harbor_lat, lon, lat)
+            if abs(dist_m) <= cap_km * 1000.0 * 1.08:
+                return lon, lat
+    return random_position_near_port_water(rng, harbor_lon, harbor_lat, min_km, 50.0)
 
 
 def snap_to_baltic_water(lon: float, lat: float) -> Tuple[float, float]:
