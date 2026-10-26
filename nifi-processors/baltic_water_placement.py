@@ -51,6 +51,10 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (15.5, 54.8),
     (18.0, 54.5),
     (20.0, 54.8),
+    (10.3, 54.45),  # Kiel Bight / western Baltic
+    (11.5, 54.15),  # Wismar / Rostock approaches
+    (12.4, 54.35),  # Warnemünde / Stralsund lane
+    (13.6, 54.55),  # Sassnitz / Rügen sound
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
@@ -63,6 +67,8 @@ OPEN_WATER_ZONES: List[Box] = [
     (11.0, 13.5, 56.0, 57.8),
     (13.5, 15.5, 55.0, 56.2),
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
+    (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
+    (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
 ]
 
 # Lakes / river mouths — wet but not Baltic Sea AIS/MAD buoy placement.
@@ -96,7 +102,8 @@ ISLAND_BOXES: List[Box] = [
 
 # Mainland / large coastal land (conservative; avoids Sweden, Finland, PL, DE, DK).
 MAINLAND_BOXES: List[Box] = [
-    (8.0, 14.5, 53.5, 55.45),
+    (9.9, 12.4, 53.5, 53.82),  # Schleswig-Holstein / MV inland (not Kiel/Rostock bays)
+    (12.0, 13.9, 53.52, 53.92),  # Mecklenburg hinterland (not coastal lane)
     (10.5, 16.8, 55.45, 58.85),
     (16.8, 18.05, 57.8, 60.6),
     (18.05, 21.5, 59.2, 60.6),

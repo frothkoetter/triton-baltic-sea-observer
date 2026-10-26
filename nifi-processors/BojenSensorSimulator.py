@@ -198,7 +198,7 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.5'
+        version = '1.2.6'
         description = (
             'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
             '(baltic_water_placement), nahe NATO-Häfen.'
