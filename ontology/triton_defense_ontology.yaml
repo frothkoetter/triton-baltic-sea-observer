@@ -1,6 +1,9 @@
 # Triton Baltic Sea Observer — semantic ontology (object types + physical mappings).
-# Use this file to register CDW/Iceberg tables in Ontology Manager, Atlas business
-# metadata, or CDV datasets with consistent property names.
+# Companion files:
+#   ontology/graph.yaml                          — linkTypes + relationship graph
+#   ontology/mappings/lidar_simulation_metadata.yaml — column ↔ property mapping
+#   ontology/enums/lidar_classification_codes.yaml
+#   cdv/datasets/LidarSimulationMetadata.dataset.json — CDV dataset import stub
 #
 # apiVersion: triton/ontology/v1
 
@@ -8,8 +11,43 @@ ontology:
   name: triton_baltic_defense
   namespace: defense
   description: Baltic maritime defense demo — AIS, buoys, harbours, LiDAR simulation.
+  graph: ontology/graph.yaml
+  mappings:
+    - ontology/mappings/lidar_simulation_metadata.yaml
 
 objectTypes:
+  - apiName: LasPointCloudAsset
+    displayName: LAS point cloud file
+    description: Binary LAS object in HDFS/S3 (not a Hive row).
+    primaryKey:
+      - uri
+    properties:
+      - apiName: uri
+        type: string
+        description: e.g. s3a://bucket/path/vessel.las
+
+  - apiName: BalticSeaHarbour
+    displayName: Baltic Sea harbour
+    backingDatasource:
+      catalog: Hive
+      database: defense
+      table: baltic_sea_harbours
+      primaryKey:
+        - name
+    properties:
+      - apiName: name
+        type: string
+        column: name
+      - apiName: country
+        type: string
+        column: country
+      - apiName: latitude
+        type: double
+        column: latitude
+      - apiName: longitude
+        type: double
+        column: longitude
+
   - apiName: LidarSimulationMetadata
     displayName: LiDAR simulation metadata
     description: >
@@ -25,7 +63,8 @@ objectTypes:
           transform: day
       primaryKey:
         - hadoop_file_url
-    titleProperty: vessel_name
+    titleProperty: vesselName
+    mappingFile: ontology/mappings/lidar_simulation_metadata.yaml
     properties:
       - apiName: hadoopFileUrl
         type: string

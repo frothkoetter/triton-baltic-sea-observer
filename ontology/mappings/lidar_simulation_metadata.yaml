@@ -1,0 +1,92 @@
+# Datasource mapping: defense.lidar_simulation_metadata → LidarSimulationMetadata
+# Import this block with ontology/triton_defense_ontology.yaml (object type + linkTypes).
+
+apiVersion: triton/ontology-mapping/v1
+objectType: LidarSimulationMetadata
+
+backingDatasource:
+  catalog: Hive
+  database: defense
+  table: lidar_simulation_metadata
+  qualifiedName: defense.lidar_simulation_metadata
+  storage: iceberg
+  primaryKey:
+    - hadoop_file_url
+
+columnMappings:
+  - column: hadoop_file_url
+    property: hadoopFileUrl
+    type: string
+    nifiAttribute: hadoop.file.url
+    cdvField: hadoop_file_url
+    cdvParameter: lidar_hadoop_file_url
+
+  - column: center_lat
+    property: centerLatitude
+    type: double
+    nifiAttribute: lidar.center.lat
+    cdvField: center_lat
+    cdvParameter: lidar_center_lat
+
+  - column: center_lon
+    property: centerLongitude
+    type: double
+    nifiAttribute: lidar.center.lon
+    cdvField: center_lon
+    cdvParameter: lidar_center_lon
+
+  - column: classification
+    property: classification
+    type: integer
+    nifiAttribute: lidar.classification
+    cdvField: classification
+    cdvParameter: lidar_classification
+    valueMapRef: ontology/enums/lidar_classification_codes.yaml
+
+  - column: filename
+    property: filename
+    type: string
+    nifiAttribute: lidar.filename
+    cdvField: filename
+    cdvParameter: lidar_filename
+
+  - column: heading_deg
+    property: headingDegrees
+    type: double
+    nifiAttribute: lidar.heading_deg
+    cdvField: heading_deg
+    cdvParameter: lidar_heading_deg
+
+  - column: point_count
+    property: pointCount
+    type: long
+    nifiAttribute: lidar.point_count
+    cdvField: point_count
+    cdvParameter: lidar_point_count
+
+  - column: vessel_name
+    property: vesselName
+    type: string
+    nifiAttribute: lidar.vessel_name
+    cdvField: vessel_name
+    cdvParameter: lidar_vessel_name
+
+  - column: vessel_type
+    property: vesselType
+    type: string
+    nifiAttribute: lidar.vessel_type
+    cdvField: vessel_type
+    cdvParameter: lidar_vessel_type
+
+  - column: ingested_at
+    property: ingestedAt
+    type: timestamp
+    cdvField: ingested_at
+    cdvParameter: lidar_ingested_at
+
+derivedProperties:
+  - property: sceneCenter
+    type: geopoint
+    fromColumns:
+      latitude: center_lat
+      longitude: center_lon

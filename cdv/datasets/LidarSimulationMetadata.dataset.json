@@ -1,0 +1,33 @@
+{
+  "comment": "CDV dataset stub — merge into a visuals export or create manually in Data Visualization",
+  "dataset": {
+    "dataset_name": "LidarSimulationMetadata",
+    "dataset_type": "singletable",
+    "dataset_detail": "defense.lidar_simulation_metadata",
+    "dataset_tablenames": ["defense.lidar_simulation_metadata"],
+    "dataset_description": "LiDAR simulation metadata (NiFi LidarSimulator → Iceberg). See ontology/mappings/lidar_simulation_metadata.yaml",
+    "dataset_settings": { "HAS_TITLE_CASED_NAMES": false },
+    "dataset_info": [
+      {
+        "tablename": "defense.lidar_simulation_metadata",
+        "columns": [
+          { "name": "hadoop_file_url", "type": "STRING", "isdim": true, "alias": "hadoop_file_url" },
+          { "name": "center_lat", "type": "DOUBLE", "isdim": false, "alias": "center_lat" },
+          { "name": "center_lon", "type": "DOUBLE", "isdim": false, "alias": "center_lon" },
+          { "name": "classification", "type": "INT", "isdim": true, "alias": "classification" },
+          { "name": "filename", "type": "STRING", "isdim": true, "alias": "filename" },
+          { "name": "heading_deg", "type": "DOUBLE", "isdim": false, "alias": "heading_deg" },
+          { "name": "point_count", "type": "BIGINT", "isdim": false, "alias": "point_count" },
+          { "name": "vessel_name", "type": "STRING", "isdim": true, "alias": "vessel_name" },
+          { "name": "vessel_type", "type": "STRING", "isdim": true, "alias": "vessel_type" },
+          { "name": "ingested_at", "type": "TIMESTAMP", "isdim": true, "alias": "ingested_at" }
+        ]
+      }
+    ],
+    "ontology": {
+      "objectType": "LidarSimulationMetadata",
+      "mapping": "ontology/mappings/lidar_simulation_metadata.yaml",
+      "graph": "ontology/graph.yaml"
+    }
+  }
+}

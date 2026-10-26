@@ -1,0 +1,59 @@
+# Ontology link graph (object types + relationships). Pair with mappings/*.yaml.
+apiVersion: triton/ontology-graph/v1
+ontology: triton_baltic_defense
+
+objectTypes:
+  - LidarSimulationMetadata
+  - BalticSeaHarbour
+  - LasPointCloudAsset
+
+linkTypes:
+  - apiName: storesPointCloud
+    displayName: Stores LAS point cloud
+    description: Metadata row points at the object-store LAS payload.
+    from: LidarSimulationMetadata
+    to: LasPointCloudAsset
+    cardinality: one_to_one
+    mapping:
+      fromProperty: hadoopFileUrl
+      toProperty: uri
+
+  - apiName: nearestHarbour
+    displayName: Nearest Baltic harbour
+    description: >
+      Analytic link — harbour within 25 km of scene center (same rule as buoy_near_harbours).
+    from: LidarSimulationMetadata
+    to: BalticSeaHarbour
+    cardinality: many_to_one
+    join:
+      type: geospatial_nearest
+      maxDistanceKm: 25
+      source:
+        objectType: LidarSimulationMetadata
+        latitudeProperty: centerLatitude
+        longitudeProperty: centerLongitude
+      target:
+        objectType: BalticSeaHarbour
+        table: defense.baltic_sea_harbours
+        latitudeColumn: latitude
+        longitudeColumn: longitude
+        nameColumn: name
+
+  - apiName: vesselTypeMatch
+    displayName: Vessel type (simulator key)
+    from: LidarSimulationMetadata
+    to: LidarSimulationMetadata
+    cardinality: many_to_one
+    mapping:
+      fromProperty: vesselType
+      toProperty: vesselType
+    note: Self-link for grouping/dashboard facets only.
+
+# Mermaid view (documentation)
+mermaid: |
+  flowchart LR
+    LAS[LasPointCloudAsset\ns3a://…/*.las]
+    META[LidarSimulationMetadata\ndefense.lidar_simulation_metadata]
+    HARB[BalticSeaHarbour\ndefense.baltic_sea_harbours]
+    META -->|storesPointCloud| LAS
+    META -->|nearestHarbour ≤25km| HARB

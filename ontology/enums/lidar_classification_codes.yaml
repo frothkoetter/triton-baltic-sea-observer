@@ -1,0 +1,15 @@
+# LAS classification codes (nifi-processors/lidar_vessel_geometry.VESSEL_TYPE_CODES)
+apiVersion: triton/ontology-enum/v1
+enumName: LidarVesselClassification
+property: classification
+values:
+  0: never_classified
+  1: oil_tanker
+  2: gas_tanker
+  3: container_ship
+  4: ferry
+  5: sailing
+  6: corvette
+  7: frigate
+  8: submarine
+  9: landing_ship
