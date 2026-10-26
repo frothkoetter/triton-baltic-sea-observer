@@ -67,6 +67,10 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (10.3, 54.45),  # Kiel Bight / western Baltic
     (11.5, 54.15),  # Wismar / Rostock approaches
     (12.4, 54.35),  # Warnemünde / Stralsund lane
+    (12.75, 54.52),  # Strelasund (Stralsund–Rügen)
+    (13.15, 54.48),  # SW Rügen / Schaproder Bodden lane
+    (13.45, 54.42),  # Greifswalder Bodden outer
+    (13.25, 54.72),  # N of Darß–Zingst (open Baltic)
     (13.6, 54.55),  # Sassnitz / Rügen sound
 ]
 
@@ -77,6 +81,11 @@ CHANNEL_BOXES: List[Box] = [
     (24.35, 25.35, 59.05, 59.85),  # Tallinn–Helsinki mid-channel
     (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
+    (12.55, 13.18, 54.44, 54.60),  # Strelasund
+    (13.02, 13.58, 54.36, 54.52),  # Rügen SW sounds (not island interior)
+    (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
+    (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
+    (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
@@ -95,6 +104,7 @@ OPEN_WATER_ZONES: List[Box] = [
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
+    (12.6, 14.6, 54.72, 55.12),  # Arkona / Zingst offshore
 ]
 
 # Lakes / river mouths — wet but not Baltic Sea AIS/MAD buoy placement.
@@ -119,7 +129,7 @@ ISLAND_BOXES: List[Box] = [
     (23.15, 23.45, 58.88, 59.08),  # Vormsi
     (13.30, 13.75, 54.95, 55.20),  # Fehmarn
     (12.35, 12.65, 54.82, 55.02),  # Mön
-    (13.25, 13.75, 54.25, 54.55),  # Rügen
+    (13.38, 13.62, 54.30, 54.48),  # Rügen land core (not Strelasund / sounds)
     (13.85, 14.25, 53.85, 54.12),  # Usedom
     (14.45, 14.75, 54.28, 54.48),  # Wolin
     (20.25, 20.75, 54.72, 55.05),  # Kotlin (Kaliningrad Bay)
@@ -138,7 +148,7 @@ MAINLAND_BOXES: List[Box] = [
     (19.5, 21.8, 53.8, 54.55),
     (21.8, 24.5, 53.9, 55.8),
     (24.5, 28.5, 54.0, 57.5),
-    (12.0, 14.8, 54.5, 55.55),
+    (12.25, 14.35, 54.50, 54.70),  # Darß–Zingst–Rügen hinterland (not sea N of peninsula)
     # Baltic states — inland cores only (gulfs/bays stay water via offshore seeds)
     (24.2, 26.2, 58.35, 59.12),
     (25.4, 27.9, 58.15, 58.95),

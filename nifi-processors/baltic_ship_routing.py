@@ -42,13 +42,15 @@ def leg_samples_water(
     lat1: float,
     lon2: float,
     lat2: float,
-    samples: int = _LEG_SAMPLES,
+    samples: int | None = None,
 ) -> bool:
     """True if geodesic samples between two points stay on Baltic water."""
     az12, _, dist_m = _GEOD.inv(lon1, lat1, lon2, lat2)
     dist_m = abs(dist_m)
     if dist_m < 1.0:
         return is_baltic_water(lon2, lat2)
+    if samples is None:
+        samples = max(_LEG_SAMPLES, min(48, int(dist_m / 3_500) + 6))
     for i in range(1, samples):
         frac = i / samples
         lon, lat, _ = _GEOD.fwd(lon1, lat1, az12, dist_m * frac)
@@ -136,6 +138,26 @@ def move_towards_on_water(
     return lat, lon
 
 
+def _simplify_water_path(path: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """Drop intermediate nodes when a direct geodesic leg stays on water (fewer zig-zags)."""
+    if len(path) <= 2:
+        return path
+    out: List[Tuple[float, float]] = [path[0]]
+    i = 0
+    while i < len(path) - 1:
+        j = len(path) - 1
+        while j > i + 1:
+            if leg_samples_water(path[i][0], path[i][1], path[j][0], path[j][1]):
+                out.append(path[j])
+                i = j
+                break
+            j -= 1
+        else:
+            out.append(path[i + 1])
+            i += 1
+    return out
+
+
 def _water_graph_path(
     start_lon: float,
     start_lat: float,
@@ -190,7 +212,7 @@ def _water_graph_path(
         path.append(nodes[cur])
         cur = prev[cur]
     path.reverse()
-    return path
+    return _simplify_water_path(path)
 
 
 def build_sea_route(
@@ -224,7 +246,8 @@ def build_sea_route(
     if not route_path_valid(start_lon, start_lat, sparse):
         sparse = _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
 
-    return densify_route(start_lon, start_lat, sparse)
+    # Sparse waypoints only — densify_route() is for map polylines / export, not ship ticks.
+    return sparse
 
 
 def _fallback_dense_route(
