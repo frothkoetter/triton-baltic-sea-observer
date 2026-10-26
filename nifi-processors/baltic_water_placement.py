@@ -100,7 +100,7 @@ OPEN_WATER_ZONES: List[Box] = [
     (13.5, 15.5, 55.0, 56.2),
     (20.5, 23.8, 57.75, 59.05),  # Irbe / Moonsund / W Estonian lanes
     (23.0, 25.5, 58.35, 59.35),  # N Gulf of Riga → Gulf of Finland
-    (24.2, 27.2, 58.15, 59.75),  # E Estonian / Finnish coastal lane
+    (24.2, 27.0, 58.15, 59.35),  # E Estonian coastal lane (not inland N of Tartu)
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
@@ -163,6 +163,9 @@ MAINLAND_BOXES: List[Box] = [
     (26.0, 27.9, 58.05, 58.75),  # SE Estonia inland (Tartu belt)
     (18.0, 19.8, 54.55, 55.05),  # Kashubian coast hinterland (N of Gdynia)
     (27.9, 29.35, 57.55, 58.25),  # Pskov / upper Velikaya (inland; not a sea lane)
+    (9.95, 10.55, 54.18, 54.38),  # Schleswig lakeland W of Kiel (not Baltic Sea)
+    (12.05, 12.55, 54.08, 54.22),  # Mecklenburg hinterland NE of Rostock
+    (25.85, 27.25, 58.82, 59.28),  # E Estonia inland (e.g. Rakke; not Peipus coast lane)
 ]
 
 BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)
@@ -191,7 +194,12 @@ def is_baltic_water(lon: float, lat: float) -> bool:
     ):
         return False
     if _in_any(lon, lat, OPEN_WATER_ZONES):
-        return True
+        # Coastal zone rectangles overlap lakes/hinterland — require a nearby offshore seed.
+        for slon, slat in OFFSHORE_SEEDS:
+            _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
+            if abs(dist_m) <= SEA_SEED_MAX_M:
+                return True
+        return False
     for slon, slat in OFFSHORE_SEEDS:
         _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
         if abs(dist_m) <= SEA_SEED_MAX_M:

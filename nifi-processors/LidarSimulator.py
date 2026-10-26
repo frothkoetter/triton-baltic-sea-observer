@@ -133,6 +133,23 @@ def _random_position_near_baltic_port(
     return random_position_near_port_water(rng, port_lon, port_lat, min_km, max_km)
 
 
+def _sample_scene_center(
+    rng: np.random.Generator,
+    near_port: bool,
+    max_attempts: int = 64,
+) -> Tuple[float, float]:
+    """WGS84 scene center guaranteed on Baltic sea (not lakes / coastal hinterland)."""
+    for _ in range(max_attempts):
+        if near_port:
+            lon, lat = _random_position_near_baltic_port(rng)
+        else:
+            lon, lat = random_baltic_water_position(rng)
+        if is_baltic_water(lon, lat):
+            return lon, lat
+    lon, lat = random_baltic_water_position(rng)
+    return lon, lat
+
+
 def build_single_vessel_points(
     seed: Optional[int] = None,
     unclassified_fraction: float = UNCLASSIFIED_FRACTION,
@@ -148,10 +165,7 @@ def build_single_vessel_points(
     templates = baltic_fleet_scene()
     template = templates[int(rng.integers(0, len(templates)))]
     is_unclassified = float(rng.random()) < float(unclassified_fraction)
-    if is_unclassified:
-        center_lon, center_lat = _random_position_near_baltic_port(rng)
-    else:
-        center_lon, center_lat = random_baltic_water_position(rng)
+    center_lon, center_lat = _sample_scene_center(rng, near_port=is_unclassified)
     heading = float(rng.uniform(0.0, 360.0))
     spec = replace(template, heading_deg=heading)
     local = vessel_local_points(spec, rng)
@@ -320,7 +334,7 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.2.1"
+        version = "4.2.2"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
             "Positions are offshore Baltic water only. "
