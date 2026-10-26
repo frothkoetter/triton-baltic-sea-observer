@@ -20,6 +20,7 @@ from baltic_water_placement import sample_water_near_harbor
 # --- Liste der NATO Marine Häfen aus der Quelle [12-14] ---
 HARBORS = [
     {"name": "Kiel", "Latitude": 54.3233, "Longitude": 10.1228},
+    {"name": "Travemünde", "Latitude": 53.9624, "Longitude": 10.8672},
     {"name": "Rostock", "Latitude": 54.0887, "Longitude": 12.1405},
     {"name": "Karlskrona", "Latitude": 56.1612, "Longitude": 15.5869},
     {"name": "Gdynia", "Latitude": 54.5189, "Longitude": 18.5305},
@@ -198,7 +199,7 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.6'
+        version = '1.2.7'
         description = (
             'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
             '(baltic_water_placement), nahe NATO-Häfen.'
