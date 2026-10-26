@@ -30,8 +30,10 @@ from baltic_water_placement import (
     snap_to_baltic_water,
 )
 
+from baltic_ship_sim_state import AIS_SHIP_STATE_FILE
+
 # --- Constants ---
-STATE_FILE = "/tmp/ship_state.json"
+STATE_FILE = AIS_SHIP_STATE_FILE
 DEFAULT_NUM_SHIPS = 5
 PROXIMITY_THRESHOLD = 0.05  # Degrees for harbor arrival detection
 NAUTICAL_MILE_TO_DEGREE_APPROX = 0.016666666666666666 # Approx 1 degree = 60 nautical miles
