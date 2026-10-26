@@ -1,0 +1,107 @@
+# Triton Baltic Sea Observer — semantic ontology (object types + physical mappings).
+# Use this file to register CDW/Iceberg tables in Ontology Manager, Atlas business
+# metadata, or CDV datasets with consistent property names.
+#
+# apiVersion: triton/ontology/v1
+
+ontology:
+  name: triton_baltic_defense
+  namespace: defense
+  description: Baltic maritime defense demo — AIS, buoys, harbours, LiDAR simulation.
+
+objectTypes:
+  - apiName: LidarSimulationMetadata
+    displayName: LiDAR simulation metadata
+    description: >
+      One row per simulated vessel LAS capture ingested from NiFi LidarSimulator
+      (point cloud in object store; metadata in Iceberg).
+    backingDatasource:
+      catalog: Hive
+      database: defense
+      table: lidar_simulation_metadata
+      storage: iceberg
+      partition:
+        - column: ingested_at
+          transform: day
+      primaryKey:
+        - hadoop_file_url
+    titleProperty: vessel_name
+    properties:
+      - apiName: hadoopFileUrl
+        type: string
+        column: hadoop_file_url
+        required: true
+        description: Object store URI of the LAS file.
+        nifiAttribute: hadoop.file.url
+        cdvParameter: lidar_hadoop_file_url
+
+      - apiName: centerLatitude
+        type: double
+        column: center_lat
+        description: Vessel scene center latitude (WGS84).
+        nifiAttribute: lidar.center.lat
+        cdvParameter: lidar_center_lat
+
+      - apiName: centerLongitude
+        type: double
+        column: center_lon
+        description: Vessel scene center longitude (WGS84).
+        nifiAttribute: lidar.center.lon
+        cdvParameter: lidar_center_lon
+
+      - apiName: sceneCenter
+        type: geopoint
+        description: Composite geopoint for map visuals (lat, lon).
+        mapping:
+          latitude: center_lat
+          longitude: center_lon
+
+      - apiName: classification
+        type: integer
+        column: classification
+        description: LAS point class code (vessel type / unclassified).
+        nifiAttribute: lidar.classification
+        cdvParameter: lidar_classification
+
+      - apiName: filename
+        type: string
+        column: filename
+        nifiAttribute: lidar.filename
+        cdvParameter: lidar_filename
+
+      - apiName: headingDegrees
+        type: double
+        column: heading_deg
+        description: Vessel heading, degrees clockwise from north.
+        nifiAttribute: lidar.heading_deg
+        cdvParameter: lidar_heading_deg
+
+      - apiName: pointCount
+        type: long
+        column: point_count
+        nifiAttribute: lidar.point_count
+        cdvParameter: lidar_point_count
+
+      - apiName: vesselName
+        type: string
+        column: vessel_name
+        nifiAttribute: lidar.vessel_name
+        cdvParameter: lidar_vessel_name
+
+      - apiName: vesselType
+        type: string
+        column: vessel_type
+        description: Simulator vessel type key (e.g. corvette) or undefined.
+        nifiAttribute: lidar.vessel_type
+        cdvParameter: lidar_vessel_type
+
+      - apiName: ingestedAt
+        type: timestamp
+        column: ingested_at
+        description: Row ingest time (Iceberg partition key).
+        cdvParameter: lidar_ingested_at
+
+    cdvDataset:
+      suggestedName: LidarSimulationMetadata
+      sqlTable: defense.lidar_simulation_metadata
+      htmlPanelExample: cdv/lidar_metadata_iris_style_example.html

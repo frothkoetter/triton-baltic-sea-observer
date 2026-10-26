@@ -1,5 +1,6 @@
 -- Impala Iceberg: LiDAR vessel simulation metadata (NiFi LidarSimulator FlowFile attributes)
 -- Also appended to create_db_tables_impala.sql (search: lidar_simulation_metadata)
+-- Ontology object type + column mapping: ontology/triton_defense_ontology.yaml (LidarSimulationMetadata)
 
 CREATE DATABASE IF NOT EXISTS defense;
 USE defense;
