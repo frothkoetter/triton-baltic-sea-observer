@@ -78,7 +78,7 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
 CHANNEL_BOXES: List[Box] = [
     (21.55, 22.55, 58.02, 58.78),  # Moonsund (Väinameri)
     (22.35, 23.25, 58.32, 58.98),  # Virtsu–Kuivastu / Muhu Väin
-    (24.35, 25.35, 59.05, 59.85),  # Tallinn–Helsinki mid-channel
+    (24.68, 25.35, 59.40, 59.88),  # Tallinn–Helsinki mid-channel (not Harju hinterland)
     (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
     (12.55, 13.18, 54.44, 54.60),  # Strelasund
@@ -99,8 +99,8 @@ OPEN_WATER_ZONES: List[Box] = [
     (11.0, 13.5, 56.0, 57.8),
     (13.5, 15.5, 55.0, 56.2),
     (20.5, 23.8, 57.75, 59.05),  # Irbe / Moonsund / W Estonian lanes
-    (23.0, 25.5, 58.35, 59.35),  # N Gulf of Riga → Gulf of Finland
-    (24.2, 27.0, 58.15, 59.35),  # E Estonian coastal lane (not inland N of Tartu)
+    (24.0, 25.4, 58.35, 59.22),  # N Gulf of Riga → GoF (offshore strip; not Rapla/Tallinn land)
+    (24.2, 26.8, 58.15, 59.12),  # E Estonian shelf (not Tartu / Rakke belt)
     (20.8, 22.8, 57.85, 58.55),  # west Estonian shelf
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
@@ -166,6 +166,8 @@ MAINLAND_BOXES: List[Box] = [
     (9.95, 10.55, 54.18, 54.38),  # Schleswig lakeland W of Kiel (not Baltic Sea)
     (12.05, 12.55, 54.08, 54.22),  # Mecklenburg hinterland NE of Rostock
     (25.85, 27.25, 58.82, 59.28),  # E Estonia inland (e.g. Rakke; not Peipus coast lane)
+    (23.38, 25.05, 58.68, 59.46),  # W & central Estonia (Rapla, Keila, Haapsalu hinterland)
+    (25.05, 27.15, 59.12, 59.48),  # N Estonia inland (Rakvere, Jõhvi belt; not GoF lane)
 ]
 
 BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)
@@ -185,14 +187,14 @@ def is_baltic_water(lon: float, lat: float) -> bool:
     """Sea in the Baltic basin; inland EE/LV/LT cores are excluded before open-water zones."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
-    if _in_any(lon, lat, CHANNEL_BOXES):
-        return True
     if (
         _in_any(lon, lat, MAINLAND_BOXES)
         or _in_any(lon, lat, ISLAND_BOXES)
         or _in_any(lon, lat, INLAND_WATER_BOXES)
     ):
         return False
+    if _in_any(lon, lat, CHANNEL_BOXES):
+        return True
     if _in_any(lon, lat, OPEN_WATER_ZONES):
         # Coastal zone rectangles overlap lakes/hinterland — require a nearby offshore seed.
         for slon, slat in OFFSHORE_SEEDS:
@@ -214,7 +216,7 @@ def random_baltic_water_position(
     for _ in range(max_attempts):
         if float(rng.random()) < 0.65:
             slon, slat = OFFSHORE_SEEDS[int(rng.integers(0, len(OFFSHORE_SEEDS)))]
-            dist_m = float(rng.uniform(0.0, 35_000.0))
+            dist_m = float(rng.uniform(0.0, 22_000.0))
             az = float(rng.uniform(0.0, 360.0))
             lon, lat, _ = _GEOD.fwd(slon, slat, az, dist_m)
         else:
