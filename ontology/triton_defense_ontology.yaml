@@ -141,9 +141,9 @@ objectTypes:
         cdvParameter: lidar_predicted_vessel_type
 
       - apiName: modelConfidence
-        type: string
+        type: double
         column: model_confidence
-        description: Model confidence for predicted vessel type (string).
+        description: Model confidence for predicted vessel type (numeric).
         cdvParameter: lidar_model_confidence
 
       - apiName: ingestedAt

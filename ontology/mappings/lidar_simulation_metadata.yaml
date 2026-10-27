@@ -86,7 +86,7 @@ columnMappings:
 
   - column: model_confidence
     property: modelConfidence
-    type: string
+    type: double
     cdvField: model_confidence
     cdvParameter: lidar_model_confidence
 

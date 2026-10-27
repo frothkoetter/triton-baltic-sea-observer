@@ -21,7 +21,7 @@
           { "name": "vessel_name", "type": "STRING", "isdim": true, "alias": "vessel_name" },
           { "name": "vessel_type", "type": "STRING", "isdim": true, "alias": "vessel_type" },
           { "name": "predicted_vessel_type", "type": "STRING", "isdim": true, "alias": "predicted_vessel_type" },
-          { "name": "model_confidence", "type": "STRING", "isdim": true, "alias": "model_confidence" },
+          { "name": "model_confidence", "type": "DOUBLE", "isdim": false, "alias": "model_confidence" },
           { "name": "ingested_at", "type": "TIMESTAMP", "isdim": true, "alias": "ingested_at" }
         ]
       }
