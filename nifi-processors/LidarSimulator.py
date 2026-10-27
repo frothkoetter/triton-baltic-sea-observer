@@ -334,7 +334,7 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.2.3"
+        version = "4.2.4"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
             "Positions are offshore Baltic water only. "

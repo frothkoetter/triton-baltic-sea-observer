@@ -189,6 +189,12 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
 def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Updates the position, course, speed, and status of each ship."""
     for ship in ships:
+        lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
+        if not is_baltic_water(lon0, lat0):
+            lon, lat = snap_to_baltic_water(lon0, lat0)
+            ship["Longitude"], ship["Latitude"] = lon, lat
+            ship["RouteWaypoints"] = []
+            ship["RouteIndex"] = 0
         target = route_target(ship)
         if target is None:
             ensure_ship_route(ship)
@@ -231,7 +237,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.6.0'
+        version = '1.6.1'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )

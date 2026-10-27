@@ -15,7 +15,7 @@ import string
 from datetime import datetime, timezone
 from faker import Faker # Importiert die Faker-Bibliothek
 
-from baltic_water_placement import sample_water_near_harbor
+from baltic_water_placement import is_baltic_water, sample_water_near_harbor
 
 # --- Liste der NATO Marine Häfen aus der Quelle [12-14] ---
 HARBORS = [
@@ -199,7 +199,7 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.7'
+        version = '1.2.8'
         description = (
             'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
             '(baltic_water_placement), nahe NATO-Häfen.'
@@ -237,11 +237,17 @@ class BuoySensorSimulator(FlowFileTransform):
     def _generate_position_near_nato_harbor(self):
         """Random NATO harbor, position on offshore water (3–20 km)."""
         harbor = random.choice(HARBORS)
+        for _ in range(24):
+            lon, lat = sample_water_near_harbor(
+                harbor["Longitude"],
+                harbor["Latitude"],
+                min_km=3.0,
+                max_km=20.0,
+            )
+            if is_baltic_water(lon, lat):
+                return {"lat": round(lat, 4), "lon": round(lon, 4)}
         lon, lat = sample_water_near_harbor(
-            harbor["Longitude"],
-            harbor["Latitude"],
-            min_km=3.0,
-            max_km=20.0,
+            harbor["Longitude"], harbor["Latitude"], 5.0, 30.0, seed=0
         )
         return {"lat": round(lat, 4), "lon": round(lon, 4)}
 

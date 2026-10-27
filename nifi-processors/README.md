@@ -61,4 +61,6 @@ Upload **`baltic_water_placement.py`** and **`baltic_ship_routing.py`** with pro
 
 **Ship AIS:** `MarineShipSimulator` (1.5.3) and `ShipSimulationProcessor` in `ShipSimulationRoutesGemini.py` (1.2.3) route via offshore waypoints. Any processor that imports `baltic_water_placement.py` must declare **`pyproj`** in `ProcessorDetails.dependencies` (LiDAR, STANAG, Marine, Bojen, Gemini ship sim). Deploy `baltic_water_placement.py` + `baltic_ship_routing.py` with them. After upgrade, delete stale state on NiFi nodes: `/tmp/ship_state.json`, `/tmp/marineship_state.json`.
 
+**Coast / island regression:** `python3 -m unittest test_baltic_water_placement.py` (pins in `baltic_coast_pins.py`; extend when map review finds land leakage).
+
 **Route state reset:** `BalticShipRouteStateReset` (deploy with `baltic_ship_sim_state.py`) clears only those `/tmp` JSON files—or empties `RouteWaypoints` / `RouteIndex` in place—so AIS and marine simulators pick up new water routing without touching LiDAR temp dirs or `marineship_version_state.json`. Wire it on a manual **GenerateFlowFile** or schedule after deployments.

@@ -23,7 +23,7 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (11.8, 57.4),
     (12.6, 56.1),
     (13.8, 55.2),
-    (14.8, 55.0),
+    (14.8, 54.9),
     (16.0, 55.4),
     (17.2, 56.2),
     (18.5, 57.0),
@@ -38,31 +38,28 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (21.6, 58.0),  # W Moonsund
     (22.5, 58.8),  # E Moonsund / W Hiiumaa
     (23.0, 58.9),  # W of Pakri
-    (23.8, 59.0),  # N of Pakri / Tallinn offshore
-    (24.5, 59.2),  # Gulf of Finland W lane
+    (23.55, 59.12),  # N of Pakri / Tallinn offshore
+    (24.75, 59.55),  # Gulf of Finland W lane
     (25.5, 59.9),  # Gulf of Finland mid-channel
     (26.2, 59.6),  # E Gulf of Finland
-    (22.5, 57.5),
+    (22.8, 57.55),  # Gulf of Riga mid-shelf
     (24.0, 57.8),
-    (25.5, 58.2),
-    (26.8, 59.0),
+    (25.0, 58.15),  # N Estonian shelf
+    (26.4, 59.45),  # E Gulf of Finland
     (25.0, 59.8),
     (23.5, 60.2),
-    (21.0, 59.5),
+    (20.5, 59.0),  # Åland approaches
     (19.0, 58.8),
-    (17.5, 58.0),
-    (16.2, 57.2),
-    (15.0, 56.5),
+    (17.0, 57.0),  # S-central Baltic (S of Gotland)
+    (15.7, 55.28),  # S of Bornholm / Arkona approach
     (20.5, 55.5),
-    (22.0, 56.0),
-    (24.5, 56.2),
-    (27.5, 57.0),
-    (28.5, 58.0),
+    (22.8, 57.35),  # Gulf of Riga lane (channel)
+    (23.3, 57.45),
     (29.8, 59.85),  # Kotlin / E Gulf of Finland (Primorsk / SPB approaches)
     (27.2, 60.15),  # W Gulf of Finland mid-channel
-    (13.2, 54.6),
+    (13.25, 54.70),
     (15.5, 54.8),
-    (18.0, 54.5),
+    (17.95, 54.6),  # Gdańsk Bay offshore
     (20.0, 54.8),
     (10.3, 54.45),  # Kiel Bight / western Baltic
     (11.5, 54.15),  # Wismar / Rostock approaches
@@ -71,9 +68,9 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (13.15, 54.48),  # SW Rügen / Schaproder Bodden lane
     (13.45, 54.42),  # Greifswalder Bodden outer
     (13.25, 54.72),  # N of Darß–Zingst (open Baltic)
-    (13.6, 54.55),  # Sassnitz / Rügen sound
+    (13.6, 54.42),  # Sassnitz / Rügen sound
     (13.85, 54.88),  # N of Rügen / Wolin offshore
-    (14.85, 55.12),  # E Arkona / W Bornholm passage
+    (14.85, 54.92),  # E Arkona / W Bornholm passage
     (15.75, 55.32),  # E of Bornholm
     (12.05, 56.45),  # Kattegat mid (links W Baltic to E via Øresund)
     (12.82, 54.57),  # Strelasund fairway
@@ -89,19 +86,21 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
 CHANNEL_BOXES: List[Box] = [
     (21.55, 22.55, 58.02, 58.78),  # Moonsund (Väinameri)
     (22.35, 23.25, 58.32, 58.98),  # Virtsu–Kuivastu / Muhu Väin
-    (24.68, 25.35, 59.40, 59.88),  # Tallinn–Helsinki mid-channel (not Harju hinterland)
-    (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
+    (24.82, 25.45, 59.46, 59.90),  # Tallinn–Helsinki mid-channel (offshore only)
+    (23.05, 23.55, 59.05, 59.18),  # N of Pakri offshore (not Haapsalu)
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
-    (12.55, 13.22, 54.44, 54.62),  # Strelasund (not Rügen upland)
+    (12.58, 13.16, 54.48, 54.62),  # Strelasund fairway (not Stralsund town)
     (13.02, 13.58, 54.36, 54.50),  # Rügen SW sounds (not island interior)
     (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
     (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
     (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
     (13.22, 13.78, 54.56, 54.74),  # Greifswalder Bodden / SE Rügen fairway
     (13.35, 14.55, 54.76, 55.08),  # E of Rügen / Wolin approaches (not island cores)
-    (16.2, 20.8, 55.35, 57.45),  # S-central Baltic lane (Poland–Latvia shelf; not Swedish coast)
-    (14.35, 16.85, 54.78, 55.38),  # Arkona / N & E of Bornholm (open Baltic lane)
-    (11.0, 12.65, 56.05, 57.75),  # Kattegat / Øresund approach (Baltic–Skagerrak link)
+    (16.45, 20.35, 55.38, 57.12),  # S-central Baltic open lane (not Kalmar / coast cities)
+    (15.60, 16.90, 54.95, 55.45),  # E of Bornholm (not island interior)
+    (11.0, 13.25, 55.95, 57.85),  # Kattegat / Øresund approach (Baltic–Skagerrak link)
+    (22.75, 23.85, 57.15, 57.70),  # Gulf of Riga central lane
+    (18.45, 19.55, 54.48, 54.78),  # Gdańsk Bay / Hel offshore lane
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
@@ -145,11 +144,15 @@ ISLAND_BOXES: List[Box] = [
     (23.15, 23.45, 58.88, 59.08),  # Vormsi
     (13.30, 13.75, 54.95, 55.20),  # Fehmarn
     (12.35, 12.65, 54.82, 55.02),  # Mön
-    (13.18, 13.48, 54.30, 54.515),  # Rügen land core (not Strelasund / sounds)
+    (13.15, 13.52, 54.30, 54.54),  # Rügen land core (not Strelasund / sounds)
     (13.85, 14.25, 53.85, 54.12),  # Usedom
     (14.45, 14.75, 54.28, 54.48),  # Wolin
     (20.25, 20.75, 54.72, 55.05),  # Kotlin (Kaliningrad Bay)
     (10.90, 11.40, 54.85, 55.10),  # Lolland (sounds)
+    (11.05, 12.15, 55.05, 55.55),  # Zealand / Storebælt interior
+    (10.15, 10.85, 55.35, 55.75),  # SE Jutland (not Little Belt fairway)
+    (11.35, 11.95, 54.75, 55.05),  # Fehmarn interior
+    (14.95, 15.55, 55.05, 55.35),  # Bornholm interior (not E passage)
 ]
 
 # Mainland / large coastal land (conservative; avoids Sweden, Finland, PL, DE, DK).
@@ -177,12 +180,16 @@ MAINLAND_BOXES: List[Box] = [
     (22.05, 23.55, 56.88, 57.52),  # Kurzeme hinterland (inland; not Irbe / Ventspils bay)
     (21.5, 24.0, 55.45, 56.25),  # Lithuania inland (Telšių area)
     (26.0, 27.9, 58.05, 58.75),  # SE Estonia inland (Tartu belt)
-    (18.0, 19.8, 54.55, 55.05),  # Kashubian coast hinterland (N of Gdynia)
+    (18.0, 19.8, 54.60, 55.05),  # Kashubian coast hinterland (N of Gdynia bays)
     (27.9, 29.35, 57.55, 58.25),  # Pskov / upper Velikaya (inland; not a sea lane)
     (9.95, 10.55, 54.18, 54.38),  # Schleswig lakeland W of Kiel (not Baltic Sea)
     (12.05, 12.55, 54.08, 54.22),  # Mecklenburg hinterland NE of Rostock
+    (11.15, 11.85, 53.82, 54.14),  # Wismar / Küsten hinterland
+    (15.85, 16.95, 56.52, 56.82),  # Kalmar / SE Sweden coast (not open-lane channel)
+    (12.85, 13.40, 54.26, 54.36),  # Stralsund / Barth hinterland
     (25.85, 27.25, 58.82, 59.28),  # E Estonia inland (e.g. Rakke; not Peipus coast lane)
     (23.38, 25.05, 58.68, 59.46),  # W & central Estonia (Rapla, Keila, Haapsalu hinterland)
+    (23.40, 24.00, 58.90, 59.02),  # Haapsalu / W coast peninsula
     (25.05, 27.15, 59.12, 59.48),  # N Estonia inland (Rakvere, Jõhvi belt; not GoF lane)
 ]
 
