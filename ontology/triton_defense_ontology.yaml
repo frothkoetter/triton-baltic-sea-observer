@@ -134,6 +134,18 @@ objectTypes:
         nifiAttribute: lidar.vessel_type
         cdvParameter: lidar_vessel_type
 
+      - apiName: predictedVesselType
+        type: string
+        column: predicted_vessel_type
+        description: ML-predicted vessel type label (string).
+        cdvParameter: lidar_predicted_vessel_type
+
+      - apiName: modelConfidence
+        type: string
+        column: model_confidence
+        description: Model confidence for predicted vessel type (string).
+        cdvParameter: lidar_model_confidence
+
       - apiName: ingestedAt
         type: timestamp
         column: ingested_at

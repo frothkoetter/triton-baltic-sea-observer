@@ -78,6 +78,18 @@ columnMappings:
     cdvField: vessel_type
     cdvParameter: lidar_vessel_type
 
+  - column: predicted_vessel_type
+    property: predictedVesselType
+    type: string
+    cdvField: predicted_vessel_type
+    cdvParameter: lidar_predicted_vessel_type
+
+  - column: model_confidence
+    property: modelConfidence
+    type: string
+    cdvField: model_confidence
+    cdvParameter: lidar_model_confidence
+
   - column: ingested_at
     property: ingestedAt
     type: timestamp

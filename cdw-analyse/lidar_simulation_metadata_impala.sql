@@ -16,6 +16,8 @@ CREATE TABLE lidar_simulation_metadata (
   point_count BIGINT COMMENT 'Number of points in the LAS file (lidar.point_count).',
   vessel_name STRING COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
   vessel_type STRING COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
+  predicted_vessel_type STRING COMMENT 'ML-predicted vessel type label (string; populated by inference pipeline).',
+  model_confidence STRING COMMENT 'Model confidence for predicted_vessel_type (string, e.g. score or percentage).',
   ingested_at TIMESTAMP COMMENT 'When the metadata row was recorded (set at ingest).'
 )
 PARTITIONED BY SPEC (day(ingested_at))
