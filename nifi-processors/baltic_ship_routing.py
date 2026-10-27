@@ -18,8 +18,11 @@ from baltic_water_placement import (
 
 _GEOD = Geod(ellps="WGS84")
 
-# ~0.06° ≈ 3–4 nm — waypoint reached
-WAYPOINT_ARRIVAL_DEG = 0.06
+# One NiFi processor invocation ≈ this much simulated time (not wall clock).
+SIMULATION_HOURS_PER_TICK = 5.0 / 60.0  # 5 minutes
+
+# Waypoint reached when within this geodesic distance (m).
+WAYPOINT_ARRIVAL_M = 2_500.0
 
 _MAX_SEED_HOP_M = 160_000
 _MAX_ROUTE_HOPS = 32
@@ -125,12 +128,16 @@ def move_towards_on_water(
     lon2: float,
     speed_knots: float,
     substeps: int = 8,
+    hours: float | None = None,
 ) -> Tuple[float, float]:
     """Step toward the waypoint along geodesics; never snap across land."""
     lat, lon = lat1, lon1
-    step_speed = speed_knots / max(1, substeps)
+    tick_h = hours if hours is not None else SIMULATION_HOURS_PER_TICK
+    step_hours = tick_h / max(1, substeps)
     for _ in range(substeps):
-        nlat, nlon = move_geodesic_knots(lon, lat, lon2, lat2, step_speed)
+        nlat, nlon = move_geodesic_knots(
+            lon, lat, lon2, lat2, speed_knots, hours=step_hours
+        )
         if is_baltic_water(nlon, nlat):
             lat, lon = nlat, nlon
         else:
@@ -274,6 +281,27 @@ def _fallback_dense_route(
     return route
 
 
+def _trim_passed_waypoints(ship: Dict[str, Any]) -> None:
+    """Drop waypoints already behind the vessel (avoids snapping back to wp[0])."""
+    wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
+    if not wps:
+        return
+    idx = int(ship.get("RouteIndex", 0))
+    if idx > 0:
+        ship["RouteWaypoints"] = wps[idx:]
+        ship["RouteIndex"] = 0
+        return
+    lon = float(ship["Longitude"])
+    lat = float(ship["Latitude"])
+    while len(wps) > 1:
+        wlon, wlat = float(wps[0]["lon"]), float(wps[0]["lat"])
+        if not at_waypoint(lat, lon, wlat, wlon):
+            break
+        wps = wps[1:]
+    ship["RouteWaypoints"] = wps
+    ship["RouteIndex"] = 0
+
+
 def ensure_ship_route(ship: Dict[str, Any]) -> None:
     """Attach ``RouteWaypoints`` / ``RouteIndex`` if missing or invalid."""
     dest = ship.get("Destination")
@@ -281,8 +309,14 @@ def ensure_ship_route(ship: Dict[str, Any]) -> None:
         return
     start_lon = float(ship["Longitude"])
     start_lat = float(ship["Latitude"])
+    _trim_passed_waypoints(ship)
     wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
-    if wps and route_path_valid(start_lon, start_lat, wps):
+    idx = int(ship.get("RouteIndex", 0))
+    remaining = wps[idx:] if idx < len(wps) else []
+    if remaining and route_path_valid(start_lon, start_lat, remaining):
+        if idx > 0:
+            ship["RouteWaypoints"] = remaining
+            ship["RouteIndex"] = 0
         return
     ship["RouteWaypoints"] = build_sea_route(
         start_lon,
@@ -305,10 +339,8 @@ def route_target(ship: Dict[str, Any]) -> Tuple[float, float] | None:
 
 
 def at_waypoint(lat: float, lon: float, target_lat: float, target_lon: float) -> bool:
-    return (
-        abs(lat - target_lat) < WAYPOINT_ARRIVAL_DEG
-        and abs(lon - target_lon) < WAYPOINT_ARRIVAL_DEG
-    )
+    _, _, dist_m = _GEOD.inv(lon, lat, target_lon, target_lat)
+    return abs(dist_m) <= WAYPOINT_ARRIVAL_M
 
 
 def assign_new_destination(
