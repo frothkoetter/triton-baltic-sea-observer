@@ -93,7 +93,7 @@ CHANNEL_BOXES: List[Box] = [
     (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
     (12.55, 13.22, 54.44, 54.62),  # Strelasund (not Rügen upland)
-    (13.02, 13.58, 54.36, 54.52),  # Rügen SW sounds (not island interior)
+    (13.02, 13.58, 54.36, 54.50),  # Rügen SW sounds (not island interior)
     (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
     (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
     (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
