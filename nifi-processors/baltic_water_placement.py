@@ -72,6 +72,17 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (13.45, 54.42),  # Greifswalder Bodden outer
     (13.25, 54.72),  # N of Darß–Zingst (open Baltic)
     (13.6, 54.55),  # Sassnitz / Rügen sound
+    (13.85, 54.88),  # N of Rügen / Wolin offshore
+    (14.85, 55.12),  # E Arkona / W Bornholm passage
+    (15.75, 55.32),  # E of Bornholm
+    (12.05, 56.45),  # Kattegat mid (links W Baltic to E via Øresund)
+    (12.82, 54.57),  # Strelasund fairway
+    (12.96, 54.59),
+    (13.12, 54.58),
+    (13.28, 54.60),
+    (13.48, 54.70),
+    (13.62, 54.84),
+    (18.2, 56.25),
 ]
 
 # Narrow fairways — treated as sea for routing/placement (overrides island boxes).
@@ -81,11 +92,16 @@ CHANNEL_BOXES: List[Box] = [
     (24.68, 25.35, 59.40, 59.88),  # Tallinn–Helsinki mid-channel (not Harju hinterland)
     (22.85, 23.65, 58.82, 59.18),  # N of Pakri / Paldiski approaches
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
-    (12.55, 13.18, 54.44, 54.60),  # Strelasund
+    (12.55, 13.22, 54.44, 54.62),  # Strelasund (not Rügen upland)
     (13.02, 13.58, 54.36, 54.52),  # Rügen SW sounds (not island interior)
     (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
     (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
     (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
+    (13.22, 13.78, 54.56, 54.74),  # Greifswalder Bodden / SE Rügen fairway
+    (13.35, 14.55, 54.76, 55.08),  # E of Rügen / Wolin approaches (not island cores)
+    (16.2, 20.8, 55.35, 57.45),  # S-central Baltic lane (Poland–Latvia shelf; not Swedish coast)
+    (14.35, 16.85, 54.78, 55.38),  # Arkona / N & E of Bornholm (open Baltic lane)
+    (11.0, 12.65, 56.05, 57.75),  # Kattegat / Øresund approach (Baltic–Skagerrak link)
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
@@ -129,7 +145,7 @@ ISLAND_BOXES: List[Box] = [
     (23.15, 23.45, 58.88, 59.08),  # Vormsi
     (13.30, 13.75, 54.95, 55.20),  # Fehmarn
     (12.35, 12.65, 54.82, 55.02),  # Mön
-    (13.38, 13.62, 54.30, 54.48),  # Rügen land core (not Strelasund / sounds)
+    (13.18, 13.48, 54.30, 54.515),  # Rügen land core (not Strelasund / sounds)
     (13.85, 14.25, 53.85, 54.12),  # Usedom
     (14.45, 14.75, 54.28, 54.48),  # Wolin
     (20.25, 20.75, 54.72, 55.05),  # Kotlin (Kaliningrad Bay)
@@ -184,17 +200,17 @@ def _in_any(lon: float, lat: float, boxes: Sequence[Box]) -> bool:
 
 
 def is_baltic_water(lon: float, lat: float) -> bool:
-    """Sea in the Baltic basin; inland EE/LV/LT cores are excluded before open-water zones."""
+    """Sea in the Baltic basin; narrow fairways override coarse mainland boxes."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
+    if _in_any(lon, lat, CHANNEL_BOXES):
+        return True
     if (
         _in_any(lon, lat, MAINLAND_BOXES)
         or _in_any(lon, lat, ISLAND_BOXES)
         or _in_any(lon, lat, INLAND_WATER_BOXES)
     ):
         return False
-    if _in_any(lon, lat, CHANNEL_BOXES):
-        return True
     if _in_any(lon, lat, OPEN_WATER_ZONES):
         # Coastal zone rectangles overlap lakes/hinterland — require a nearby offshore seed.
         for slon, slat in OFFSHORE_SEEDS:

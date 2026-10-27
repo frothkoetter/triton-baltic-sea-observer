@@ -165,6 +165,62 @@ def _simplify_water_path(path: List[Tuple[float, float]]) -> List[Tuple[float, f
     return out
 
 
+def _bfs_water_path(
+    start_lon: float,
+    start_lat: float,
+    goal_lon: float,
+    goal_lat: float,
+    max_hop_m: float = 220_000.0,
+) -> List[Tuple[float, float]]:
+    """Breadth-first path via offshore seeds when Dijkstra graph is disconnected."""
+    nodes: List[Tuple[float, float]] = [(start_lon, start_lat)]
+    for slon, slat in OFFSHORE_SEEDS:
+        if is_baltic_water(slon, slat):
+            nodes.append((slon, slat))
+    nodes.append((goal_lon, goal_lat))
+    n = len(nodes)
+    goal_i = n - 1
+    adj: List[List[int]] = [[] for _ in range(n)]
+    for i in range(n):
+        lon1, lat1 = nodes[i]
+        for j in range(i + 1, n):
+            lon2, lat2 = nodes[j]
+            _, _, dist_m = _GEOD.inv(lon1, lat1, lon2, lat2)
+            if abs(dist_m) > max_hop_m:
+                continue
+            if leg_samples_water(lon1, lat1, lon2, lat2):
+                adj[i].append(j)
+                adj[j].append(i)
+
+    from collections import deque
+
+    prev = [-1] * n
+    prev[0] = 0
+    q: deque[int] = deque([0])
+    while q:
+        u = q.popleft()
+        if u == goal_i:
+            break
+        for v in adj[u]:
+            if prev[v] >= 0:
+                continue
+            prev[v] = u
+            q.append(v)
+
+    if prev[goal_i] < 0:
+        return []
+
+    path: List[Tuple[float, float]] = []
+    cur = goal_i
+    while cur >= 0:
+        path.append(nodes[cur])
+        if cur == 0:
+            break
+        cur = prev[cur]
+    path.reverse()
+    return _simplify_water_path(path)
+
+
 def _water_graph_path(
     start_lon: float,
     start_lat: float,
@@ -242,18 +298,23 @@ def build_sea_route(
     if not is_baltic_water(end_lon, end_lat):
         end_lon, end_lat = snap_to_baltic_water(end_lon, end_lat)
 
-    path = _water_graph_path(start_lon, start_lat, end_lon, end_lat)
-    sparse = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
-    if not route_path_valid(start_lon, start_lat, sparse):
-        sparse = _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
-    if not route_path_valid(start_lon, start_lat, sparse):
-        end_lon, end_lat = sample_water_near_harbor(harbor_lon, harbor_lat, 5.0, 18.0, seed=42)
-        path = _water_graph_path(start_lon, start_lat, end_lon, end_lat)
-        sparse = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
-    if not route_path_valid(start_lon, start_lat, sparse):
-        sparse = _fallback_dense_route(start_lon, start_lat, end_lon, end_lat)
+    sparse: List[Dict[str, float]] = []
+    for end_lon_try, end_lat_try in (
+        (end_lon, end_lat),
+        sample_water_near_harbor(harbor_lon, harbor_lat, 5.0, 18.0, seed=42),
+    ):
+        for path_fn in (_water_graph_path, _bfs_water_path):
+            path = path_fn(start_lon, start_lat, end_lon_try, end_lat_try)
+            if not path:
+                continue
+            candidate = [{"lon": lon, "lat": lat} for lon, lat in path[1:]]
+            if route_path_valid(start_lon, start_lat, candidate):
+                sparse = candidate
+                break
+        if sparse:
+            break
 
-    # Sparse waypoints only — densify_route() is for map polylines / export, not ship ticks.
+    # Never return chord-snap fallbacks — they draw straight lines over peninsulas on maps.
     return sparse
 
 
