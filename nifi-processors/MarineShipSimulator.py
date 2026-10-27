@@ -231,7 +231,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.5.8'
+        version = '1.5.9'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
