@@ -29,8 +29,8 @@ from baltic_ship_routing import (
     _destination_key,
 )
 from baltic_water_placement import (
+    harbor_departure_position,
     is_baltic_water,
-    sample_water_near_harbor,
     snap_to_baltic_water,
 )
 
@@ -122,7 +122,13 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                     ship["OriginPort"] = ship["Destination"]
                 lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
                 if not is_baltic_water(lon0, lat0):
-                    lon, lat = snap_to_baltic_water(lon0, lat0)
+                    origin = ship.get("OriginPort")
+                    if isinstance(origin, dict):
+                        lon, lat = harbor_departure_position(
+                            float(origin["Longitude"]), float(origin["Latitude"])
+                        )
+                    else:
+                        lon, lat = snap_to_baltic_water(lon0, lat0)
                     ship["Longitude"], ship["Latitude"] = lon, lat
                     ship["RouteWaypoints"] = []
                     ship["RouteIndex"] = 0
@@ -157,11 +163,9 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     ships = []
     for i in range(num_ships):
         origin = random.choice(HARBORS)
-        lon, lat = sample_water_near_harbor(
-            origin["Longitude"],
-            origin["Latitude"],
-            min_km=5.0,
-            max_km=25.0,
+        lon, lat = harbor_departure_position(
+            float(origin["Longitude"]),
+            float(origin["Latitude"]),
         )
         destination, route = pick_initial_destination_with_route(
             lon,
@@ -173,12 +177,9 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             "MMSI": 123456000 + i,
             "Latitude": lat,
             "Longitude": lon,
-            "Speed": random.uniform(1, 10),
+            "Speed": random.uniform(4.0, 10.0),
             "Course": random.uniform(0, 360),
-            "Status": random.choice([
-                "Underway using engine", "Underway", "Anchored",
-                "Moored", "Not under command"
-            ]),
+            "Status": "Underway using engine",
             "OriginPort": origin,
             "Destination": destination,
             "RouteWaypoints": route,
@@ -196,7 +197,13 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for ship in ships:
         lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
         if not is_baltic_water(lon0, lat0):
-            lon, lat = snap_to_baltic_water(lon0, lat0)
+            origin = ship.get("OriginPort")
+            if isinstance(origin, dict):
+                lon, lat = harbor_departure_position(
+                    float(origin["Longitude"]), float(origin["Latitude"])
+                )
+            else:
+                lon, lat = snap_to_baltic_water(lon0, lat0)
             ship["Longitude"], ship["Latitude"] = lon, lat
             ship["RouteWaypoints"] = []
             ship["RouteIndex"] = 0
@@ -243,7 +250,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.4'
+        version = '1.3.5'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )

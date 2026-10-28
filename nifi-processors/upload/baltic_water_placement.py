@@ -91,6 +91,7 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (18.25, 58.72),  # Stockholm offshore routing spine
     (18.55, 58.55),
     (20.85, 59.55),  # Turku / Archipelago lane
+    (21.2, 61.35),  # Gulf of Bothnia S / Pori approach
     (12.82, 54.57),  # Strelasund fairway
     (12.96, 54.59),
     (13.12, 54.58),
@@ -133,6 +134,9 @@ CHANNEL_BOXES: List[Box] = [
     (26.80, 30.20, 59.55, 60.35),  # Gulf of Finland E (Primorsk / Kotlin lanes)
     (19.85, 21.35, 59.35, 60.05),  # Åland / Turku north approach
     (18.35, 20.50, 58.45, 59.22),  # Stockholm archipelago approach (not city core)
+    (17.75, 18.55, 57.42, 57.78),  # Visby / Gotland W approach
+    (15.05, 16.35, 56.02, 56.38),  # Karlskrona archipelago approach
+    (20.0, 22.5, 61.0, 62.5),  # Gulf of Bothnia south / Pori lane
     (20.00, 23.50, 59.48, 60.35),  # Turku / Archipelago Sea lane (not Turku city)
 ]
 
@@ -153,6 +157,7 @@ OPEN_WATER_ZONES: List[Box] = [
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
     (12.6, 14.6, 54.72, 55.12),  # Arkona / Zingst offshore
+    (19.5, 22.5, 60.9, 62.8),  # Gulf of Bothnia south (Pori / Bothnian lane)
 ]
 
 # Lakes / river mouths — wet but not Baltic Sea AIS/MAD buoy placement.
@@ -226,7 +231,7 @@ MAINLAND_BOXES: List[Box] = [
     (25.05, 27.15, 59.12, 59.48),  # N Estonia inland (Rakvere, Jõhvi belt; not GoF lane)
 ]
 
-BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)
+BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 62.8)
 SEA_SEED_MAX_M = 30_000  # max distance to offshore seed to count as sea (not lakes/inland)
 
 
@@ -364,6 +369,50 @@ def _rng(seed: int | None = None) -> np.random.Generator:
 def sample_baltic_water_position(seed: int | None = None) -> Tuple[float, float]:
     """(lon, lat) on Baltic water — for simulators using the stdlib ``random`` module."""
     return random_baltic_water_position(_rng(seed))
+
+
+def harbor_departure_position(
+    port_lon: float,
+    port_lat: float,
+    *,
+    max_offset_km: float = 70.0,
+) -> Tuple[float, float]:
+    """
+    AIS sim spawn: harbor chart position, or the nearest water point within ``max_offset_km``.
+
+    Never uses ``snap_to_baltic_water`` (which can jump to open-sea seeds far from the port).
+    """
+    if is_baltic_water(port_lon, port_lat):
+        return float(port_lon), float(port_lat)
+
+    seaward = _seaward_azimuth_deg(port_lon, port_lat)
+    max_m = max(500.0, max_offset_km * 1000.0)
+    best_lon: float | None = None
+    best_lat: float | None = None
+    best_dist_m = 1e18
+
+    for dist_m in np.linspace(50.0, max_m, 120):
+        bearings: List[float] = list(np.linspace(0.0, 360.0, 48, endpoint=False))
+        bearings.extend(
+            [seaward + d for d in (-40.0, -20.0, 0.0, 20.0, 40.0)]
+        )
+        for azimuth in bearings:
+            lon, lat, _ = _GEOD.fwd(port_lon, port_lat, float(azimuth), float(dist_m))
+            if not is_baltic_water(lon, lat):
+                continue
+            _, _, d = _GEOD.inv(port_lon, port_lat, lon, lat)
+            ad = abs(d)
+            if ad < best_dist_m:
+                best_dist_m = ad
+                best_lon, best_lat = float(lon), float(lat)
+
+    if best_lon is not None and best_lat is not None:
+        return best_lon, best_lat
+
+    lon, lat, _ = _GEOD.fwd(port_lon, port_lat, seaward, min(800.0, max_m))
+    if is_baltic_water(lon, lat):
+        return float(lon), float(lat)
+    return float(port_lon), float(port_lat)
 
 
 def sample_water_near_harbor(
