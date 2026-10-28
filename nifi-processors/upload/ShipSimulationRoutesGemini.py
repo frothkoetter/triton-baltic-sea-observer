@@ -24,6 +24,8 @@ from baltic_ship_routing import (
     move_towards_on_water,
     pick_initial_destination_with_route,
     route_target,
+    warm_routing_graph,
+    _destination_key,
 )
 from baltic_water_placement import (
     is_baltic_water,
@@ -124,6 +126,9 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                     ship["RouteWaypoints"] = []
                     ship["RouteIndex"] = 0
                     ship.pop("RouteDestKey", None)
+                rdk = ship.get("RouteDestKey")
+                if isinstance(rdk, list) and len(rdk) == 2:
+                    ship["RouteDestKey"] = (float(rdk[0]), float(rdk[1]))
             return ships
     else:
         return initialize_ships(num_ships)
@@ -138,12 +143,16 @@ def save_ship_state(ships: List[Dict[str, Any]]):
             ship_copy["Destination"] = ship_copy["Destination"]["name"]
         if isinstance(ship_copy.get("OriginPort"), dict):
             ship_copy["OriginPort"] = ship_copy["OriginPort"]["name"]
+        rdk = ship.get("RouteDestKey")
+        if isinstance(rdk, (list, tuple)) and len(rdk) == 2:
+            ship_copy["RouteDestKey"] = [float(rdk[0]), float(rdk[1])]
         serializable_ships.append(ship_copy)
     with open(STATE_FILE, "w") as f:
         json.dump(serializable_ships, f)
 
 def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     """Initializes a new set of ships with random starting positions and destinations."""
+    warm_routing_graph()
     ships = []
     for i in range(num_ships):
         origin = random.choice(HARBORS)
@@ -174,7 +183,10 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             "RouteWaypoints": route,
             "RouteIndex": 0,
         }
-        ensure_ship_route(ship)
+        if route:
+            ship["RouteDestKey"] = _destination_key(destination)
+        else:
+            ensure_ship_route(ship)
         ships.append(ship)
     return ships
 
