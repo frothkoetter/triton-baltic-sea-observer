@@ -7,6 +7,7 @@ fall on coarse mainland or island boxes. Port offsets retry until water or seawa
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import List, Sequence, Tuple
 
 import numpy as np
@@ -206,7 +207,7 @@ def _in_any(lon: float, lat: float, boxes: Sequence[Box]) -> bool:
     return any(_in_box(lon, lat, b) for b in boxes)
 
 
-def is_baltic_water(lon: float, lat: float) -> bool:
+def _is_baltic_water_uncached(lon: float, lat: float) -> bool:
     """Sea in the Baltic basin; narrow fairways override coarse mainland boxes."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
@@ -219,7 +220,6 @@ def is_baltic_water(lon: float, lat: float) -> bool:
     ):
         return False
     if _in_any(lon, lat, OPEN_WATER_ZONES):
-        # Coastal zone rectangles overlap lakes/hinterland — require a nearby offshore seed.
         for slon, slat in OFFSHORE_SEEDS:
             _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
             if abs(dist_m) <= SEA_SEED_MAX_M:
@@ -230,6 +230,16 @@ def is_baltic_water(lon: float, lat: float) -> bool:
         if abs(dist_m) <= SEA_SEED_MAX_M:
             return True
     return False
+
+
+@lru_cache(maxsize=131_072)
+def _is_baltic_water_cached(lon_q: float, lat_q: float) -> bool:
+    return _is_baltic_water_uncached(lon_q, lat_q)
+
+
+def is_baltic_water(lon: float, lat: float) -> bool:
+    """Sea in the Baltic basin (result memoized on ~11 m grid)."""
+    return _is_baltic_water_cached(round(float(lon), 4), round(float(lat), 4))
 
 
 def random_baltic_water_position(

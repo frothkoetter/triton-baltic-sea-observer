@@ -54,7 +54,7 @@ Writes to **`dev/samples/`**. Open in CloudCompare; color by **Classification**.
 
 On NiFi, shared **`upload/requirements.txt`** is minimal (**numpy**); each processor adds **`ProcessorDetails.dependencies`** (`pyproj`, `laspy`, `faker`, …).
 
-**Ship AIS:** Only **`upload/ShipSimulationRoutesGemini.py`** for `ShipSimulationProcessor` (**1.3.0**). No legacy duplicate AIS modules. Each GenerateFlowFile tick (**1 min** in the default flow) = **1 hour** simulated time (`SIMULATION_HOURS_PER_TICK` in `baltic_ship_routing.py`).
+**Ship AIS:** Only **`upload/ShipSimulationRoutesGemini.py`** for `ShipSimulationProcessor` (**1.3.1**). No legacy duplicate AIS modules. **`MarineShipSimulator` 1.6.3** shares the same routing fast path. Each GenerateFlowFile tick (**1 min**) = **1 hour** simulated time. After upgrading from 1.3.0 / 1.6.2, run route state reset or delete `/tmp/ship_state.json` and `/tmp/marineship_state.json` once so `RouteDestKey` is populated.
 
 **Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`).
 

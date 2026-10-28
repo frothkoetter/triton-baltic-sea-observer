@@ -131,7 +131,7 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 ship["Longitude"], ship["Latitude"] = lon, lat
                 ship["RouteWaypoints"] = []
                 ship["RouteIndex"] = 0
-            ensure_ship_route(ship)
+                ship.pop("RouteDestKey", None)
         return ships
     else:
         return initialize_ships(num_ships)
@@ -195,10 +195,9 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             ship["Longitude"], ship["Latitude"] = lon, lat
             ship["RouteWaypoints"] = []
             ship["RouteIndex"] = 0
+            ship.pop("RouteDestKey", None)
+        ensure_ship_route(ship)
         target = route_target(ship)
-        if target is None:
-            ensure_ship_route(ship)
-            target = route_target(ship)
         if target is None:
             continue
         target_lat, target_lon = target
@@ -237,7 +236,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.6.2'
+        version = '1.6.3'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )
