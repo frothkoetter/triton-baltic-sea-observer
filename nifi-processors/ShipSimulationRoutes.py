@@ -103,7 +103,7 @@ def move_towards(lat1, lon1, lat2, lon2, speed):
     dist_deg = math.hypot(delta_lat, delta_lon)
     if dist_deg == 0:
         return lat2, lon2
-    move_deg = (speed / 60.0) * 0.1
+    move_deg = (speed / 60.0)  # 1 NiFi tick = 1 h simulated (see baltic_ship_routing)
     ratio = move_deg / dist_deg
     return lat1 + delta_lat * ratio, lon1 + delta_lon * ratio
 

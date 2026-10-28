@@ -18,8 +18,8 @@ from baltic_water_placement import (
 
 _GEOD = Geod(ellps="WGS84")
 
-# One NiFi processor invocation ≈ this much simulated time (not wall clock).
-SIMULATION_HOURS_PER_TICK = 5.0 / 60.0  # 5 minutes
+# One NiFi GenerateFlowFile tick (typically 1 min wall clock) advances this much simulated time.
+SIMULATION_HOURS_PER_TICK = 1.0  # 1 hour
 
 # Waypoint reached when within this geodesic distance (m).
 WAYPOINT_ARRIVAL_M = 2_500.0
