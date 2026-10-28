@@ -2,7 +2,12 @@
     name: 'lidar-vessel-classifier',
     skipInAirgap: true,
     scripts: [
+        'entry.py',
         'fit.py',
-        'predict.py'
+        'train.py',
+        'predict.py',
+        'classify.py',
+        'predict_with_metrics.py',
+        'use_model_metrics.py'
     ]
 }
