@@ -1,0 +1,9 @@
+{
+    name: 'ais-outlier-detector',
+    skipInAirgap: true,
+    scripts: [
+        'fit.py',
+        'predict.py',
+        'predict_array.py'
+    ]
+}

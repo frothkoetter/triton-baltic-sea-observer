@@ -12,6 +12,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `MessengerSimulator.py` | Messenger sim |
 | `gpsjammer.py` | GPS jamming sim |
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state |
+| `AisOutlierCmlInvoke.py` | POST AIS batch to CML **ais-outlier-detector** model (JSON array out) |
 | `baltic_water_placement.py` | Water / land mask (shared) |
 | `baltic_ship_routing.py` | Sea routes (AIS + marine) |
 | `baltic_ship_sim_state.py` | Route reset helpers + AIS state path |
