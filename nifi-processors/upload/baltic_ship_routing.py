@@ -30,6 +30,41 @@ _LEG_SAMPLES = 16
 _DENSIFY_STEP_M = 25_000
 _NM_TO_M = 1852.0
 
+# Cached sea routes between coarse start/goal cells (routing is expensive).
+_ROUTE_CACHE: Dict[Tuple[float, float, float, float], List[Dict[str, float]]] = {}
+_ROUTE_CACHE_MAX = 512
+
+
+def _destination_key(dest: Dict[str, Any]) -> Tuple[float, float]:
+    return (round(float(dest["Longitude"]), 3), round(float(dest["Latitude"]), 3))
+
+
+def _route_cache_key(
+    start_lon: float,
+    start_lat: float,
+    harbor_lon: float,
+    harbor_lat: float,
+) -> Tuple[float, float, float, float]:
+    return (
+        round(start_lon, 2),
+        round(start_lat, 2),
+        round(harbor_lon, 2),
+        round(harbor_lat, 2),
+    )
+
+
+def _cache_get_route(key: Tuple[float, float, float, float]) -> List[Dict[str, float]] | None:
+    hit = _ROUTE_CACHE.get(key)
+    if hit is None:
+        return None
+    return [dict(wp) for wp in hit]
+
+
+def _cache_put_route(key: Tuple[float, float, float, float], waypoints: List[Dict[str, float]]) -> None:
+    if len(_ROUTE_CACHE) >= _ROUTE_CACHE_MAX:
+        _ROUTE_CACHE.pop(next(iter(_ROUTE_CACHE)))
+    _ROUTE_CACHE[key] = [dict(wp) for wp in waypoints]
+
 
 def _route_waypoints_valid(waypoints: List[Dict[str, float]]) -> bool:
     if not waypoints:
@@ -299,6 +334,11 @@ def build_sea_route(
         end_lon, end_lat = snap_to_baltic_water(end_lon, end_lat)
 
     sparse: List[Dict[str, float]] = []
+    cache_key = _route_cache_key(start_lon, start_lat, harbor_lon, harbor_lat)
+    cached = _cache_get_route(cache_key)
+    if cached is not None:
+        return cached
+
     for end_lon_try, end_lat_try in (
         (end_lon, end_lat),
         sample_water_near_harbor(harbor_lon, harbor_lat, 5.0, 18.0, seed=42),
@@ -314,6 +354,7 @@ def build_sea_route(
         if sparse:
             break
 
+    _cache_put_route(cache_key, sparse)
     # Never return chord-snap fallbacks — they draw straight lines over peninsulas on maps.
     return sparse
 
@@ -363,22 +404,33 @@ def _trim_passed_waypoints(ship: Dict[str, Any]) -> None:
     ship["RouteIndex"] = 0
 
 
-def ensure_ship_route(ship: Dict[str, Any]) -> None:
+def ensure_ship_route(ship: Dict[str, Any], *, force_rebuild: bool = False) -> None:
     """Attach ``RouteWaypoints`` / ``RouteIndex`` if missing or invalid."""
     dest = ship.get("Destination")
     if not isinstance(dest, dict):
         return
     start_lon = float(ship["Longitude"])
     start_lat = float(ship["Latitude"])
+    dest_key = _destination_key(dest)
     _trim_passed_waypoints(ship)
     wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
     idx = int(ship.get("RouteIndex", 0))
+
+    if not force_rebuild and wps and idx < len(wps):
+        if ship.get("RouteDestKey") == dest_key:
+            return
+        if ship.get("RouteDestKey") is None:
+            ship["RouteDestKey"] = dest_key
+            return
+
     remaining = wps[idx:] if idx < len(wps) else []
-    if remaining and route_path_valid(start_lon, start_lat, remaining):
+    if not force_rebuild and remaining and route_path_valid(start_lon, start_lat, remaining):
         if idx > 0:
             ship["RouteWaypoints"] = remaining
             ship["RouteIndex"] = 0
+        ship["RouteDestKey"] = dest_key
         return
+
     ship["RouteWaypoints"] = build_sea_route(
         start_lon,
         start_lat,
@@ -386,11 +438,11 @@ def ensure_ship_route(ship: Dict[str, Any]) -> None:
         float(dest["Latitude"]),
     )
     ship["RouteIndex"] = 0
+    ship["RouteDestKey"] = dest_key
 
 
 def route_target(ship: Dict[str, Any]) -> Tuple[float, float] | None:
     """Current (lat, lon) waypoint, or None if route is empty."""
-    ensure_ship_route(ship)
     wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
     idx = int(ship.get("RouteIndex", 0))
     if idx >= len(wps):
@@ -419,6 +471,7 @@ def assign_new_destination(
         float(harbor["Latitude"]),
     )
     ship["RouteIndex"] = 0
+    ship["RouteDestKey"] = _destination_key(harbor)
     if depart:
         ship["Status"] = "Underway using engine"
         ship["Speed"] = max(float(ship.get("Speed") or 0), random.uniform(4.0, 12.0))
@@ -438,8 +491,7 @@ def advance_route_or_arrive(
 
     Returns True if the ship arrived at the final waypoint (anchorage).
     """
-    ensure_ship_route(ship)
-    wps: List[Dict[str, float]] = ship["RouteWaypoints"]
+    wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
     idx = int(ship.get("RouteIndex", 0))
     if idx >= len(wps):
         return True
