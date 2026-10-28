@@ -21,6 +21,7 @@ from baltic_ship_routing import (
     advance_route_or_arrive,
     ensure_ship_route,
     move_towards_on_water,
+    pick_initial_destination_with_route,
     route_target,
 )
 from baltic_water_placement import (
@@ -156,8 +157,6 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     for i in range(num_ships):
         unit = fleet_unit_for_index(i)
         origin = random.choice(HARBORS)
-        others = [h for h in HARBORS if h["name"] != origin["name"]]
-        destination = random.choice(others)
         initial_status = random.choice(["Underway using engine", "Underway", "Anchored", "Moored", "Not under command"])
         initial_depth = 0.0 if initial_status == "Moored" else random.uniform(5.0, 15.0)
         lon, lat = sample_water_near_harbor(
@@ -165,6 +164,12 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             origin["Latitude"],
             min_km=5.0,
             max_km=25.0,
+        )
+        destination, route = pick_initial_destination_with_route(
+            lon,
+            lat,
+            HARBORS,
+            origin["name"],
         )
         ship = {
             "Name": unit["name"],
@@ -179,7 +184,7 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             "Depth": initial_depth,
             "Operational_Status": random.choice(OPERATIONAL_STATUS_OPTIONS),
             "System_Status": random.choice(SYSTEM_STATUS_OPTIONS),
-            "RouteWaypoints": [],
+            "RouteWaypoints": route,
             "RouteIndex": 0,
         }
         ensure_ship_route(ship)
@@ -236,7 +241,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.6.3'
+        version = '1.6.4'
         description = (
             'Baltic harbor traffic with water-only waypoints (no overland routes).'
         )

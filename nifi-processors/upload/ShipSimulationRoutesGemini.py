@@ -22,6 +22,7 @@ from baltic_ship_routing import (
     advance_route_or_arrive,
     ensure_ship_route,
     move_towards_on_water,
+    pick_initial_destination_with_route,
     route_target,
 )
 from baltic_water_placement import (
@@ -146,13 +147,17 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     ships = []
     for i in range(num_ships):
         origin = random.choice(HARBORS)
-        others = [h for h in HARBORS if h["name"] != origin["name"]]
-        destination = random.choice(others)
         lon, lat = sample_water_near_harbor(
             origin["Longitude"],
             origin["Latitude"],
             min_km=5.0,
             max_km=25.0,
+        )
+        destination, route = pick_initial_destination_with_route(
+            lon,
+            lat,
+            HARBORS,
+            origin["name"],
         )
         ship = {
             "MMSI": 123456000 + i,
@@ -166,7 +171,7 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
             ]),
             "OriginPort": origin,
             "Destination": destination,
-            "RouteWaypoints": [],
+            "RouteWaypoints": route,
             "RouteIndex": 0,
         }
         ensure_ship_route(ship)
@@ -223,7 +228,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.1'
+        version = '1.3.2'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )
