@@ -68,7 +68,7 @@ class TestBalticShipRouting(unittest.TestCase):
             )
             if route:
                 ok += 1
-        self.assertGreaterEqual(ok, 34, f"only {ok}/50 ships got routes")
+        self.assertGreaterEqual(ok, 45, f"only {ok}/50 ships got routes")
 
 
 if __name__ == "__main__":

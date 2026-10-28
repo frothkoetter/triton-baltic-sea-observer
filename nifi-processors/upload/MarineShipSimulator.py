@@ -22,6 +22,7 @@ from baltic_ship_routing import (
     ensure_ship_route,
     move_towards_on_water,
     pick_initial_destination_with_route,
+    repair_ship_route,
     route_target,
 )
 from baltic_water_placement import (
@@ -202,6 +203,8 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             ship["RouteIndex"] = 0
             ship.pop("RouteDestKey", None)
         ensure_ship_route(ship)
+        if route_target(ship) is None:
+            repair_ship_route(ship, HARBORS)
         target = route_target(ship)
         if target is None:
             continue
