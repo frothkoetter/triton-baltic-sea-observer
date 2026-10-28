@@ -12,6 +12,7 @@ from pyproj import Geod
 from baltic_water_placement import (
     CHANNEL_BOXES,
     OFFSHORE_SEEDS,
+    harbor_departure_position,
     is_baltic_water,
     sample_baltic_water_position,
     sample_water_near_harbor,
@@ -486,6 +487,41 @@ def repair_ship_route(ship: Dict[str, Any], harbors: List[Dict[str, Any]]) -> bo
     return assign_routable_destination(ship, harbors, prefer_current=True)
 
 
+def relocate_ship_to_origin(ship: Dict[str, Any]) -> bool:
+    """Move the vessel to its origin harbor berth (for stuck / unroutable positions)."""
+    origin = ship.get("OriginPort")
+    if not isinstance(origin, dict):
+        return False
+    lon, lat = harbor_departure_position(
+        float(origin["Longitude"]),
+        float(origin["Latitude"]),
+    )
+    ship["Longitude"] = lon
+    ship["Latitude"] = lat
+    ship["RouteWaypoints"] = []
+    ship["RouteIndex"] = 0
+    ship.pop("RouteDestKey", None)
+    return True
+
+
+def recover_stuck_ship_route(ship: Dict[str, Any], harbors: List[Dict[str, Any]]) -> bool:
+    """Repair route; if impossible from current position, reset to origin harbor and retry."""
+    start_lon = float(ship["Longitude"])
+    start_lat = float(ship["Latitude"])
+    wps: List[Dict[str, float]] = ship.get("RouteWaypoints") or []
+    idx = int(ship.get("RouteIndex", 0))
+    tail = wps[idx:] if idx < len(wps) else []
+    if tail and not route_path_valid(start_lon, start_lat, tail):
+        ship["RouteWaypoints"] = []
+        ship["RouteIndex"] = 0
+        ship.pop("RouteDestKey", None)
+    if repair_ship_route(ship, harbors):
+        return True
+    if relocate_ship_to_origin(ship):
+        return repair_ship_route(ship, harbors)
+    return False
+
+
 def _route_cache_key(
     start_lon: float,
     start_lat: float,
@@ -753,7 +789,12 @@ def _trim_passed_waypoints(ship: Dict[str, Any]) -> None:
     ship["RouteIndex"] = 0
 
 
-def ensure_ship_route(ship: Dict[str, Any], *, force_rebuild: bool = False) -> None:
+def ensure_ship_route(
+    ship: Dict[str, Any],
+    *,
+    force_rebuild: bool = False,
+    harbors: List[Dict[str, Any]] | None = None,
+) -> None:
     """Attach ``RouteWaypoints`` / ``RouteIndex`` if missing or invalid."""
     dest = ship.get("Destination")
     if not isinstance(dest, dict):
@@ -787,8 +828,17 @@ def ensure_ship_route(ship: Dict[str, Any], *, force_rebuild: bool = False) -> N
         float(dest["Latitude"]),
     )
     ship["RouteIndex"] = 0
-    ship["RouteDestKey"] = dest_key
-    if not ship["RouteWaypoints"]:
+    if ship["RouteWaypoints"] and route_path_valid(
+        start_lon, start_lat, ship["RouteWaypoints"]
+    ):
+        ship["RouteDestKey"] = dest_key
+        return
+    ship["RouteWaypoints"] = []
+    ship["RouteIndex"] = 0
+    ship.pop("RouteDestKey", None)
+    if harbors and assign_routable_destination(ship, harbors, prefer_current=True):
+        return
+    if not ship.get("RouteWaypoints"):
         ship.pop("RouteDestKey", None)
 
 
@@ -839,14 +889,19 @@ def pick_initial_destination_with_route(
         dest = ship["Destination"]
         assert isinstance(dest, dict)
         return dest, list(ship.get("RouteWaypoints") or [])
-    dest = random.choice(candidates)
-    route = build_sea_route(
-        start_lon,
-        start_lat,
-        float(dest["Longitude"]),
-        float(dest["Latitude"]),
-    )
-    return dest, route
+    for h in candidates:
+        ship["Destination"] = h
+        ship["RouteWaypoints"] = []
+        ship.pop("RouteDestKey", None)
+        if assign_routable_destination(
+            ship,
+            harbors,
+            prefer_current=True,
+        ):
+            dest = ship["Destination"]
+            assert isinstance(dest, dict)
+            return dest, list(ship.get("RouteWaypoints") or [])
+    return origin_h, []
 
 
 def assign_new_destination(
@@ -858,17 +913,11 @@ def assign_new_destination(
 ) -> None:
     """Set destination harbor and rebuild a water route from the current position."""
     ship["Destination"] = harbor
-    if assign_routable_destination(ship, harbors, prefer_current=True):
-        pass
-    else:
-        ship["RouteWaypoints"] = build_sea_route(
-            float(ship["Longitude"]),
-            float(ship["Latitude"]),
-            float(harbor["Longitude"]),
-            float(harbor["Latitude"]),
-        )
+    if not assign_routable_destination(ship, harbors, prefer_current=True):
+        ship["RouteWaypoints"] = []
         ship["RouteIndex"] = 0
-        ship["RouteDestKey"] = _destination_key(harbor)
+        ship.pop("RouteDestKey", None)
+        assign_routable_destination(ship, harbors, prefer_current=False)
     if depart:
         ship["Status"] = "Underway using engine"
         ship["Speed"] = max(float(ship.get("Speed") or 0), random.uniform(4.0, 12.0))

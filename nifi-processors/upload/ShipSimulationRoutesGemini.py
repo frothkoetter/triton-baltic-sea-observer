@@ -23,7 +23,9 @@ from baltic_ship_routing import (
     ensure_ship_route,
     move_towards_on_water,
     pick_initial_destination_with_route,
+    recover_stuck_ship_route,
     repair_ship_route,
+    route_path_valid,
     route_target,
     warm_routing_graph,
     _destination_key,
@@ -136,6 +138,15 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                 rdk = ship.get("RouteDestKey")
                 if isinstance(rdk, list) and len(rdk) == 2:
                     ship["RouteDestKey"] = (float(rdk[0]), float(rdk[1]))
+                wps = ship.get("RouteWaypoints") or []
+                idx = int(ship.get("RouteIndex", 0))
+                tail = wps[idx:] if idx < len(wps) else []
+                if tail and not route_path_valid(
+                    float(ship["Longitude"]), float(ship["Latitude"]), tail
+                ):
+                    ship["RouteWaypoints"] = []
+                    ship["RouteIndex"] = 0
+                    ship.pop("RouteDestKey", None)
             return ships
     else:
         return initialize_ships(num_ships)
@@ -208,9 +219,9 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             ship["RouteWaypoints"] = []
             ship["RouteIndex"] = 0
             ship.pop("RouteDestKey", None)
-        ensure_ship_route(ship)
+        ensure_ship_route(ship, harbors=HARBORS)
         if route_target(ship) is None:
-            repair_ship_route(ship, HARBORS)
+            recover_stuck_ship_route(ship, HARBORS)
         target = route_target(ship)
         if target is None:
             continue
@@ -250,7 +261,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.5'
+        version = '1.3.6'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )
