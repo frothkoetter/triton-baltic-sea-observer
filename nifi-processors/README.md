@@ -1,66 +1,63 @@
 # NiFi Python processors
 
-These scripts run inside Apache NiFi (Python processors) or locally for development.
+Layout:
 
-## Local setup (LiDAR simulator and others)
+| Directory | Purpose |
+|-----------|---------|
+| **`upload/`** | **Sync this folder only** to NiFi `python/extensions/` (Python Auto-Loader / S3). |
+| **`tests/`** | Regression tests — not uploaded to NiFi. |
+| **`dev/`** | Local LAS export, legacy scripts, `requirements-dev.txt`. |
 
-From the repository root, with your virtualenv activated:
+See **`upload/README.md`** for the file list and roles.
+
+## Local setup
 
 ```bash
-cd nifi-processors
+cd nifi-processors/dev
 python3 -m pip install -r requirements-dev.txt
-python3 LidarSimulator.py
+PYTHONPATH=../upload python3 ../upload/LidarSimulator.py
 ```
 
 `LidarSimulator.py` needs **laspy** and **pyproj** (in `requirements-dev.txt`; NiFi installs them via `ProcessorDetails.dependencies`).
 
-Each run generates **one random vessel type** as EPSG:4326 LAS. Scene centers are placed on **Baltic Sea water** (offshore seeds / sea zones; not uniform land boxes). About **10%** of runs are **unclassified** (LAS class `0`, `lidar.vessel_type` / `lidar.vessel_name` = `undefined`) with the center **5–20 km** offshore from a major port. Optional **Random Seed** and **Unclassified Fraction** control repeatability and the unclassified rate.
+Each LiDAR run generates **one random vessel type** as EPSG:4326 LAS on Baltic water. About **10%** of runs are **unclassified** (class `0`). Optional **Random Seed** and **Unclassified Fraction** on the processor.
 
 | Error | Fix |
 |-------|-----|
-| `No module named 'laspy'` | `python3 -m pip install -r requirements-dev.txt` |
-| `No module named 'pyproj'` but pip installed **pyroj** | Wrong package — `requirements.txt` line 5 must be `pyproj`, not `pyroj`. Run: `python3 -m pip uninstall pyroj -y && python3 -m pip install pyproj` |
+| `No module named 'laspy'` | `pip install -r dev/requirements-dev.txt` |
+| Wrong **pyroj** package | Uninstall pyroj; `pip install pyproj` |
 
-Output in the current directory:
-
-| File | Use |
-|------|-----|
-| `baltic_fleet.las` | WGS84 lon/lat (EPSG:4326) for NiFi and GIS pipelines |
-| `baltic_fleet_enu.las` | UTM meters (EPSG:32635) for **3D viewers** |
-
-### Viewing in 3D
-
-Open **`baltic_fleet_enu.las`** in [CloudCompare](https://www.cloudcompare.org/) (or similar). Color points by **Classification** (1–9 = vessel types).
-
-Do **not** use a plain 3D plot of `baltic_fleet.las` with lon/lat on X/Y and height on Z without reprojection — degrees and meters share the same axis, so ships look like flat smears, not hulls.
-
-The geometry is **parametric** (hull + superstructure silhouettes), not CAD mesh models of real vessels.
-
-### One LAS per vessel type
+### Tests
 
 ```bash
-python3 export_vessel_samples.py
-ls samples/
+cd nifi-processors
+PYTHONPATH=upload:tests python3 -m unittest discover -s tests -p 'test_*.py' -v
+PYTHONPATH=upload:tests python3 tests/test_baltic_ship_routing.py
 ```
 
-Creates `samples/sample_oil_tanker.las`, … `sample_landing_ship.las`, and `samples/all_vessel_types_enu.las` (3×3 grid). Color by **Classification** 1–9 in CloudCompare.
+Coast pins live in **`tests/baltic_coast_pins.py`** (tests only).
 
-## NiFi runtime
+### Vessel LAS samples (dev)
 
-On NiFi, declare processor dependencies in each processor’s `ProcessorDetails.dependencies` (see `LidarSimulator`). NiFi also installs shared `requirements.txt` (keep it minimal — **numpy only**) plus those deps into each processor venv under `/var/opt/nifi/python/work/extensions/`.
+```bash
+cd nifi-processors/dev
+PYTHONPATH=../upload python3 export_vessel_samples.py
+```
 
-**LiDAR validation / `Failed to install requirements for LidarSimulator` (pip return code 1):** In `nifi-app.log`, scroll above the `RuntimeError` for `OSError: [Errno 28] No space left on device`. The main consumer is usually **Python processor venvs** under `/var/opt/nifi/python/work/extensions/` (pip installs numpy/laspy/pyproj per processor), not LAS output. Fix: free disk there (`rm -rf` stale version dirs), deploy minimal `requirements.txt`, restart the processor.
+Writes to **`dev/samples/`**. Open in CloudCompare; color by **Classification**.
 
-**LiDAR temp files:** Each run writes one `.las` under a `lidar_sim_*` temp directory, loads it into the FlowFile, then deletes the directory (v4.2.1+). Older builds used `mkdtemp` without cleanup and could leak under `/tmp` if scheduled often. Downstream **PutHDFS / PutIceberg** storage is separate from the NiFi pod disk.
+## NiFi deploy
 
-The `LidarSimulator` class must live at **module top level** (not inside `if` blocks) or NiFi will not list it in the processor palette after S3 sync.
+1. Upload **contents of `upload/`** (flat — no `upload/` prefix on the cluster).
+2. Do **not** upload `tests/`, `dev/`, or `test_*.py`.
+3. Reload Python extensions after changes.
 
-`baltic_water_placement.py` uses coarse **MAINLAND_BOXES** and **ISLAND_BOXES** (Gotland, Åland, Saaremaa, Rügen, etc.) so open-water zones and random seeds do not treat islands as sea. Redeploy this file whenever placement logic changes.
+On NiFi, shared **`upload/requirements.txt`** is minimal (**numpy**); each processor adds **`ProcessorDetails.dependencies`** (`pyproj`, `laspy`, `faker`, …).
 
-Upload **`baltic_water_placement.py`** and **`baltic_ship_routing.py`** with processors that import them (`MarineShipSimulator.py`, `ShipSimulationRoutesGemini.py`, `STANAGSimulator.py`, `BojenSensorSimulator.py`, plus `lidar_vessel_geometry.py` for `LidarSimulator.py`). Each processor adds the extensions directory to `sys.path` on load (NiFi runs them in isolated venvs). All files share one Python extensions directory. Restart or reload extensions after upload.
+**Ship AIS:** Only **`upload/ShipSimulationRoutesGemini.py`** for `ShipSimulationProcessor` (**1.3.0**). No legacy duplicate AIS modules. Each GenerateFlowFile tick (**1 min** in the default flow) = **1 hour** simulated time (`SIMULATION_HOURS_PER_TICK` in `baltic_ship_routing.py`).
 
-**Ship AIS:** Deploy only **`ShipSimulationRoutesGemini.py`** for `ShipSimulationProcessor` (**1.3.0**). Do **not** upload legacy `ShipSimulation.py` or `ShipSimulationRoutes.py` (duplicate type / syntax errors). `MarineShipSimulator` (**1.6.2**) and `ShipSimulationProcessor` route via offshore waypoints. Each NiFi tick (GenerateFlowFile **1 min** in the default flow) advances **1 hour** of simulated time (`SIMULATION_HOURS_PER_TICK` in `baltic_ship_routing.py`). Any processor that imports `baltic_water_placement.py` must declare **`pyproj`** in `ProcessorDetails.dependencies` (LiDAR, STANAG, Marine, Bojen, Gemini ship sim). Deploy `baltic_water_placement.py` + `baltic_ship_routing.py` with them. After upgrade, delete stale state on NiFi nodes: `/tmp/ship_state.json`, `/tmp/marineship_state.json`. If the flow shows a **Ghost** `ShipSimulationProcessor`, set the processor bundle version to **1.3.0** (matches `ProcessorDetails.version` in `ShipSimulationRoutesGemini.py`) and remove old extension files from the NiFi python/extensions folder.
+**Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`).
 
-**Coast / island regression:** `python3 -m unittest test_baltic_water_placement.py` (pins in `baltic_coast_pins.py`; extend when map review finds land leakage).
+**LiDAR disk:** Failed pip installs often trace to **`No space left on device`** under `/var/opt/nifi/python/work/extensions/`. Keep **`requirements.txt`** minimal; prune stale venv dirs.
 
-**Route state reset:** `BalticShipRouteStateReset` (**1.0.0**, deploy **`BalticShipRouteStateReset.py`** with **`baltic_ship_sim_state.py`** and **`marine_fleet_registry.py`**) clears only `/tmp/ship_state.json` and `/tmp/marineship_state.json`, or empties `RouteWaypoints` / `RouteIndex` in place. **If the processor does not appear in the NiFi palette**, check `nifi-app.log` for `Downloaded external resource BalticShipRouteStateReset.py` — the CDF Python Auto-Loader must sync every file listed in **`PYTHON_EXTENSIONS_MANIFEST.txt`** (this module was missing from the cluster bundle in Oct 2026 diagnostics while `baltic_ship_sim_state.py` was present). Wire the processor on a manual **GenerateFlowFile** or run after deployments.
+**Ghost processor:** If the flow references an old bundle (e.g. **1.2.9**), set **`ShipSimulationProcessor`** to **1.3.0** and remove obsolete extension files from the node.
