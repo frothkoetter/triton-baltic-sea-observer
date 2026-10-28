@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import heapq
 import random
+from functools import lru_cache
 from typing import Any, Dict, List, Tuple
 
 from pyproj import Geod
@@ -28,6 +29,8 @@ WAYPOINT_ARRIVAL_M = 2_500.0
 _MAX_SEED_HOP_M = 320_000  # ~173 nm; Gedser/Arkona + cross-basin seed hops
 _BFS_MAX_HOP_M = 320_000
 _STATIC_GRAPH_MAX_EDGE_M = 120_000  # fairway chains; still spans Irbe–GoF ladder hops
+_STATIC_ATTACH_MAX_M = 120_000
+_STATIC_ATTACH_LIMIT = 10
 _HARBOR_APPROACH_SAMPLES = 6
 _STEP_ROUTE_M = 22_000
 _MAX_STEP_ROUTE_STEPS = 72
@@ -198,6 +201,12 @@ _STATIC_GRAPH_NODES: List[Tuple[float, float]] | None = None
 _STATIC_GRAPH_ADJ: List[List[Tuple[int, float]]] | None = None
 
 
+def warm_routing_graph() -> None:
+    """Precompute the fairway graph (call once before batch route builds)."""
+    _ensure_static_routing_graph()
+    _main_routing_seed_indexes()
+
+
 def _ensure_static_routing_graph() -> None:
     global _STATIC_GRAPH_NODES, _STATIC_GRAPH_ADJ
     if _STATIC_GRAPH_NODES is not None:
@@ -261,12 +270,12 @@ def _dijkstra_path(
     return _simplify_water_path(path)
 
 
-def _path_with_static_graph(
+def _path_with_static_graph_impl(
     start_lon: float,
     start_lat: float,
     goal_lon: float,
     goal_lat: float,
-) -> List[Tuple[float, float]]:
+) -> Tuple[Tuple[float, float], ...]:
     _ensure_static_routing_graph()
     assert _STATIC_GRAPH_NODES is not None
     assert _STATIC_GRAPH_ADJ is not None
@@ -293,13 +302,13 @@ def _path_with_static_graph(
             lon_b, lat_b = nodes[j]
             _, _, dist_m = _GEOD.inv(lon_a, lat_a, lon_b, lat_b)
             dist_m = abs(dist_m)
-            if dist_m > _MAX_SEED_HOP_M:
+            if dist_m > _STATIC_ATTACH_MAX_M:
                 continue
             near.append((dist_m, j))
         near.sort(key=lambda x: x[0])
         attached = 0
-        for _, j in near:
-            if attached >= 18:
+        for _, j in near[: _STATIC_ATTACH_LIMIT * 3]:
+            if attached >= _STATIC_ATTACH_LIMIT:
                 break
             lon_b, lat_b = nodes[j]
             if not leg_samples_water(lon_a, lat_a, lon_b, lat_b):
@@ -308,7 +317,33 @@ def _path_with_static_graph(
             adj[idx].append((j, w))
             adj[j].append((idx, w))
             attached += 1
-    return _dijkstra_path(nodes, adj, start_i, goal_i)
+    path = _dijkstra_path(nodes, adj, start_i, goal_i)
+    return tuple(path)
+
+
+@lru_cache(maxsize=512)
+def _path_with_static_graph_cached(
+    start_lon: float,
+    start_lat: float,
+    goal_lon: float,
+    goal_lat: float,
+) -> Tuple[Tuple[float, float], ...]:
+    return _path_with_static_graph_impl(start_lon, start_lat, goal_lon, goal_lat)
+
+
+def _path_with_static_graph(
+    start_lon: float,
+    start_lat: float,
+    goal_lon: float,
+    goal_lat: float,
+) -> List[Tuple[float, float]]:
+    path = _path_with_static_graph_cached(
+        round(start_lon, 2),
+        round(start_lat, 2),
+        round(goal_lon, 2),
+        round(goal_lat, 2),
+    )
+    return list(path)
 
 
 def leg_samples_water(
@@ -662,9 +697,10 @@ def pick_initial_destination_with_route(
     harbors: List[Dict[str, Any]],
     origin_name: str,
     *,
-    max_attempts: int = 16,
+    max_attempts: int = 10,
 ) -> Tuple[Dict[str, Any], List[Dict[str, float]]]:
     """Choose a destination harbor and non-empty sea route when possible."""
+    warm_routing_graph()
     candidates = [h for h in harbors if h.get("name") != origin_name]
     random.shuffle(candidates)
     tries = candidates if len(candidates) <= max_attempts else candidates[:max_attempts]
