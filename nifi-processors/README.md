@@ -56,7 +56,7 @@ On NiFi, shared **`upload/requirements.txt`** is minimal (**numpy**); each proce
 
 **Ship AIS:** Only **`upload/ShipSimulationRoutesGemini.py`** for `ShipSimulationProcessor` (**1.3.1**). No legacy duplicate AIS modules. **`MarineShipSimulator` 1.6.3** shares the same routing fast path. Each GenerateFlowFile tick (**1 min**) = **1 hour** simulated time. After upgrading from 1.3.0 / 1.6.2, run route state reset or delete `/tmp/ship_state.json` and `/tmp/marineship_state.json` once so `RouteDestKey` is populated.
 
-**Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`).
+**Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** (**1.1.0**) in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`). With **Dump State To Payload** = true (default), each run embeds pre-reset `/tmp` JSON under `snapshots` in the outgoing FlowFile, then deletes or clears routes—useful when the NiFi pod `/tmp` is not reachable.
 
 **LiDAR disk:** Failed pip installs often trace to **`No space left on device`** under `/var/opt/nifi/python/work/extensions/`. Keep **`requirements.txt`** minimal; prune stale venv dirs.
 
