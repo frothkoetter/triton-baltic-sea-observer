@@ -42,7 +42,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
 
     RESET_AIS = PropertyDescriptor(
         name="Reset AIS State",
-        description=f"Target {AIS_SHIP_STATE_FILE} (ShipSimulationRoutesGemini and legacy ship sims).",
+        description=f"Target {AIS_SHIP_STATE_FILE} (ShipSimulationRoutesGemini AIS simulator).",
         allowable_values=["true", "false"],
         default_value="true",
         required=True,
