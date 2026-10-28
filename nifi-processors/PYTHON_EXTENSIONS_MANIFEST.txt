@@ -1,0 +1,18 @@
+# Files that must be present under NiFi python/extensions/ (Python Auto-Loader / S3 sync).
+# One line per file. Do not omit processor modules or shared imports they depend on.
+
+BalticShipRouteStateReset.py
+BojenSensorSimulator.py
+LidarSimulator.py
+MarineShipSimulator.py
+MessengerSimulator.py
+ShipSimulationRoutesGemini.py
+STANAGSimulator.py
+gpsjammer.py
+baltic_coast_pins.py
+baltic_ship_routing.py
+baltic_ship_sim_state.py
+baltic_water_placement.py
+lidar_vessel_geometry.py
+marine_fleet_registry.py
+requirements.txt
