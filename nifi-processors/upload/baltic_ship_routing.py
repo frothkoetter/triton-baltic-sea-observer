@@ -43,6 +43,38 @@ _NM_TO_M = 1852.0
 _ROUTE_CACHE: Dict[Tuple[float, float, float, float], List[Dict[str, float]]] = {}
 _ROUTE_CACHE_MAX = 512
 
+# Prefer these destinations (by name) when random routing fails from an origin.
+# Values are validated empirically from spawn points near each port.
+DEFAULT_HARBOR_PAIR_FALLBACKS: Tuple[str, ...] = (
+    "Helsinki",
+    "Tallinn",
+    "Riga",
+    "Ventspils",
+    "Rostock",
+    "Karlskrona",
+)
+
+HARBOR_PAIR_FALLBACKS: Dict[str, Tuple[str, ...]] = {
+    "Stockholm": ("Nynäshamn", "Helsinki", "Tallinn", "Visby", "Karlskrona", "Riga"),
+    "Turku": ("Mariehamn", "Helsinki", "Tallinn", "Pori", "Riga", "Stockholm"),
+    "Nynäshamn": ("Stockholm", "Visby", "Karlskrona", "Helsinki", "Riga", "Tallinn"),
+    "Gdynia": ("Gdańsk", "Ustka", "Karlskrona", "Klaipėda", "Riga", "Rostock"),
+    "Kaliningrad": ("Klaipėda", "Gdynia", "Gdańsk", "Liepāja", "Karlskrona", "Rostock"),
+    "Mariehamn": ("Turku", "Helsinki", "Tallinn", "Karlskrona", "Pori", "Riga"),
+    "Sassnitz": ("Rostock", "Stralsund", "Świnoujście", "Rønne", "Greifswald", "Wismar"),
+    "Rønne": ("Karlskrona", "Sassnitz", "Stralsund", "Kiel", "Rostock", "Gdynia"),
+    "Pori": ("Mariehamn", "Turku", "Helsinki", "Tallinn", "Riga", "Stockholm"),
+    "Visby": ("Karlskrona", "Nynäshamn", "Stockholm", "Riga", "Ventspils", "Rostock"),
+    "Bolderāja": ("Riga", "Tallinn", "Ventspils", "Paldiski", "Helsinki", "Liepāja"),
+    "Świnoujście": ("Rostock", "Stralsund", "Sassnitz", "Kiel", "Travemünde", "Gdynia"),
+    "Wismar": ("Rostock", "Travemünde", "Stralsund", "Kiel", "Karlskrona", "Klaipėda"),
+    "Greifswald": ("Rostock", "Stralsund", "Sassnitz", "Świnoujście", "Karlskrona", "Kiel"),
+    "Kiel": ("Rostock", "Travemünde", "Stralsund", "Sassnitz", "Karlskrona", "Klaipėda"),
+    "Travemünde": ("Rostock", "Stralsund", "Kiel", "Karlskrona", "Klaipėda", "Riga"),
+    "Paldiski": ("Tallinn", "Helsinki", "Riga", "Ventspils", "Bolderāja", "Liepāja"),
+    "Primorsk": ("St. Petersburg", "Helsinki", "Tallinn", "Riga", "Ventspils", "Rostock"),
+}
+
 _ROUTING_SEEDS: List[Tuple[float, float]] | None = None
 _MAIN_SEED_IDX: set[int] | None = None
 
@@ -372,6 +404,88 @@ def _destination_key(dest: Dict[str, Any]) -> Tuple[float, float]:
     return (round(float(dest["Longitude"]), 3), round(float(dest["Latitude"]), 3))
 
 
+def _origin_name(ship: Dict[str, Any]) -> str:
+    origin = ship.get("OriginPort")
+    if isinstance(origin, dict):
+        return str(origin.get("name") or "")
+    if isinstance(origin, str):
+        return origin
+    return ""
+
+
+def _harbor_lookup(harbors: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    return {str(h["name"]): h for h in harbors}
+
+
+def _fallback_destination_names(origin_name: str) -> Tuple[str, ...]:
+    return HARBOR_PAIR_FALLBACKS.get(origin_name, DEFAULT_HARBOR_PAIR_FALLBACKS)
+
+
+def _ordered_destination_names(
+    origin_name: str,
+    *,
+    prefer: str | None = None,
+) -> List[str]:
+    names: List[str] = []
+    if prefer and prefer != origin_name:
+        names.append(prefer)
+    for name in _fallback_destination_names(origin_name):
+        if name != origin_name and name not in names:
+            names.append(name)
+    return names
+
+
+def assign_routable_destination(
+    ship: Dict[str, Any],
+    harbors: List[Dict[str, Any]],
+    *,
+    prefer_current: bool = True,
+    extra_names: List[str] | None = None,
+) -> bool:
+    """Set ``Destination`` and ``RouteWaypoints`` using harbor-pair fallbacks."""
+    warm_routing_graph()
+    lookup = _harbor_lookup(harbors)
+    origin_name = _origin_name(ship)
+    start_lon = float(ship["Longitude"])
+    start_lat = float(ship["Latitude"])
+    prefer: str | None = None
+    if prefer_current:
+        dest = ship.get("Destination")
+        if isinstance(dest, dict):
+            prefer = str(dest.get("name") or "")
+    names = _ordered_destination_names(origin_name, prefer=prefer)
+    if extra_names:
+        for name in extra_names:
+            if name != origin_name and name not in names:
+                names.append(name)
+    for name in names:
+        harbor = lookup.get(name)
+        if harbor is None:
+            continue
+        route = build_sea_route(
+            start_lon,
+            start_lat,
+            float(harbor["Longitude"]),
+            float(harbor["Latitude"]),
+        )
+        if not route:
+            continue
+        ship["Destination"] = harbor
+        ship["RouteWaypoints"] = route
+        ship["RouteIndex"] = 0
+        ship["RouteDestKey"] = _destination_key(harbor)
+        return True
+    ship["RouteWaypoints"] = []
+    ship["RouteIndex"] = 0
+    ship.pop("RouteDestKey", None)
+    return False
+
+
+def repair_ship_route(ship: Dict[str, Any], harbors: List[Dict[str, Any]]) -> bool:
+    """Rebuild an empty or broken route using harbor-pair fallbacks."""
+    return assign_routable_destination(ship, harbors, prefer_current=True)
+
+
 def _route_cache_key(
     start_lon: float,
     start_lat: float,
@@ -674,6 +788,8 @@ def ensure_ship_route(ship: Dict[str, Any], *, force_rebuild: bool = False) -> N
     )
     ship["RouteIndex"] = 0
     ship["RouteDestKey"] = dest_key
+    if not ship["RouteWaypoints"]:
+        ship.pop("RouteDestKey", None)
 
 
 def route_target(ship: Dict[str, Any]) -> Tuple[float, float] | None:
@@ -700,20 +816,29 @@ def pick_initial_destination_with_route(
     max_attempts: int = 10,
 ) -> Tuple[Dict[str, Any], List[Dict[str, float]]]:
     """Choose a destination harbor and non-empty sea route when possible."""
-    warm_routing_graph()
+    origin_h = _harbor_lookup(harbors).get(origin_name)
+    if origin_h is None:
+        origin_h = {"name": origin_name, "Longitude": start_lon, "Latitude": start_lat}
+    ship: Dict[str, Any] = {
+        "Longitude": start_lon,
+        "Latitude": start_lat,
+        "OriginPort": origin_h,
+        "Destination": origin_h,
+    }
+    extras: List[str] = []
     candidates = [h for h in harbors if h.get("name") != origin_name]
     random.shuffle(candidates)
-    tries = candidates if len(candidates) <= max_attempts else candidates[:max_attempts]
-    tries = tries + [c for c in candidates if c not in tries]
-    for dest in tries[:max_attempts]:
-        route = build_sea_route(
-            start_lon,
-            start_lat,
-            float(dest["Longitude"]),
-            float(dest["Latitude"]),
-        )
-        if route:
-            return dest, route
+    for h in candidates[: max(0, max_attempts - len(_fallback_destination_names(origin_name)))]:
+        extras.append(str(h["name"]))
+    if assign_routable_destination(
+        ship,
+        harbors,
+        prefer_current=False,
+        extra_names=extras,
+    ):
+        dest = ship["Destination"]
+        assert isinstance(dest, dict)
+        return dest, list(ship.get("RouteWaypoints") or [])
     dest = random.choice(candidates)
     route = build_sea_route(
         start_lon,
@@ -727,19 +852,23 @@ def pick_initial_destination_with_route(
 def assign_new_destination(
     ship: Dict[str, Any],
     harbor: Dict[str, Any],
+    harbors: List[Dict[str, Any]],
     *,
     depart: bool = True,
 ) -> None:
     """Set destination harbor and rebuild a water route from the current position."""
     ship["Destination"] = harbor
-    ship["RouteWaypoints"] = build_sea_route(
-        float(ship["Longitude"]),
-        float(ship["Latitude"]),
-        float(harbor["Longitude"]),
-        float(harbor["Latitude"]),
-    )
-    ship["RouteIndex"] = 0
-    ship["RouteDestKey"] = _destination_key(harbor)
+    if assign_routable_destination(ship, harbors, prefer_current=True):
+        pass
+    else:
+        ship["RouteWaypoints"] = build_sea_route(
+            float(ship["Longitude"]),
+            float(ship["Latitude"]),
+            float(harbor["Longitude"]),
+            float(harbor["Latitude"]),
+        )
+        ship["RouteIndex"] = 0
+        ship["RouteDestKey"] = _destination_key(harbor)
     if depart:
         ship["Status"] = "Underway using engine"
         ship["Speed"] = max(float(ship.get("Speed") or 0), random.uniform(4.0, 12.0))
@@ -783,5 +912,5 @@ def advance_route_or_arrive(
             new_harbor = random.choice(others)
     if isinstance(dest, dict):
         ship["OriginPort"] = dest
-    assign_new_destination(ship, new_harbor, depart=True)
+    assign_new_destination(ship, new_harbor, harbors, depart=True)
     return True

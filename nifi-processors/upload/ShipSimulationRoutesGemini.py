@@ -23,6 +23,7 @@ from baltic_ship_routing import (
     ensure_ship_route,
     move_towards_on_water,
     pick_initial_destination_with_route,
+    repair_ship_route,
     route_target,
     warm_routing_graph,
     _destination_key,
@@ -186,7 +187,7 @@ def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
         if route:
             ship["RouteDestKey"] = _destination_key(destination)
         else:
-            ensure_ship_route(ship)
+            repair_ship_route(ship, HARBORS)
         ships.append(ship)
     return ships
 
@@ -201,6 +202,8 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             ship["RouteIndex"] = 0
             ship.pop("RouteDestKey", None)
         ensure_ship_route(ship)
+        if route_target(ship) is None:
+            repair_ship_route(ship, HARBORS)
         target = route_target(ship)
         if target is None:
             continue
@@ -240,7 +243,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.2'
+        version = '1.3.4'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )
