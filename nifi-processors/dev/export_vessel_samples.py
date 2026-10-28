@@ -2,7 +2,7 @@
 """
 Export one UTM LAS sample per vessel type plus a combined catalog.
 
-Output directory (default): nifi-processors/samples/
+Output directory (default): nifi-processors/dev/samples/
 
   sample_oil_tanker.las
   sample_gas_tanker.las
@@ -15,7 +15,12 @@ Open in CloudCompare; color by Classification (1–9).
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
+
+_UPLOAD = Path(__file__).resolve().parent.parent / "upload"
+if str(_UPLOAD) not in sys.path:
+    sys.path.insert(0, str(_UPLOAD))
 
 import numpy as np
 
@@ -83,7 +88,7 @@ def main() -> None:
         "--out-dir",
         type=Path,
         default=Path(__file__).resolve().parent / "samples",
-        help="Output directory (default: nifi-processors/samples)",
+        help="Output directory (default: dev/samples)",
     )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()

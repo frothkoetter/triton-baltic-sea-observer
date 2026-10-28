@@ -1,5 +1,5 @@
 # Local development (all processors / LiDAR CLI). Not used by NiFi auto-loader.
--r requirements.txt
+-r ../upload/requirements.txt
 laspy>=2.5.0
 pyproj>=3.6.0
 faker
