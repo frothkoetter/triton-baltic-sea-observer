@@ -40,6 +40,15 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (22.5, 58.8),  # E Moonsund / W Hiiumaa
     (23.0, 58.9),  # W of Pakri
     (23.55, 59.12),  # N of Pakri / Tallinn offshore
+    (23.35, 59.05),  # Pakri–Moonsund lane
+    (23.28, 59.02),  # Hiiumaa W fairway mid
+    (23.29, 59.05),  # Pakri approach (W fairway)
+    (23.75, 59.18),  # W Estonian shelf ladder
+    (24.15, 59.30),
+    (24.52, 59.42),  # Tallinn W bypass entry
+    (24.72, 59.42),  # Tallinn bypass
+    (24.82, 59.44),
+    (24.05, 59.22),  # W Gulf of Finland (off Tallinn)
     (24.75, 59.55),  # Gulf of Finland W lane
     (25.5, 59.9),  # Gulf of Finland mid-channel
     (26.2, 59.6),  # E Gulf of Finland
@@ -67,13 +76,21 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (12.4, 54.35),  # Warnemünde / Stralsund lane
     (12.75, 54.52),  # Strelasund (Stralsund–Rügen)
     (13.15, 54.48),  # SW Rügen / Schaproder Bodden lane
-    (13.45, 54.42),  # Greifswalder Bodden outer
+    (13.55, 54.38),  # Greifswalder Bodden outer
     (13.25, 54.72),  # N of Darß–Zingst (open Baltic)
     (13.6, 54.42),  # Sassnitz / Rügen sound
     (13.85, 54.88),  # N of Rügen / Wolin offshore
     (14.85, 54.92),  # E Arkona / W Bornholm passage
     (15.75, 55.32),  # E of Bornholm
     (12.05, 56.45),  # Kattegat mid (links W Baltic to E via Øresund)
+    (11.50, 54.55),  # Fehmarnsund / Gedser lane
+    (11.85, 54.52),
+    (12.00, 54.50),  # Gedser offshore (Arkona approach)
+    (11.05, 55.15),  # Storebælt
+    (11.35, 55.42),
+    (18.25, 58.72),  # Stockholm offshore routing spine
+    (18.55, 58.55),
+    (20.85, 59.55),  # Turku / Archipelago lane
     (12.82, 54.57),  # Strelasund fairway
     (12.96, 54.59),
     (13.12, 54.58),
@@ -88,20 +105,35 @@ CHANNEL_BOXES: List[Box] = [
     (21.55, 22.55, 58.02, 58.78),  # Moonsund (Väinameri)
     (22.35, 23.25, 58.32, 58.98),  # Virtsu–Kuivastu / Muhu Väin
     (24.82, 25.45, 59.46, 59.90),  # Tallinn–Helsinki mid-channel (offshore only)
+    (23.55, 24.52, 59.12, 59.398),  # W Estonian GoF approach (below Keila at 59.40°N)
+    (24.78, 24.86, 59.40, 59.52),  # Tallinn bypass fairway (E of city center)
+    (24.50, 24.78, 59.399, 59.435),  # Tallinn W bypass tie-in (below old-town pin)
     (23.05, 23.55, 59.05, 59.18),  # N of Pakri offshore (not Haapsalu)
+    (22.45, 23.30, 58.82, 59.05),  # W Hiiumaa fairway (not Haapsalu / E Hiiumaa)
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
     (12.58, 13.16, 54.48, 54.62),  # Strelasund fairway (not Stralsund town)
-    (13.02, 13.58, 54.36, 54.50),  # Rügen SW sounds (not island interior)
+    (13.02, 13.14, 54.36, 54.54),  # Rügen SW sounds (not island interior E of 13.14°E)
     (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
     (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
     (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
-    (13.22, 13.78, 54.56, 54.74),  # Greifswalder Bodden / SE Rügen fairway
+    (13.22, 13.78, 54.58, 54.74),  # Greifswalder Bodden / SE Rügen fairway (not Rügen interior)
     (13.35, 14.55, 54.76, 55.08),  # E of Rügen / Wolin approaches (not island cores)
     (16.45, 20.35, 55.38, 57.12),  # S-central Baltic open lane (not Kalmar / coast cities)
     (15.60, 16.90, 54.95, 55.45),  # E of Bornholm (not island interior)
-    (11.0, 13.25, 55.95, 57.85),  # Kattegat / Øresund approach (Baltic–Skagerrak link)
+    (11.0, 13.25, 55.95, 57.85),  # Kattegat / Skagerrack approach (not Øresund cities)
+    (10.70, 11.90, 54.38, 54.78),  # Kiel Bay / Flensburg offshore lane
+    (11.35, 12.55, 54.42, 54.72),  # Fehmarnsund / Gedser passage (E of Fehmarn)
+    (10.85, 11.55, 55.05, 55.28),  # Storebælt fairway (not Zealand interior)
+    (10.95, 11.75, 55.30, 55.48),  # Great Belt fairway (not Copenhagen)
+    (12.62, 12.98, 55.58, 55.72),  # Øresund strait (not Malmö / Copenhagen)
+    (12.55, 13.05, 54.42, 54.68),  # W Arkona / Darß offshore (not Rügen interior)
+    (14.20, 14.85, 54.82, 55.05),  # E of Rügen / Bornholm W passage
     (22.75, 23.85, 57.15, 57.70),  # Gulf of Riga central lane
     (18.45, 19.55, 54.48, 54.78),  # Gdańsk Bay / Hel offshore lane
+    (26.80, 30.20, 59.55, 60.35),  # Gulf of Finland E (Primorsk / Kotlin lanes)
+    (19.85, 21.35, 59.35, 60.05),  # Åland / Turku north approach
+    (18.35, 20.50, 58.45, 59.22),  # Stockholm archipelago approach (not city core)
+    (20.00, 23.50, 59.48, 60.35),  # Turku / Archipelago Sea lane (not Turku city)
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
