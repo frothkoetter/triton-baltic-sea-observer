@@ -98,11 +98,91 @@ Upload `nifi-processors/upload/AisOutlierCmlInvoke.py` to NiFi Python extensions
 
 Place after the AIS aggregate / `MergeContent` that builds the 15-minute batch; remove or bypass the LLM `InvokeHTTP` + prompt processor.
 
-### Option B — InvokeHTTP
+### Option B — InvokeHTTP (standard processor)
 
-1. **POST** to the model URL  
-2. Body: `{"records": ${json.array:...}}`  — often built with `MergeContent` + `AttributesToJSON` or a small script  
-3. Use **EvaluateJsonPath** or **JoltTransformJSON** if the platform wraps the array; with `predict_array` the body should start with `[`
+Use this when you **do not** want a custom Python extension. Point **InvokeHTTP** at the same **`predict_array`** model URL as Option A.
+
+#### Model endpoint
+
+Deploy **`predict_array.py`** with entry function **`predict_array`**. The HTTP response body should be a **JSON array** (first non-whitespace character `[`). No LLM-style header or footer.
+
+#### Request body shape
+
+The model expects a JSON object (CML passes it as the `args` dict):
+
+```json
+{"records": [ { "MMSI": 123, "Event_Timestamp": "...", ... }, ... ]}
+```
+
+Alternatively `{"ndjson": "<one JSON object per line>"}` (same as `AisOutlierCmlInvoke`).
+
+#### NiFi flow (typical)
+
+```text
+[15 min AIS batch FlowFile] → [Wrap as {"records": ...}] → InvokeHTTP → [optional validate] → downstream (PutS3 / PutDatabase / Merge)
+```
+
+1. **Upstream** — `MergeContent` (or `MergeRecord`) on a 15-minute window so one FlowFile holds the batch (NDJSON lines or a JSON array from the sim).
+
+2. **Wrap payload** — choose one:
+
+   | Input content | Processor | Action |
+   |---------------|-----------|--------|
+   | JSON array `[{...},...]` | **ReplaceText** | Replacement: `{"records": $1}` with search `^(\[.*\])$` (single-line array) or read full content |
+   | NDJSON (one object per line) | **ExecuteScript** (Groovy) or Option A processor | Parse lines, `new groovy.json.JsonBuilder([records: list]).toString()` |
+   | Already wrapped | *(none)* | Body is already `{"records":...}` |
+
+   Minimal Groovy (ExecuteScript, property **Script Body**), FlowFile content = NDJSON:
+
+   ```groovy
+   def flowFile = session.get()
+   if (!flowFile) return
+   def text = new String(session.read(flowFile).bytes, 'UTF-8').trim()
+   def records = text.startsWith('[')
+       ? new groovy.json.JsonSlurper().parseText(text)
+       : text.readLines().findAll { it.trim() }.collect { new groovy.json.JsonSlurper().parseText(it) }
+   def body = new groovy.json.JsonBuilder([records: records]).toString()
+   flowFile = session.write(flowFile, { out -> out.write(body.getBytes('UTF-8')) } as OutputStreamCallback)
+   session.transfer(flowFile, REL_SUCCESS)
+   ```
+
+3. **InvokeHTTP** — suggested properties:
+
+   | Property | Value |
+   |----------|--------|
+   | HTTP Method | `POST` |
+   | Remote URL | `https://<your-cai-model-host>/...` (deployed `predict_array` URL) |
+   | Content-Type | `application/json` |
+   | Send Message Body | `true` |
+   | Put Response Body in Attribute | `false` |
+   | Output Response Regardless | `true` (or route on `Response Code`) |
+   | Connection Timeout / Read Timeout | e.g. `30 sec` / `120 sec` (large batches) |
+
+   **Authorization (CDP):** add a dynamic property on InvokeHTTP:
+
+   - Name: `Authorization`
+   - Value: `Bearer ${cdp.api.key}` (store the token in a **Parameter Context**, not in the flow JSON)
+
+   Use an **StandardRestrictedSSLContextService** controller service if the cluster requires explicit TLS trust.
+
+4. **Response** — with **`predict_array`**, the response FlowFile **content** is the outlier array. Connect **Response** to success; set `mime.type=application/json` via **UpdateAttribute** if needed.
+
+   If you deployed **`predict`** / **`detect_outliers`** with a wrapper instead, the body may look like `{"body":"[...]"}` or `{"prediction":[...]}`. Then add **EvaluateJsonPath** (content → attribute) or **JoltTransformJSON** to extract the array before storage.
+
+5. **Replace LLM step** — remove the old **InvokeHTTP** to the chat/completions URL and any **UpdateAttribute** that sets the analyst prompt. Reuse the same success/failure relationships into your existing “Risk Classification” / CDW ingest chain; only the HTTP target and request body change.
+
+6. **Errors** — route **Original** / non-2xx to **RetryFlowFile** or failure; log `invokehttp.status.code` and response body (truncated) for model errors.
+
+#### curl equivalent (sanity check)
+
+```bash
+curl -sS -X POST "$MODEL_URL" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $CDP_API_KEY" \
+  -d '{"records":[{"MMSI":123456006,"Event_Timestamp":"2025-10-14 17:05:54.044","Latitude":53.98346,"Longitude":12.04434,"Speed":34.0,"Course":180.0,"Status":"Moored","Destination":"Primorsk"}]}'
+```
+
+Stdout should start with `[` and contain only outlier objects (empty array `[]` if none).
 
 ## Local test
 
