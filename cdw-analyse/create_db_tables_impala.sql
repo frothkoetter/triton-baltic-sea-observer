@@ -539,6 +539,7 @@ FROM maritime_surveillance_reports
 ;
 
 -- VIEW: defense.lagebild (Time interval and CAST changes for Impala)
+DROP VIEW IF EXISTS defense.lagebild;
 CREATE VIEW defense.lagebild AS
 WITH Harbour_Ref AS (
     -- Define the source for all harbors to check proximity against
@@ -711,6 +712,49 @@ FilteredMarineMessages AS (
     SELECT *
     FROM LatestMarineMessages
     WHERE rn = 1 AND distance_m <= 50000 -- Filter only events within 50 km (50000 m) of the specific harbor
+),
+
+-- CTE 6: Latest LiDAR simulation metadata (NiFi LidarSimulator → defense.lidar_simulation_metadata)
+LatestLidarSimulations AS (
+    SELECT
+        l.hadoop_file_url,
+        l.filename,
+        l.ingested_at AS lidar_time,
+        l.center_lat AS lidar_lat,
+        l.center_lon AS lidar_lon,
+        l.vessel_name,
+        l.vessel_type,
+        l.classification,
+        l.point_count,
+        l.heading_deg,
+        l.predicted_vessel_type,
+        l.model_confidence,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        ST_GeodesicLengthWGS84(
+            ST_SetSRID(
+                ST_LineString(l.center_lon, l.center_lat, h.Harbour_Lon, h.Harbour_Lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY COALESCE(l.hadoop_file_url, l.filename), h.harbour_name
+            ORDER BY l.ingested_at DESC
+        ) AS rn
+    FROM
+        defense.lidar_simulation_metadata l
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE
+        CAST(l.ingested_at AS TIMESTAMP) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 24 HOURS
+        AND l.center_lat IS NOT NULL
+        AND l.center_lon IS NOT NULL
+),
+FilteredLidarSimulations AS (
+    SELECT *
+    FROM LatestLidarSimulations
+    WHERE rn = 1
+      AND distance_m <= 50000
 )
 
 ----------------------------------------------------------------------------------------------------
@@ -806,6 +850,33 @@ SELECT
     ) AS details
 FROM
     FilteredMarineMessages m
+
+UNION ALL
+
+SELECT
+    'LiDAR' AS Data_Source,
+    COALESCE(l.filename, l.hadoop_file_url) AS ID,
+    l.lidar_time AS "timestamp",
+    l.lidar_lat AS latitude,
+    l.lidar_lon AS longitude,
+    l.harbour_name AS harbour_name,
+    l.distance_m AS dist_m_raw,
+    CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Vessel: ', COALESCE(l.vessel_name, 'unknown'),
+        ' (', COALESCE(l.vessel_type, 'undefined'), ')',
+        ' | Class: ', CAST(l.classification AS VARCHAR),
+        ' | Points: ', CAST(l.point_count AS VARCHAR),
+        ' | Hdg: ', CAST(ROUND(l.heading_deg, 1) AS VARCHAR), '°',
+        COALESCE(
+            CONCAT(' | ML: ', l.predicted_vessel_type, ' (conf ', CAST(l.model_confidence AS VARCHAR), ')'),
+            ''
+        ),
+        COALESCE(CONCAT(' | LAS: ', l.hadoop_file_url), '')
+    ) AS details
+FROM
+    FilteredLidarSimulations l
 
 ORDER BY harbour_name, "timestamp" DESC;
 
