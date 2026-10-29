@@ -34,6 +34,7 @@ from baltic_water_placement import (
     random_baltic_water_position,
     random_position_near_port_water,
 )
+from lidar_sea_surface import LAS_CLASS_WATER_SURFACE, SeaSurfaceConfig, sample_sparse_sea_surface_local
 from lidar_vessel_geometry import (
     LAS_CLASS_NEVER_CLASSIFIED,
     VESSEL_TYPE_CODES,
@@ -82,6 +83,7 @@ BALTIC_PORTS: List[Tuple[str, float, float]] = [
 ]
 
 UNCLASSIFIED_FRACTION = 0.10
+DEFAULT_SEA_SURFACE_BUDGET = 1_200
 PORT_OFFSET_MIN_KM = 5.0
 PORT_OFFSET_MAX_KM = 20.0
 UNDEFINED_VESSEL_LABEL = "undefined"
@@ -153,6 +155,9 @@ def _sample_scene_center(
 def build_single_vessel_points(
     seed: Optional[int] = None,
     unclassified_fraction: float = UNCLASSIFIED_FRACTION,
+    sea_surface_budget: int = DEFAULT_SEA_SURFACE_BUDGET,
+    wave_amplitude_m: float = 0.6,
+    wave_length_m: float = 18.0,
 ) -> Tuple[np.ndarray, np.ndarray, VesselSpec, float, float, bool]:
     """
     Pick one vessel archetype, random heading, and Baltic position.
@@ -169,12 +174,28 @@ def build_single_vessel_points(
     heading = float(rng.uniform(0.0, 360.0))
     spec = replace(template, heading_deg=heading)
     local = vessel_local_points(spec, rng)
+    sea_local = sample_sparse_sea_surface_local(
+        spec,
+        rng,
+        SeaSurfaceConfig(
+            point_budget=sea_surface_budget,
+            wave_amplitude_m=wave_amplitude_m,
+            wave_length_m=wave_length_m,
+        ),
+    )
+    if len(sea_local):
+        local = np.vstack((local, sea_local))
     geo = _local_to_geographic(local, center_lon, center_lat, spec.heading_deg)
     if is_unclassified:
         code = LAS_CLASS_NEVER_CLASSIFIED
     else:
         code = VESSEL_TYPE_CODES.get(spec.vessel_type, LAS_CLASS_NEVER_CLASSIFIED)
-    classification = np.full(len(geo), code, dtype=np.uint16)
+    n_hull = len(geo) - len(sea_local)
+    classification = np.empty(len(geo), dtype=np.uint16)
+    if n_hull > 0:
+        classification[:n_hull] = code
+    if len(sea_local):
+        classification[n_hull:] = LAS_CLASS_WATER_SURFACE
     return geo, classification, spec, center_lon, center_lat, is_unclassified
 
 
@@ -334,10 +355,11 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.2.4"
+        version = "4.3.0"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
             "Positions are offshore Baltic water only. "
+            "Optional sparse sea-surface points (class 10) around the hull. "
             "~10% unclassified (class 0) near ports (5–20 km)."
         )
         dependencies = ["numpy", "laspy", "pyproj"]
@@ -365,6 +387,23 @@ class LidarSimulator(FlowFileTransform):
         default_value="0.1",
         required=False,
     )
+    SEA_SURFACE_BUDGET = PropertyDescriptor(
+        name="Sea Surface Point Budget",
+        description=(
+            "Max extra LAS points for water/waves around the vessel (class 10). "
+            "0 disables sea surface (hull only)."
+        ),
+        validators=[StandardValidators.INTEGER_VALIDATOR],
+        default_value=str(DEFAULT_SEA_SURFACE_BUDGET),
+        required=False,
+    )
+    WAVE_AMPLITUDE_M = PropertyDescriptor(
+        name="Wave Amplitude (m)",
+        description="Swell height for sparse sea-surface points (local z ripple).",
+        validators=[StandardValidators.NUMBER_VALIDATOR],
+        default_value="0.6",
+        required=False,
+    )
 
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
@@ -373,6 +412,8 @@ class LidarSimulator(FlowFileTransform):
             self.RANDOM_SEED,
             self.OUTPUT_BASENAME,
             self.UNCLASSIFIED_FRACTION,
+            self.SEA_SURFACE_BUDGET,
+            self.WAVE_AMPLITUDE_M,
         ]
 
     def getPropertyDescriptors(self):
@@ -389,8 +430,22 @@ class LidarSimulator(FlowFileTransform):
         unclassified_fraction = (
             float(frac_raw) if frac_raw and str(frac_raw).strip() else UNCLASSIFIED_FRACTION
         )
+        budget_raw = context.getProperty(self.SEA_SURFACE_BUDGET.name).getValue()
+        sea_budget = (
+            int(budget_raw)
+            if budget_raw and str(budget_raw).strip()
+            else DEFAULT_SEA_SURFACE_BUDGET
+        )
+        amp_raw = context.getProperty(self.WAVE_AMPLITUDE_M.name).getValue()
+        wave_amp = float(amp_raw) if amp_raw and str(amp_raw).strip() else 0.6
+
         points, classification, spec, center_lon, center_lat, is_unclassified = (
-            build_single_vessel_points(seed=seed, unclassified_fraction=unclassified_fraction)
+            build_single_vessel_points(
+                seed=seed,
+                unclassified_fraction=unclassified_fraction,
+                sea_surface_budget=max(0, sea_budget),
+                wave_amplitude_m=max(0.0, wave_amp),
+            )
         )
         with tempfile.TemporaryDirectory(prefix="lidar_sim_") as tmp_dir:
             out_path = os.path.join(tmp_dir, basename)
@@ -411,9 +466,11 @@ class LidarSimulator(FlowFileTransform):
             vessel_name = spec.name
             class_code = VESSEL_TYPE_CODES.get(spec.vessel_type, LAS_CLASS_NEVER_CLASSIFIED)
 
+        sea_count = int(np.sum(classification == LAS_CLASS_WATER_SURFACE))
         attrs = {
             "mime.type": "application/octet-stream",
             "lidar.point_count": str(len(points)),
+            "lidar.sea_surface.point_count": str(sea_count),
             "lidar.filename": basename,
             "lidar.vessel_type": vessel_type,
             "lidar.vessel_name": vessel_name,
