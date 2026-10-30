@@ -49,6 +49,31 @@ def generate_summary_sql(summary_text, timestamp):
         
     return insert_statement
 
+
+def lagebild_dataset_summary(df: pd.DataFrame) -> str:
+    """Short header for the LLM from defense.lagebild row counts."""
+    if df.empty:
+        return "No events in the last 24h for the selected German harbours."
+
+    n = len(df)
+    parts = [f"{n} events in the reporting window"]
+    if "data_source" in df.columns:
+        src_col = "data_source"
+    elif "Data_Source" in df.columns:
+        src_col = "Data_Source"
+    else:
+        return parts[0]
+
+    counts = df[src_col].fillna("Unknown").astype(str).value_counts()
+    by_source = ", ".join(f"{name}: {int(count)}" for name, count in counts.items())
+    parts.append(f"by Data_Source — {by_source}")
+    if "harbour_name" in df.columns:
+        top = df["harbour_name"].value_counts().head(3)
+        hot = ", ".join(f"{name} ({int(c)})" for name, c in top.items())
+        parts.append(f"busiest harbours — {hot}")
+    return "; ".join(parts)
+
+
 # --- Main Pipeline Execution ---
 
 # Setup Connection and API Client
@@ -78,7 +103,9 @@ try:
     df_content_string = df_to_use.to_markdown(index=False)
     
     # Check if the generated string exceeds the limit
-    if len(df_content_string) > MAX_CHAR_LIMIT:
+    if len(dataframe) == 0:
+        df_content_string = "(no rows returned)"
+    elif len(df_content_string) > MAX_CHAR_LIMIT:
         print(f"Warning: Data size ({len(df_content_string)} chars) exceeds the {MAX_CHAR_LIMIT} limit. Truncating rows...")
         
         # Estimate the maximum number of rows based on the original length
@@ -100,32 +127,42 @@ except Exception as e:
     if 'conn' in locals():
         conn.close()
     sys.exit(1)
+
+analysis_start_time = datetime.now()
+dataset_summary = lagebild_dataset_summary(df_to_use)
+
 # 2. Prompt Construction
 prompt_template = """
 --- MILITARY SITUATION REPORT ---
-Analyst: military situation awreness - Please Analyse and provide a concise, pretty summary based on the data below.
+Analyst: military situation awareness — analyse the consolidated harbour picture and write a concise summary.
 
-Output Format:
+Reporting time (local analyst run): {report_time}
 
-Situation Awareness Summary (current data and time ) 
+Dataset overview: {dataset_summary}
 
-Number of all event analized is 30 recent observations, primarily driven by Buoy and AIS data sources. The analysis identifies Rostock as the primary current hotspot.
+The table includes rows from defense.lagebild. Use the Data_Source column (AIS, Buoy, LiDAR, Social_Media, Marine_Message, etc.) and the details column (sanctions, magnetic anomalies, LiDAR vessel class / ML hints, message subjects).
 
-1. High-Priority Threat Assessment (Critical) - The single highest-priority event requires immediate investigation
-2. Geographic Hotspots and AnomaliesThe most active regions are centered on German ports
-3. Conclusion and Recommendation - example Highest Priority: Focus ASW resources immediately on the 0.89 km proximity zone near Rostock to classify the POSSIBLE_SUBMARINE object. Verification: Assign Maritime Patrol Aircraft (MPA) or Unmanned Surface Vessels (USVs) to verify the 203.6 and 157.9 magnetic anomalies reported near Kiel and Rostock.
+Output format:
 
-AIS Sanctions: No vessels with known sanctions were detected in the vicinity of the assessed harbors during this reporting period.
+Situation Awareness Summary ({report_time})
+
+1. High-Priority Threat Assessment (Critical) — the single highest-priority event
+2. Geographic Hotspots and Anomalies — active German Baltic ports and cross-source corroboration
+3. Conclusion and Recommendation — actionable next steps (MPA/USV verification, sanctions follow-up, LiDAR re-scan, etc.)
+4. AIS Sanctions — state explicitly if any AIS row shows a sanctioned vessel or reason in details; otherwise say none observed
 
 Data:
-{}
+{data_table}
 
 END OF DATA.
 """
-prompt = prompt_template.format(df_content_string)
+prompt = prompt_template.format(
+    report_time=analysis_start_time.strftime("%Y-%m-%d %H:%M:%S"),
+    dataset_summary=dataset_summary,
+    data_table=df_content_string,
+)
 
 # 3. LLM Execution Setup
-analysis_start_time = datetime.now()
 timestamp_str = analysis_start_time.strftime("%Y%m%d_%H%M%S")
 report_filename = f"llm_analysis_report_{timestamp_str}.txt"
 sql_filename = f"llm_summary_insert_{timestamp_str}.sql"
