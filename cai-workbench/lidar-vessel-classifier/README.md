@@ -20,7 +20,13 @@ S3 uses the **S3 Object Store** data connection (`LIDAR_S3_CONNECTION_NAME`, def
 
 Default data prefix: `s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/`
 
-## Train
+**Local git data:** sample `.las` files live in [`../data/lidar/`](../data/lidar/) (sync with the repo). In a CML project rooted at `lidar-vessel-classifier/`:
+
+```bash
+export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/../data/lidar"
+python3 fit.py
+```
+
 
 Run experiment **`fit.py`**, or:
 
