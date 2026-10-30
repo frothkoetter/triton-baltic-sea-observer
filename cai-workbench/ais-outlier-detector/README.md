@@ -27,6 +27,12 @@ Each hit includes: `MMSI`, `Event_Timestamp`, `Longitude`, `Latitude`, `Speed`, 
 | `src/rules.py` | Rule engine |
 | `src/detect.py` | Rules + ML severity |
 
+**Local git data:** NDJSON fixtures under [`../data/ais/`](../data/ais/), e.g.:
+
+```bash
+cat ../data/ais/sample_rendezvous.ndjson | python3 run_local.py
+```
+
 ## Train (Workbench experiment)
 
 ```bash

@@ -1,0 +1,2 @@
+{"MMSI": 123456006, "Event_Timestamp": "2025-10-14 17:05:54.044", "Latitude": 53.98346, "Longitude": 12.04434, "Speed": 8.0, "Course": 180.0, "Status": "Underway using engine", "Destination": "Primorsk"}
+{"MMSI": 123456007, "Event_Timestamp": "2025-10-14 17:05:54.044", "Latitude": 53.985, "Longitude": 12.046, "Speed": 7.0, "Course": 175.0, "Status": "Underway using engine", "Destination": "Primorsk"}
