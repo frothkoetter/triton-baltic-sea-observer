@@ -16,7 +16,6 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `RusFleetPositionSimulator.py` | Russian Baltic Fleet positions (`rus_fleet_positions`) |
 | `rus_fleet_registry.py` | Fleet MMSI `RUS273xxx`, home bases, patrol seeds |
 | `rus_fleet_sim_engine.py` | Mission / port / anchor state machine |
-| `AisOutlierCmlInvoke.py` | POST AIS batch to CML **ais-outlier-detector** model (JSON array out) |
 | `baltic_water_placement.py` | Water / land mask (shared) |
 | `baltic_ship_routing.py` | Sea routes (AIS + marine) |
 | `baltic_ship_sim_state.py` | Route reset helpers + AIS / RUS fleet state paths |

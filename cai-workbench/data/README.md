@@ -15,7 +15,7 @@ Place project-specific datasets here so CML sessions and jobs can use **paths in
 
 ## AIS
 
-- One JSON object per line (NDJSON), same fields as NiFi `ShipSimulationRoutesGemini` / `AisOutlierCmlInvoke`.
+- One JSON object per line (NDJSON), same fields as NiFi `ShipSimulationRoutesGemini`.
 
 ## Git
 

@@ -93,20 +93,7 @@ JSON array only (no prose), e.g.:
 
 ## NiFi integration
 
-### Option A — Python processor (this repo)
-
-Upload `nifi-processors/upload/AisOutlierCmlInvoke.py` to NiFi Python extensions.
-
-- **CML Model URL:** your deployed model HTTPS URL  
-- **CDP API Key:** bearer token if required  
-- Input: FlowFile with 15-minute AIS **NDJSON** (one ship event per line) or JSON array  
-- Output: **only** the outlier JSON array in `flowfile-content`
-
-Place after the AIS aggregate / `MergeContent` that builds the 15-minute batch; remove or bypass the LLM `InvokeHTTP` + prompt processor.
-
-### Option B — InvokeHTTP (standard processor)
-
-Use this when you **do not** want a custom Python extension. Point **InvokeHTTP** at the same **`predict_array`** model URL as Option A.
+Use **InvokeHTTP** (standard processor). Point it at the deployed **`predict_array`** model URL.
 
 #### Model endpoint
 
@@ -120,7 +107,7 @@ The model expects a JSON object (CML passes it as the `args` dict):
 {"records": [ { "MMSI": 123, "Event_Timestamp": "...", ... }, ... ]}
 ```
 
-Alternatively `{"ndjson": "<one JSON object per line>"}` (same as `AisOutlierCmlInvoke`).
+Alternatively `{"ndjson": "<one JSON object per line>"}` (same shape as AIS simulator NDJSON).
 
 #### NiFi flow (typical)
 
