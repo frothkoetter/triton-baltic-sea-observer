@@ -1,7 +1,7 @@
 -- CDW Trino / Iceberg: connect to catalog ``iceberg``, schema ``defense``
 -- (JDBC host cdw-aw-se-trino…cloudera.site:443). Impala-style ``STORED BY ICEBERG`` removed.
 -- Full apply: TRINO_USER=… TRINO_PASSWORD=… python3 run_trino_ddl.py
--- Re-run: drops recreate some tables; INSERT blocks may duplicate unless tables are dropped first.
+-- Re-run: DROP TABLE IF EXISTS before each CREATE; safe to re-apply full DDL+INSERT.
 
 CREATE SCHEMA IF NOT EXISTS iceberg.defense;
 USE iceberg.defense;
@@ -32,6 +32,7 @@ INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitu
 ('Słupsk Trough', 'POLYGON((18.631009957831964 56.33596162852314, 18.631009957831964 55.68428205974104, 18.81138185878598 55.68428205974104, 18.81138185878598 56.33596162852314, 18.631009957831964 56.33596162852314))', 56.0101, 18.7212),
 ('Baltic Shelf', 'POLYGON((17.20764611432847 56.797018539001215, 17.20764611432847 56.27911433081525, 17.4428839762831 56.27911433081525, 17.4428839762831 56.797018539001215, 17.20764611432847 56.797018539001215))', 56.5381, 17.3253);
 
+DROP TABLE IF EXISTS sanctioned_vessels;
 CREATE TABLE sanctioned_vessels (
   Name varchar COMMENT 'The official registered name of the vessel.',
   MMSI bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
@@ -97,6 +98,7 @@ INSERT INTO sanctioned_vessels (Name, IMO, Type, Flag, Sanction_Reason, Linked_T
 INSERT INTO sanctioned_vessels (Name, MMSI, IMO, Type, Flag, Sanction_Reason, Linked_To) VALUES ('BALAZS', 123456001, 9327413, 'Chemical/Products Tanker', 'Liberia', 'Blocked under E.O. 14024', 'Hennesea Holdings Limited');
 
 
+DROP TABLE IF EXISTS baltic_sea_harbours;
 CREATE TABLE baltic_sea_harbours (
   name varchar COMMENT 'The official name of the harbour or port.',
   country varchar COMMENT 'The country in which the harbour is located.',
@@ -178,7 +180,8 @@ CREATE TABLE buoy_data (
   payload_object_correlationId varchar COMMENT 'An identifier used to link related measurements or detections across multiple buoys or systems.'
 ) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
-CREATE TABLE IF NOT EXISTS maritime_surveillance_reports (
+DROP TABLE IF EXISTS maritime_surveillance_reports;
+CREATE TABLE maritime_surveillance_reports (
   message_subject   varchar    COMMENT 'The subject line of the message',
   message_text      varchar    COMMENT 'The full text of the message report',
   message_from      varchar    COMMENT 'The source of the message (e.g., Frigate Alpha HQ)',
@@ -191,7 +194,7 @@ CREATE TABLE IF NOT EXISTS maritime_surveillance_reports (
 
 DROP TABLE IF EXISTS social_media_messages;
 
-CREATE TABLE IF NOT EXISTS social_media_messages(
+CREATE TABLE social_media_messages(
   user_name         varchar    COMMENT 'The name of the user who posted the tweet',
   user_username     varchar    COMMENT 'The username of the user',
   tweet             varchar    COMMENT 'The full text of the tweet',
@@ -204,6 +207,7 @@ CREATE TABLE IF NOT EXISTS social_media_messages(
   metrics_replies   integer       COMMENT 'The number of replies'
 ) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
+DROP TABLE IF EXISTS german_navy_fleet;
 CREATE TABLE german_navy_fleet (
     class varchar COMMENT 'The type of naval vessel, e.g., Fregatten, Korvetten.',
     name varchar COMMENT 'The official name of the individual ship, e.g., FGS Brandenburg.',
@@ -283,6 +287,7 @@ INSERT INTO german_navy_fleet (class, name, mmsi, jahr_in_dienst, besatzung) VAL
 ('Sonstige', 'FGS Juist', 'MAR123454', 1985, 25),
 ('Sonstige', 'FGS Langeoog', 'MAR123455', 1987, 25);
 
+DROP TABLE IF EXISTS rus_fleet;
 CREATE TABLE rus_fleet (
     class VARCHAR COMMENT 'Ship class designation.',
     name VARCHAR COMMENT 'Unit name.',
@@ -335,6 +340,7 @@ INSERT INTO rus_fleet (class, name, mmsi, jahr_in_dienst, besatzung, home_base, 
 ('Project 20180 Altay', 'RFS Sim Tug Kappa', 'RUS273035', 2015, 32, 'Baltiysk', 'repair/logistics hub', 'simulated', 'SIM-SUP2', 'support', 'home_standby');
 
 
+DROP TABLE IF EXISTS ships;
 CREATE TABLE ships (
   mmsi bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
   ship_name varchar COMMENT 'The current registered name of the vessel.',
@@ -879,7 +885,8 @@ FROM
 
 ORDER BY harbour_name, "timestamp" DESC;
 
-CREATE TABLE IF NOT EXISTS Situation_Awareness_Summary (
+DROP TABLE IF EXISTS Situation_Awareness_Summary;
+CREATE TABLE Situation_Awareness_Summary (
   summary_timestamp timestamp,
   summare_line integer,
   summary_text varchar
