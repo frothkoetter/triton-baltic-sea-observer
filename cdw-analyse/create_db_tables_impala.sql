@@ -20,6 +20,20 @@ CREATE  TABLE ais_events_ice(
 )
 STORED BY Iceberg;
 
+-- DDL: rus_events_ice (same shape as ais_events_ice; mmsi STRING for RUS273xxx synthetic IDs)
+DROP TABLE IF EXISTS rus_events_ice;
+CREATE TABLE rus_events_ice(
+  `mmsi` STRING COMMENT 'Synthetic Russian Baltic Fleet identifier (e.g. RUS273xxx; not a real 9-digit MMSI).',
+  `event_timestamp` STRING COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
+  `latitude` DOUBLE COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',
+  `longitude` DOUBLE COMMENT 'The geographical longitude of the vessel (decimal degrees, -180 to +180).',
+  `speed` DOUBLE COMMENT 'Speed Over Ground (SOG) of the vessel in knots or a standardized unit.',
+  `course` DOUBLE COMMENT 'Course Over Ground (COG) of the vessel in degrees (0 to 359.9).',
+  `status` STRING COMMENT 'The navigation status of the vessel (e.g., Underway, Moored, Anchored).',
+  `Destination` STRING COMMENT 'The reported destination of the vessel.'
+)
+STORED BY Iceberg;
+
 -- DDL: observation_areas
 DROP TABLE IF EXISTS observation_areas;
 CREATE TABLE observation_areas (

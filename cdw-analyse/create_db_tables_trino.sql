@@ -17,6 +17,18 @@ CREATE TABLE ais_events_ice(
   Destination varchar COMMENT 'The reported destination of the vessel.'
 );
 
+DROP TABLE IF EXISTS rus_events_ice;
+CREATE TABLE rus_events_ice(
+  mmsi varchar COMMENT 'Synthetic Russian Baltic Fleet identifier (e.g. RUS273xxx; not a real 9-digit MMSI).',
+  event_timestamp varchar COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
+  latitude double COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',
+  longitude double COMMENT 'The geographical longitude of the vessel (decimal degrees, -180 to +180).',
+  speed double COMMENT 'Speed Over Ground (SOG) of the vessel in knots or a standardized unit.',
+  course double COMMENT 'Course Over Ground (COG) of the vessel in degrees (0 to 359.9).',
+  status varchar COMMENT 'The navigation status of the vessel (e.g., Underway, Moored, Anchored).',
+  Destination varchar COMMENT 'The reported destination of the vessel.'
+);
+
 DROP TABLE IF EXISTS observation_areas; 
 CREATE TABLE observation_areas (
   area_id varchar COMMENT 'A unique identifier for the defined observation or surveillance area.',
