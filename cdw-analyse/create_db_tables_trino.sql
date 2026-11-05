@@ -815,3 +815,141 @@ CREATE TABLE IF NOT EXISTS Situation_Awareness_Summary (
   summare_line integer,
   summary_text varchar
 );
+
+CREATE OR REPLACE VIEW vessel_proximity AS
+WITH
+latest_vessel_ref AS (
+    SELECT
+        CAST(mmsi AS varchar) AS vessel_mmsi,
+        a.event_timestamp AS vessel_time,
+        latitude AS vessel_lat,
+        longitude AS vessel_lon,
+        ROW_NUMBER() OVER (PARTITION BY a.mmsi ORDER BY a.event_timestamp DESC) AS rn
+    FROM
+        defense.ais_events_ice a
+    WHERE
+        try_cast(a.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
+),
+vessel_ref AS (
+    SELECT *
+    FROM latest_vessel_ref
+    WHERE rn = 1
+),
+latest_ais_events AS (
+    SELECT
+        CAST(a.mmsi AS varchar) AS vessel_mmsi,
+        a.event_timestamp AS vessel_time,
+        a.latitude AS vessel_lat,
+        a.longitude AS vessel_lon,
+        great_circle_distance(a.latitude, a.longitude, h.vessel_lat, h.vessel_lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY a.mmsi, h.vessel_mmsi ORDER BY a.event_timestamp DESC) AS rn,
+        h.vessel_mmsi AS ref_vessel_mmsi
+    FROM
+        defense.ais_events_ice a
+        CROSS JOIN vessel_ref h
+    WHERE
+        try_cast(a.event_timestamp AS timestamp) >= try_cast(h.vessel_time AS timestamp) - interval '4' hour
+),
+filtered_ais_events AS (
+    SELECT *
+    FROM latest_ais_events
+    WHERE rn = 1
+),
+latest_marine_status AS (
+    SELECT
+        v.mmsi AS marine_mmsi,
+        v.event_timestamp AS marine_time,
+        v.latitude AS marine_lat,
+        v.longitude AS marine_lon,
+        v.operational_status,
+        great_circle_distance(v.latitude, v.longitude, h.vessel_lat, h.vessel_lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY v.mmsi, h.vessel_mmsi ORDER BY v.event_timestamp DESC) AS rn,
+        h.vessel_mmsi AS ref_vessel_mmsi
+    FROM
+        defense.marine_vessel_status v
+        CROSS JOIN vessel_ref h
+    WHERE
+        try_cast(v.event_timestamp AS timestamp) >= current_timestamp - interval '4' hour
+),
+filtered_marine_status AS (
+    SELECT *
+    FROM latest_marine_status
+    WHERE rn = 1
+)
+SELECT
+    'REF' AS Data_Source,
+    vessel_mmsi,
+    vessel_time,
+    vessel_lon,
+    vessel_lat,
+    0 AS distance_m,
+    0 AS distance_km,
+    'Reference Vessel' AS details,
+    vessel_mmsi AS ref_vessel_mmsi
+FROM vessel_ref
+WHERE rn = 1
+UNION ALL
+SELECT
+    'AIS' AS Data_Source,
+    a.vessel_mmsi,
+    a.vessel_time,
+    a.vessel_lon,
+    a.vessel_lat,
+    a.distance_m,
+    ROUND(a.distance_m / 1000.0, 2) AS distance_km,
+    CONCAT(
+        'Distance: ',
+        CAST(ROUND(a.distance_m / 1000.0, 2) AS varchar),
+        ' km '
+    ) AS details,
+    a.ref_vessel_mmsi
+FROM filtered_ais_events a
+UNION ALL
+SELECT
+    'Fleet' AS Data_Source,
+    CAST(m.marine_mmsi AS varchar) AS vessel_mmsi,
+    m.marine_time AS vessel_time,
+    m.marine_lon AS vessel_lon,
+    m.marine_lat AS vessel_lat,
+    m.distance_m,
+    ROUND(m.distance_m / 1000.0, 2) AS distance_km,
+    CONCAT(
+        'Distance: ',
+        CAST(ROUND(m.distance_m / 1000.0, 2) AS varchar),
+        ' km | ',
+        'Status: ',
+        m.operational_status
+    ) AS details,
+    m.ref_vessel_mmsi
+FROM filtered_marine_status m
+ORDER BY Data_Source DESC;
+
+-- gps_jammer_events: airspace integrity / GPS jamming simulation (NiFi GpsJammer)
+DROP TABLE IF EXISTS gps_jammer_events;
+CREATE TABLE gps_jammer_events (
+    geohash varchar COMMENT '6-character geohash identifying the tile',
+    ts varchar COMMENT 'ISO 8601 Timestamp of the observation',
+    latitude double COMMENT 'Latitude of the tile center',
+    longitude double COMMENT 'Longitude of the tile center',
+    adsb_nic integer COMMENT 'Navigation Integrity Category (0-8)',
+    signal_integrity double COMMENT 'Calculated signal integrity (0.05 - 0.90)',
+    jamming_indicator boolean COMMENT 'True if NIC < 5, indicating probable electronic warfare',
+    event_type varchar COMMENT 'Classification of the record (e.g., gps_jammer_event)'
+) WITH (partitioning = ARRAY['truncate(ts, 10)']);
+
+-- lidar_simulation_metadata: one row per NiFi LidarSimulator LAS object (FlowFile attributes)
+DROP TABLE IF EXISTS lidar_simulation_metadata;
+CREATE TABLE lidar_simulation_metadata (
+  hadoop_file_url varchar COMMENT 'Object store URI of the LAS file (hadoop.file.url), e.g. s3a://bucket/path/object.',
+  center_lat double COMMENT 'Vessel scene center latitude in WGS84 (lidar.center.lat).',
+  center_lon double COMMENT 'Vessel scene center longitude in WGS84 (lidar.center.lon).',
+  classification integer COMMENT 'LAS point class code for vessel type (lidar.classification).',
+  filename varchar COMMENT 'LAS basename written to object store (lidar.filename).',
+  heading_deg double COMMENT 'Vessel heading in degrees clockwise from north (lidar.heading_deg).',
+  point_count bigint COMMENT 'Number of points in the LAS file (lidar.point_count).',
+  vessel_name varchar COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
+  vessel_type varchar COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
+  predicted_vessel_type varchar COMMENT 'ML-predicted vessel type label (inference pipeline).',
+  model_confidence double COMMENT 'Model confidence for predicted_vessel_type (0.0–1.0).',
+  ingested_at timestamp COMMENT 'When the metadata row was recorded (set at ingest).'
+) WITH (partitioning = ARRAY['day(ingested_at)']);

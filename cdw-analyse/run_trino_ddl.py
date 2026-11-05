@@ -38,6 +38,12 @@ def transform_sql(text: str) -> str:
         flags=re.IGNORECASE,
     )
     text = re.sub(
+        r"\)\s*\nPARTITIONED BY SPEC \(day\(ingested_at\)\)\s*\nSTORED BY ICEBERG\s*;",
+        ") WITH (partitioning = ARRAY['day(ingested_at)']);",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
         r"\)\s*\nCOMMENT 'Table for maritime surveillance reports'\s*\nSTORED by ICEBERG\s*;",
         ");",
         text,
