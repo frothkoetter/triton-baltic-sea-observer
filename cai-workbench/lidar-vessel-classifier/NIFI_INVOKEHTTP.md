@@ -35,18 +35,40 @@ For NiFi:
 | **HTTP URL** | `https://modelservice.ml-….cloudera.site/model?accessKey=${lidar.model.access.key}` (Parameter Context; mark key **sensitive**) |
 | **Request Content-Type** | `application/json` |
 | **Request Body Enabled** | `true` |
-| **Connection Timeout** | `60 sec` (or higher while testing) |
-| **Socket Read Timeout** | `120 sec` or more (model reads LAS from S3) |
+| **Connection Timeout** | `30–60 sec` minimum while testing (avoid `5 sec` until connectivity is proven) |
+| **Socket Read Timeout** | `120 sec` or more (model reads LAS from S3; `15 sec` is often too low) |
 | **Authorization** (optional dynamic property) | `Bearer ${lidar.model.api.key}` if required; omit if `accessKey`-only curl works |
 
-**Request body** (FlowFile content), e.g. after **ReplaceText** / **AttributesToJSON**:
+**Request body** (FlowFile content) must match the model gateway—**not** the same shape as the URL:
 
 ```json
-{"request":{"s3_uri":"${lidar.s3.uri}"}}
+{"request":{"s3_uri":"s3a://goes-se-sandbox/data/user/…/file.las"}}
 ```
 
-Use the **same S3 URI** NiFi wrote the LAS to (`s3a://…` is fine; the model normalizes `s3a` → `s3`).  
-Set `lidar.s3.uri` from **PutObject** / **ListS3** / `hadoop.file.url` if your flow already has it.
+**Wrong (common):** putting `accessKey` inside the JSON body **and** on the query string:
+
+```json
+{"accessKey":"…","request":{"s3_uri":"…"}}
+```
+
+Use **`accessKey` only on HTTP URL** (`…/model?accessKey=…`). Strip `accessKey` from the body with **JoltTransformJSON**, **ReplaceText**, or build the body in an upstream processor.
+
+Use the **same S3 URI** NiFi wrote the LAS to (`s3a://…` is fine; the model normalizes `s3a` → `s3`).
+
+### Parameter / URL expression (NiFi 2.x)
+
+Use **Parameter Context** references with **`${…}`**, not `#{}`, unless your CDP docs explicitly say otherwise:
+
+| Parameter name (example) | HTTP URL fragment |
+|--------------------------|-------------------|
+| `Lidar Classifier URL` | `${Lidar Classifier URL}?accessKey=${Lidar Classification Access Key}` |
+
+In the InvokeHTTP UI, the resolved **HTTP URL** preview (or a one-shot test) must show a real host, e.g.  
+`https://modelservice.ml-….cloudera.site/model?accessKey=…`  
+
+If the URL stays literally `#{Lidar Classifier URL}?accessKey=…`, the processor will fail (often **Connect timed out** or unknown host).
+
+Suggested timeouts while debugging: **Connection Timeout** `30–60 sec`, **Socket Read Timeout** `120 sec` (not `5 sec` / `15 sec`).
 
 Map response fields with **EvaluateJsonPath** on the response FlowFile, e.g.:
 
