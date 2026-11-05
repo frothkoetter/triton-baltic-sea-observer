@@ -15,8 +15,8 @@ CREATE EXTERNAL TABLE ais_events_ice(
 )
 STORED BY Iceberg;
 
-drop table if exists rus_events_ice;
-CREATE EXTERNAL TABLE rus_events_ice(
+drop table if exists rus_naval_fleet_positions;
+CREATE EXTERNAL TABLE rus_naval_fleet_positions(
   `mmsi` string COMMENT 'Synthetic Russian Baltic Fleet identifier (e.g. RUS273xxx; not a real 9-digit MMSI).',
   `event_timestamp` string COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
   `latitude` double COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',

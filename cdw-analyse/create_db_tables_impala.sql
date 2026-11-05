@@ -20,9 +20,9 @@ CREATE  TABLE ais_events_ice(
 )
 STORED BY Iceberg;
 
--- DDL: rus_events_ice (same shape as ais_events_ice; mmsi STRING for RUS273xxx synthetic IDs)
-DROP TABLE IF EXISTS rus_events_ice;
-CREATE TABLE rus_events_ice(
+-- DDL: rus_naval_fleet_positions (same shape as ais_events_ice; mmsi STRING for RUS273xxx synthetic IDs)
+DROP TABLE IF EXISTS rus_naval_fleet_positions;
+CREATE TABLE rus_naval_fleet_positions(
   `mmsi` STRING COMMENT 'Synthetic Russian Baltic Fleet identifier (e.g. RUS273xxx; not a real 9-digit MMSI).',
   `event_timestamp` STRING COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
   `latitude` DOUBLE COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',
