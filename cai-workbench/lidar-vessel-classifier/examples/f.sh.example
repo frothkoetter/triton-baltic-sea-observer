@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Copy to f.sh locally; never commit real keys.
+# cp f.sh.example f.sh && chmod +x f.sh
+
+set -euo pipefail
+
+: "${LIDAR_MODEL_URL:=https://modelservice.ml-c8115bd7-ec4.se-sandb.a465-9q4k.cloudera.site/model}"
+: "${LIDAR_MODEL_ACCESS_KEY:?export LIDAR_MODEL_ACCESS_KEY}"
+: "${LIDAR_S3_URI:?export LIDAR_S3_URI}"
+# Optional model API key (Bearer), if accessKey-only is not enough:
+# export LIDAR_MODEL_BEARER='…'
+
+exec "$(dirname "$0")/invoke_model_service.sh"

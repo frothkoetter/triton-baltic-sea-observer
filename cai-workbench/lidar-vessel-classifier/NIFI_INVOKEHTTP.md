@@ -3,7 +3,9 @@
 Your Mac `curl` proves the **model endpoint and `accessKey` query param** work.  
 NiFi **`Connect timed out`** means the **NiFi JVM never opened a TCP connection** to that host (firewall, DNS, wrong URL, or proxy)—not a missing Bearer token.
 
-## Working request shape (no Bearer)
+## Working request shape
+
+**Minimum (query `accessKey` only):**
 
 ```bash
 curl -sS -H "Content-Type: application/json" -X POST \
@@ -11,14 +13,19 @@ curl -sS -H "Content-Type: application/json" -X POST \
   -d '{"request":{"s3_uri":"s3a://<bucket>/path/to/file.las"}}'
 ```
 
+**Also valid (optional model API key as Bearer + same `accessKey`):** some deployments accept both; use the **model access key** from CML Model → Access Key, not a CDP workload JWT unless your docs say otherwise.
+
 Expected response (example):
 
 ```json
 {"success":true,"response":{"confidence":0.54,"vessel_type":"gas_tanker"},...}
 ```
 
-- Do **not** set an **`Authorization`** dynamic property on InvokeHTTP when using **`accessKey`** in the URL.
-- Remove any leftover **`Authorization: Bearer …`** property (empty values can still confuse debugging).
+For NiFi:
+
+- **`accessKey`** must be on **HTTP URL**: `…/model?accessKey=${lidar.model.access.key}`
+- **Optional:** dynamic property **`Authorization`** = `Bearer ${lidar.model.api.key}` if your environment requires it (same as local `f.sh`).
+- Do **not** use a stale CDP Knox JWT or OpenAI-style token here unless you know the gateway expects it.
 
 ## InvokeHTTP settings (NiFi 2.x)
 
@@ -30,7 +37,7 @@ Expected response (example):
 | **Request Body Enabled** | `true` |
 | **Connection Timeout** | `60 sec` (or higher while testing) |
 | **Socket Read Timeout** | `120 sec` or more (model reads LAS from S3) |
-| **Authorization** | *(omit — delete dynamic property)* |
+| **Authorization** (optional dynamic property) | `Bearer ${lidar.model.api.key}` if required; omit if `accessKey`-only curl works |
 
 **Request body** (FlowFile content), e.g. after **ReplaceText** / **AttributesToJSON**:
 
