@@ -54,3 +54,9 @@ Run **`cdsw-build.sh`** (or install `requirements.txt`) before deploying so `las
 ## Metrics
 
 Deploy **`predict_with_metrics.py`** with entry function **`predict`**, then run **`use_model_metrics.py`** in a session (`dev = True` for local calls).
+
+## NiFi (InvokeHTTP)
+
+Production flows call the **CML Model Service** with **`accessKey`** on the query string (no Bearer token). See **[NIFI_INVOKEHTTP.md](./NIFI_INVOKEHTTP.md)** and **`examples/invoke_model_service.sh`**.
+
+If InvokeHTTP reports **`Connect timed out`**, test curl from the **NiFi host**—laptop success does not imply cluster egress to `modelservice.ml-*.cloudera.site`.
