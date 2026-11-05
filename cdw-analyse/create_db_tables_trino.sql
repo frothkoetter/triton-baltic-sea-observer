@@ -1,28 +1,29 @@
-create database defense;
+-- CDW Trino / Iceberg: connect to catalog ``iceberg``, schema ``defense``
+-- (JDBC host cdw-aw-se-trino…cloudera.site:443). Impala-style ``STORED BY ICEBERG`` removed.
+-- Full apply: TRINO_USER=… TRINO_PASSWORD=… python3 run_trino_ddl.py
+-- Re-run: drops recreate some tables; INSERT blocks may duplicate unless tables are dropped first.
 
-use defense;
+CREATE SCHEMA IF NOT EXISTS iceberg.defense;
+USE iceberg.defense;
+DROP TABLE IF EXISTS ais_events_ice;
+CREATE TABLE ais_events_ice(
+  mmsi bigint COMMENT 'Maritime Mobile Service Identity, a unique 9-digit vessel identifier.',
+  event_timestamp varchar COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
+  latitude double COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',
+  longitude double COMMENT 'The geographical longitude of the vessel (decimal degrees, -180 to +180).',
+  speed double COMMENT 'Speed Over Ground (SOG) of the vessel in knots or a standardized unit.',
+  course double COMMENT 'Course Over Ground (COG) of the vessel in degrees (0 to 359.9).',
+  status varchar COMMENT 'The navigation status of the vessel (e.g., Underway, Moored, Anchored).',
+  Destination varchar COMMENT 'The reported destination of the vessel.'
+);
 
-drop table if exists ais_events_ice;
-CREATE EXTERNAL TABLE ais_events_ice(
-  `mmsi` bigint COMMENT 'Maritime Mobile Service Identity, a unique 9-digit vessel identifier.',
-  `event_timestamp` string COMMENT 'The time and date the AIS event was recorded (typically stored as ISO 8601 or similar format).',
-  `latitude` double COMMENT 'The geographical latitude of the vessel (decimal degrees, -90 to +90).',
-  `longitude` double COMMENT 'The geographical longitude of the vessel (decimal degrees, -180 to +180).',
-  `speed` double COMMENT 'Speed Over Ground (SOG) of the vessel in knots or a standardized unit.',
-  `course` double COMMENT 'Course Over Ground (COG) of the vessel in degrees (0 to 359.9).',
-  `status` string COMMENT 'The navigation status of the vessel (e.g., Underway, Moored, Anchored).',
-  `Destination` string COMMENT 'The reported destination of the vessel.'
-)
-STORED BY Iceberg;
-
-drop table if exists observation_areas; 
+DROP TABLE IF EXISTS observation_areas; 
 CREATE TABLE observation_areas (
-  area_id STRING COMMENT 'A unique identifier for the defined observation or surveillance area.',
-  polygon STRING COMMENT 'The geographic boundary of the area, typically represented as a well-known text (WKT) string or a JSON array of coordinates.',
+  area_id varchar COMMENT 'A unique identifier for the defined observation or surveillance area.',
+  polygon varchar COMMENT 'The geographic boundary of the area, typically represented as a well-known text (WKT) string or a JSON array of coordinates.',
   center_latitude double COMMENT 'The central latitude coordinate of the observation area.',
   center_longitude double COMMENT 'The central longitude coordinate of the observation area.'
-)
-STORED by ICEBERG ;
+);
 
 INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitude) VALUES
 ('Bornholm Basin', 'POLYGON((17.237478356677286 56.03107993705109, 17.237478356677286 55.9047066587936, 18.31712997618766 55.9047066587936, 18.317129976129976 56.03107993705109, 17.237478356677286 56.03107993705109))', 55.9679, 17.7773),
@@ -32,15 +33,14 @@ INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitu
 ('Baltic Shelf', 'POLYGON((17.20764611432847 56.797018539001215, 17.20764611432847 56.27911433081525, 17.4428839762831 56.27911433081525, 17.4428839762831 56.797018539001215, 17.20764611432847 56.797018539001215))', 56.5381, 17.3253);
 
 CREATE TABLE sanctioned_vessels (
-  Name STRING COMMENT 'The official registered name of the vessel.',
-  MMSI BIGINT COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
-  IMO BIGINT COMMENT 'The unique 7-digit International Maritime Organization identification number.',
-  Type STRING COMMENT 'The primary classification or type of vessel (e.g., Crude Oil Tanker, Cargo).',
-  Flag STRING COMMENT 'The country whose flag the vessel is sailing under (flag state).',
-  Sanction_Reason STRING COMMENT 'The specific regulatory or legal reason for the vessel being sanctioned.',
-  Linked_To STRING COMMENT 'Entities, organizations, or individuals associated with or controlling the sanctioned vessel.'
-)
-STORED by ICEBERG;
+  Name varchar COMMENT 'The official registered name of the vessel.',
+  MMSI bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
+  IMO bigint COMMENT 'The unique 7-digit International Maritime Organization identification number.',
+  Type varchar COMMENT 'The primary classification or type of vessel (e.g., Crude Oil Tanker, Cargo).',
+  Flag varchar COMMENT 'The country whose flag the vessel is sailing under (flag state).',
+  Sanction_Reason varchar COMMENT 'The specific regulatory or legal reason for the vessel being sanctioned.',
+  Linked_To varchar COMMENT 'Entities, organizations, or individuals associated with or controlling the sanctioned vessel.'
+);
 
 INSERT INTO sanctioned_vessels (Name, MMSI, IMO, Type, Flag, Sanction_Reason, Linked_To)
 VALUES
@@ -98,12 +98,11 @@ INSERT INTO sanctioned_vessels (Name, MMSI, IMO, Type, Flag, Sanction_Reason, Li
 
 
 CREATE TABLE baltic_sea_harbours (
-  name STRING COMMENT 'The official name of the harbour or port.',
-  country STRING COMMENT 'The country in which the harbour is located.',
-  latitude DOUBLE COMMENT 'The geographical latitude of the harbour’s central point (decimal degrees).',
-  longitude DOUBLE COMMENT 'The geographical longitude of the harbour’s central point (decimal degrees).'
-)
-STORED by ICEBERG;
+  name varchar COMMENT 'The official name of the harbour or port.',
+  country varchar COMMENT 'The country in which the harbour is located.',
+  latitude double COMMENT 'The geographical latitude of the harbour’s central point (decimal degrees).',
+  longitude double COMMENT 'The geographical longitude of the harbour’s central point (decimal degrees).'
+);
 
 INSERT INTO baltic_sea_harbours VALUES
 ('Stockholm', 'Sweden', 59.3293, 18.0686),
@@ -140,87 +139,78 @@ INSERT INTO baltic_sea_harbours VALUES
 
 
 
-drop table if exists marine_vessel_status;
+DROP TABLE IF EXISTS marine_vessel_status;
 
 CREATE TABLE marine_vessel_status (
-  MMSI STRING COMMENT 'Maritime Mobile Service Identity, a unique 9-digit vessel identifier.',
-  Event_Timestamp STRING COMMENT 'The time and date the vessel status was reported.',
-  Latitude DOUBLE COMMENT 'The geographical latitude of the vessel.',
-  Longitude DOUBLE COMMENT 'The geographical longitude of the vessel.',
-  Speed DOUBLE COMMENT 'Speed Over Ground (SOG) of the vessel.',
-  Course DOUBLE COMMENT 'Course Over Ground (COG) of the vessel.',
-  Status STRING COMMENT 'The navigational status of the vessel (e.g., Underway, Moored).',
-  Destination STRING COMMENT 'The reported port or area destination of the vessel.',
-  Depth DOUBLE COMMENT 'The reported water depth at the vessel’s location.',
-  Operational_Status STRING COMMENT 'The current operational state of the vessel (e.g., Fishing, Dredging, Tanker).',
-  System_Status STRING COMMENT 'The reporting status of the AIS or monitoring system.'
-)
-PARTITIONED BY SPEC (TRUNCATE(10, Event_Timestamp))
-STORED by ICEBERG;
+  MMSI varchar COMMENT 'Maritime Mobile Service Identity, a unique 9-digit vessel identifier.',
+  Event_Timestamp varchar COMMENT 'The time and date the vessel status was reported.',
+  Latitude double COMMENT 'The geographical latitude of the vessel.',
+  Longitude double COMMENT 'The geographical longitude of the vessel.',
+  Speed double COMMENT 'Speed Over Ground (SOG) of the vessel.',
+  Course double COMMENT 'Course Over Ground (COG) of the vessel.',
+  Status varchar COMMENT 'The navigational status of the vessel (e.g., Underway, Moored).',
+  Destination varchar COMMENT 'The reported port or area destination of the vessel.',
+  Depth double COMMENT 'The reported water depth at the vessel’s location.',
+  Operational_Status varchar COMMENT 'The current operational state of the vessel (e.g., Fishing, Dredging, Tanker).',
+  System_Status varchar COMMENT 'The reporting status of the AIS or monitoring system.'
+) WITH (partitioning = ARRAY['truncate(event_timestamp, 10)']);
 
-drop table buoy_data;
+DROP TABLE IF EXISTS buoy_data;
 
 CREATE TABLE buoy_data (
-  buoyid STRING COMMENT 'A unique identifier for the specific buoy that recorded the data.',
-  ts STRING COMMENT 'Timestamp of the data record, indicating when the measurement was taken.',
-  geo_position_lat DOUBLE COMMENT 'Geographical latitude where the buoy is currently located.',
-  geo_position_lon DOUBLE COMMENT 'Geographical longitude where the buoy is currently located.',
-  altitude INT COMMENT 'The altitude or depth of the buoy at the time of the measurement (in meters or feet).',
-  payload_magneticField_totalField DOUBLE COMMENT 'The total intensity of the measured magnetic field.',
-  payload_magneticField_anomaly DOUBLE COMMENT 'The deviation of the measured magnetic field from the expected regional field.',
-  payload_magneticField_gradient STRING COMMENT 'Detailed measurement of the rate of change of the magnetic field over distance.',
-  payload_detectionConfidence STRING COMMENT 'A rating or score indicating the certainty of any object detection.',
-  payload_object_type STRING COMMENT 'The classification category of the detected object (e.g., vessel, submarine, anomaly).',
-  payload_object_classification STRING COMMENT 'A more specific sub-classification of the detected object (e.g., fishing trawler, cargo ship).',
-  payload_object_confidence INT COMMENT 'A percentage or score indicating the confidence level in the object classification.',
-  payload_object_estimatedDepth INT COMMENT 'The estimated depth of the detected object below the water surface.',
-  payload_object_motion STRING COMMENT 'The observed motion characteristics of the detected object (e.g., static, slow-moving, erratic).',
-  payload_object_extent STRING COMMENT 'A description of the size or dimensions of the detected object.',
-  payload_object_notes STRING COMMENT 'Free-form text notes or observations regarding the detected object.',
-  payload_object_orientation INT COMMENT 'The observed heading or orientation of the detected object (in degrees).',
-  payload_object_correlationId STRING COMMENT 'An identifier used to link related measurements or detections across multiple buoys or systems.'
-)
-PARTITIONED BY SPEC (TRUNCATE(10, ts))
-STORED by ICEBERG;
+  buoyid varchar COMMENT 'A unique identifier for the specific buoy that recorded the data.',
+  ts varchar COMMENT 'Timestamp of the data record, indicating when the measurement was taken.',
+  geo_position_lat double COMMENT 'Geographical latitude where the buoy is currently located.',
+  geo_position_lon double COMMENT 'Geographical longitude where the buoy is currently located.',
+  altitude integer COMMENT 'The altitude or depth of the buoy at the time of the measurement (in meters or feet).',
+  payload_magneticField_totalField double COMMENT 'The total intensity of the measured magnetic field.',
+  payload_magneticField_anomaly double COMMENT 'The deviation of the measured magnetic field from the expected regional field.',
+  payload_magneticField_gradient varchar COMMENT 'Detailed measurement of the rate of change of the magnetic field over distance.',
+  payload_detectionConfidence varchar COMMENT 'A rating or score indicating the certainty of any object detection.',
+  payload_object_type varchar COMMENT 'The classification category of the detected object (e.g., vessel, submarine, anomaly).',
+  payload_object_classification varchar COMMENT 'A more specific sub-classification of the detected object (e.g., fishing trawler, cargo ship).',
+  payload_object_confidence integer COMMENT 'A percentage or score indicating the confidence level in the object classification.',
+  payload_object_estimatedDepth integer COMMENT 'The estimated depth of the detected object below the water surface.',
+  payload_object_motion varchar COMMENT 'The observed motion characteristics of the detected object (e.g., static, slow-moving, erratic).',
+  payload_object_extent varchar COMMENT 'A description of the size or dimensions of the detected object.',
+  payload_object_notes varchar COMMENT 'Free-form text notes or observations regarding the detected object.',
+  payload_object_orientation integer COMMENT 'The observed heading or orientation of the detected object (in degrees).',
+  payload_object_correlationId varchar COMMENT 'An identifier used to link related measurements or detections across multiple buoys or systems.'
+) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
 CREATE TABLE IF NOT EXISTS maritime_surveillance_reports (
-  message_subject   STRING    COMMENT 'The subject line of the message',
-  message_text      STRING    COMMENT 'The full text of the message report',
-  message_from      STRING    COMMENT 'The source of the message (e.g., Frigate Alpha HQ)',
-  message_dtg       STRING    COMMENT 'The date-time group of the message',
-  message_id        STRING    COMMENT 'A unique identifier for the message',
-  message_to        STRING    COMMENT 'The intended recipient of the message',
-  message_position  STRING    COMMENT 'The position of the asset, if provided'
-)
-COMMENT 'Table for maritime surveillance reports'
-STORED by ICEBERG;
+  message_subject   varchar    COMMENT 'The subject line of the message',
+  message_text      varchar    COMMENT 'The full text of the message report',
+  message_from      varchar    COMMENT 'The source of the message (e.g., Frigate Alpha HQ)',
+  message_dtg       varchar    COMMENT 'The date-time group of the message',
+  message_id        varchar    COMMENT 'A unique identifier for the message',
+  message_to        varchar    COMMENT 'The intended recipient of the message',
+  message_position  varchar    COMMENT 'The position of the asset, if provided'
+);
 
 
-drop table if exists social_media_messages;
+DROP TABLE IF EXISTS social_media_messages;
 
 CREATE TABLE IF NOT EXISTS social_media_messages(
-  user_name         STRING    COMMENT 'The name of the user who posted the tweet',
-  user_username     STRING    COMMENT 'The username of the user',
-  tweet             STRING    COMMENT 'The full text of the tweet',
-  ts                STRING COMMENT 'The timestamp of the tweet',
-  priority          STRING    COMMENT 'The priority level (e.g., niedrig)',
-  latitude          DOUBLE    COMMENT 'The latitude of the tweet location',
-  longitude         DOUBLE    COMMENT 'The longitude of the tweet location',
-  metrics_retweets  INT       COMMENT 'The number of retweets',
-  metrics_likes     INT       COMMENT 'The number of likes',
-  metrics_replies   INT       COMMENT 'The number of replies'
-)
-PARTITIONED BY SPEC (TRUNCATE(10, ts))
-STORED by ICEBERG;
+  user_name         varchar    COMMENT 'The name of the user who posted the tweet',
+  user_username     varchar    COMMENT 'The username of the user',
+  tweet             varchar    COMMENT 'The full text of the tweet',
+  ts                varchar COMMENT 'The timestamp of the tweet',
+  priority          varchar    COMMENT 'The priority level (e.g., niedrig)',
+  latitude          double    COMMENT 'The latitude of the tweet location',
+  longitude         double    COMMENT 'The longitude of the tweet location',
+  metrics_retweets  integer       COMMENT 'The number of retweets',
+  metrics_likes     integer       COMMENT 'The number of likes',
+  metrics_replies   integer       COMMENT 'The number of replies'
+) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
 CREATE TABLE german_navy_fleet (
-    class STRING COMMENT 'The type of naval vessel, e.g., Fregatten, Korvetten.',
-    name STRING COMMENT 'The official name of the individual ship, e.g., FGS Brandenburg.',
-    mmsi STRING COMMENT 'A unique identifier for the vessel, following a custom pattern.',
-    jahr_in_dienst INT COMMENT 'The year the ship was commissioned and entered service.',
-    besatzung INT COMMENT 'The total crew size or number of personnel for the vessel.'
-)
-STORED BY ICEBERG;
+    class varchar COMMENT 'The type of naval vessel, e.g., Fregatten, Korvetten.',
+    name varchar COMMENT 'The official name of the individual ship, e.g., FGS Brandenburg.',
+    mmsi varchar COMMENT 'A unique identifier for the vessel, following a custom pattern.',
+    jahr_in_dienst integer COMMENT 'The year the ship was commissioned and entered service.',
+    besatzung integer COMMENT 'The total crew size or number of personnel for the vessel.'
+);
 
 INSERT INTO german_navy_fleet (class, name, mmsi, jahr_in_dienst, besatzung) VALUES
 -- Fregatten (11)
@@ -346,20 +336,19 @@ INSERT INTO rus_fleet (class, name, mmsi, jahr_in_dienst, besatzung, home_base, 
 
 
 CREATE TABLE ships (
-  mmsi BIGINT COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
-  ship_name STRING COMMENT 'The current registered name of the vessel.',
-  vessel_type STRING COMMENT 'The classification or type of vessel (e.g., Cargo, Tanker, Passenger).',
-  imo_number STRING COMMENT 'The unique 7-digit International Maritime Organization identification number.',
-  call_sign STRING COMMENT 'The unique radio communication identifier for the vessel.',
-  flag STRING COMMENT 'The country whose flag the vessel is sailing under (flag state).',
-  length_m DOUBLE COMMENT 'The overall length of the vessel in meters.',
-  beam_m DOUBLE COMMENT 'The maximum width (beam) of the vessel in meters.',
-  gross_tonnage DOUBLE COMMENT 'The gross tonnage (GT) measurement of the vessel’s volume.',
-  year_built INT COMMENT 'The year the vessel was constructed.'
-)
-STORED BY ICEBERG;
+  mmsi bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',
+  ship_name varchar COMMENT 'The current registered name of the vessel.',
+  vessel_type varchar COMMENT 'The classification or type of vessel (e.g., Cargo, Tanker, Passenger).',
+  imo_number varchar COMMENT 'The unique 7-digit International Maritime Organization identification number.',
+  call_sign varchar COMMENT 'The unique radio communication identifier for the vessel.',
+  flag varchar COMMENT 'The country whose flag the vessel is sailing under (flag state).',
+  length_m double COMMENT 'The overall length of the vessel in meters.',
+  beam_m double COMMENT 'The maximum width (beam) of the vessel in meters.',
+  gross_tonnage double COMMENT 'The gross tonnage (GT) measurement of the vessel’s volume.',
+  year_built integer COMMENT 'The year the vessel was constructed.'
+);
 
-INSERT INTO TABLE ships VALUES
+INSERT INTO ships VALUES
 (123456000, 'Poseidon Pride', 'Cargo', 'IMO9876541', 'PPDX', 'Liberia', 150.0, 25.0, 12000.0, 2010),
 (123456001, 'Balazs', 'Tanker', 'IMO9876542', 'SSER', 'Panama', 200.0, 32.0, 35000.0, 2012),
 (123456002, 'Ocean Wanderer', 'Passenger', 'IMO9876543', 'OWAN', 'Bahamas', 180.0, 28.0, 25000.0, 2015),
@@ -413,11 +402,11 @@ INSERT INTO TABLE ships VALUES
 
 
 
-create view area_violation as
+CREATE OR REPLACE VIEW area_violation as
 WITH observation_polygons AS (
     SELECT 
         area_id,
-        ST_GeomFromText(polygon) AS geom
+        ST_GeometryFromText(polygon) AS geom
     FROM defense.observation_areas
 ),
 ship_positions AS (
@@ -454,9 +443,7 @@ ship_transitions AS (
         transition
 from ship_transitions;
 
-create view buoy_near_harbours 
-COMMENT 'A view containing all buoy data records that are located within a 10 km radius of any harbour listed in the baltic_sea_harbours table. Includes the distance to the nearest harbour.'
-AS
+CREATE OR REPLACE VIEW buoy_near_harbours AS
 SELECT
   b.buoyid,
   b.ts,
@@ -491,7 +478,7 @@ SELECT
   ) AS distance_km
 FROM
   defense.buoy_data b
-JOIN
+CROSS JOIN
   defense.baltic_sea_harbours h
 WHERE
   (
@@ -504,23 +491,23 @@ WHERE
     )
   ) <= 10;
 
+DROP TABLE IF EXISTS vessel_outliers;
 CREATE TABLE vessel_outliers (
-  MMSI BIGINT COMMENT 'The unique 9-digit Maritime Mobile Service Identity number of the vessel.',
-  Event_Timestamp STRING COMMENT 'The time and date the outlier event was detected.',
-  Latitude DOUBLE COMMENT 'The geographical latitude of the vessel at the time of the event.',
-  Longitude DOUBLE COMMENT 'The geographical longitude of the vessel at the time of the event.',
-  Speed DOUBLE COMMENT 'The observed Speed Over Ground (SOG) of the vessel.',
-  Course DOUBLE COMMENT 'The observed Course Over Ground (COG) of the vessel.',
-  Status STRING COMMENT 'The reported navigation status of the vessel (e.g., Moored, Underway).',
-  Destination STRING COMMENT 'The reported destination of the vessel.',
-  Outlier_Type STRING COMMENT 'The category of the detected anomaly (e.g., Rendezvous, Inconsistent Maneuvering).',
-  Reason STRING COMMENT 'A detailed explanation or justification for why the record was flagged as an outlier.',
-  Recommendation STRING COMMENT 'Suggested action to investigate or resolve the detected anomaly.',
-  Severity_Level INT COMMENT 'A numeric rating indicating the critical nature or impact of the detected outlier.'
-)
-STORED BY ICEBERG;
+  MMSI bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number of the vessel.',
+  Event_Timestamp varchar COMMENT 'The time and date the outlier event was detected.',
+  Latitude double COMMENT 'The geographical latitude of the vessel at the time of the event.',
+  Longitude double COMMENT 'The geographical longitude of the vessel at the time of the event.',
+  Speed double COMMENT 'The observed Speed Over Ground (SOG) of the vessel.',
+  Course double COMMENT 'The observed Course Over Ground (COG) of the vessel.',
+  Status varchar COMMENT 'The reported navigation status of the vessel (e.g., Moored, Underway).',
+  Destination varchar COMMENT 'The reported destination of the vessel.',
+  Outlier_Type varchar COMMENT 'The category of the detected anomaly (e.g., Rendezvous, Inconsistent Maneuvering).',
+  Reason varchar COMMENT 'A detailed explanation or justification for why the record was flagged as an outlier.',
+  Recommendation varchar COMMENT 'Suggested action to investigate or resolve the detected anomaly.',
+  Severity_Level integer COMMENT 'A numeric rating indicating the critical nature or impact of the detected outlier.'
+);
 
-CREATE VIEW latest_sanctioned_vessel_events AS
+CREATE OR REPLACE VIEW latest_sanctioned_vessel_events AS
 WITH LatestAISData AS (
     -- 1. Identify the latest record for each MMSI in ais_events_ice
     SELECT
@@ -568,7 +555,7 @@ WHERE
     lad.rn = 1;
 
 
-create view marine_messages as
+CREATE OR REPLACE VIEW marine_messages as
 select
     message_id,
     message_subject ,
@@ -576,16 +563,13 @@ select
     message_from ,
     message_to,
     message_dtg ,
-     -- extract timestamp 
-    FROM_UNIXTIME(UNIX_TIMESTAMP(message_dtg, 'ddHHmmZMMMyy'), 'yyyy-MM-dd HH:mm:ss') AS message_timestamp,
+    try_cast(message_dtg AS timestamp) AS message_timestamp,
     message_position,
-     -- Extract Latitude: Looks for "LAT " followed by any number of digits/decimals until '°'
-    CAST(REGEXP_EXTRACT(message_position, 'LAT\\s+([0-9]+\\.[0-9]+)°', 1) AS DOUBLE) AS message_latitude,
-      -- Extract Longitude: Looks for "LON " followed by any number of digits/decimals until '°'
-    CAST(REGEXP_EXTRACT(message_position, 'LON\\s+([0-9]+\\.[0-9]+)°', 1) AS DOUBLE) AS message_longitude
+    CAST(regexp_extract(message_position, 'LAT\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_latitude,
+    CAST(regexp_extract(message_position, 'LON\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_longitude
 from maritime_surveillance_reports order by message_dtg desc;
 
-CREATE VIEW defense.lagebild AS
+CREATE OR REPLACE VIEW lagebild AS
 WITH Harbour_Ref AS (
     -- Define the source for all harbors to check proximity against
     SELECT
@@ -606,24 +590,19 @@ LatestBuoyDetections AS (
         b.geo_position_lat AS buoy_lat,
         b.geo_position_lon AS buoy_lon,
         b.payload_object_classification,
-        b.payload_magneticField_anomaly,
+        b.payload_magneticfield_anomaly,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
         -- HYBRID DISTANCE CALCULATION
-        ST_GeodesicLengthWGS84(
-            ST_SetSRID(
-                ST_LineString(b.geo_position_lon, b.geo_position_lat, h.Harbour_Lon, h.Harbour_Lat),
-                4326
-            )
-        ) AS distance_m,
+        great_circle_distance(b.geo_position_lat, b.geo_position_lon, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
         ROW_NUMBER() OVER (PARTITION BY b.buoyid, h.harbour_name ORDER BY b.ts DESC) AS rn -- Partition by buoyid AND harbor
     FROM
         defense.buoy_data b
     CROSS JOIN
         Harbour_Ref h
     WHERE
-        b.payload_detectionConfidence IS NOT NULL
-        AND b.ts >= current_timestamp() - interval 24 hours
+        b.payload_detectionconfidence IS NOT NULL
+        AND try_cast(b.ts AS timestamp) >= current_timestamp - interval '24' hour
 ),
 FilteredBuoyDetections AS (
     SELECT *
@@ -643,12 +622,7 @@ LatestAisEvents AS (
         s.Sanction_Reason,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
-        ST_GeodesicLengthWGS84(
-            ST_SetSRID(
-                ST_LineString(a.longitude, a.latitude, h.Harbour_Lon, h.Harbour_Lat),
-                4326
-            )
-        ) AS distance_m,
+        great_circle_distance(a.latitude, a.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
         ROW_NUMBER() OVER (PARTITION BY a.mmsi, h.harbour_name ORDER BY a.event_timestamp DESC) AS rn -- Partition by MMSI AND harbor
     FROM
         defense.ais_events_ice a
@@ -656,7 +630,7 @@ LatestAisEvents AS (
         Harbour_Ref h
     LEFT JOIN
         defense.sanctioned_vessels s ON a.mmsi = s.mmsi
-    WHERE a.event_timestamp >= current_timestamp() - interval 24 hours
+    WHERE try_cast(a.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
 ),
 FilteredAisEvents AS (
     SELECT *
@@ -675,18 +649,13 @@ LatestMarineStatus AS (
         v.operational_status,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
-        ST_GeodesicLengthWGS84(
-            ST_SetSRID(
-                ST_LineString(v.longitude, v.latitude, h.Harbour_Lon, h.Harbour_Lat),
-                4326
-            )
-        ) AS distance_m,
+        great_circle_distance(v.latitude, v.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
         ROW_NUMBER() OVER (PARTITION BY v.mmsi, h.harbour_name ORDER BY v.event_timestamp DESC) AS rn -- Partition by MMSI AND harbor
     FROM
         defense.marine_vessel_status v
     CROSS JOIN
         Harbour_Ref h
-    WHERE v.event_timestamp >= current_timestamp() - interval 24 hours
+    WHERE try_cast(v.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
 ),
 FilteredMarineStatus AS (
     SELECT *
@@ -706,18 +675,13 @@ LatestSocialMedia AS (
         s.latitude AS social_lat,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
-        ST_GeodesicLengthWGS84(
-            ST_SetSRID(
-                ST_LineString(s.longitude, s.latitude, h.Harbour_Lon, h.Harbour_Lat),
-                4326
-            )
-        ) AS distance_m,
+        great_circle_distance(s.latitude, s.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
         ROW_NUMBER() OVER (PARTITION BY s.tweet, s.user_username, h.harbour_name ORDER BY s.ts DESC) AS rn -- Partition by user/tweet AND harbor
     FROM
         defense.social_media_messages s
     CROSS JOIN
         Harbour_Ref h
-    WHERE s.ts >= current_timestamp() - interval 24 hours
+    WHERE try_cast(s.ts AS timestamp) >= current_timestamp - interval '24' hour
 ),
 FilteredSocialMedia AS (
     SELECT *
@@ -735,19 +699,14 @@ LatestMarineMessages AS (
         m.message_from,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
-        ST_GeodesicLengthWGS84(
-            ST_SetSRID(
-                ST_LineString(m.message_longitude, m.message_latitude, h.Harbour_Lon, h.Harbour_Lat),
-                4326
-            )
-        ) AS distance_m,
+        great_circle_distance(m.message_latitude, m.message_longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
         ROW_NUMBER() OVER (PARTITION BY m.message_id, h.harbour_name ORDER BY m.message_timestamp DESC) AS rn
     FROM
         defense.marine_messages m
     CROSS JOIN
         Harbour_Ref h
     -- Use message_timestamp for the time filter
-    WHERE CAST(m.message_timestamp AS TIMESTAMP) >= current_timestamp() - interval 24 hours
+    WHERE CAST(m.message_timestamp AS TIMESTAMP) >= current_timestamp - interval '24' hour
 ),
 FilteredMarineMessages AS (
     SELECT *
@@ -761,7 +720,7 @@ FilteredMarineMessages AS (
 SELECT
     'Buoy' AS Data_Source,
     b.buoyid AS ID,
-    b.buoy_time AS "timestamp",
+    try_cast(b.buoy_time AS timestamp) AS "timestamp",
     b.buoy_lat AS latitude,
     b.buoy_lon AS longitude,
     b.harbour_name AS harbour_name, -- Added to the final SELECT
@@ -770,7 +729,7 @@ SELECT
     CONCAT(
         'Distance: ', CAST(ROUND(b.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
         'Object: ', b.payload_object_classification,
-        ' | Mag Anomaly: ', CAST(b.payload_magneticField_anomaly AS VARCHAR)
+        ' | Mag Anomaly: ', CAST(b.payload_magneticfield_anomaly AS VARCHAR)
     ) AS details
 FROM
     FilteredBuoyDetections b
@@ -780,7 +739,7 @@ UNION ALL
 SELECT
     'AIS' AS Data_Source,
     CAST(a.mmsi AS VARCHAR) AS ID,
-    a.ship_time AS "timestamp",
+    try_cast(a.ship_time AS timestamp) AS "timestamp",
     a.ship_lat AS latitude,
     a.ship_lon AS longitude,
     a.harbour_name AS harbour_name, -- Added to the final SELECT
@@ -799,7 +758,7 @@ UNION ALL
 SELECT
     'Marine' AS Data_Source,
     CAST(m.marine_mmsi AS VARCHAR) AS ID,
-    m.marine_time AS "timestamp",
+    try_cast(m.marine_time AS timestamp) AS "timestamp",
     m.marine_lat AS latitude,
     m.marine_lon AS longitude,
     m.harbour_name AS harbour_name, -- Added to the final SELECT
@@ -817,7 +776,7 @@ UNION ALL
 SELECT
     'SocialMedia' AS Data_Source,
     s.user_username AS ID,
-    s.social_time AS "timestamp",
+    try_cast(s.social_time AS timestamp) AS "timestamp",
     s.social_lat AS latitude,
     s.social_lon AS longitude,
     s.harbour_name AS harbour_name, -- Added to the final SELECT
@@ -835,7 +794,7 @@ UNION ALL
 SELECT
     'Marine_Message' AS Data_Source,
     m.message_id AS ID,
-    m.message_time AS "timestamp",
+    try_cast(m.message_time AS timestamp) AS "timestamp",
     m.message_lat AS latitude,
     m.message_lon AS longitude,
     m.harbour_name AS harbour_name,
@@ -851,8 +810,8 @@ FROM
 
 ORDER BY harbour_name, "timestamp" DESC;
 
-create table Situation_Awareness_Summary
-(summary_timestamp timestamp,
- summare_line int,
- summary_text string)
-stored by Iceberg;
+CREATE TABLE IF NOT EXISTS Situation_Awareness_Summary (
+  summary_timestamp timestamp,
+  summare_line integer,
+  summary_text varchar
+);
