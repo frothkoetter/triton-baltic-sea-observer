@@ -5,7 +5,8 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | File | Role |
 |------|------|
 | `ShipSimulationRoutesGemini.py` | AIS — `ShipSimulationProcessor` |
-| `MarineShipSimulator.py` | Marine AIS |
+| `MarineShipSimulator.py` | German Navy AIS (`german_navy_missions` — base patrol return) |
+| `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
 | `STANAGSimulator.py` | STANAG messages |
