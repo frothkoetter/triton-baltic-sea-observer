@@ -290,6 +290,62 @@ INSERT INTO german_navy_fleet (`class`, name, mmsi, jahr_in_dienst, besatzung) V
 ('Sonstige', 'FGS Juist', 'MAR123454', 1985, 25),
 ('Sonstige', 'FGS Langeoog', 'MAR123455', 1987, 25);
 
+-- DDL: rus_fleet (Russian Baltic Fleet — real public units + simulated fillers; MMSI RUS273xxx is not real AIS)
+-- Init distribution (metadata): ~33% default_mission_state eligible_mission (active patrol at sim time);
+-- ~67% home_standby; of home_standby ~60% home_base Baltiysk, remainder Kronstadt / Primorsk / Vistula Lagoon (small craft).
+CREATE TABLE rus_fleet (
+    `class` STRING COMMENT 'Ship class designation, e.g. Project 11540 Neustrashimy.',
+    name STRING COMMENT 'Unit name.',
+    mmsi STRING COMMENT 'Synthetic fleet MMSI (RUS273xxx — not broadcast AIS).',
+    jahr_in_dienst INT COMMENT 'Year commissioned.',
+    besatzung INT COMMENT 'Typical crew size.',
+    home_base STRING COMMENT 'Primary home port: Baltiysk, Kronstadt, Primorsk, Vistula Lagoon Baltiysk.',
+    base_role STRING COMMENT 'HQ primary, repair/logistics hub, reserve/dispersal, small craft/patrol.',
+    data_source STRING COMMENT 'real or simulated.',
+    hull_number STRING COMMENT 'Optional pennant/hull number.',
+    vessel_category STRING COMMENT 'frigate, corvette, submarine, landing ship, patrol, support.',
+    default_mission_state STRING COMMENT 'eligible_mission (~33%) or home_standby (~67%).'
+)
+STORED BY ICEBERG;
+
+-- DML: Insert into rus_fleet (35 units)
+INSERT INTO rus_fleet (`class`, name, mmsi, jahr_in_dienst, besatzung, home_base, base_role, data_source, hull_number, vessel_category, default_mission_state) VALUES
+('Project 11540 Neustrashimy', 'Yaroslav Mudry', 'RUS273001', 2009, 210, 'Baltiysk', 'HQ primary', 'real', '727', 'frigate', 'eligible_mission'),
+('Project 20380 Steregushchiy', 'Steregushchy', 'RUS273002', 2007, 100, 'Baltiysk', 'HQ primary', 'real', '530', 'corvette', 'eligible_mission'),
+('Project 20380 Steregushchiy', 'Soobrazitelny', 'RUS273003', 2011, 100, 'Baltiysk', 'HQ primary', 'real', '531', 'corvette', 'eligible_mission'),
+('Project 20380 Steregushchiy', 'Boikiy', 'RUS273004', 2013, 100, 'Baltiysk', 'HQ primary', 'real', '532', 'corvette', 'home_standby'),
+('Project 20380 Steregushchiy', 'Stoikiy', 'RUS273005', 2014, 100, 'Baltiysk', 'HQ primary', 'real', '545', 'corvette', 'eligible_mission'),
+('Project 20385 Gremyashchiy', 'Gremyashchiy', 'RUS273006', 2020, 100, 'Baltiysk', 'HQ primary', 'real', '337', 'corvette', 'home_standby'),
+('Project 21631 Buyan-M', 'Grad Sviyazhsk', 'RUS273007', 2014, 52, 'Baltiysk', 'HQ primary', 'real', '652', 'corvette', 'eligible_mission'),
+('Project 21631 Buyan-M', 'Velikiy Ustyug', 'RUS273008', 2014, 52, 'Baltiysk', 'HQ primary', 'real', '651', 'corvette', 'home_standby'),
+('Project 21631 Buyan-M', 'Serpukhov', 'RUS273009', 2016, 52, 'Baltiysk', 'HQ primary', 'real', '603', 'corvette', 'eligible_mission'),
+('Project 22800 Karakurt', 'Mytishchi', 'RUS273010', 2019, 39, 'Baltiysk', 'HQ primary', 'real', '899', 'corvette', 'home_standby'),
+('Project 22800 Karakurt', 'Sovetsk', 'RUS273011', 2020, 39, 'Baltiysk', 'HQ primary', 'real', '577', 'corvette', 'eligible_mission'),
+('Project 22800 Karakurt', 'Odintsovo', 'RUS273012', 2021, 39, 'Baltiysk', 'HQ primary', 'real', '626', 'corvette', 'home_standby'),
+('Project 877 Kilo', 'Dmitrov', 'RUS273013', 1986, 52, 'Kronstadt', 'reserve/dispersal', 'real', 'B-806', 'submarine', 'eligible_mission'),
+('Project 877 Kilo', 'Vladikavkaz', 'RUS273014', 1990, 52, 'Kronstadt', 'reserve/dispersal', 'real', 'B-177', 'submarine', 'home_standby'),
+('Project 636.3 Improved Kilo', 'Kolpino', 'RUS273015', 2016, 52, 'Kronstadt', 'reserve/dispersal', 'real', 'B-271', 'submarine', 'eligible_mission'),
+('Project 775 Ropucha', 'Kaliningrad', 'RUS273016', 1984, 87, 'Baltiysk', 'HQ primary', 'real', '102', 'landing ship', 'home_standby'),
+('Project 775 Ropucha', 'Korolev', 'RUS273017', 1989, 87, 'Baltiysk', 'HQ primary', 'real', '130', 'landing ship', 'eligible_mission'),
+('Project 1171 Alligator', 'Minsk', 'RUS273018', 1983, 107, 'Baltiysk', 'HQ primary', 'real', '127', 'landing ship', 'home_standby'),
+('Project 1171 Alligator', 'Kalinin', 'RUS273019', 1985, 107, 'Baltiysk', 'repair/logistics hub', 'real', '152', 'landing ship', 'home_standby'),
+('Project 860 Vishnya', 'Kildin', 'RUS273020', 1987, 80, 'Kronstadt', 'repair/logistics hub', 'real', '535', 'support', 'home_standby'),
+('Project 861M Moma', 'Khariton Laptev', 'RUS273021', 1986, 74, 'Kronstadt', 'repair/logistics hub', 'real', '908', 'support', 'home_standby'),
+('Project 20180 Altay', 'Elbrus', 'RUS273022', 2017, 32, 'Baltiysk', 'repair/logistics hub', 'real', 'A-168', 'support', 'home_standby'),
+('Project 141 Kashtan', 'Pavel Khokhryakov', 'RUS273023', 1985, 36, 'Primorsk', 'repair/logistics hub', 'real', '323', 'support', 'home_standby'),
+('Project 1265 Sonya', 'BT-215', 'RUS273024', 1976, 32, 'Kronstadt', 'small craft/patrol', 'real', 'BT-215', 'patrol', 'eligible_mission'),
+('Project 1331M Mukha', 'PK-123', 'RUS273025', 1988, 28, 'Vistula Lagoon Baltiysk', 'small craft/patrol', 'real', 'PK-123', 'patrol', 'home_standby'),
+('Project 20380 Steregushchiy', 'RFS Sim Corvette Alpha', 'RUS273026', 2018, 95, 'Baltiysk', 'HQ primary', 'simulated', 'SIM-01', 'corvette', 'eligible_mission'),
+('Project 20380 Steregushchiy', 'RFS Sim Corvette Beta', 'RUS273027', 2019, 95, 'Baltiysk', 'HQ primary', 'simulated', 'SIM-02', 'corvette', 'home_standby'),
+('Project 22800 Karakurt', 'RFS Sim Karakurt Gamma', 'RUS273028', 2022, 39, 'Baltiysk', 'HQ primary', 'simulated', 'SIM-03', 'corvette', 'home_standby'),
+('Project 877 Kilo', 'RFS Sim Kilo Delta', 'RUS273029', 1992, 52, 'Kronstadt', 'reserve/dispersal', 'simulated', 'SIM-S1', 'submarine', 'home_standby'),
+('Project 775 Ropucha', 'RFS Sim Ropucha Epsilon', 'RUS273030', 1991, 87, 'Baltiysk', 'HQ primary', 'simulated', 'SIM-L1', 'landing ship', 'eligible_mission'),
+('Project 1171 Alligator', 'RFS Sim Alligator Zeta', 'RUS273031', 1988, 107, 'Primorsk', 'reserve/dispersal', 'simulated', 'SIM-L2', 'landing ship', 'home_standby'),
+('Project 1265 Sonya', 'RFS Sim Minesweeper Eta', 'RUS273032', 1980, 32, 'Kronstadt', 'small craft/patrol', 'simulated', 'SIM-P1', 'patrol', 'eligible_mission'),
+('Project 1331M Mukha', 'RFS Sim Patrol Theta', 'RUS273033', 1990, 28, 'Vistula Lagoon Baltiysk', 'small craft/patrol', 'simulated', 'SIM-P2', 'patrol', 'home_standby'),
+('Project 860 Vishnya', 'RFS Sim AGI Iota', 'RUS273034', 1993, 80, 'Primorsk', 'repair/logistics hub', 'simulated', 'SIM-SUP1', 'support', 'home_standby'),
+('Project 20180 Altay', 'RFS Sim Tug Kappa', 'RUS273035', 2015, 32, 'Baltiysk', 'repair/logistics hub', 'simulated', 'SIM-SUP2', 'support', 'home_standby');
+
 -- DDL: ships
 CREATE TABLE ships (
   mmsi BIGINT COMMENT 'The unique 9-digit Maritime Mobile Service Identity number.',

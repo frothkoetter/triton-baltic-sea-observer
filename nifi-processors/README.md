@@ -64,3 +64,5 @@ Upload **`baltic_water_placement.py`** and **`baltic_ship_routing.py`** with pro
 **Coast / island regression:** `python3 -m unittest test_baltic_water_placement.py` (pins in `baltic_coast_pins.py`; extend when map review finds land leakage).
 
 **Route state reset:** `BalticShipRouteStateReset` (deploy with `baltic_ship_sim_state.py`) clears only those `/tmp` JSON files—or empties `RouteWaypoints` / `RouteIndex` in place—so AIS and marine simulators pick up new water routing without touching LiDAR temp dirs or `marineship_version_state.json`. Wire it on a manual **GenerateFlowFile** or schedule after deployments.
+
+**Russian Baltic Fleet:** `upload/RusFleetPositionSimulator.py` with `upload/rus_fleet_registry.py`, `upload/rus_fleet_sim_engine.py`, plus shared `baltic_*` modules. FlowFile attribute `ship.simulation.route` = `rus_fleet_positions`; state `/tmp/rus_fleet_state.json`. See `upload/README.md`.

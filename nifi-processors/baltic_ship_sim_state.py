@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Literal, Sequence
 from marine_fleet_registry import MARINESHIP_STATE_FILE
 
 AIS_SHIP_STATE_FILE = "/tmp/ship_state.json"
+RUS_FLEET_STATE_FILE = "/tmp/rus_fleet_state.json"
 
 ROUTE_STATE_KEYS = ("RouteWaypoints", "RouteIndex")
 
@@ -28,12 +29,18 @@ class RouteStateResetResult:
     errors: List[str] = field(default_factory=list)
 
 
-def _state_paths(reset_ais: bool, reset_marine: bool) -> List[str]:
+def _state_paths(
+    reset_ais: bool,
+    reset_marine: bool,
+    reset_rus_fleet: bool = False,
+) -> List[str]:
     paths: List[str] = []
     if reset_ais:
         paths.append(AIS_SHIP_STATE_FILE)
     if reset_marine:
         paths.append(MARINESHIP_STATE_FILE)
+    if reset_rus_fleet:
+        paths.append(RUS_FLEET_STATE_FILE)
     return paths
 
 
@@ -60,6 +67,7 @@ def reset_baltic_ship_route_state(
     *,
     reset_ais: bool = True,
     reset_marine: bool = True,
+    reset_rus_fleet: bool = False,
     mode: ResetMode = "delete_files",
 ) -> RouteStateResetResult:
     """
@@ -70,7 +78,7 @@ def reset_baltic_ship_route_state(
     ``RouteIndex`` so the next tick recomputes water-only routes.
     """
     result = RouteStateResetResult(mode=mode)
-    for path in _state_paths(reset_ais, reset_marine):
+    for path in _state_paths(reset_ais, reset_marine, reset_rus_fleet):
         if mode == "delete_files":
             if not os.path.exists(path):
                 result.missing_files.append(path)

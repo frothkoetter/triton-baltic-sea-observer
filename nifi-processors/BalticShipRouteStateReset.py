@@ -19,6 +19,7 @@ from nifiapi.properties import PropertyDescriptor, StandardValidators
 
 from baltic_ship_sim_state import (
     AIS_SHIP_STATE_FILE,
+    RUS_FLEET_STATE_FILE,
     reset_baltic_ship_route_state,
     result_summary,
 )
@@ -54,6 +55,13 @@ class BalticShipRouteStateReset(FlowFileTransform):
         default_value="true",
         required=True,
     )
+    RESET_RUS_FLEET = PropertyDescriptor(
+        name="Reset RUS Fleet State",
+        description=f"Target {RUS_FLEET_STATE_FILE} (RusFleetPositionSimulator).",
+        allowable_values=["true", "false"],
+        default_value="false",
+        required=True,
+    )
     RESET_MODE = PropertyDescriptor(
         name="Reset Mode",
         description=(
@@ -69,7 +77,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
-        self.descriptors = [self.RESET_AIS, self.RESET_MARINE, self.RESET_MODE]
+        self.descriptors = [self.RESET_AIS, self.RESET_MARINE, self.RESET_RUS_FLEET, self.RESET_MODE]
 
     def getPropertyDescriptors(self):
         return self.descriptors
@@ -78,13 +86,14 @@ class BalticShipRouteStateReset(FlowFileTransform):
         try:
             reset_ais = context.getProperty(self.RESET_AIS.name).getValue() == "true"
             reset_marine = context.getProperty(self.RESET_MARINE.name).getValue() == "true"
+            reset_rus = context.getProperty(self.RESET_RUS_FLEET.name).getValue() == "true"
             mode_label = context.getProperty(self.RESET_MODE.name).getValue()
             mode = (
                 "clear_route_fields"
                 if mode_label == "Clear Route Fields Only"
                 else "delete_files"
             )
-            if not reset_ais and not reset_marine:
+            if not reset_ais and not reset_marine and not reset_rus:
                 return FlowFileTransformResult(
                     contents=b'{"skipped": true, "reason": "no targets selected"}',
                     attributes={"ship.route.reset": "skipped"},
@@ -94,6 +103,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
             result = reset_baltic_ship_route_state(
                 reset_ais=reset_ais,
                 reset_marine=reset_marine,
+                reset_rus_fleet=reset_rus,
                 mode=mode,
             )
             summary: Dict[str, Any] = result_summary(result)
