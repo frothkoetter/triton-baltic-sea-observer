@@ -418,7 +418,22 @@ INSERT INTO ships VALUES
 (123456048, 'Valiant', 'Tug', 'IMO9876589', 'VALI', 'Netherlands', 45.0, 11.0, 800.0, 2014),
 (123456049, 'Oceans Gate', 'Bulk Carrier', 'IMO9876590', 'OGAT', 'Australia', 240.0, 44.0, 70000.0, 2020);
 
-
+-- lidar_simulation_metadata: one row per NiFi LidarSimulator LAS object (FlowFile attributes)
+DROP TABLE IF EXISTS lidar_simulation_metadata;
+CREATE TABLE lidar_simulation_metadata (
+  hadoop_file_url varchar COMMENT 'Object store URI of the LAS file (hadoop.file.url), e.g. s3a://bucket/path/object.',
+  center_lat double COMMENT 'Vessel scene center latitude in WGS84 (lidar.center.lat).',
+  center_lon double COMMENT 'Vessel scene center longitude in WGS84 (lidar.center.lon).',
+  classification integer COMMENT 'LAS point class code for vessel type (lidar.classification).',
+  filename varchar COMMENT 'LAS basename written to object store (lidar.filename).',
+  heading_deg double COMMENT 'Vessel heading in degrees clockwise from north (lidar.heading_deg).',
+  point_count bigint COMMENT 'Number of points in the LAS file (lidar.point_count).',
+  vessel_name varchar COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
+  vessel_type varchar COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
+  predicted_vessel_type varchar COMMENT 'ML-predicted vessel type label (inference pipeline).',
+  model_confidence double COMMENT 'Model confidence for predicted_vessel_type (0.0–1.0).',
+  ingested_at timestamp COMMENT 'When the metadata row was recorded (set at ingest).'
+) WITH (partitioning = ARRAY['day(ingested_at)']);
 
 CREATE OR REPLACE VIEW area_violation as
 WITH observation_polygons AS (
@@ -1017,20 +1032,3 @@ CREATE TABLE gps_jammer_events (
     jamming_indicator boolean COMMENT 'True if NIC < 5, indicating probable electronic warfare',
     event_type varchar COMMENT 'Classification of the record (e.g., gps_jammer_event)'
 ) WITH (partitioning = ARRAY['truncate(ts, 10)']);
-
--- lidar_simulation_metadata: one row per NiFi LidarSimulator LAS object (FlowFile attributes)
-DROP TABLE IF EXISTS lidar_simulation_metadata;
-CREATE TABLE lidar_simulation_metadata (
-  hadoop_file_url varchar COMMENT 'Object store URI of the LAS file (hadoop.file.url), e.g. s3a://bucket/path/object.',
-  center_lat double COMMENT 'Vessel scene center latitude in WGS84 (lidar.center.lat).',
-  center_lon double COMMENT 'Vessel scene center longitude in WGS84 (lidar.center.lon).',
-  classification integer COMMENT 'LAS point class code for vessel type (lidar.classification).',
-  filename varchar COMMENT 'LAS basename written to object store (lidar.filename).',
-  heading_deg double COMMENT 'Vessel heading in degrees clockwise from north (lidar.heading_deg).',
-  point_count bigint COMMENT 'Number of points in the LAS file (lidar.point_count).',
-  vessel_name varchar COMMENT 'Display name of the simulated vessel (lidar.vessel_name).',
-  vessel_type varchar COMMENT 'Simulator vessel type key, e.g. corvette (lidar.vessel_type).',
-  predicted_vessel_type varchar COMMENT 'ML-predicted vessel type label (inference pipeline).',
-  model_confidence double COMMENT 'Model confidence for predicted_vessel_type (0.0–1.0).',
-  ingested_at timestamp COMMENT 'When the metadata row was recorded (set at ingest).'
-) WITH (partitioning = ARRAY['day(ingested_at)']);
