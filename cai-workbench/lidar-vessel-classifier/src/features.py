@@ -85,6 +85,17 @@ def extract_features_from_las_bytes(payload: bytes) -> np.ndarray:
     z = np.asarray(las.z)
     intensity = np.asarray(las.intensity) if hasattr(las, "intensity") else None
     classification = np.asarray(las.classification) if hasattr(las, "classification") else None
+    if classification is not None and len(classification):
+        try:
+            from src.labels import CODE_TO_VESSEL_TYPE
+        except ImportError:
+            from labels import CODE_TO_VESSEL_TYPE
+        vessel_mask = np.isin(classification, list(CODE_TO_VESSEL_TYPE.keys()))
+        if vessel_mask.any():
+            x, y, z = x[vessel_mask], y[vessel_mask], z[vessel_mask]
+            if intensity is not None:
+                intensity = intensity[vessel_mask]
+            classification = classification[vessel_mask]
     return las_points_to_feature_vector(x, y, z, intensity, classification)
 
 
@@ -104,6 +115,9 @@ def ground_truth_label_from_las_bytes(payload: bytes) -> str | None:
     cls = np.asarray(las.classification)
     if cls.size == 0:
         return None
-    values, counts = np.unique(cls, return_counts=True)
+    vessel_cls = cls[np.isin(cls, list(CODE_TO_VESSEL_TYPE.keys()))]
+    if vessel_cls.size == 0:
+        return None
+    values, counts = np.unique(vessel_cls, return_counts=True)
     code = int(values[counts.argmax()])
     return CODE_TO_VESSEL_TYPE.get(code)

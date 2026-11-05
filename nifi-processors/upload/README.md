@@ -1,44 +1,40 @@
-# NiFi upload bundle — Russian Baltic Fleet
+# NiFi Python extensions (upload bundle)
 
-Deploy these files together with parent-directory shared modules (`baltic_ship_routing.py`, `baltic_water_placement.py`).
+Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/` (Python Auto-Loader or S3). Do not upload parent `tests/` or `dev/`.
 
 | File | Role |
 |------|------|
-| `rus_fleet_registry.py` | Fleet list (MMSI `RUS273xxx`), home bases, patrol zone seeds |
-| `rus_fleet_sim_engine.py` | Mission / port / anchor state machine (unit-testable) |
-| `RusFleetPositionSimulator.py` | NiFi `FlowFileTransform` processor |
+| `ShipSimulationRoutesGemini.py` | AIS — `ShipSimulationProcessor` |
+| `MarineShipSimulator.py` | Marine AIS |
+| `LidarSimulator.py` | LiDAR LAS generator |
+| `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
+| `STANAGSimulator.py` | STANAG messages |
+| `MessengerSimulator.py` | Messenger sim |
+| `gpsjammer.py` | GPS jamming sim |
+| `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
+| `RusFleetPositionSimulator.py` | Russian Baltic Fleet positions (`rus_fleet_positions`) |
+| `rus_fleet_registry.py` | Fleet MMSI `RUS273xxx`, home bases, patrol seeds |
+| `rus_fleet_sim_engine.py` | Mission / port / anchor state machine |
+| `AisOutlierCmlInvoke.py` | POST AIS batch to CML **ais-outlier-detector** model (JSON array out) |
+| `baltic_water_placement.py` | Water / land mask (shared) |
+| `baltic_ship_routing.py` | Sea routes (AIS + marine) |
+| `baltic_ship_sim_state.py` | Route reset helpers + AIS / RUS fleet state paths |
+| `marine_fleet_registry.py` | Marine / STANAG fleet registry |
+| `lidar_vessel_geometry.py` | LiDAR vessel meshes |
+| `requirements.txt` | NiFi `pip install` base (`numpy`) |
 
-## Simulation route
+Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
+
+## Russian Baltic Fleet route
 
 FlowFile attribute **`ship.simulation.route`** = **`rus_fleet_positions`**.
 
-State file: **`/tmp/rus_fleet_state.json`** (separate from marine and civilian AIS simulators).
+State: **`/tmp/rus_fleet_state.json`** (separate from `/tmp/ship_state.json` and `/tmp/marineship_state.json`).
 
-Version file when ship count changes: `/tmp/rus_fleet_version_state.json`.
+Use **BalticShipRouteStateReset** with **Reset RUS Fleet State** = true, or delete the file manually.
 
-## Behavior summary
+## After deploy
 
-- Registry matches CDW table **`rus_fleet`** (~35 units; real public names + simulated fillers).
-- ~**33%** of fleet on Baltic patrol missions at init (from `default_mission_state` + fill to target fraction).
-- Missions loop offshore patrol boxes (Fehmarn Belt, Mecklenburg Bight, Swedish EEZ, etc.) via water-only routing, then return to **`home_base`**.
-- Occasional **anchoring** (Speed 0, Status Anchored) up to 24 simulated hours at waypoints.
-- **7 days** in port (`Moored`) after each mission before standby or re-assignment.
-- Non-mission units **anchored** near Baltiysk (~60% of home-port fleet), Kronstadt, Primorsk, or Vistula Lagoon.
+Reload Python extensions; run route state reset or clear `/tmp/ship_state.json`, `/tmp/marineship_state.json`, and `/tmp/rus_fleet_state.json` when routing or fleet logic changes.
 
-## Processor properties
-
-- **Number of Ships** — subset of full registry (default: all).
-- **Random Seed** — optional reproducibility for tests / demos.
-
-## Tests
-
-From `nifi-processors/`:
-
-```bash
-python3 -m pip install -r requirements-dev.txt
-python3 -m unittest tests.test_rus_fleet_sim test_baltic_ship_routing
-```
-
-## Reset state
-
-Use `BalticShipRouteStateReset` with **Reset RUS Fleet State** = true, or delete `/tmp/rus_fleet_state.json` manually.
+Tests (from repo `nifi-processors/`): `python3 -m unittest tests.test_rus_fleet_sim test_baltic_ship_routing`

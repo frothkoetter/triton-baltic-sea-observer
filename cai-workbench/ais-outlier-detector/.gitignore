@@ -1,0 +1,4 @@
+model.pkl
+artifacts/
+__pycache__/
+*.pyc

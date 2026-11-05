@@ -27,6 +27,8 @@ class RouteStateResetResult:
     missing_files: List[str] = field(default_factory=list)
     ships_route_cleared: int = 0
     errors: List[str] = field(default_factory=list)
+    # Raw JSON read from each target path immediately before reset (None if file absent).
+    snapshots: Dict[str, Any] = field(default_factory=dict)
 
 
 def _state_paths(
@@ -42,6 +44,21 @@ def _state_paths(
     if reset_rus_fleet:
         paths.append(RUS_FLEET_STATE_FILE)
     return paths
+
+
+def _read_state_file(path: str) -> Any:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _snapshot_state_file(path: str, result: RouteStateResetResult) -> None:
+    if not os.path.exists(path):
+        result.snapshots[path] = None
+        return
+    try:
+        result.snapshots[path] = _read_state_file(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        result.snapshots[path] = {"_read_error": str(exc)}
 
 
 def _clear_route_fields_on_ship(ship: Dict[str, Any]) -> bool:
@@ -79,6 +96,7 @@ def reset_baltic_ship_route_state(
     """
     result = RouteStateResetResult(mode=mode)
     for path in _state_paths(reset_ais, reset_marine, reset_rus_fleet):
+        _snapshot_state_file(path, result)
         if mode == "delete_files":
             if not os.path.exists(path):
                 result.missing_files.append(path)
@@ -94,8 +112,9 @@ def reset_baltic_ship_route_state(
             result.missing_files.append(path)
             continue
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                ships = json.load(f)
+            ships = result.snapshots.get(path)
+            if not isinstance(ships, list):
+                ships = _read_state_file(path)
         except (OSError, json.JSONDecodeError) as exc:
             result.errors.append(f"{path}: read failed: {exc}")
             continue
@@ -116,8 +135,12 @@ def reset_baltic_ship_route_state(
     return result
 
 
-def result_summary(result: RouteStateResetResult) -> Dict[str, Any]:
-    return {
+def result_summary(
+    result: RouteStateResetResult,
+    *,
+    include_snapshots: bool = False,
+) -> Dict[str, Any]:
+    summary: Dict[str, Any] = {
         "mode": result.mode,
         "deleted_files": result.deleted_files,
         "updated_files": result.updated_files,
@@ -125,3 +148,18 @@ def result_summary(result: RouteStateResetResult) -> Dict[str, Any]:
         "ships_route_cleared": result.ships_route_cleared,
         "errors": result.errors,
     }
+    if include_snapshots:
+        summary["snapshots"] = result.snapshots
+    return summary
+
+
+def reset_payload(
+    result: RouteStateResetResult,
+    *,
+    include_snapshots: bool = True,
+) -> Dict[str, Any]:
+    """JSON body for NiFi FlowFile content after a reset run."""
+    body: Dict[str, Any] = {"reset": result_summary(result, include_snapshots=False)}
+    if include_snapshots:
+        body["snapshots"] = result.snapshots
+    return body

@@ -22,11 +22,17 @@ from baltic_ship_routing import (
     advance_route_or_arrive,
     ensure_ship_route,
     move_towards_on_water,
+    pick_initial_destination_with_route,
+    recover_stuck_ship_route,
+    repair_ship_route,
+    route_path_valid,
     route_target,
+    warm_routing_graph,
+    _destination_key,
 )
 from baltic_water_placement import (
+    harbor_departure_position,
     is_baltic_water,
-    sample_water_near_harbor,
     snap_to_baltic_water,
 )
 
@@ -118,11 +124,29 @@ def load_ship_state(num_ships: int) -> List[Dict[str, Any]]:
                     ship["OriginPort"] = ship["Destination"]
                 lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
                 if not is_baltic_water(lon0, lat0):
-                    lon, lat = snap_to_baltic_water(lon0, lat0)
+                    origin = ship.get("OriginPort")
+                    if isinstance(origin, dict):
+                        lon, lat = harbor_departure_position(
+                            float(origin["Longitude"]), float(origin["Latitude"])
+                        )
+                    else:
+                        lon, lat = snap_to_baltic_water(lon0, lat0)
                     ship["Longitude"], ship["Latitude"] = lon, lat
                     ship["RouteWaypoints"] = []
                     ship["RouteIndex"] = 0
-                ensure_ship_route(ship)
+                    ship.pop("RouteDestKey", None)
+                rdk = ship.get("RouteDestKey")
+                if isinstance(rdk, list) and len(rdk) == 2:
+                    ship["RouteDestKey"] = (float(rdk[0]), float(rdk[1]))
+                wps = ship.get("RouteWaypoints") or []
+                idx = int(ship.get("RouteIndex", 0))
+                tail = wps[idx:] if idx < len(wps) else []
+                if tail and not route_path_valid(
+                    float(ship["Longitude"]), float(ship["Latitude"]), tail
+                ):
+                    ship["RouteWaypoints"] = []
+                    ship["RouteIndex"] = 0
+                    ship.pop("RouteDestKey", None)
             return ships
     else:
         return initialize_ships(num_ships)
@@ -137,39 +161,45 @@ def save_ship_state(ships: List[Dict[str, Any]]):
             ship_copy["Destination"] = ship_copy["Destination"]["name"]
         if isinstance(ship_copy.get("OriginPort"), dict):
             ship_copy["OriginPort"] = ship_copy["OriginPort"]["name"]
+        rdk = ship.get("RouteDestKey")
+        if isinstance(rdk, (list, tuple)) and len(rdk) == 2:
+            ship_copy["RouteDestKey"] = [float(rdk[0]), float(rdk[1])]
         serializable_ships.append(ship_copy)
     with open(STATE_FILE, "w") as f:
         json.dump(serializable_ships, f)
 
 def initialize_ships(num_ships: int) -> List[Dict[str, Any]]:
     """Initializes a new set of ships with random starting positions and destinations."""
+    warm_routing_graph()
     ships = []
     for i in range(num_ships):
         origin = random.choice(HARBORS)
-        others = [h for h in HARBORS if h["name"] != origin["name"]]
-        destination = random.choice(others)
-        lon, lat = sample_water_near_harbor(
-            origin["Longitude"],
-            origin["Latitude"],
-            min_km=5.0,
-            max_km=25.0,
+        lon, lat = harbor_departure_position(
+            float(origin["Longitude"]),
+            float(origin["Latitude"]),
+        )
+        destination, route = pick_initial_destination_with_route(
+            lon,
+            lat,
+            HARBORS,
+            origin["name"],
         )
         ship = {
             "MMSI": 123456000 + i,
             "Latitude": lat,
             "Longitude": lon,
-            "Speed": random.uniform(1, 10),
+            "Speed": random.uniform(4.0, 10.0),
             "Course": random.uniform(0, 360),
-            "Status": random.choice([
-                "Underway using engine", "Underway", "Anchored",
-                "Moored", "Not under command"
-            ]),
+            "Status": "Underway using engine",
             "OriginPort": origin,
             "Destination": destination,
-            "RouteWaypoints": [],
+            "RouteWaypoints": route,
             "RouteIndex": 0,
         }
-        ensure_ship_route(ship)
+        if route:
+            ship["RouteDestKey"] = _destination_key(destination)
+        else:
+            repair_ship_route(ship, HARBORS)
         ships.append(ship)
     return ships
 
@@ -178,14 +208,21 @@ def update_ship_movements(ships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for ship in ships:
         lon0, lat0 = float(ship["Longitude"]), float(ship["Latitude"])
         if not is_baltic_water(lon0, lat0):
-            lon, lat = snap_to_baltic_water(lon0, lat0)
+            origin = ship.get("OriginPort")
+            if isinstance(origin, dict):
+                lon, lat = harbor_departure_position(
+                    float(origin["Longitude"]), float(origin["Latitude"])
+                )
+            else:
+                lon, lat = snap_to_baltic_water(lon0, lat0)
             ship["Longitude"], ship["Latitude"] = lon, lat
             ship["RouteWaypoints"] = []
             ship["RouteIndex"] = 0
+            ship.pop("RouteDestKey", None)
+        ensure_ship_route(ship, harbors=HARBORS)
+        if route_target(ship) is None:
+            recover_stuck_ship_route(ship, HARBORS)
         target = route_target(ship)
-        if target is None:
-            ensure_ship_route(ship)
-            target = route_target(ship)
         if target is None:
             continue
         target_lat, target_lon = target
@@ -224,7 +261,7 @@ class ShipSimulationProcessor(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.9'
+        version = '1.3.6'
         description = (
             'Baltic ship AIS simulation with water-only multi-waypoint routes between harbors.'
         )

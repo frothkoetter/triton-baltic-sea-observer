@@ -7,6 +7,7 @@ fall on coarse mainland or island boxes. Port offsets retry until water or seawa
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import List, Sequence, Tuple
 
 import numpy as np
@@ -39,6 +40,15 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (22.5, 58.8),  # E Moonsund / W Hiiumaa
     (23.0, 58.9),  # W of Pakri
     (23.55, 59.12),  # N of Pakri / Tallinn offshore
+    (23.35, 59.05),  # Pakri–Moonsund lane
+    (23.28, 59.02),  # Hiiumaa W fairway mid
+    (23.29, 59.05),  # Pakri approach (W fairway)
+    (23.75, 59.18),  # W Estonian shelf ladder
+    (24.15, 59.30),
+    (24.52, 59.42),  # Tallinn W bypass entry
+    (24.72, 59.42),  # Tallinn bypass
+    (24.82, 59.44),
+    (24.05, 59.22),  # W Gulf of Finland (off Tallinn)
     (24.75, 59.55),  # Gulf of Finland W lane
     (25.5, 59.9),  # Gulf of Finland mid-channel
     (26.2, 59.6),  # E Gulf of Finland
@@ -66,13 +76,22 @@ OFFSHORE_SEEDS: List[Tuple[float, float]] = [
     (12.4, 54.35),  # Warnemünde / Stralsund lane
     (12.75, 54.52),  # Strelasund (Stralsund–Rügen)
     (13.15, 54.48),  # SW Rügen / Schaproder Bodden lane
-    (13.45, 54.42),  # Greifswalder Bodden outer
+    (13.55, 54.38),  # Greifswalder Bodden outer
     (13.25, 54.72),  # N of Darß–Zingst (open Baltic)
     (13.6, 54.42),  # Sassnitz / Rügen sound
     (13.85, 54.88),  # N of Rügen / Wolin offshore
     (14.85, 54.92),  # E Arkona / W Bornholm passage
     (15.75, 55.32),  # E of Bornholm
     (12.05, 56.45),  # Kattegat mid (links W Baltic to E via Øresund)
+    (11.50, 54.55),  # Fehmarnsund / Gedser lane
+    (11.85, 54.52),
+    (12.00, 54.50),  # Gedser offshore (Arkona approach)
+    (11.05, 55.15),  # Storebælt
+    (11.35, 55.42),
+    (18.25, 58.72),  # Stockholm offshore routing spine
+    (18.55, 58.55),
+    (20.85, 59.55),  # Turku / Archipelago lane
+    (21.2, 61.35),  # Gulf of Bothnia S / Pori approach
     (12.82, 54.57),  # Strelasund fairway
     (12.96, 54.59),
     (13.12, 54.58),
@@ -87,20 +106,38 @@ CHANNEL_BOXES: List[Box] = [
     (21.55, 22.55, 58.02, 58.78),  # Moonsund (Väinameri)
     (22.35, 23.25, 58.32, 58.98),  # Virtsu–Kuivastu / Muhu Väin
     (24.82, 25.45, 59.46, 59.90),  # Tallinn–Helsinki mid-channel (offshore only)
+    (23.55, 24.52, 59.12, 59.398),  # W Estonian GoF approach (below Keila at 59.40°N)
+    (24.78, 24.86, 59.40, 59.52),  # Tallinn bypass fairway (E of city center)
+    (24.50, 24.78, 59.399, 59.435),  # Tallinn W bypass tie-in (below old-town pin)
     (23.05, 23.55, 59.05, 59.18),  # N of Pakri offshore (not Haapsalu)
+    (22.45, 23.30, 58.82, 59.05),  # W Hiiumaa fairway (not Haapsalu / E Hiiumaa)
     (25.35, 27.05, 59.35, 60.25),  # Central Gulf of Finland
     (12.58, 13.16, 54.48, 54.62),  # Strelasund fairway (not Stralsund town)
-    (13.02, 13.58, 54.36, 54.50),  # Rügen SW sounds (not island interior)
+    (13.02, 13.14, 54.36, 54.54),  # Rügen SW sounds (not island interior E of 13.14°E)
     (13.52, 14.38, 54.30, 54.54),  # Greifswalder Bodden / Peenestrom approach
     (14.32, 14.78, 54.28, 54.50),  # Swinemünde / Wolin strait
     (12.85, 13.55, 54.70, 54.88),  # Baltic north of Darß–Zingst peninsula
-    (13.22, 13.78, 54.56, 54.74),  # Greifswalder Bodden / SE Rügen fairway
+    (13.22, 13.78, 54.58, 54.74),  # Greifswalder Bodden / SE Rügen fairway (not Rügen interior)
     (13.35, 14.55, 54.76, 55.08),  # E of Rügen / Wolin approaches (not island cores)
     (16.45, 20.35, 55.38, 57.12),  # S-central Baltic open lane (not Kalmar / coast cities)
     (15.60, 16.90, 54.95, 55.45),  # E of Bornholm (not island interior)
-    (11.0, 13.25, 55.95, 57.85),  # Kattegat / Øresund approach (Baltic–Skagerrak link)
+    (11.0, 13.25, 55.95, 57.85),  # Kattegat / Skagerrack approach (not Øresund cities)
+    (10.70, 11.90, 54.38, 54.78),  # Kiel Bay / Flensburg offshore lane
+    (11.35, 12.55, 54.42, 54.72),  # Fehmarnsund / Gedser passage (E of Fehmarn)
+    (10.85, 11.55, 55.05, 55.28),  # Storebælt fairway (not Zealand interior)
+    (10.95, 11.75, 55.30, 55.48),  # Great Belt fairway (not Copenhagen)
+    (12.62, 12.98, 55.58, 55.72),  # Øresund strait (not Malmö / Copenhagen)
+    (12.55, 13.05, 54.42, 54.68),  # W Arkona / Darß offshore (not Rügen interior)
+    (14.20, 14.85, 54.82, 55.05),  # E of Rügen / Bornholm W passage
     (22.75, 23.85, 57.15, 57.70),  # Gulf of Riga central lane
     (18.45, 19.55, 54.48, 54.78),  # Gdańsk Bay / Hel offshore lane
+    (26.80, 30.20, 59.55, 60.35),  # Gulf of Finland E (Primorsk / Kotlin lanes)
+    (19.85, 21.35, 59.35, 60.05),  # Åland / Turku north approach
+    (18.35, 20.50, 58.45, 59.22),  # Stockholm archipelago approach (not city core)
+    (17.75, 18.55, 57.42, 57.78),  # Visby / Gotland W approach
+    (15.05, 16.35, 56.02, 56.38),  # Karlskrona archipelago approach
+    (20.0, 22.5, 61.0, 62.5),  # Gulf of Bothnia south / Pori lane
+    (20.00, 23.50, 59.48, 60.35),  # Turku / Archipelago Sea lane (not Turku city)
 ]
 
 # Coastal sea rectangles for random draws only — kept narrow so LV/LT/EE interiors stay land.
@@ -120,6 +157,7 @@ OPEN_WATER_ZONES: List[Box] = [
     (9.2, 11.9, 53.82, 54.58),  # German Bight / Kiel Bay (coastal sea)
     (11.9, 14.3, 54.02, 54.72),  # Mecklenburg Bight (coastal sea)
     (12.6, 14.6, 54.72, 55.12),  # Arkona / Zingst offshore
+    (19.5, 22.5, 60.9, 62.8),  # Gulf of Bothnia south (Pori / Bothnian lane)
 ]
 
 # Lakes / river mouths — wet but not Baltic Sea AIS/MAD buoy placement.
@@ -193,7 +231,7 @@ MAINLAND_BOXES: List[Box] = [
     (25.05, 27.15, 59.12, 59.48),  # N Estonia inland (Rakvere, Jõhvi belt; not GoF lane)
 ]
 
-BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 60.5)
+BALTIC_BOUNDS: Box = (10.0, 30.0, 53.8, 62.8)
 SEA_SEED_MAX_M = 30_000  # max distance to offshore seed to count as sea (not lakes/inland)
 
 
@@ -206,7 +244,7 @@ def _in_any(lon: float, lat: float, boxes: Sequence[Box]) -> bool:
     return any(_in_box(lon, lat, b) for b in boxes)
 
 
-def is_baltic_water(lon: float, lat: float) -> bool:
+def _is_baltic_water_uncached(lon: float, lat: float) -> bool:
     """Sea in the Baltic basin; narrow fairways override coarse mainland boxes."""
     if not _in_box(lon, lat, BALTIC_BOUNDS):
         return False
@@ -219,7 +257,6 @@ def is_baltic_water(lon: float, lat: float) -> bool:
     ):
         return False
     if _in_any(lon, lat, OPEN_WATER_ZONES):
-        # Coastal zone rectangles overlap lakes/hinterland — require a nearby offshore seed.
         for slon, slat in OFFSHORE_SEEDS:
             _, _, dist_m = _GEOD.inv(lon, lat, slon, slat)
             if abs(dist_m) <= SEA_SEED_MAX_M:
@@ -230,6 +267,16 @@ def is_baltic_water(lon: float, lat: float) -> bool:
         if abs(dist_m) <= SEA_SEED_MAX_M:
             return True
     return False
+
+
+@lru_cache(maxsize=131_072)
+def _is_baltic_water_cached(lon_q: float, lat_q: float) -> bool:
+    return _is_baltic_water_uncached(lon_q, lat_q)
+
+
+def is_baltic_water(lon: float, lat: float) -> bool:
+    """Sea in the Baltic basin (result memoized on ~11 m grid)."""
+    return _is_baltic_water_cached(round(float(lon), 4), round(float(lat), 4))
 
 
 def random_baltic_water_position(
@@ -322,6 +369,50 @@ def _rng(seed: int | None = None) -> np.random.Generator:
 def sample_baltic_water_position(seed: int | None = None) -> Tuple[float, float]:
     """(lon, lat) on Baltic water — for simulators using the stdlib ``random`` module."""
     return random_baltic_water_position(_rng(seed))
+
+
+def harbor_departure_position(
+    port_lon: float,
+    port_lat: float,
+    *,
+    max_offset_km: float = 70.0,
+) -> Tuple[float, float]:
+    """
+    AIS sim spawn: harbor chart position, or the nearest water point within ``max_offset_km``.
+
+    Never uses ``snap_to_baltic_water`` (which can jump to open-sea seeds far from the port).
+    """
+    if is_baltic_water(port_lon, port_lat):
+        return float(port_lon), float(port_lat)
+
+    seaward = _seaward_azimuth_deg(port_lon, port_lat)
+    max_m = max(500.0, max_offset_km * 1000.0)
+    best_lon: float | None = None
+    best_lat: float | None = None
+    best_dist_m = 1e18
+
+    for dist_m in np.linspace(50.0, max_m, 120):
+        bearings: List[float] = list(np.linspace(0.0, 360.0, 48, endpoint=False))
+        bearings.extend(
+            [seaward + d for d in (-40.0, -20.0, 0.0, 20.0, 40.0)]
+        )
+        for azimuth in bearings:
+            lon, lat, _ = _GEOD.fwd(port_lon, port_lat, float(azimuth), float(dist_m))
+            if not is_baltic_water(lon, lat):
+                continue
+            _, _, d = _GEOD.inv(port_lon, port_lat, lon, lat)
+            ad = abs(d)
+            if ad < best_dist_m:
+                best_dist_m = ad
+                best_lon, best_lat = float(lon), float(lat)
+
+    if best_lon is not None and best_lat is not None:
+        return best_lon, best_lat
+
+    lon, lat, _ = _GEOD.fwd(port_lon, port_lat, seaward, min(800.0, max_m))
+    if is_baltic_water(lon, lat):
+        return float(lon), float(lat)
+    return float(port_lon), float(port_lat)
 
 
 def sample_water_near_harbor(

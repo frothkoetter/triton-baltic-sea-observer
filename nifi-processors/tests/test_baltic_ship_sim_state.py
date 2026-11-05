@@ -32,6 +32,19 @@ class TestBalticShipSimState(unittest.TestCase):
             self.assertFalse(os.path.exists(ais))
             self.assertFalse(os.path.exists(marine))
 
+    def test_delete_files_captures_snapshot_before_remove(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ais = os.path.join(tmp, "ship_state.json")
+            ships = [{"MMSI": "1", "RouteWaypoints": []}]
+            with open(ais, "w") as f:
+                json.dump(ships, f)
+            with patch("baltic_ship_sim_state.AIS_SHIP_STATE_FILE", ais):
+                result = reset_baltic_ship_route_state(
+                    reset_ais=True, reset_marine=False, mode="delete_files"
+                )
+            self.assertEqual(result.snapshots[ais], ships)
+            self.assertFalse(os.path.exists(ais))
+
     def test_clear_route_fields_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             ais = os.path.join(tmp, "ship_state.json")
