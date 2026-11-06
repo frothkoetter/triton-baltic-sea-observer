@@ -828,9 +828,46 @@ FilteredLidarSimulations AS (
     FROM LatestLidarSimulations
     WHERE rn = 1
       AND distance_m <= 50000
-)
+),
 
-----------------------------------------------------------------------------------------------------
+LatestRusNavalPositions AS (
+    SELECT
+        p.mmsi,
+        p.event_timestamp AS rus_time,
+        p.latitude AS rus_lat,
+        p.longitude AS rus_lon,
+        p.speed AS rus_speed,
+        p.course AS rus_course,
+        p.status AS rus_status,
+        p.Destination AS rus_destination,
+        rf.name AS rus_name,
+        rf.class AS rus_class,
+        rf.home_base AS rus_home_base,
+        rf.vessel_category AS rus_vessel_category,
+        rf.hull_number AS rus_hull_number,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        ST_GeodesicLengthWGS84(
+            ST_SetSRID(
+                ST_LineString(p.longitude, p.latitude, h.Harbour_Lon, h.Harbour_Lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY p.mmsi, h.harbour_name ORDER BY p.event_timestamp DESC) AS rn
+    FROM
+        defense.rus_naval_fleet_positions p
+    CROSS JOIN
+        Harbour_Ref h
+    LEFT JOIN
+        defense.rus_fleet rf ON p.mmsi = rf.mmsi
+    WHERE p.event_timestamp >= current_timestamp() - interval 24 hours
+),
+FilteredRusNavalPositions AS (
+    SELECT *
+    FROM LatestRusNavalPositions
+    WHERE rn = 1
+      AND distance_m <= 30000
+)
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
 SELECT
@@ -950,6 +987,32 @@ SELECT
     ) AS details
 FROM
     FilteredLidarSimulations l
+
+UNION ALL
+
+SELECT
+    'RUS_Fleet' AS Data_Source,
+    r.mmsi AS ID,
+    r.rus_time AS "timestamp",
+    r.rus_lat AS latitude,
+    r.rus_lon AS longitude,
+    r.harbour_name AS harbour_name,
+    r.distance_m AS dist_m_raw,
+    CAST(ROUND(r.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(r.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Unit: ', COALESCE(r.rus_name, r.mmsi),
+        COALESCE(CONCAT(' (', r.rus_class, ')'), ''),
+        ' | Home: ', COALESCE(r.rus_home_base, 'unknown'),
+        ' | Cat: ', COALESCE(r.rus_vessel_category, ''),
+        COALESCE(CONCAT(' | Hull: ', r.rus_hull_number), ''),
+        ' | Status: ', COALESCE(r.rus_status, ''),
+        ' | Dest: ', COALESCE(r.rus_destination, ''),
+        ' | SOG: ', CAST(ROUND(r.rus_speed, 1) AS VARCHAR), ' kn',
+        ' | COG: ', CAST(ROUND(r.rus_course, 0) AS VARCHAR), '°'
+    ) AS details
+FROM
+    FilteredRusNavalPositions r
 
 ORDER BY harbour_name, "timestamp" DESC;
 
