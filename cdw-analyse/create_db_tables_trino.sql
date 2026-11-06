@@ -435,6 +435,19 @@ CREATE TABLE lidar_simulation_metadata (
   ingested_at timestamp COMMENT 'When the metadata row was recorded (set at ingest).'
 ) WITH (partitioning = ARRAY['day(ingested_at)']);
 
+-- gps_jammer_events: airspace integrity / GPS jamming simulation (NiFi GpsJammer)
+DROP TABLE IF EXISTS gps_jammer_events;
+CREATE TABLE gps_jammer_events (
+    geohash varchar COMMENT '6-character geohash identifying the tile',
+    ts varchar COMMENT 'ISO 8601 Timestamp of the observation',
+    latitude double COMMENT 'Latitude of the tile center',
+    longitude double COMMENT 'Longitude of the tile center',
+    adsb_nic integer COMMENT 'Navigation Integrity Category (0-8)',
+    signal_integrity double COMMENT 'Calculated signal integrity (0.05 - 0.90)',
+    jamming_indicator boolean COMMENT 'True if NIC < 5, indicating probable electronic warfare',
+    event_type varchar COMMENT 'Classification of the record (e.g., gps_jammer_event)'
+) WITH (partitioning = ARRAY['truncate(ts, 10)']);
+
 CREATE OR REPLACE VIEW area_violation as
 WITH observation_polygons AS (
     SELECT 
@@ -817,6 +830,33 @@ FilteredRusNavalPositions AS (
     FROM LatestRusNavalPositions
     WHERE rn = 1
       AND distance_m <= 30000
+),
+
+LatestGpsJammerEvents AS (
+    SELECT
+        g.geohash,
+        g.ts AS jammer_time,
+        g.latitude AS jammer_lat,
+        g.longitude AS jammer_lon,
+        g.adsb_nic,
+        g.signal_integrity,
+        g.jamming_indicator,
+        g.event_type,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY g.geohash, h.harbour_name ORDER BY g.ts DESC) AS rn
+    FROM
+        defense.gps_jammer_events g
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE try_cast(g.ts AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredGpsJammerEvents AS (
+    SELECT *
+    FROM LatestGpsJammerEvents
+    WHERE rn = 1
+      AND distance_m <= 50000
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
@@ -964,6 +1004,28 @@ SELECT
 FROM
     FilteredRusNavalPositions r
 
+UNION ALL
+
+SELECT
+    'GPS_Jammer' AS Data_Source,
+    j.geohash AS ID,
+    try_cast(j.jammer_time AS timestamp) AS "timestamp",
+    j.jammer_lat AS latitude,
+    j.jammer_lon AS longitude,
+    j.harbour_name AS harbour_name,
+    j.distance_m AS dist_m_raw,
+    CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Geohash: ', j.geohash,
+        ' | NIC: ', CAST(j.adsb_nic AS VARCHAR),
+        ' | Signal integrity: ', CAST(ROUND(j.signal_integrity, 2) AS VARCHAR),
+        ' | Jamming: ', CAST(j.jamming_indicator AS VARCHAR),
+        COALESCE(CONCAT(' | Type: ', j.event_type), '')
+    ) AS details
+FROM
+    FilteredGpsJammerEvents j
+
 ORDER BY harbour_name, "timestamp" DESC;
 
 DROP TABLE IF EXISTS Situation_Awareness_Summary;
@@ -1080,16 +1142,3 @@ SELECT
     m.ref_vessel_mmsi
 FROM filtered_marine_status m
 ORDER BY Data_Source DESC;
-
--- gps_jammer_events: airspace integrity / GPS jamming simulation (NiFi GpsJammer)
-DROP TABLE IF EXISTS gps_jammer_events;
-CREATE TABLE gps_jammer_events (
-    geohash varchar COMMENT '6-character geohash identifying the tile',
-    ts varchar COMMENT 'ISO 8601 Timestamp of the observation',
-    latitude double COMMENT 'Latitude of the tile center',
-    longitude double COMMENT 'Longitude of the tile center',
-    adsb_nic integer COMMENT 'Navigation Integrity Category (0-8)',
-    signal_integrity double COMMENT 'Calculated signal integrity (0.05 - 0.90)',
-    jamming_indicator boolean COMMENT 'True if NIC < 5, indicating probable electronic warfare',
-    event_type varchar COMMENT 'Classification of the record (e.g., gps_jammer_event)'
-) WITH (partitioning = ARRAY['truncate(ts, 10)']);

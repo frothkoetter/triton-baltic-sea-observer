@@ -445,6 +445,21 @@ CREATE TABLE lidar_simulation_metadata (
 PARTITIONED BY SPEC (day(ingested_at))
 STORED BY ICEBERG;
 
+-- DDL: gps_jammer_events (before views — referenced by defense.lagebild)
+DROP TABLE IF EXISTS gps_jammer_events;
+CREATE TABLE gps_jammer_events (
+    geohash STRING COMMENT '6-character geohash identifying the tile',
+    ts STRING COMMENT 'ISO 8601 Timestamp of the observation',
+    latitude DOUBLE COMMENT 'Latitude of the tile center',
+    longitude DOUBLE COMMENT 'Longitude of the tile center',
+    adsb_nic INT COMMENT 'Navigation Integrity Category (0-8)',
+    signal_integrity DOUBLE COMMENT 'Calculated signal integrity (0.05 - 0.90)',
+    jamming_indicator BOOLEAN COMMENT 'True if NIC < 5, indicating probable electronic warfare',
+    event_type STRING COMMENT 'Classification of the record (e.g., gps_jammer_event)'
+)
+PARTITIONED BY SPEC (TRUNCATE(10, ts))
+STORED BY ICEBERG;
+
 -- VIEW: area_violation
 CREATE VIEW area_violation AS
 WITH observation_polygons AS (
@@ -880,6 +895,38 @@ FilteredRusNavalPositions AS (
     FROM LatestRusNavalPositions
     WHERE rn = 1
       AND distance_m <= 30000
+),
+
+LatestGpsJammerEvents AS (
+    SELECT
+        g.geohash,
+        g.ts AS jammer_time,
+        g.latitude AS jammer_lat,
+        g.longitude AS jammer_lon,
+        g.adsb_nic,
+        g.signal_integrity,
+        g.jamming_indicator,
+        g.event_type,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        ST_GeodesicLengthWGS84(
+            ST_SetSRID(
+                ST_LineString(g.longitude, g.latitude, h.Harbour_Lon, h.Harbour_Lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (PARTITION BY g.geohash, h.harbour_name ORDER BY g.ts DESC) AS rn
+    FROM
+        defense.gps_jammer_events g
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE CAST(g.ts AS TIMESTAMP) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 24 HOURS
+),
+FilteredGpsJammerEvents AS (
+    SELECT *
+    FROM LatestGpsJammerEvents
+    WHERE rn = 1
+      AND distance_m <= 50000
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
@@ -1026,6 +1073,28 @@ SELECT
     ) AS details
 FROM
     FilteredRusNavalPositions r
+
+UNION ALL
+
+SELECT
+    'GPS_Jammer' AS Data_Source,
+    j.geohash AS ID,
+    j.jammer_time AS "timestamp",
+    j.jammer_lat AS latitude,
+    j.jammer_lon AS longitude,
+    j.harbour_name AS harbour_name,
+    j.distance_m AS dist_m_raw,
+    CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Geohash: ', j.geohash,
+        ' | NIC: ', CAST(j.adsb_nic AS VARCHAR),
+        ' | Signal integrity: ', CAST(ROUND(j.signal_integrity, 2) AS VARCHAR),
+        ' | Jamming: ', CAST(j.jamming_indicator AS VARCHAR),
+        COALESCE(CONCAT(' | Type: ', j.event_type), '')
+    ) AS details
+FROM
+    FilteredGpsJammerEvents j
 
 ORDER BY harbour_name, "timestamp" DESC;
 
@@ -1192,21 +1261,3 @@ FROM
     filtered_marine_status m
 ORDER BY
     Data_Source DESC;
-
-
--- DDL: gps_jammer_events
--- Diese Tabelle speichert die Integritätsdaten der Luftraumüberwachung
-DROP TABLE IF EXISTS gps_jammer_events;
-
-CREATE TABLE gps_jammer_events (
-    geohash STRING COMMENT '6-character geohash identifying the tile',
-    ts STRING COMMENT 'ISO 8601 Timestamp of the observation',
-    latitude DOUBLE COMMENT 'Latitude of the tile center',
-    longitude DOUBLE COMMENT 'Longitude of the tile center',
-    adsb_nic INT COMMENT 'Navigation Integrity Category (0-8)',
-    signal_integrity DOUBLE COMMENT 'Calculated signal integrity (0.05 - 0.90)',
-    jamming_indicator BOOLEAN COMMENT 'True if NIC < 5, indicating probable electronic warfare',
-    event_type STRING COMMENT 'Classification of the record (e.g., gps_jammer_event)'
-)
-PARTITIONED BY SPEC (TRUNCATE(10, ts)) -- Partitionierung nach Tag (YYYY-MM-DD)
-STORED BY ICEBERG;
