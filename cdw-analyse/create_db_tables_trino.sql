@@ -845,18 +845,23 @@ LatestGpsJammerEvents AS (
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
         great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
-        ROW_NUMBER() OVER (PARTITION BY g.geohash, h.harbour_name ORDER BY g.ts DESC) AS rn
+        ROW_NUMBER() OVER (
+            PARTITION BY g.geohash, g.ts
+            ORDER BY great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon)
+        ) AS rn
     FROM
         defense.gps_jammer_events g
     CROSS JOIN
         Harbour_Ref h
-    WHERE try_cast(g.ts AS timestamp) >= current_timestamp - interval '24' hour
+    WHERE coalesce(
+            try(from_iso8601_timestamp(g.ts)),
+            try_cast(g.ts AS timestamp)
+        ) >= current_timestamp - interval '24' hour
 ),
 FilteredGpsJammerEvents AS (
     SELECT *
     FROM LatestGpsJammerEvents
     WHERE rn = 1
-      AND distance_m <= 50000
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME

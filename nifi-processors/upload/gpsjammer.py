@@ -85,7 +85,7 @@ class GPSJammerSimulator(FlowFileTransform):
             num_records_str = context.getProperty(self.NUM_RECORDS.name).getValue()
             num_records = int(num_records_str) if num_records_str and num_records_str.isdigit() else 25
 
-            timestamp = datetime.now(timezone.utc).isoformat(timespec='milliseconds')[:-6] + 'Z'
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
             for _ in range(num_records):
                 lat = random.uniform(self.LAT_RANGE[0], self.LAT_RANGE[1])
