@@ -5,9 +5,12 @@
 | File | Purpose |
 |------|---------|
 | `triton_visuals_Oct_30_2026_trino.json` | Triton dashboard export with **Trino/Iceberg** table names |
+| `visuals_triton-nato-c2-ops.json` | **NATO C2 ops** export (Trino `iceberg.defense.*`; dashboards + `lagebild`) |
 | `convert_cdv_impala_to_trino.py` | Regenerate from an Impala-style export |
 
-Impala exports use `defense.<table>`. Trino needs the **catalog** qualifier:
+`visuals_triton-nato-c2-ops.json` is already **Trino-qualified** (`iceberg.defense.<table>`); import it against your Trino connection without running the converter.
+
+Older Impala exports use `defense.<table>`. Trino needs the **catalog** qualifier:
 
 ```text
 iceberg.defense.ais_events_ice
