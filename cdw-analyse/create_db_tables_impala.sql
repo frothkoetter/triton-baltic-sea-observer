@@ -900,7 +900,10 @@ FilteredRusNavalPositions AS (
 GpsJammerNearestHarbour AS (
     SELECT
         g.geohash,
-        g.ts AS jammer_time,
+        coalesce(
+            cast(g.ts AS timestamp),
+            cast(regexp_replace(g.ts, 'Z$', '') AS timestamp)
+        ) AS jammer_time,
         g.latitude AS jammer_lat,
         g.longitude AS jammer_lon,
         g.adsb_nic,
@@ -928,7 +931,10 @@ GpsJammerNearestHarbour AS (
         defense.gps_jammer_events g
     CROSS JOIN
         Harbour_Ref h
-    WHERE CAST(g.ts AS TIMESTAMP) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 24 HOURS
+    WHERE coalesce(
+            cast(g.ts AS timestamp),
+            cast(regexp_replace(g.ts, 'Z$', '') AS timestamp)
+        ) >= CAST(NOW() AS TIMESTAMP) - INTERVAL 24 HOURS
         AND g.jamming_indicator = true
 ),
 GpsJammerLatestPerTile AS (
