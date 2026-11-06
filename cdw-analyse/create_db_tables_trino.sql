@@ -832,7 +832,7 @@ FilteredRusNavalPositions AS (
       AND distance_m <= 30000
 ),
 
-LatestGpsJammerEvents AS (
+GpsJammerNearestHarbour AS (
     SELECT
         g.geohash,
         g.ts AS jammer_time,
@@ -848,7 +848,7 @@ LatestGpsJammerEvents AS (
         ROW_NUMBER() OVER (
             PARTITION BY g.geohash, g.ts
             ORDER BY great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon)
-        ) AS rn
+        ) AS rn_nearest
     FROM
         defense.gps_jammer_events g
     CROSS JOIN
@@ -857,11 +857,19 @@ LatestGpsJammerEvents AS (
             try(from_iso8601_timestamp(g.ts)),
             try_cast(g.ts AS timestamp)
         ) >= current_timestamp - interval '24' hour
+        AND g.jamming_indicator = true
+),
+GpsJammerLatestPerTile AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (PARTITION BY geohash ORDER BY jammer_time DESC) AS rn_latest
+    FROM GpsJammerNearestHarbour
+    WHERE rn_nearest = 1
 ),
 FilteredGpsJammerEvents AS (
     SELECT *
-    FROM LatestGpsJammerEvents
-    WHERE rn = 1
+    FROM GpsJammerLatestPerTile
+    WHERE rn_latest = 1
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
