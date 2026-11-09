@@ -14,7 +14,7 @@ Train and deploy a vessel-type classifier on LiDAR `.las` data (Cloudera templat
 | `entry.py` | CDSW application static file server (`CDSW_APP_PORT`) |
 | `lineage.yaml` | Optional model lineage metadata |
 | `model.pkl` | Fitted classifier (from `fit.py` / `train.py`) |
-| `src/` | `features.py`, `labels.py`, `s3_client.py`, `s3_las_loader.py` |
+| `src/` | `features.py`, `labels.py`, `s3_las_loader.py`, `mlflow_tracking.py`, `eval_metrics.py` |
 
 S3 uses the **S3 Object Store** data connection (`LIDAR_S3_CONNECTION_NAME`, default `S3 Object Store`).
 
@@ -36,6 +36,44 @@ python3 fit.py
 ```
 
 Env: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
+
+## MLflow experiments (Cloudera AI)
+
+On Cloudera AI, **MLflow is pre-installed** in ML Runtime sessions; this project also lists `mlflow>=2.9,<3` in `requirements.txt` for local runs. Training logs a run from **`fit.py`** (the CDSW/CML experiment entrypoint).
+
+1. In the project, create an experiment in the UI (**New Experiment**) or rely on `mlflow.set_experiment()` to create one on first run.
+2. Start an **ML Runtime** session (not Legacy Engine), install deps if needed (`./cdsw-build.sh`), then train:
+
+```bash
+export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/../data/lidar"
+export MLFLOW_EXPERIMENT_NAME="lidar-vessel-classifier"
+python3 fit.py
+```
+
+Optional environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `MLFLOW_EXPERIMENT_NAME` | Experiment name (default: `lidar-vessel-classifier`) |
+| `MLFLOW_TRACKING_URI` | Override tracking URI (usually **unset** on CML — uses project `.experiments/`) |
+| `MLFLOW_RUN_NAME` | Friendly run name in the Experiments UI |
+| `MLFLOW_REGISTERED_MODEL_NAME` | If set, registers the sklearn pipeline in Model Registry |
+| `LIDAR_MLFLOW_DISABLED` | `1` to skip MLflow logging |
+| `LIDAR_MLFLOW_EVAL` | `1` when running `use_model_metrics.py` to log a replay eval run |
+| `LIDAR_MLFLOW_EVAL_EXPERIMENT` | Eval experiment name (default: `<MLFLOW_EXPERIMENT_NAME>-eval`) |
+
+**Logged on train:** hyperparameters (`RandomForestClassifier`), `accuracy`, `macro_f1`, per-class precision/recall/F1, CV split count, `classification_report.json`, `confusion_matrix.json`, sklearn model artifact via `mlflow.sklearn.log_model`.
+
+**Cloudera Experiments UI:** open **Experiments** → your experiment → latest run. **Parameters** show forest settings; **Metrics** show accuracy / macro-F1 and per-class columns; **Artifacts** include `model/` (for CML deploy), confusion matrix, and `training_rows.csv`.
+
+Replay evaluation (feature rows from last train, not fresh LAS download):
+
+```bash
+export LIDAR_MLFLOW_EVAL=1
+python3 use_model_metrics.py
+```
+
+Disable MLflow locally: `export LIDAR_MLFLOW_DISABLED=1`.
 
 ## Deploy
 

@@ -89,3 +89,21 @@ if predictions:
         model_deployment_crn=model_deployment_crn,
         dev=dev,
     )
+
+if os.environ.get("LIDAR_MLFLOW_EVAL", "").lower() in ("1", "true", "yes"):
+    from src.eval_metrics import evaluate_saved_model
+    from src.mlflow_tracking import log_eval_metrics, mlflow_enabled
+
+    _model = _root / "model.pkl"
+    _rows = _root / "artifacts" / "training_rows.csv"
+    if mlflow_enabled() and _model.is_file() and _rows.is_file():
+        eval_result = evaluate_saved_model(_model, _rows, out_dir=_root / "artifacts")
+        run_id = log_eval_metrics(
+            eval_result["metrics"],
+            params=eval_result["params"],
+            artifact_paths=[Path(p) for p in eval_result["artifact_paths"]],
+        )
+        print("MLflow eval run id:", run_id)
+        print("replay accuracy:", eval_result["metrics"].get("accuracy"))
+    else:
+        print("LIDAR_MLFLOW_EVAL set but model, rows, or mlflow missing — skip replay eval.")
