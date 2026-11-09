@@ -39,15 +39,11 @@ Env: `LIDAR_S3_PREFIX`, `LIDAR_LOCAL_DIR`, `LIDAR_MAX_FILES`.
 
 ## Deploy
 
-**Option A — `predict.py`** (recommended): entry function **`predict`**.
+Deploy **`classify.py`** with entry function **`classify`**. Request body:
 
 ```json
 {"s3_uri": "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/<key>"}
 ```
-
-or `{"las_bytes_base64": "..."}`.
-
-**Option B — `classify.py`**: entry function **`classify`**, input `{"s3_uri": "s3://..."}` only.
 
 Run **`cdsw-build.sh`** (or install `requirements.txt`) before deploying so `laspy`, `boto3`, and `scikit-learn` are available.
 
