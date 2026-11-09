@@ -3,26 +3,33 @@ from nifiapi.properties import PropertyDescriptor, StandardValidators
 import json
 import random
 import string
-from faker import Faker # Importiert die Faker-Bibliothek
 import datetime
 from datetime import timezone
+
+# Static word pools (no Faker) to keep NiFi processor venv small on limited disk.
+_TWEET_WORDS = (
+    "vessel", "convoy", "Baltic", "patrol", "AIS", "harbour", "sanctioned",
+    "cargo", "frigate", "submarine", "NATO", "shipping", "lane", "radar",
+    "exercise", "deployment", "maritime", "surveillance", "port", "fleet",
+)
+_FIRST_NAMES = ("Alex", "Jordan", "Morgan", "Sam", "Chris", "Robin", "Taylor")
+_LAST_NAMES = ("Nordsee", "BalticWatch", "SeaGuard", "KielObserver", "MarineEye")
 
 class TwitterMessageGenerator(FlowFileTransform):
     """
     Ein NiFi-Python-Prozessor, der eine konfigurierbare Anzahl von Twitter-ähnlichen
     Nachrichten mit zufälligem Text, Benutzernamen und Metriken generiert.
     
-    Dieser Prozessor verwendet die Faker-Bibliothek, um realistische, aber zufällige
-    Daten zu erstellen und ignoriert den Inhalt des eingehenden FlowFiles.
+    Generiert zufällige JSON-Daten ohne externe Pip-Abhängigkeiten (stdlib only).
     """
 
     class Java:
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '2.5.0' # Version wurde aktualisiert
+        version = '2.6.0'
         description = 'Generiert eine konfigurierbare Anzahl von Twitter-ähnlichen JSON-Nachrichten mit zufälligem Text, Benutzernamen und Metriken. Er ignoriert den eingehenden FlowFile-Inhalt.'
-        dependencies = ['Faker==25.0.0'] # Abhängigkeit von der Faker-Bibliothek
+        dependencies = []
 
     # Definiert eine Eigenschaft, um die maximale Anzahl der zu generierenden Nachrichten festzulegen.
     MAX_OUTPUT_MESSAGES = PropertyDescriptor(
@@ -37,7 +44,6 @@ class TwitterMessageGenerator(FlowFileTransform):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
         self.descriptors = [self.MAX_OUTPUT_MESSAGES]
-        self.fake = Faker()
 
     def getPropertyDescriptors(self):
         return self.descriptors
@@ -74,8 +80,8 @@ class TwitterMessageGenerator(FlowFileTransform):
         """
         Generiert einen zufälligen, Twitter-ähnlichen Text mit Hashtags und Emojis.
         """
-        # Erstellt einen Kernsatz für den Tweet
-        text = self.fake.sentence(nb_words=random.randint(5, 20), variable_nb_words=True)
+        n_words = random.randint(5, 20)
+        text = " ".join(random.choice(_TWEET_WORDS) for _ in range(n_words)).capitalize() + "."
 
         # Listen mit möglichen Hashtags und Emojis, aktualisiert für militärische/marinebezogene Themen
         hashtags = ["#suspect", "#vessel", "#container", "#uboot", "#sanctioned", "#Marine", "#NATO", "#Militär", "#Seelogistik"]
@@ -112,10 +118,10 @@ class TwitterMessageGenerator(FlowFileTransform):
             for _ in range(max_messages):
                 tweet_text = self._generate_random_tweet_text()
                 
-                # Erstellt realistische Benutzerdaten und Metriken mit Faker
+                base_user = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
                 tweet_record = {
-                    "user_name": self.fake.name(),
-                    "user_username": self.fake.user_name(),
+                    "user_name": f"{random.choice(_FIRST_NAMES)} {random.choice(_LAST_NAMES)}",
+                    "user_username": f"user_{base_user}",
                     "tweet": tweet_text,
                     "ts": datetime.datetime.now(timezone.utc).isoformat(), 
                     "priority": self._generate_priority(),
