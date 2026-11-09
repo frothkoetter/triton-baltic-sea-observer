@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import io
+import os
 from typing import Tuple
 
 import numpy as np
+
+# Cap points for online inference (full LAS reads are slow; stats are stable on a sample).
+DEFAULT_INFER_MAX_POINTS = 50_000
 
 try:
     from src.labels import FEATURE_NAMES
@@ -75,7 +79,32 @@ def las_points_to_feature_vector(
     )
 
 
-def extract_features_from_las_bytes(payload: bytes) -> np.ndarray:
+def _subsample_points(
+    n: int,
+    max_points: int,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    intensity: np.ndarray | None,
+    classification: np.ndarray | None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, np.ndarray | None]:
+    if n <= max_points or max_points <= 0:
+        return x, y, z, intensity, classification
+    rng = np.random.default_rng(0)
+    idx = rng.choice(n, size=max_points, replace=False)
+    x, y, z = x[idx], y[idx], z[idx]
+    if intensity is not None:
+        intensity = intensity[idx]
+    if classification is not None:
+        classification = classification[idx]
+    return x, y, z, intensity, classification
+
+
+def extract_features_from_las_bytes(
+    payload: bytes,
+    *,
+    max_points: int | None = None,
+) -> np.ndarray:
     import laspy
 
     with laspy.open(io.BytesIO(payload)) as reader:
@@ -96,6 +125,12 @@ def extract_features_from_las_bytes(payload: bytes) -> np.ndarray:
             if intensity is not None:
                 intensity = intensity[vessel_mask]
             classification = classification[vessel_mask]
+    cap = max_points
+    if cap is None:
+        cap = int(os.environ.get("LIDAR_INFER_MAX_POINTS", DEFAULT_INFER_MAX_POINTS))
+    x, y, z, intensity, classification = _subsample_points(
+        len(x), cap, x, y, z, intensity, classification
+    )
     return las_points_to_feature_vector(x, y, z, intensity, classification)
 
 

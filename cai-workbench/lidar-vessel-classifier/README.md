@@ -56,3 +56,27 @@ Deploy **`predict_with_metrics.py`** with entry function **`predict`**, then run
 Production flows call the **CML Model Service** with **`accessKey`** on the query string; optional **`Authorization: Bearer <model API key>`** if your gateway requires it (same as local `f.sh`). See **[NIFI_INVOKEHTTP.md](./NIFI_INVOKEHTTP.md)** and **`examples/invoke_model_service.sh`**.
 
 If InvokeHTTP reports **`Connect timed out`**, test curl from the **NiFi host**—laptop success does not imply cluster egress to `modelservice.ml-*.cloudera.site`.
+
+## Model Service: `context deadline exceeded`
+
+This comes from the **CML Model API gateway** (request took longer than the deployment timeout). Training on more LAS files does **not** slow `predict`/`classify` much; the usual causes are:
+
+1. **Large or remote S3 object** — the replica downloads the full `.las` before feature extraction. Use a bucket the **S3 Object Store** connection can read (same account/region as training when possible).
+2. **Huge point clouds** — set env on the model deployment: **`LIDAR_INFER_MAX_POINTS`** (default `50000`) to subsample before features.
+3. **Gateway timeout too low** — in CML, open the deployed model → **Settings** (or replica resources) and increase **request / inference timeout** (e.g. 120–300 s) while testing; then tune down.
+4. **Cold start** — first call after deploy loads `model.pkl`; retry once.
+
+Test Model body (wrapped by the service):
+
+```json
+{"s3_uri": "s3://<bucket>/path/to/file.las"}
+```
+
+Sanity check from a CML session on the same project:
+
+```python
+from classify import classify
+classify({"s3_uri": "s3://…"})
+```
+
+If that is fast but Model Service fails, raise the gateway timeout; if that is slow, fix S3 URI or reduce file size.
