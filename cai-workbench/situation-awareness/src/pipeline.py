@@ -30,6 +30,7 @@ class PipelineResult:
     comparison_text: str | None
     dataset_summary: str
     pdf_path: Path | None
+    map_path: Path | None
     data_source: str
     sql_insert: str | None
     row_count: int
@@ -79,13 +80,14 @@ def run_pipeline(
                 else:
                     comparison_text = "UNCHANGED | No prior report for comparison."
 
-    pdf_path = write_report_pdf(
+    pdf_path, map_path = write_report_pdf(
         report_text,
         comparison_text,
         settings,
         report_time,
         dataset_summary=dataset_summary,
         row_count=len(df_used),
+        df_used=df_used,
     )
     sql_insert = None
     if settings.insert_sql_enabled:
@@ -100,6 +102,7 @@ def run_pipeline(
         comparison_text=comparison_text,
         dataset_summary=dataset_summary,
         pdf_path=pdf_path,
+        map_path=map_path,
         data_source=data_source,
         sql_insert=sql_insert,
         row_count=len(df_used),

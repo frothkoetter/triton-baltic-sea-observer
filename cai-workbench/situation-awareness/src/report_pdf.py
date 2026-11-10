@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
+import pandas as pd
 from fpdf import FPDF
 
 from .config import Settings
@@ -92,11 +93,38 @@ _HEADING_CORE_RE = re.compile(
     r"^(\d+\.|SECTION\s+\d+[:.)]?\s*)(.+)$", re.I
 )
 
+_PRIMARY_NUMBERED_SECTION_RE = re.compile(
+    r"^\s*(?:#{1,3}\s+)?(?:\*\*)?\d+\.\s+.+",
+    re.I,
+)
+
 
 def normalize_heading_line(line: str) -> str | None:
     """Return normalized section title from a markdown/plain heading line, or None."""
     num, title = parse_section_heading(line)
     return title
+
+
+def _is_primary_section_break(line: str) -> bool:
+    """True only for top-level report sections, not nested SECTION N: action lines."""
+    stripped = line.strip()
+    if not stripped or len(stripped) > 120:
+        return False
+    if _PRIMARY_NUMBERED_SECTION_RE.match(stripped):
+        return True
+    m = re.match(r"^SECTION\s+\d+\s*:\s*(.+)$", stripped, re.I)
+    if m:
+        rest = m.group(1)
+        if "**" in rest:
+            return False
+        if re.search(r"\b(IMMEDIATE|MPA|USV|VERIFICATION|FOLLOW-UP|RE-SCAN)\b", rest, re.I):
+            return False
+        return True
+    if stripped.startswith("**") and stripped.endswith("**"):
+        inner = stripped.strip("*").strip()
+        if inner and not re.match(r"^SECTION\s+\d+", inner, re.I):
+            return bool(parse_section_heading(stripped)[1])
+    return False
 
 
 def parse_section_heading(line: str) -> tuple[str | None, str | None]:
@@ -232,7 +260,7 @@ def parse_body_blocks(body: str) -> list[BodyBlock]:
                 i += 1
                 continue
 
-        if normalize_heading_line(stripped) and len(stripped) < 120:
+        if _is_primary_section_break(stripped):
             flush_para()
             i += 1
             continue
@@ -259,6 +287,9 @@ def _split_report_sections(report_text: str) -> list[tuple[str, str]]:
         if not stripped:
             current_lines.append("")
             continue
+        if not _is_primary_section_break(stripped):
+            current_lines.append(stripped)
+            continue
         number, heading = parse_section_heading(stripped)
         if heading:
             if current_lines:
@@ -270,8 +301,6 @@ def _split_report_sections(report_text: str) -> list[tuple[str, str]]:
             else:
                 current_title = f"SECTION: {heading}"
             current_lines = []
-        else:
-            current_lines.append(stripped)
 
     if current_lines:
         sections.append((current_title, "\n".join(current_lines).strip()))
@@ -474,7 +503,8 @@ def write_report_pdf(
     *,
     dataset_summary: str = "",
     row_count: int | None = None,
-) -> Path:
+    df_used: pd.DataFrame | None = None,
+) -> tuple[Path, Path | None]:
     settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
     stamp = report_time.strftime("%Y%m%d_%H%M%S")
     base = f"nato_sitrep_{stamp}"
@@ -515,6 +545,28 @@ def write_report_pdf(
         hotspot=hotspot,
     )
 
+    map_path: Path | None = None
+    if df_used is not None and not df_used.empty:
+        map_path = settings.artifacts_dir / f"{base}_map.png"
+        try:
+            from .lagebild_map import render_lagebild_map
+
+            render_lagebild_map(
+                df_used,
+                map_path,
+                comparison_text=comparison_text,
+                dataset_summary=dataset_summary,
+            )
+            if map_path.is_file() and map_path.stat().st_size > 0:
+                pdf.section_heading("SECTION: SITUATION MAP (GERMAN BALTIC)")
+                content_w = pdf.w - pdf.l_margin - pdf.r_margin
+                pdf.image(str(map_path), w=min(content_w, 180))
+                pdf.ln(4)
+            else:
+                map_path = None
+        except Exception:
+            map_path = None
+
     for idx, (title, body) in enumerate(_split_report_sections(report_text), start=1):
         if idx > 1 and pdf.get_y() > 240:
             pdf.add_page()
@@ -535,13 +587,14 @@ def write_report_pdf(
         "format": "nato_sitrep",
         "pdf": pdf_path.name,
         "text": txt_path.name,
+        "map": map_path.name if map_path else None,
         "dtg": dtg,
         "has_comparison": bool(comparison_text),
     }
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     _update_index(settings.artifacts_dir, meta)
     _link_latest(settings.artifacts_dir, pdf_path)
-    return pdf_path
+    return pdf_path, map_path
 
 
 def _link_latest(artifacts_dir: Path, pdf_path: Path) -> None:
