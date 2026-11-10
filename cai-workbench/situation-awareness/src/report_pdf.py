@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Callable
 from typing import Literal
 
 import pandas as pd
@@ -182,6 +183,28 @@ def parse_markdown_table(lines: list[str]) -> list[list[str]]:
     return [r + [""] * (width - len(r)) for r in rows]
 
 
+_MD_SUBHEADING_RE = re.compile(r"^#{1,3}\s+(.+)$")
+_BULLET_LINE_RE = re.compile(r"^-\s+(.+)$")
+
+
+def _is_horizontal_rule(line: str) -> bool:
+    s = line.strip()
+    if not s:
+        return False
+    if s in ("---", "***", "___"):
+        return True
+    return bool(re.match(r"^[-*_]{3,}\s*$", s))
+
+
+def _parse_markdown_subheading(line: str) -> str | None:
+    """Return subheading title from ``##`` / ``###`` lines (uppercase)."""
+    m = _MD_SUBHEADING_RE.match(line.strip())
+    if not m:
+        return None
+    title = re.sub(r"^\*\*|\*\*$", "", m.group(1).strip()).strip()
+    return title.upper() if title else None
+
+
 def _is_italic_caption_line(line: str) -> bool:
     s = line.strip()
     return bool(re.match(r"^\*[^*].+\*$", s))
@@ -206,7 +229,7 @@ def inline_markdown_to_html(text: str) -> str:
 
 @dataclass(frozen=True)
 class BodyBlock:
-    kind: Literal["paragraph", "table", "caption"]
+    kind: Literal["paragraph", "table", "caption", "subheading", "bullet_list"]
     text: str = ""
     rows: tuple[tuple[str, ...], ...] = ()
 
@@ -221,7 +244,12 @@ def parse_body_blocks(body: str) -> list[BodyBlock]:
     def flush_para() -> None:
         nonlocal para
         if para:
-            text = " ".join(p.strip() for p in para if p.strip())
+            parts = [
+                p.strip()
+                for p in para
+                if p.strip() and not _is_horizontal_rule(p.strip())
+            ]
+            text = " ".join(parts)
             if text:
                 blocks.append(BodyBlock(kind="paragraph", text=text))
             para = []
@@ -233,6 +261,33 @@ def parse_body_blocks(body: str) -> list[BodyBlock]:
         if not stripped:
             flush_para()
             i += 1
+            continue
+
+        if _is_horizontal_rule(stripped):
+            flush_para()
+            i += 1
+            continue
+
+        sub_title = _parse_markdown_subheading(stripped)
+        if sub_title is not None:
+            flush_para()
+            blocks.append(BodyBlock(kind="subheading", text=sub_title))
+            i += 1
+            continue
+
+        bullet_m = _BULLET_LINE_RE.match(stripped)
+        if bullet_m:
+            flush_para()
+            bullets: list[str] = []
+            while i < len(lines):
+                bm = _BULLET_LINE_RE.match(lines[i].strip())
+                if not bm:
+                    break
+                bullets.append(bm.group(1).strip())
+                i += 1
+            if bullets:
+                frozen = tuple((b,) for b in bullets)
+                blocks.append(BodyBlock(kind="bullet_list", rows=frozen))
             continue
 
         if _is_markdown_table_row(stripped):
@@ -430,6 +485,131 @@ class NatoSitrepPDF(FPDF):
             self.cell(col_w, 7, _sanitize_for_pdf(val)[:48], border=1)
         self.ln(10)
 
+    def render_subheading(self, text: str) -> None:
+        margin_l = self.l_margin
+        content_w = self.w - self.l_margin - self.r_margin
+        y = self.get_y()
+        bar_w = 2.5
+        line_h = 6.0
+        self.set_fill_color(*NATO_HEADER_BLUE)
+        self.rect(margin_l, y, bar_w, line_h, style="F")
+        self.set_xy(margin_l + bar_w + 2, y)
+        self.set_font("Helvetica", "B", 9)
+        self.set_text_color(*NATO_HEADER_BLUE)
+        self.cell(
+            content_w - bar_w - 2,
+            line_h,
+            _sanitize_for_pdf(text),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        self.set_text_color(0, 0, 0)
+        self.ln(2)
+
+    def _estimate_blocks_height(
+        self, blocks: list[BodyBlock], inner_w: float
+    ) -> float:
+        pad = 3.0
+        total = pad * 2
+        for block in blocks:
+            if block.kind == "subheading":
+                total += 10.0
+            elif block.kind == "caption":
+                total += 6.0
+            elif block.kind == "table":
+                total += 5.5 * max(len(block.rows), 1) + 3.0
+            elif block.kind == "bullet_list":
+                total += 4.5 * max(len(block.rows), 1) + 1.0
+            elif block.kind == "paragraph":
+                safe = _sanitize_for_pdf(block.text)
+                line_count = len(
+                    self.multi_cell(
+                        inner_w,
+                        4.5,
+                        safe,
+                        split_only=True,
+                    )
+                )
+                total += 4.5 * max(line_count, 1) + 1.0
+        return total
+
+    def _render_body_blocks(self, blocks: list[BodyBlock]) -> None:
+        for block in blocks:
+            if block.kind == "subheading":
+                self.render_subheading(block.text)
+            elif block.kind == "caption":
+                self.set_font("Helvetica", "I", 8)
+                self.set_text_color(60, 60, 60)
+                self.multi_cell(
+                    0, 4.5, _sanitize_for_pdf(block.text), new_x="LMARGIN", new_y="NEXT"
+                )
+                self.set_text_color(0, 0, 0)
+                self.ln(1)
+            elif block.kind == "table":
+                self.render_data_table([list(r) for r in block.rows])
+            elif block.kind == "bullet_list":
+                self.set_font("Helvetica", "", 9)
+                for row in block.rows:
+                    item = row[0] if row else ""
+                    safe = _sanitize_for_pdf(item)
+                    fragment = inline_markdown_to_html(safe)
+                    try:
+                        self.write_html(
+                            f"<p>&nbsp;&nbsp;* {fragment}</p>",
+                            table_line_separators=True,
+                        )
+                    except Exception:
+                        self.multi_cell(
+                            0, 4.5, f"* {safe}", new_x="LMARGIN", new_y="NEXT"
+                        )
+                self.ln(1)
+            else:
+                safe = _sanitize_for_pdf(block.text)
+                fragment = inline_markdown_to_html(safe)
+                self.set_font("Helvetica", "", 9)
+                try:
+                    self.write_html(f"<p>{fragment}</p>", table_line_separators=True)
+                except Exception:
+                    self.multi_cell(
+                        0, 4.5, safe, new_x="LMARGIN", new_y="NEXT"
+                    )
+                self.ln(1)
+
+    def render_framed_block(
+        self, render_fn: Callable[[], None], *, estimated_height: float
+    ) -> None:
+        pad = 3.0
+        x = self.l_margin
+        content_w = self.w - self.l_margin - self.r_margin
+        y0 = self.get_y()
+        frame_h0 = max(estimated_height, pad * 2)
+
+        self.set_fill_color(*NATO_TABLE_HEADER_FILL)
+        self.set_draw_color(*NATO_TABLE_GRID)
+        self.set_line_width(0.25)
+        self.rect(x, y0, content_w, frame_h0, style="DF")
+
+        old_l, old_r = self.l_margin, self.r_margin
+        self.set_left_margin(x + pad)
+        self.set_right_margin(self.w - (x + content_w - pad))
+        self.set_xy(x + pad, y0 + pad)
+
+        render_fn()
+
+        y1 = self.get_y() + pad
+        self.set_left_margin(old_l)
+        self.set_right_margin(old_r)
+
+        actual_h = y1 - y0
+        if actual_h > frame_h0:
+            self.set_fill_color(*NATO_TABLE_HEADER_FILL)
+            self.rect(x, y0 + frame_h0, content_w, actual_h - frame_h0, style="F")
+        self.set_draw_color(*NATO_TABLE_GRID)
+        self.rect(x, y0, content_w, actual_h, style="D")
+
+        self.set_y(y1)
+        self.ln(2)
+
     def section_heading(self, title: str) -> None:
         title = re.sub(r"^\*\*|\*\*$", "", title.strip())
         self.set_font("Helvetica", "B", 10)
@@ -470,29 +650,22 @@ class NatoSitrepPDF(FPDF):
             self.ln()
         self.ln(3)
 
-    def render_markdown_body(self, body: str) -> None:
-        for block in parse_body_blocks(body):
-            if block.kind == "caption":
-                self.set_font("Helvetica", "I", 8)
-                self.set_text_color(60, 60, 60)
-                self.multi_cell(
-                    0, 4.5, _sanitize_for_pdf(block.text), new_x="LMARGIN", new_y="NEXT"
-                )
-                self.set_text_color(0, 0, 0)
-                self.ln(1)
-            elif block.kind == "table":
-                self.render_data_table([list(r) for r in block.rows])
-            else:
-                safe = _sanitize_for_pdf(block.text)
-                fragment = inline_markdown_to_html(safe)
-                self.set_font("Helvetica", "", 9)
-                try:
-                    self.write_html(f"<p>{fragment}</p>", table_line_separators=True)
-                except Exception:
-                    self.multi_cell(
-                        0, 4.5, safe, new_x="LMARGIN", new_y="NEXT"
-                    )
-                self.ln(1)
+    def render_markdown_body(self, body: str, *, framed: bool = False) -> None:
+        blocks = parse_body_blocks(body)
+        if framed:
+            pad = 3.0
+            content_w = self.w - self.l_margin - self.r_margin
+            inner_w = content_w - 2 * pad
+            est_h = self._estimate_blocks_height(blocks, inner_w)
+            self.render_framed_block(
+                lambda: self._render_body_blocks(blocks),
+                estimated_height=est_h,
+            )
+        else:
+            self._render_body_blocks(blocks)
+
+    def render_comparison_body(self, body: str) -> None:
+        self.render_markdown_body(body, framed=True)
 
 
 def load_prior_lagebild_snapshot(
@@ -676,7 +849,7 @@ def write_report_pdf(
     if comparison_text:
         pdf.add_page()
         pdf.section_heading("SECTION: 24H / 48H DELTA & DIRECTIVES")
-        pdf.render_markdown_body(comparison_text)
+        pdf.render_comparison_body(comparison_text)
 
     pdf.output(str(pdf_path))
 

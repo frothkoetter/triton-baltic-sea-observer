@@ -510,6 +510,37 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertEqual(kinds[1], "table")
         self.assertEqual(blocks[-1].kind, "paragraph")
 
+    def test_parse_body_blocks_comparison_markdown(self) -> None:
+        body = (
+            "## Comparison Summary\n"
+            "Delta narrative with **emphasis**.\n"
+            "---\n"
+            "***\n"
+            "### Executive Summary\n"
+            "- ESCALATED | Kiel corridor\n"
+            "- NEW | Rostock contact\n"
+            "\n"
+            "Paragraph after bullets — no rule."
+        )
+        blocks = parse_body_blocks(body)
+        kinds = [b.kind for b in blocks]
+        self.assertEqual(kinds[0], "subheading")
+        self.assertEqual(blocks[0].text, "COMPARISON SUMMARY")
+        self.assertEqual(kinds[1], "paragraph")
+        self.assertNotIn("##", blocks[1].text)
+        self.assertNotIn("---", blocks[1].text)
+        self.assertEqual(kinds[2], "subheading")
+        self.assertEqual(blocks[2].text, "EXECUTIVE SUMMARY")
+        self.assertEqual(kinds[3], "bullet_list")
+        self.assertEqual(len(blocks[3].rows), 2)
+        self.assertEqual(blocks[-1].kind, "paragraph")
+        para_texts = [
+            b.text for b in blocks if b.kind == "paragraph"
+        ]
+        for txt in para_texts:
+            self.assertNotIn("##", txt)
+            self.assertNotRegex(txt, r"^\s*---\s*$")
+
     def test_inline_markdown_to_html(self) -> None:
         out = inline_markdown_to_html("**critical** and *watch*")
         self.assertIn("<b>critical</b>", out)
