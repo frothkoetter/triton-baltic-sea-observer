@@ -26,7 +26,7 @@ Enable SQL persistence: `LAGEBILD_INSERT_SQL=1` (writes to `defense.Situation_Aw
 
 ## PDF (NATO SITREP layout)
 
-Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Companion PNGs include a **German Baltic harbour map** (land/sea basemap via **cartopy** when installed, otherwise bundled Natural Earth 110m coast GeoJSON under `data/`) and a **data visualization** composite (source mix, harbour counts, severity, deltas or source×harbour). Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
+Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Companion PNGs include a **German Baltic harbour map** (land/sea basemap via **cartopy** when installed, otherwise bundled Natural Earth 110m coast GeoJSON under `data/`), a **data visualization** composite (source mix, harbour counts, severity, deltas or source×harbour), and a **Zebra-style analytics** page (source-mix radar vs prior run plus harbour ΔPY variance). Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
 
 Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRECEDENCE`, `LAGEBILD_PRECEDENCE_ESCALATED` (defaults to `FLASH / IMMEDIATE` when comparison contains `ESCALATED`).
 
@@ -73,7 +73,7 @@ situation-awareness/
   lagebild.py          # run_pipeline()
   run_hourly.py        # CML job entry
   lagebild.ipynb       # Demo notebook
-  src/                 # data_access, prompts, llm_client, report_pdf, compare_reports, config
+  src/                 # data_access, prompts, llm_client, report_pdf, lagebild_zebra, config
   tests/
 ```
 

@@ -495,6 +495,44 @@ class NatoSitrepPDF(FPDF):
                 self.ln(1)
 
 
+def load_prior_lagebild_snapshot(
+    artifacts_dir: Path,
+    *,
+    hours: float = 24,
+    exclude_base: str | None = None,
+) -> dict[str, object] | None:
+    """Load harbour/source counts from the most recent prior SITREP meta JSON."""
+    if not artifacts_dir.is_dir():
+        return None
+    candidates = sorted(artifacts_dir.glob("nato_sitrep_*.json"), reverse=True)
+    now = datetime.now(timezone.utc)
+    for path in candidates:
+        if exclude_base and path.stem == exclude_base:
+            continue
+        try:
+            meta = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        ts_raw = meta.get("timestamp")
+        if ts_raw:
+            ts = datetime.fromisoformat(str(ts_raw).replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            if (now - ts.astimezone(timezone.utc)).total_seconds() > hours * 3600:
+                continue
+        harbour = meta.get("harbour_counts") or {}
+        source = meta.get("source_counts") or {}
+        if not harbour and not source and meta.get("row_count") is None:
+            continue
+        return {
+            "harbour_counts": {str(k): int(v) for k, v in harbour.items()},
+            "source_counts": {str(k): int(v) for k, v in source.items()},
+            "row_count": meta.get("row_count"),
+            "meta_path": path.name,
+        }
+    return None
+
+
 def write_report_pdf(
     report_text: str,
     comparison_text: str | None,
@@ -504,7 +542,7 @@ def write_report_pdf(
     dataset_summary: str = "",
     row_count: int | None = None,
     df_used: pd.DataFrame | None = None,
-) -> tuple[Path, Path | None, Path | None]:
+) -> tuple[Path, Path | None, Path | None, Path | None]:
     settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
     stamp = report_time.strftime("%Y%m%d_%H%M%S")
     base = f"nato_sitrep_{stamp}"
@@ -588,6 +626,42 @@ def write_report_pdf(
         except Exception:
             charts_path = None
 
+    source_counts: dict[str, int] = {}
+    harbour_counts: dict[str, int] = {}
+    zebra_path: Path | None = None
+    if df_used is not None and not df_used.empty:
+        prior = load_prior_lagebild_snapshot(
+            settings.artifacts_dir, exclude_base=base
+        )
+        prior_source = (prior or {}).get("source_counts") or {}
+        prior_harbour = (prior or {}).get("harbour_counts") or {}
+        zebra_path = settings.artifacts_dir / f"{base}_zebra.png"
+        try:
+            from .lagebild_zebra import (
+                harbour_counts_from_df,
+                render_lagebild_zebra,
+                source_counts_from_df,
+            )
+
+            source_counts = source_counts_from_df(df_used)
+            harbour_counts = harbour_counts_from_df(df_used)
+            render_lagebild_zebra(
+                df_used,
+                zebra_path,
+                prior_source_counts=dict(prior_source),
+                prior_harbour_counts=dict(prior_harbour),
+                comparison_text=comparison_text,
+            )
+            if zebra_path.is_file() and zebra_path.stat().st_size > 0:
+                pdf.section_heading("SECTION: ANALYTICS (ZEBRA STYLE)")
+                content_w = pdf.w - pdf.l_margin - pdf.r_margin
+                pdf.image(str(zebra_path), w=min(content_w, 180))
+                pdf.ln(4)
+            else:
+                zebra_path = None
+        except Exception:
+            zebra_path = None
+
     for idx, (title, body) in enumerate(_split_report_sections(report_text), start=1):
         if idx > 1 and pdf.get_y() > 240:
             pdf.add_page()
@@ -610,13 +684,17 @@ def write_report_pdf(
         "text": txt_path.name,
         "map": map_path.name if map_path else None,
         "charts": charts_path.name if charts_path else None,
+        "zebra": zebra_path.name if zebra_path else None,
         "dtg": dtg,
         "has_comparison": bool(comparison_text),
+        "row_count": row_count if row_count is not None else (len(df_used) if df_used is not None else None),
+        "source_counts": source_counts,
+        "harbour_counts": harbour_counts,
     }
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     _update_index(settings.artifacts_dir, meta)
     _link_latest(settings.artifacts_dir, pdf_path)
-    return pdf_path, map_path, charts_path
+    return pdf_path, map_path, charts_path, zebra_path
 
 
 def _link_latest(artifacts_dir: Path, pdf_path: Path) -> None:

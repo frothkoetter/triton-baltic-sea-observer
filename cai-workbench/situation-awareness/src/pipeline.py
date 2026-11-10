@@ -32,6 +32,7 @@ class PipelineResult:
     pdf_path: Path | None
     map_path: Path | None
     charts_path: Path | None
+    zebra_path: Path | None
     data_source: str
     sql_insert: str | None
     row_count: int
@@ -81,7 +82,7 @@ def run_pipeline(
                 else:
                     comparison_text = "UNCHANGED | No prior report for comparison."
 
-    pdf_path, map_path, charts_path = write_report_pdf(
+    pdf_path, map_path, charts_path, zebra_path = write_report_pdf(
         report_text,
         comparison_text,
         settings,
@@ -105,6 +106,7 @@ def run_pipeline(
         pdf_path=pdf_path,
         map_path=map_path,
         charts_path=charts_path,
+        zebra_path=zebra_path,
         data_source=data_source,
         sql_insert=sql_insert,
         row_count=len(df_used),

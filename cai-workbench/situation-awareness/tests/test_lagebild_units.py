@@ -18,6 +18,7 @@ from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summ
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
 from src.lagebild_charts import render_lagebild_charts
 from src.lagebild_map import basemap_backend, render_lagebild_map
+from src.lagebild_zebra import render_lagebild_zebra, source_mix_radar
 from src.report_pdf import (
     _is_primary_section_break,
     _sanitize_for_pdf,
@@ -28,9 +29,10 @@ from src.report_pdf import (
     parse_body_blocks,
     parse_markdown_table,
     parse_section_heading,
+    load_prior_lagebild_snapshot,
     write_report_pdf,
 )
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 class TestDatasetSummary(unittest.TestCase):
@@ -135,6 +137,100 @@ Details.
         sections = _split_report_sections(report)
         self.assertEqual(len(sections), 2)
         self.assertIn("EXECUTIVE", sections[0][0].upper())
+
+
+class TestLagebildZebra(unittest.TestCase):
+    def test_zebra_png_smoke(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "data_source": ["AIS", "AIS", "LiDAR", "Buoy", "AIS"],
+                "harbour_name": ["Kiel", "Kiel", "Rostock", "Wismar", "Rostock"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "zebra.png"
+            render_lagebild_zebra(
+                df,
+                path,
+                prior_source_counts={"AIS": 1, "LiDAR": 2},
+                prior_harbour_counts={"Kiel": 1, "Rostock": 1},
+            )
+            self.assertTrue(path.is_file())
+            self.assertGreater(path.stat().st_size, 2048)
+
+    def test_radar_single_series_without_prior(self) -> None:
+        import matplotlib.pyplot as plt
+        import tempfile
+
+        df = pd.DataFrame(
+            {"data_source": ["AIS", "LiDAR"], "harbour_name": ["Kiel", "Rostock"]}
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "radar.png"
+            fig = plt.figure(figsize=(4, 4))
+            ax = fig.add_subplot(111, projection="polar")
+            source_mix_radar(df, ax, prior_counts=None)
+            fig.savefig(path)
+            plt.close(fig)
+            self.assertGreater(path.stat().st_size, 2048)
+
+
+class TestPriorSnapshotMeta(unittest.TestCase):
+    def test_meta_includes_counts(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            s = Settings()
+            s.artifacts_dir = Path(tmp)
+            df = pd.DataFrame(
+                {
+                    "data_source": ["AIS", "LiDAR"],
+                    "harbour_name": ["Kiel", "Rostock"],
+                    "severity": ["low", "medium"],
+                }
+            )
+            write_report_pdf(
+                "Summary only.",
+                None,
+                s,
+                datetime(2026, 11, 10, 12, 0, tzinfo=timezone.utc),
+                df_used=df,
+                row_count=2,
+            )
+            meta_files = list(Path(tmp).glob("nato_sitrep_*.json"))
+            self.assertEqual(len(meta_files), 1)
+            meta = json.loads(meta_files[0].read_text(encoding="utf-8"))
+            self.assertIn("source_counts", meta)
+            self.assertIn("harbour_counts", meta)
+            self.assertEqual(meta["source_counts"].get("AIS"), 1)
+            self.assertEqual(meta["harbour_counts"].get("Kiel"), 1)
+
+    def test_load_prior_snapshot_excludes_current(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            artifacts = Path(tmp)
+            ts = datetime.now(timezone.utc) - timedelta(hours=2)
+            prior = {
+                "timestamp": ts.isoformat(),
+                "source_counts": {"AIS": 3},
+                "harbour_counts": {"Kiel": 2},
+                "row_count": 3,
+            }
+            stamp = ts.strftime("%Y%m%d_%H%M%S")
+            (artifacts / f"nato_sitrep_{stamp}.json").write_text(
+                json.dumps(prior), encoding="utf-8"
+            )
+            loaded = load_prior_lagebild_snapshot(
+                artifacts, exclude_base="nato_sitrep_current_stub"
+            )
+            self.assertIsNotNone(loaded)
+            assert loaded is not None
+            self.assertEqual(loaded["source_counts"]["AIS"], 3)
 
 
 class TestLagebildCharts(unittest.TestCase):
@@ -277,7 +373,7 @@ class TestNatoPdf(unittest.TestCase):
                     "severity": ["medium", "low"],
                 }
             )
-            path, map_path, charts_path = write_report_pdf(
+            path, map_path, charts_path, zebra_path = write_report_pdf(
                 report,
                 None,
                 s,
@@ -295,7 +391,10 @@ class TestNatoPdf(unittest.TestCase):
             self.assertIsNotNone(charts_path)
             assert charts_path is not None
             self.assertGreater(charts_path.stat().st_size, 1024)
-            path2, _, _ = write_report_pdf(
+            self.assertIsNotNone(zebra_path)
+            assert zebra_path is not None
+            self.assertGreater(zebra_path.stat().st_size, 2048)
+            path2, _, _, _ = write_report_pdf(
                 "Idle traffic — no change near Greifswald.",
                 None,
                 s,
