@@ -28,6 +28,8 @@ Enable SQL persistence: `LAGEBILD_INSERT_SQL=1` (writes to `defense.Situation_Aw
 
 Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Companion PNGs include a **German Baltic harbour map** (land/sea basemap via **cartopy** when installed, otherwise bundled Natural Earth 110m coast GeoJSON under `data/`), a **data visualization** composite (source mix, harbour counts, severity, deltas or source×harbour), and a **Zebra-style analytics** page (source-mix radar vs prior run plus harbour ΔPY variance). Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
 
+**Live Trino column shapes:** `src/lagebild_viz_prep.normalize_lagebild_frame` standardizes harbour/source/timestamp names and infers **severity** from `details` text when Trino omits a severity column. Source labels are rolled up for pies/radar (tail → **Other**; small **Social Media** slices may fold into **Other**). On a **first run** with comparison text that is not delta-shaped, chart panel 4 falls back to **Events by data source (stacked)** instead of an empty delta panel.
+
 Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRECEDENCE`, `LAGEBILD_PRECEDENCE_ESCALATED` (defaults to `FLASH / IMMEDIATE` when comparison contains `ESCALATED`).
 
 ## Data sources
@@ -73,7 +75,7 @@ situation-awareness/
   lagebild.py          # run_pipeline()
   run_hourly.py        # CML job entry
   lagebild.ipynb       # Demo notebook
-  src/                 # data_access, prompts, llm_client, report_pdf, lagebild_zebra, config
+  src/                 # data_access, prompts, llm_client, report_pdf, lagebild_viz_prep, lagebild_zebra, config
   tests/
 ```
 

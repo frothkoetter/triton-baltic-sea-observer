@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from .lagebild_viz_prep import friendly_source_label, rollup_data_sources
+
 # Zebra / NATO palette
 AC_NAVY = "#1f4e79"
 PY_ORANGE = "#e07a2f"
@@ -26,19 +28,19 @@ _TOP_SOURCES = 8
 _TOP_HARBOURS = 6
 
 
-def _source_column(df: pd.DataFrame) -> str | None:
-    for name in ("data_source", "Data_Source"):
-        if name in df.columns:
-            return name
-    return None
-
-
 def source_counts_from_df(df: pd.DataFrame) -> dict[str, int]:
-    col = _source_column(df)
-    if col is None or df.empty:
+    if df is None or df.empty:
         return {}
-    counts = df[col].fillna("Unknown").astype(str).value_counts()
-    return {str(k): int(v) for k, v in counts.items()}
+    col = None
+    for name in ("data_source", "Data_Source", "source"):
+        if name in df.columns:
+            col = name
+            break
+    if col is None:
+        return {}
+    work = df[col].map(friendly_source_label)
+    rolled = rollup_data_sources(work, top_n=_TOP_SOURCES, cap_social=True)
+    return {str(k): int(v) for k, v in rolled.items()}
 
 
 def harbour_counts_from_df(df: pd.DataFrame) -> dict[str, int]:

@@ -585,6 +585,9 @@ def write_report_pdf(
 
     map_path: Path | None = None
     if df_used is not None and not df_used.empty:
+        from .lagebild_viz_prep import normalize_lagebild_frame
+
+        df_used = normalize_lagebild_frame(df_used)
         map_path = settings.artifacts_dir / f"{base}_map.png"
         try:
             from .lagebild_map import render_lagebild_map
