@@ -17,6 +17,12 @@ from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
 from src.lagebild_charts import render_lagebild_charts
+from src.lagebild_viz_prep import (
+    infer_severity_from_details,
+    normalize_lagebild_frame,
+    rollup_data_sources,
+    visualization_panel_status,
+)
 from src.lagebild_map import basemap_backend, render_lagebild_map
 from src.lagebild_zebra import render_lagebild_zebra, source_mix_radar
 from src.report_pdf import (
@@ -231,6 +237,71 @@ class TestPriorSnapshotMeta(unittest.TestCase):
             self.assertIsNotNone(loaded)
             assert loaded is not None
             self.assertEqual(loaded["source_counts"]["AIS"], 3)
+
+
+def _fixture_no_severity_trino_like(n: int = 75) -> pd.DataFrame:
+    """Mimic live Trino rows: mixed casing, no severity, details for inference."""
+    sources = ["LiDAR", "marine", "AIS", "Social_Media", "Buoy"]
+    harbours = ["Greifswald", "Kiel", "Rostock", "Wismar"]
+    details_cycle = [
+        "Routine ferry corridor",
+        "Sanctions-related contact",
+        "Submarine signature elevated",
+        "Nominal AIS track",
+        "Critical jammer event",
+    ]
+    rows = []
+    for i in range(n):
+        rows.append(
+            {
+                "Harbour_name": harbours[i % len(harbours)],
+                "Data_Source": sources[i % len(sources)],
+                "details_text": details_cycle[i % len(details_cycle)],
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+class TestLagebildVizPrep(unittest.TestCase):
+    def test_normalize_infers_severity(self) -> None:
+        raw = pd.DataFrame(
+            {"Harbour": ["Kiel"], "source": ["lidar"], "details": ["submarine near pier"]}
+        )
+        norm = normalize_lagebild_frame(raw)
+        self.assertIn("severity", norm.columns)
+        self.assertEqual(norm.loc[0, "severity"], "high")
+        self.assertEqual(norm.loc[0, "harbour_name"], "Kiel")
+        self.assertEqual(norm.loc[0, "data_source"], "LiDAR")
+
+    def test_infer_severity_keywords(self) -> None:
+        self.assertEqual(infer_severity_from_details("routine patrol"), "low")
+        self.assertEqual(infer_severity_from_details("kilo transfer"), "high")
+
+    def test_social_media_rollup_cap(self) -> None:
+        series = pd.Series(["Social_Media"] + ["AIS"] * 40 + ["LiDAR"] * 59)
+        rolled = rollup_data_sources(series, cap_social=True)
+        self.assertNotIn("Social Media", rolled.index)
+        self.assertIn("Other", rolled.index)
+
+    def test_no_severity_fixture_all_panels(self) -> None:
+        raw = _fixture_no_severity_trino_like(75)
+        norm = normalize_lagebild_frame(raw)
+        self.assertNotIn("No severity", str(norm["severity"].unique()))
+        status = visualization_panel_status(norm, comparison_text="Summary only — no pipes")
+        self.assertTrue(status["source_pie"])
+        self.assertTrue(status["harbour_bars"])
+        self.assertTrue(status["severity"])
+        self.assertTrue(status["deltas_or_fallback"])
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "charts.png"
+            render_lagebild_charts(
+                norm,
+                path,
+                comparison_text="Summary only — no pipes",
+            )
+            self.assertGreater(path.stat().st_size, 2048)
 
 
 class TestLagebildCharts(unittest.TestCase):

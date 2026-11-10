@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .compare_reports import DELTA_PREFIXES, parse_comparison_sections
+from .compare_reports import DELTA_PREFIXES, parse_comparison_sections, rule_based_theme_diff
+from .lagebild_viz_prep import friendly_source_label, rollup_data_sources
 
 # NATO maritime palette (aligned with report_pdf / lagebild_map).
 NATO_HEADER_RGB = (0 / 255, 61 / 255, 122 / 255)
@@ -23,9 +24,14 @@ NATO_BAND_RGB = (210 / 255, 218 / 255, 226 / 255)
 _SOURCE_COLORS = {
     "ais": "#1f5f8b",
     "lidar": "#3d7c47",
+    "marine": "#2e7d4a",
+    "social": "#8e44ad",
+    "gps": "#6d4c41",
     "buoy": "#6b5b95",
     "radar": "#b86b25",
     "sar": "#5c6bc0",
+    "stanag": "#455a64",
+    "rus": "#5d4037",
     "other": "#7a848c",
 }
 _SEVERITY_COLORS = {
@@ -38,18 +44,15 @@ _SEVERITY_COLORS = {
 _TOP_HARBOURS = 8
 
 
-def _source_column(df: pd.DataFrame) -> str | None:
-    for name in ("data_source", "Data_Source"):
-        if name in df.columns:
-            return name
-    return None
-
-
-def _normalize_source(value: object) -> str:
-    if value is None or (isinstance(value, float) and np.isnan(value)):
-        return "Other"
-    text = str(value).strip()
-    return text if text else "Other"
+def _source_color(label: str) -> str:
+    token = label.lower().replace(" ", "_").split("_")[0]
+    if token == "social":
+        return _SOURCE_COLORS["social"]
+    if token == "gps":
+        return _SOURCE_COLORS["gps"]
+    if token == "rus":
+        return _SOURCE_COLORS["rus"]
+    return _SOURCE_COLORS.get(token, _SOURCE_COLORS["other"])
 
 
 def _normalize_severity(value: object) -> str:
@@ -68,10 +71,15 @@ def _delta_status_counts(comparison_text: str) -> dict[str, int]:
     if not counts:
         for status in ("NEW", "ESCALATED", "DE-ESCALATED", "UNCHANGED"):
             pat = re.compile(
-                rf"^\s*{re.escape(status)}\s*[|:\-]",
-                re.IGNORECASE | re.MULTILINE,
+                rf"\b{re.escape(status)}\s*[|:\-]",
+                re.IGNORECASE,
             )
-            counts[status] = len(pat.findall(comparison_text))
+            n = len(pat.findall(comparison_text))
+            if n:
+                counts[status] = n
+    if not counts and comparison_text.strip():
+        for delta in rule_based_theme_diff(comparison_text, ""):
+            counts[delta.status.upper()] += 1
     return dict(counts)
 
 
@@ -84,23 +92,17 @@ def _style_axis(ax: plt.Axes, *, title: str) -> None:
 
 
 def _panel_source_pie(ax: plt.Axes, df: pd.DataFrame) -> None:
-    col = _source_column(df)
-    if not col or df.empty:
+    if df.empty or "data_source" not in df.columns:
         ax.text(0.5, 0.5, "No data source column", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
         return
-    counts = (
-        df[col].map(_normalize_source).value_counts().sort_values(ascending=False)
-    )
+    counts = rollup_data_sources(df["data_source"])
     if counts.empty:
         ax.text(0.5, 0.5, "No events", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
         return
     labels = list(counts.index)
-    colors = [
-        _SOURCE_COLORS.get(lbl.lower().split()[0], _SOURCE_COLORS["other"])
-        for lbl in labels
-    ]
+    colors = [_source_color(lbl) for lbl in labels]
     wedges, _texts, autotexts = ax.pie(
         counts.values,
         labels=labels,
@@ -147,13 +149,17 @@ def _panel_harbour_bars(ax: plt.Axes, df: pd.DataFrame) -> None:
 
 def _panel_severity(ax: plt.Axes, df: pd.DataFrame) -> None:
     order = ["low", "medium", "high", "critical", "unknown"]
-    if df.empty or "severity" not in df.columns:
+    if df.empty:
+        ax.text(0.5, 0.5, "No events", ha="center", va="center", fontsize=9)
+        ax.set_axis_off()
+        return
+    if "severity" not in df.columns:
         ax.text(0.5, 0.5, "No severity column", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
         return
     norm = df["severity"].map(_normalize_severity)
     counts = norm.value_counts()
-    labels = [s for s in order if s in counts.index]
+    labels = [s for s in order if s in counts.index and counts[s] > 0]
     if not labels:
         ax.text(0.5, 0.5, "No severity values", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
@@ -168,20 +174,12 @@ def _panel_severity(ax: plt.Axes, df: pd.DataFrame) -> None:
     _style_axis(ax, title="Severity distribution")
 
 
-def _panel_comparison_deltas(ax: plt.Axes, comparison_text: str) -> None:
+def _panel_comparison_deltas(ax: plt.Axes, comparison_text: str) -> bool:
+    """Render delta bar chart. Returns True when a chart was drawn."""
     counts = _delta_status_counts(comparison_text)
     labels = [k for k in DELTA_PREFIXES if counts.get(k, 0) > 0]
     if not labels:
-        ax.text(
-            0.5,
-            0.5,
-            "No delta lines parsed",
-            ha="center",
-            va="center",
-            fontsize=9,
-        )
-        ax.set_axis_off()
-        return
+        return False
     vals = [counts[lbl] for lbl in labels]
     colors = {
         "NEW": "#1f5f8b",
@@ -200,21 +198,21 @@ def _panel_comparison_deltas(ax: plt.Axes, comparison_text: str) -> None:
     ax.set_xticklabels(labels, fontsize=8)
     ax.set_ylabel("Line count", fontsize=8)
     _style_axis(ax, title="24h / 48h delta counts")
+    return True
 
 
 def _panel_source_harbour_grouped(ax: plt.Axes, df: pd.DataFrame) -> None:
-    col = _source_column(df)
-    if df.empty or not col or "harbour_name" not in df.columns:
+    if df.empty or "data_source" not in df.columns or "harbour_name" not in df.columns:
         ax.text(0.5, 0.5, "Insufficient dimensions", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
         return
-    work = df[[col, "harbour_name"]].dropna()
+    work = df[["data_source", "harbour_name"]].dropna()
     if work.empty:
         ax.text(0.5, 0.5, "No cross-tab data", ha="center", va="center", fontsize=9)
         ax.set_axis_off()
         return
     work = work.copy()
-    work["_source"] = work[col].map(_normalize_source)
+    work["_source"] = work["data_source"].map(friendly_source_label)
     work["_harbour"] = work["harbour_name"].astype(str).str.strip()
     pivot = (
         work.groupby(["_harbour", "_source"])
@@ -232,19 +230,65 @@ def _panel_source_harbour_grouped(ax: plt.Axes, df: pd.DataFrame) -> None:
     width = 0.8 / max(len(sources), 1)
     for idx, source in enumerate(sources):
         offset = (idx - (len(sources) - 1) / 2) * width
-        color = _SOURCE_COLORS.get(source.lower().split()[0], _SOURCE_COLORS["other"])
         ax.bar(
             x + offset,
             pivot[source].values,
             width=width * 0.92,
             label=source,
-            color=color,
+            color=_source_color(source),
         )
     ax.set_xticks(x)
     ax.set_xticklabels(pivot.index, rotation=25, ha="right", fontsize=7)
     ax.set_ylabel("Events", fontsize=8)
     ax.legend(fontsize=7, loc="upper right", framealpha=0.9)
     _style_axis(ax, title="Source x harbour (top harbours)")
+
+
+def _panel_events_by_source_stacked(ax: plt.Axes, df: pd.DataFrame) -> None:
+    """Stacked bars: top harbours with rolled-up data-source mix (fallback panel 4)."""
+    if df.empty or "data_source" not in df.columns or "harbour_name" not in df.columns:
+        ax.text(0.5, 0.5, "Insufficient dimensions", ha="center", va="center", fontsize=9)
+        ax.set_axis_off()
+        return
+    work = df[["data_source", "harbour_name"]].dropna().copy()
+    if work.empty:
+        ax.text(0.5, 0.5, "No cross-tab data", ha="center", va="center", fontsize=9)
+        ax.set_axis_off()
+        return
+    work["_source"] = work["data_source"].map(friendly_source_label)
+    work["_harbour"] = work["harbour_name"].astype(str).str.strip()
+    harbour_order = (
+        work["_harbour"].value_counts().head(6).index.tolist()
+    )
+    sources = (
+        work["_source"].value_counts().head(8).index.tolist()
+    )
+    if not harbour_order or not sources:
+        ax.set_axis_off()
+        return
+    x = np.arange(len(harbour_order))
+    bottom = np.zeros(len(harbour_order), dtype=float)
+    for source in sources:
+        heights = []
+        for harbour in harbour_order:
+            n = int(
+                ((work["_harbour"] == harbour) & (work["_source"] == source)).sum()
+            )
+            heights.append(n)
+        ax.bar(
+            x,
+            heights,
+            bottom=bottom,
+            label=source,
+            color=_source_color(source),
+            width=0.72,
+        )
+        bottom = bottom + np.array(heights, dtype=float)
+    ax.set_xticks(x)
+    ax.set_xticklabels(harbour_order, rotation=25, ha="right", fontsize=7)
+    ax.set_ylabel("Events", fontsize=8)
+    ax.legend(fontsize=7, loc="upper right", ncol=2, framealpha=0.9)
+    _style_axis(ax, title="Events by data source (stacked)")
 
 
 def render_lagebild_charts(
@@ -293,7 +337,8 @@ def render_lagebild_charts(
         _panel_harbour_bars(axes[1], df)
         _panel_severity(axes[2], df)
         if comparison_text and comparison_text.strip():
-            _panel_comparison_deltas(axes[3], comparison_text)
+            if not _panel_comparison_deltas(axes[3], comparison_text):
+                _panel_events_by_source_stacked(axes[3], df)
         else:
             _panel_source_harbour_grouped(axes[3], df)
 

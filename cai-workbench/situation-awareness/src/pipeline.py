@@ -19,6 +19,7 @@ from .data_access import (
 )
 from .llm_client import chat_completion_text
 from .prompts import build_comparison_prompt, build_situation_prompt
+from .lagebild_viz_prep import normalize_lagebild_frame
 from .report_pdf import load_report_texts, write_report_pdf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +51,7 @@ def run_pipeline(
         settings.sample_csv = settings.resolve_sample_csv(PROJECT_ROOT)
 
     dataframe, data_source = load_lagebild_dataframe(settings, PROJECT_ROOT)
+    dataframe = normalize_lagebild_frame(dataframe)
     md_table, df_used = dataframe_to_markdown_bounded(dataframe, settings.max_char_limit)
     dataset_summary = lagebild_dataset_summary(df_used)
     report_time = datetime.now(timezone.utc)
