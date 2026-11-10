@@ -11,15 +11,25 @@ from openai import OpenAI
 from .config import Settings
 
 
+def normalize_api_key(raw: str) -> str:
+    """Strip whitespace and an accidental ``Bearer `` prefix (OpenAI client adds it)."""
+    key = raw.strip()
+    if key.lower().startswith("bearer "):
+        key = key[7:].strip()
+    if not key:
+        raise ValueError("API key is empty after stripping whitespace.")
+    return key
+
+
 def resolve_api_key(settings: Settings) -> str:
     if settings.api_key:
-        return settings.api_key
+        return normalize_api_key(settings.api_key)
     if settings.jwt_path.is_file():
         with open(settings.jwt_path, encoding="utf-8") as fh:
             data = json.load(fh)
         token = data.get("access_token") or data.get("token")
         if token:
-            return str(token)
+            return normalize_api_key(str(token))
     raise ValueError(
         "Set LAGEBILD_API_KEY or place a JWT at LAGEBILD_JWT_PATH (default /tmp/jwt)."
     )

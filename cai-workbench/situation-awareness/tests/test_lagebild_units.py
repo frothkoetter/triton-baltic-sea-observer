@@ -15,7 +15,7 @@ sys.path.insert(0, str(_ROOT))
 from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
-from src.llm_client import _normalize_azure_base_url
+from src.llm_client import _normalize_azure_base_url, normalize_api_key
 
 
 class TestDatasetSummary(unittest.TestCase):
@@ -68,6 +68,14 @@ UNCHANGED | Routine ferry traffic Wismar
         prior = "routine ferry Wismar"
         deltas = rule_based_theme_diff(cur, prior)
         self.assertTrue(any(d.status == "NEW" for d in deltas))
+
+
+class TestApiKeyNormalize(unittest.TestCase):
+    def test_strips_trailing_space(self) -> None:
+        self.assertEqual(normalize_api_key("abc123 "), "abc123")
+
+    def test_strips_bearer_prefix(self) -> None:
+        self.assertEqual(normalize_api_key("Bearer tok"), "tok")
 
 
 class TestAzureNormalize(unittest.TestCase):
