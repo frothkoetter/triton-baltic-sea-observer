@@ -56,6 +56,29 @@ class Settings:
     insert_sql_enabled: bool = field(
         default_factory=lambda: _env_bool("LAGEBILD_INSERT_SQL", False)
     )
+    trino_host: str | None = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_TRINO_HOST") or None
+    )
+    trino_port: int = field(
+        default_factory=lambda: int(os.environ.get("LAGEBILD_TRINO_PORT", "443"))
+    )
+    trino_user: str | None = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_TRINO_USER") or None
+    )
+    trino_password: str | None = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_TRINO_PASSWORD") or None
+    )
+    trino_http_scheme: str = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_TRINO_HTTP_SCHEME", "https")
+    )
+    trino_schema: str = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_TRINO_SCHEMA", "defense")
+    )
+    summary_table: str = field(
+        default_factory=lambda: os.environ.get(
+            "LAGEBILD_SUMMARY_TABLE", "situation_awareness_summary"
+        )
+    )
     temperature: float = field(
         default_factory=lambda: float(os.environ.get("LAGEBILD_LLM_TEMPERATURE", "0.2"))
     )

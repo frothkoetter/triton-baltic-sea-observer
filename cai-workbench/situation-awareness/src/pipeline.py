@@ -11,9 +11,11 @@ from .compare_reports import rule_based_theme_diff
 from .config import Settings
 from .data_access import (
     dataframe_to_markdown_bounded,
+    execute_trino_sql,
     generate_summary_insert_sql,
     lagebild_dataset_summary,
     load_lagebild_dataframe,
+    summary_table_qualified,
 )
 from .llm_client import chat_completion_text
 from .prompts import build_comparison_prompt, build_situation_prompt
@@ -80,7 +82,11 @@ def run_pipeline(
     pdf_path = write_report_pdf(report_text, comparison_text, settings, report_time)
     sql_insert = None
     if settings.insert_sql_enabled:
-        sql_insert = generate_summary_insert_sql(report_text, report_time)
+        sql_insert = generate_summary_insert_sql(
+            report_text,
+            report_time,
+            table_qualified=summary_table_qualified(settings),
+        )
 
     return PipelineResult(
         report_text=report_text,
@@ -94,7 +100,11 @@ def run_pipeline(
 
 
 def execute_sql_insert(settings: Settings, sql_insert: str) -> None:
-    """Optional: persist lines to defense.Situation_Awareness_Summary via CML."""
+    """Persist report lines via Trino JDBC or CML data connection."""
+    if settings.trino_host:
+        execute_trino_sql(settings, sql_insert)
+        return
+
     import cml.data_v1 as cmldata
 
     conn = cmldata.get_connection(settings.connection_name)

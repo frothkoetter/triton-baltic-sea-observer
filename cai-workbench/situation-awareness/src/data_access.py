@@ -99,6 +99,43 @@ def fetch_from_cml(connection_name: str, sql: str) -> pd.DataFrame:
         conn.close()
 
 
+def fetch_from_trino(settings: Settings, sql: str) -> pd.DataFrame:
+    """Query Trino via HTTPS + basic auth (CDW JDBC equivalent)."""
+    if not settings.trino_host or not settings.trino_user:
+        raise ValueError("LAGEBILD_TRINO_HOST and LAGEBILD_TRINO_USER are required")
+
+    import trino
+    from trino.auth import BasicAuthentication
+
+    password = settings.trino_password or ""
+    auth = BasicAuthentication(settings.trino_user, password) if password else None
+    conn = trino.dbapi.connect(
+        host=settings.trino_host,
+        port=settings.trino_port,
+        user=settings.trino_user,
+        http_scheme=settings.trino_http_scheme,
+        auth=auth,
+        catalog=settings.trino_catalog,
+        schema=settings.trino_schema,
+    )
+    try:
+        cur = conn.cursor()
+        cur.execute(sql)
+        columns = [d[0] for d in cur.description]
+        rows = cur.fetchall()
+        return pd.DataFrame(rows, columns=columns)
+    finally:
+        conn.close()
+
+
+def summary_table_qualified(settings: Settings) -> str:
+    return qualified_table(
+        settings.trino_catalog,
+        settings.trino_schema,
+        settings.summary_table,
+    )
+
+
 def load_lagebild_dataframe(settings: Settings, project_root: Path) -> tuple[pd.DataFrame, str]:
     """
     Load lagebild data from CML connection or fall back to sample CSV.
@@ -110,22 +147,28 @@ def load_lagebild_dataframe(settings: Settings, project_root: Path) -> tuple[pd.
 
     if not use_sample:
         try:
+            if settings.trino_host:
+                df = fetch_from_trino(settings, sql)
+                return df, f"trino:{settings.trino_host}"
             df = fetch_from_cml(settings.connection_name, sql)
             return df, f"cml:{settings.connection_name}"
         except Exception as exc:
             sample_path = settings.resolve_sample_csv(project_root)
             if sample_path.is_file():
-                return load_sample_csv(sample_path), f"sample_csv (CML failed: {exc})"
+                return load_sample_csv(sample_path), f"sample_csv (live fetch failed: {exc})"
             raise
 
     sample_path = settings.resolve_sample_csv(project_root)
     return load_sample_csv(sample_path), "sample_csv"
 
 
-def generate_summary_insert_sql(summary_text: str, timestamp: Any) -> str:
-    """Bulk INSERT for defense.Situation_Awareness_Summary (optional persistence)."""
+def generate_summary_insert_sql(
+    summary_text: str, timestamp: Any, *, table_qualified: str | None = None
+) -> str:
+    """Bulk INSERT for situation awareness summary (Iceberg / Impala)."""
+    target = table_qualified or "defense.Situation_Awareness_Summary"
     values: list[str] = []
-    sql_timestamp = timestamp.strftime("'%Y-%m-%d %H:%M:%S'")
+    sql_timestamp = "TIMESTAMP '" + timestamp.strftime("%Y-%m-%d %H:%M:%S") + "'"
     for line_num, line_content in enumerate(summary_text.splitlines()):
         if not line_content.strip():
             continue
@@ -134,11 +177,35 @@ def generate_summary_insert_sql(summary_text: str, timestamp: Any) -> str:
     if not values:
         return "-- No content generated for insertion."
     return (
-        "INSERT INTO defense.Situation_Awareness_Summary "
+        f"INSERT INTO {target} "
         "(summary_timestamp, summare_line, summary_text) VALUES \n"
         + ",\n".join(values)
-        + ";"
     )
+
+
+def execute_trino_sql(settings: Settings, sql: str) -> None:
+    """Run DDL/DML on Trino when direct JDBC env is configured."""
+    if not settings.trino_host:
+        raise ValueError("Trino host not configured")
+    import trino
+    from trino.auth import BasicAuthentication
+
+    password = settings.trino_password or ""
+    auth = BasicAuthentication(settings.trino_user, password) if password else None
+    conn = trino.dbapi.connect(
+        host=settings.trino_host,
+        port=settings.trino_port,
+        user=settings.trino_user,
+        http_scheme=settings.trino_http_scheme,
+        auth=auth,
+        catalog=settings.trino_catalog,
+        schema=settings.trino_schema,
+    )
+    try:
+        cur = conn.cursor()
+        cur.execute(sql.rstrip().rstrip(";"))
+    finally:
+        conn.close()
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
