@@ -62,11 +62,12 @@ def build_comparison_prompt(
     if not prior_blocks:
         prior_blocks.append("(No prior stored reports — note baseline only.)")
 
+    prior_text = "\n\n".join(prior_blocks)
     user = f"""Compare the CURRENT report to prior reports for escalation analysis.
 
 Current run time: {report_time}
 
-{"\n\n".join(prior_blocks)}
+{prior_text}
 
 --- CURRENT REPORT ---
 {current_report}
