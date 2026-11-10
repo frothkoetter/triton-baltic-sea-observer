@@ -17,6 +17,15 @@ WHERE harbour_name IN (
 )
 """.strip()
 
+BALTIC_WIDE_LAGEBILD_SQL = """
+SELECT * FROM {qualified_lagebild}
+WHERE harbour_name IN (
+    SELECT name FROM {qualified_harbours}
+)
+   OR Data_Source IN ('GPS_Jammer', 'REF', 'RUS_Fleet')
+   OR harbour_name IS NULL
+""".strip()
+
 
 def qualified_table(catalog: str, schema: str, table: str) -> str:
     """Build Trino-style qualified name; Impala often uses schema.table only."""
@@ -30,7 +39,12 @@ def default_lagebild_sql(settings: Settings) -> str:
         return settings.sql_override.strip()
     lagebild = qualified_table(settings.trino_catalog, "defense", "lagebild")
     harbours = qualified_table(settings.trino_catalog, "defense", "baltic_sea_harbours")
-    return GERMAN_HARBOUR_FILTER_SQL.format(
+    template = (
+        GERMAN_HARBOUR_FILTER_SQL
+        if settings.german_only_harbours
+        else BALTIC_WIDE_LAGEBILD_SQL
+    )
+    return template.format(
         qualified_lagebild=lagebild,
         qualified_harbours=harbours,
     )
@@ -39,7 +53,7 @@ def default_lagebild_sql(settings: Settings) -> str:
 def lagebild_dataset_summary(df: pd.DataFrame) -> str:
     """Short header for the LLM from defense.lagebild row counts."""
     if df.empty:
-        return "No events in the last 24h for the selected German harbours."
+        return "No events in the last 24h for the Baltic Lagebild query window."
 
     n = len(df)
     parts = [f"{n} events in the reporting window"]

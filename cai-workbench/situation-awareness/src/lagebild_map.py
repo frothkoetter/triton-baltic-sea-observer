@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from .harbour_geo import coords_for_harbour, harbour_points
+from .lagebild_viz_prep import normalize_lagebild_frame
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 _STATUS_PREFIX = re.compile(r"^\s*(NEW|ESCALATED)\s*\|", re.I)
@@ -253,6 +254,32 @@ def _setup_map_axes(fig) -> tuple[object, str, str]:
     return _setup_fallback_axes(fig), "fallback", "bundled"
 
 
+def _overlay_gps_jammers(ax, df: pd.DataFrame, *, transform) -> None:
+    """Plot GPS jammer events with lat/lon when present."""
+    if df.empty or "data_source" not in df.columns:
+        return
+    jam = df[df["data_source"] == "GPS Jammer"]
+    if jam.empty:
+        return
+    if "latitude" not in jam.columns or "longitude" not in jam.columns:
+        return
+    pts = jam.dropna(subset=["latitude", "longitude"])
+    if pts.empty:
+        return
+    kw = {"transform": transform} if transform is not None else {}
+    ax.scatter(
+        pts["longitude"].astype(float),
+        pts["latitude"].astype(float),
+        marker="x",
+        s=42,
+        c="#b71c1c",
+        linewidths=1.2,
+        zorder=6,
+        label="GPS Jammer",
+        **kw,
+    )
+
+
 def _overlay_harbours(
     ax,
     counts: pd.DataFrame,
@@ -360,7 +387,8 @@ def render_lagebild_map(
     global _last_basemap_backend, _last_basemap_scale
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    counts = _harbour_counts(df)
+    work = normalize_lagebild_frame(df) if not df.empty else df
+    counts = _harbour_counts(work)
     changed = _changed_harbours(comparison_text, dataset_summary, counts)
 
     fig = plt.figure(figsize=(7.2, 5.4), dpi=120)
@@ -373,19 +401,20 @@ def render_lagebild_map(
 
         transform = ccrs.PlateCarree()
         ax.set_title(
-            "German Baltic — harbour activity (Lagebild)",
+            "Baltic Sea — harbour & jammer activity (Lagebild)",
             fontsize=11,
             pad=10,
         )
     else:
         transform = None
         ax.set_title(
-            "German Baltic — harbour activity (Lagebild)",
+            "Baltic Sea — harbour & jammer activity (Lagebild)",
             fontsize=11,
             pad=10,
         )
 
     _overlay_harbours(ax, counts, changed, transform=transform)
+    _overlay_gps_jammers(ax, work, transform=transform)
 
     if changed:
         lon_min, _, lat_min, _ = _MAP_EXTENT

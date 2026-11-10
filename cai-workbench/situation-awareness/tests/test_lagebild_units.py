@@ -14,17 +14,28 @@ sys.path.insert(0, str(_ROOT))
 
 from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
-from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
+from src.data_access import (
+    BALTIC_WIDE_LAGEBILD_SQL,
+    dataframe_to_markdown_bounded,
+    default_lagebild_sql,
+    lagebild_dataset_summary,
+)
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
 from src.lagebild_charts import render_lagebild_charts
 from src.lagebild_viz_prep import (
     infer_severity_from_details,
     normalize_lagebild_frame,
     rollup_data_sources,
+    rollup_radar_sources,
     visualization_panel_status,
 )
 from src.lagebild_map import basemap_backend, render_lagebild_map
-from src.lagebild_zebra import render_lagebild_zebra, source_mix_radar
+from src.lagebild_zebra import (
+    radar_spoke_labels,
+    render_lagebild_zebra,
+    source_mix_radar,
+    variance_table_row_labels,
+)
 from src.report_pdf import (
     _is_primary_section_break,
     _sanitize_for_pdf,
@@ -145,6 +156,72 @@ Details.
         self.assertIn("EXECUTIVE", sections[0][0].upper())
 
 
+def _wide_baltic_viz_fixture() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "harbour_name": [
+                "Kiel",
+                "Greifswald",
+                "Rostock",
+                "Kaliningrad",
+                None,
+                None,
+                "Kiel",
+                "Rostock",
+            ],
+            "Data_Source": [
+                "LiDAR",
+                "AIS",
+                "Marine",
+                "AIS",
+                "GPS_Jammer",
+                "REF",
+                "Buoy",
+                "SocialMedia",
+            ],
+            "details": [
+                "submarine signature",
+                "sanctions watch",
+                "routine",
+                "ferry corridor",
+                "jammer event",
+                "area_id=Bornholm Basin | enter surveillance",
+                "mag anomaly",
+                "tweet prio 2",
+            ],
+            "latitude": [54.3, 54.1, 54.08, 54.71, 55.2, 56.1, 54.32, 54.09],
+            "longitude": [10.1, 13.4, 12.14, 20.5, 16.0, 18.2, 10.12, 12.15],
+        }
+    )
+
+
+class TestLagebildDataAccess(unittest.TestCase):
+    def test_default_sql_is_baltic_wide(self) -> None:
+        sql = default_lagebild_sql(Settings())
+        self.assertIn("GPS_Jammer", sql)
+        self.assertIn("REF", sql)
+        self.assertIn("RUS_Fleet", sql)
+        self.assertNotIn("country = 'Germany'", sql)
+
+    def test_german_only_env_restores_filter(self) -> None:
+        import os
+
+        prev = os.environ.get("LAGEBILD_GERMAN_ONLY")
+        os.environ["LAGEBILD_GERMAN_ONLY"] = "1"
+        try:
+            sql = default_lagebild_sql(Settings())
+            self.assertIn("country = 'Germany'", sql)
+            self.assertNotIn("harbour_name IS NULL", sql)
+        finally:
+            if prev is None:
+                os.environ.pop("LAGEBILD_GERMAN_ONLY", None)
+            else:
+                os.environ["LAGEBILD_GERMAN_ONLY"] = prev
+
+    def test_baltic_sql_template_documents_union(self) -> None:
+        self.assertIn("OR Data_Source IN", BALTIC_WIDE_LAGEBILD_SQL)
+
+
 class TestLagebildZebra(unittest.TestCase):
     def test_zebra_png_smoke(self) -> None:
         import tempfile
@@ -181,6 +258,20 @@ class TestLagebildZebra(unittest.TestCase):
             fig.savefig(path)
             plt.close(fig)
             self.assertGreater(path.stat().st_size, 2048)
+
+    def test_wide_fixture_radar_and_variance(self) -> None:
+        raw = _wide_baltic_viz_fixture()
+        norm = normalize_lagebild_frame(raw)
+        spokes = radar_spoke_labels(norm)
+        self.assertGreaterEqual(len(spokes), 6)
+        self.assertIn("GPS Jammer", spokes)
+        self.assertIn("Area violation", spokes)
+        rolled = rollup_radar_sources(norm["data_source"])
+        self.assertGreaterEqual(len(rolled), 6)
+        table_rows = variance_table_row_labels(norm)
+        self.assertGreaterEqual(len(table_rows), 4)
+        status = visualization_panel_status(norm, comparison_text=None)
+        self.assertTrue(all(status.values()))
 
 
 class TestPriorSnapshotMeta(unittest.TestCase):
@@ -263,6 +354,21 @@ def _fixture_no_severity_trino_like(n: int = 75) -> pd.DataFrame:
 
 
 class TestLagebildVizPrep(unittest.TestCase):
+    def test_ref_maps_to_area_violation_and_area_id(self) -> None:
+        raw = pd.DataFrame(
+            {
+                "Data_Source": ["REF"],
+                "details": ["area_id=Gotlandic Expanse | transition enter"],
+                "harbour_name": [None],
+                "latitude": [57.0],
+                "longitude": [18.5],
+            }
+        )
+        norm = normalize_lagebild_frame(raw)
+        self.assertEqual(norm.loc[0, "data_source"], "Area violation")
+        self.assertEqual(norm.loc[0, "area_id"], "Gotlandic Expanse")
+        self.assertTrue(str(norm.loc[0, "viz_region"]).startswith("Area:"))
+
     def test_normalize_infers_severity(self) -> None:
         raw = pd.DataFrame(
             {"Harbour": ["Kiel"], "source": ["lidar"], "details": ["submarine near pier"]}
