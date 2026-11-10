@@ -24,6 +24,12 @@ Optional flags: `python run_hourly.py --use-sample` (offline), `python run_hourl
 
 Enable SQL persistence: `LAGEBILD_INSERT_SQL=1` (writes to `defense.Situation_Awareness_Summary`).
 
+## PDF (NATO SITREP layout)
+
+Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
+
+Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRECEDENCE`, `LAGEBILD_PRECEDENCE_ESCALATED` (defaults to `FLASH / IMMEDIATE` when comparison contains `ESCALATED`).
+
 ## Data sources
 
 | Engine | View |

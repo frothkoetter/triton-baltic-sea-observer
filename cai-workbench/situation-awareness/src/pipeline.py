@@ -79,7 +79,14 @@ def run_pipeline(
                 else:
                     comparison_text = "UNCHANGED | No prior report for comparison."
 
-    pdf_path = write_report_pdf(report_text, comparison_text, settings, report_time)
+    pdf_path = write_report_pdf(
+        report_text,
+        comparison_text,
+        settings,
+        report_time,
+        dataset_summary=dataset_summary,
+        row_count=len(df_used),
+    )
     sql_insert = None
     if settings.insert_sql_enabled:
         sql_insert = generate_summary_insert_sql(

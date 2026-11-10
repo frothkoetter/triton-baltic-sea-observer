@@ -1,8 +1,9 @@
-"""PDF generation and artifact index for situation reports."""
+"""NATO-style maritime SITREP PDF generation and artifact index."""
 
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,16 +11,158 @@ from fpdf import FPDF
 
 from .config import Settings
 
+MONTHS_ZULU = (
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+)
 
-class SituationReportPDF(FPDF):
-    def header(self) -> None:
-        self.set_font("Helvetica", "B", 12)
-        self.cell(0, 10, "Baltic Situation Awareness (Lagebild)", new_x="LMARGIN", new_y="NEXT")
-        self.ln(2)
+
+def format_dtg(report_time: datetime) -> str:
+    """Military DTG, e.g. ``291350Z OCT 26`` (UTC)."""
+    if report_time.tzinfo is None:
+        report_time = report_time.replace(tzinfo=timezone.utc)
+    else:
+        report_time = report_time.astimezone(timezone.utc)
+    mon = MONTHS_ZULU[report_time.month - 1]
+    yy = report_time.year % 100
+    return f"{report_time.day:02d}{report_time.hour:02d}{report_time.minute:02d}Z {mon} {yy:02d}"
 
 
 def _sanitize_for_pdf(text: str) -> str:
     return text.encode("latin-1", errors="replace").decode("latin-1")
+
+
+def _primary_hotspot(dataset_summary: str) -> str:
+    m = re.search(r"busiest harbours\s*[—–-]\s*([^;,]+)", dataset_summary, re.I)
+    if m:
+        return m.group(1).strip().split("(")[0].strip().upper()
+    return "BALTIC SEA (GER)"
+
+
+def _tracks_observed(dataset_summary: str, row_count: int | None) -> str:
+    m = re.search(r"(\d+)\s+events", dataset_summary)
+    n = int(m.group(1)) if m else (row_count or 0)
+    return f"{n} TRACKS ANALYZED"
+
+
+class NatoSitrepPDF(FPDF):
+    """Layout aligned with NATO maritime SITREP samples (classification banner + sections)."""
+
+    def __init__(
+        self,
+        *,
+        classification: str,
+        theatre: str,
+        dtg: str,
+        precedence: str,
+    ) -> None:
+        super().__init__()
+        self.classification = classification
+        self.theatre = theatre
+        self.dtg = dtg
+        self.precedence = precedence
+
+    def header(self) -> None:
+        self.set_font("Helvetica", "B", 9)
+        self.cell(0, 5, _sanitize_for_pdf(self.classification), align="C", new_x="LMARGIN", new_y="NEXT")
+        self.ln(3)
+        self.set_font("Helvetica", "B", 14)
+        self.cell(0, 8, "MARITIME SITUATION REPORT (SITREP)", align="C", new_x="LMARGIN", new_y="NEXT")
+        self.set_font("Helvetica", "B", 11)
+        self.cell(0, 6, _sanitize_for_pdf(self.theatre), align="C", new_x="LMARGIN", new_y="NEXT")
+        self.ln(2)
+        self.set_font("Helvetica", "", 10)
+        self.cell(0, 5, f"DTG: {self.dtg}", new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 5, f"PRECEDENCE: {self.precedence}", new_x="LMARGIN", new_y="NEXT")
+        self.ln(3)
+
+    def footer(self) -> None:
+        self.set_y(-18)
+        self.set_font("Helvetica", "I", 8)
+        self.cell(0, 4, _sanitize_for_pdf(self.classification), align="C", new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 4, f"-- {self.page_no()} of {{nb}} --", align="C")
+
+    def situation_summary_table(
+        self,
+        dtg: str,
+        area: str,
+        observations: str,
+        hotspot: str,
+    ) -> None:
+        self.set_font("Helvetica", "B", 8)
+        col_w = (self.w - self.l_margin - self.r_margin) / 4
+        headers = [
+            "DATE-TIME GROUP",
+            "AREA OF OPERATIONS",
+            "OBSERVATIONS",
+            "PRIMARY HOTSPOT",
+        ]
+        for h in headers:
+            self.cell(col_w, 6, h, border=1)
+        self.ln()
+        self.set_font("Helvetica", "", 8)
+        for val in (dtg, area, observations, hotspot):
+            self.cell(col_w, 7, _sanitize_for_pdf(val)[:40], border=1)
+        self.ln(10)
+
+    def section_heading(self, title: str) -> None:
+        self.set_font("Helvetica", "B", 10)
+        self.multi_cell(0, 6, _sanitize_for_pdf(title))
+        self.ln(2)
+
+    def body_paragraph(self, text: str) -> None:
+        self.set_font("Helvetica", "", 9)
+        self.multi_cell(0, 4.5, _sanitize_for_pdf(text))
+        self.ln(2)
+
+
+def _split_report_sections(report_text: str) -> list[tuple[str, str]]:
+    """Map LLM output into labelled SITREP sections when numbered headings exist."""
+    lines = report_text.strip().splitlines()
+    if not lines:
+        return [("SECTION 1: SITUATION SUMMARY", "(No narrative generated.)")]
+
+    sections: list[tuple[str, str]] = []
+    current_title = "SECTION 1: SITUATION SUMMARY"
+    current_lines: list[str] = []
+
+    heading_re = re.compile(
+        r"^(#{1,3}\s+)?(\d+\.|SECTION\s+\d+[:.)]?\s*)(.+)$", re.I
+    )
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            current_lines.append("")
+            continue
+        hm = heading_re.match(stripped)
+        if hm and len(stripped) < 120:
+            if current_lines:
+                sections.append((current_title, "\n".join(current_lines).strip()))
+            title_body = (hm.group(3) or "").strip()
+            current_title = title_body.upper()
+            if not current_title.startswith("SECTION"):
+                current_title = f"SECTION: {current_title}"
+            current_lines = []
+        else:
+            current_lines.append(stripped)
+
+    if current_lines:
+        sections.append((current_title, "\n".join(current_lines).strip()))
+
+    if not sections:
+        return [("SECTION 1: SITUATION SUMMARY", report_text.strip())]
+    return sections
 
 
 def write_report_pdf(
@@ -27,32 +170,70 @@ def write_report_pdf(
     comparison_text: str | None,
     settings: Settings,
     report_time: datetime,
+    *,
+    dataset_summary: str = "",
+    row_count: int | None = None,
 ) -> Path:
     settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
     stamp = report_time.strftime("%Y%m%d_%H%M%S")
-    pdf_path = settings.artifacts_dir / f"lagebild_report_{stamp}.pdf"
-    meta_path = settings.artifacts_dir / f"lagebild_report_{stamp}.json"
-    txt_path = settings.artifacts_dir / f"lagebild_report_{stamp}.txt"
+    base = f"nato_sitrep_{stamp}"
+    pdf_path = settings.artifacts_dir / f"{base}.pdf"
+    meta_path = settings.artifacts_dir / f"{base}.json"
+    txt_path = settings.artifacts_dir / f"{base}.txt"
 
     txt_path.write_text(report_text, encoding="utf-8")
 
-    pdf = SituationReportPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
+    classification = __import__("os").environ.get(
+        "LAGEBILD_CLASSIFICATION", "NATO UNCLASSIFIED // RELEASABLE TO MARCOM"
+    )
+    theatre = __import__("os").environ.get("LAGEBILD_THEATRE", "JMOC BALTIC THEATRE")
+    precedence = __import__("os").environ.get("LAGEBILD_PRECEDENCE", "ROUTINE")
+    if comparison_text and "ESCALATED" in comparison_text.upper():
+        precedence = __import__("os").environ.get(
+            "LAGEBILD_PRECEDENCE_ESCALATED", "FLASH / IMMEDIATE"
+        )
+
+    dtg = format_dtg(report_time)
+    hotspot = _primary_hotspot(dataset_summary or report_text)
+    observations = _tracks_observed(dataset_summary or report_text, row_count)
+
+    pdf = NatoSitrepPDF(
+        classification=classification,
+        theatre=theatre,
+        dtg=dtg,
+        precedence=precedence,
+    )
+    pdf.alias_nb_pages()
+    pdf.set_auto_page_break(auto=True, margin=22)
     pdf.add_page()
-    pdf.set_font("Helvetica", "", 10)
-    pdf.multi_cell(0, 5, _sanitize_for_pdf(f"Generated: {report_time.isoformat()}\n\n{report_text}"))
+    pdf.situation_summary_table(
+        dtg=dtg,
+        area="BALTIC SEA (GER)",
+        observations=observations,
+        hotspot=hotspot,
+    )
+
+    for idx, (title, body) in enumerate(_split_report_sections(report_text), start=1):
+        if idx > 1 and pdf.get_y() > 240:
+            pdf.add_page()
+        if not title.upper().startswith("SECTION"):
+            title = f"SECTION {idx}: {title}"
+        pdf.section_heading(title)
+        pdf.body_paragraph(body)
+
     if comparison_text:
         pdf.add_page()
-        pdf.set_font("Helvetica", "B", 11)
-        pdf.cell(0, 8, "24h / 48h Comparison", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 10)
-        pdf.multi_cell(0, 5, _sanitize_for_pdf(comparison_text))
+        pdf.section_heading("SECTION: 24H / 48H DELTA & DIRECTIVES")
+        pdf.body_paragraph(comparison_text)
+
     pdf.output(str(pdf_path))
 
     meta = {
         "timestamp": report_time.isoformat(),
+        "format": "nato_sitrep",
         "pdf": pdf_path.name,
         "text": txt_path.name,
+        "dtg": dtg,
         "has_comparison": bool(comparison_text),
     }
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")

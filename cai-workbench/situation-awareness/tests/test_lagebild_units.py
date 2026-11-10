@@ -16,6 +16,9 @@ from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
+from src.report_pdf import format_dtg, write_report_pdf
+from src.config import Settings
+from datetime import datetime, timezone
 
 
 class TestDatasetSummary(unittest.TestCase):
@@ -89,6 +92,30 @@ class TestAzureNormalize(unittest.TestCase):
             base, "https://example.openai.azure.com/openai/deployments/x"
         )
         self.assertEqual(ver, "2025-01-01-preview")
+
+
+class TestNatoPdf(unittest.TestCase):
+    def test_format_dtg(self) -> None:
+        dt = datetime(2026, 10, 29, 13, 50, tzinfo=timezone.utc)
+        self.assertEqual(format_dtg(dt), "291350Z OCT 26")
+
+    def test_writes_nato_sitrep_pdf(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            s = Settings()
+            s.artifacts_dir = Path(tmp)
+            path = write_report_pdf(
+                "1. Executive Summary\nTest threat line.",
+                None,
+                s,
+                datetime(2026, 10, 29, 13, 50, tzinfo=timezone.utc),
+                dataset_summary="75 events; busiest harbours — Rostock (12)",
+                row_count=75,
+            )
+            self.assertTrue(path.name.startswith("nato_sitrep_"))
+            self.assertTrue(path.read_bytes().startswith(b"%PDF"))
+            self.assertGreater(path.stat().st_size, 500)
 
 
 class TestConfig(unittest.TestCase):
