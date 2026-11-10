@@ -53,8 +53,13 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+)
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -129,7 +134,16 @@ def load_training_table(
     return pd.DataFrame(rows)
 
 
-def train_and_save(df: pd.DataFrame) -> Pipeline:
+RF_PARAMS = {
+    "n_estimators": 200,
+    "max_depth": 12,
+    "class_weight": "balanced",
+    "random_state": 42,
+    "n_jobs": -1,
+}
+
+
+def train_and_save(df: pd.DataFrame) -> tuple[Pipeline, dict]:
     X = df[FEATURE_NAMES].values
     y = df["label"].values
 
@@ -142,30 +156,81 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
     pipeline = Pipeline(
         steps=[
             ("scale", StandardScaler()),
-            (
-                "clf",
-                RandomForestClassifier(
-                    n_estimators=200,
-                    max_depth=12,
-                    class_weight="balanced",
-                    random_state=42,
-                    n_jobs=-1,
-                ),
-            ),
+            ("clf", RandomForestClassifier(**RF_PARAMS)),
         ]
     )
 
+    labels = sorted(df["label"].unique().tolist())
+    eval_method = "train_fit"
+    y_eval = y
+    y_pred = None
+
     if n_splits >= 2:
+        eval_method = "stratified_kfold_cv"
         cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         y_pred = cross_val_predict(pipeline, X, y, cv=cv)
-        print(classification_report(y, y_pred))
+        print(classification_report(y, y_pred, labels=labels, zero_division=0))
+    else:
+        test_size = 0.2 if len(y) >= 5 else 0.0
+        if test_size > 0 and min_class_count >= 2:
+            eval_method = "holdout_split"
+            X_tr, X_va, y_tr, y_va = train_test_split(
+                X,
+                y,
+                test_size=test_size,
+                random_state=42,
+                stratify=y,
+            )
+            holdout = Pipeline(
+                steps=[
+                    ("scale", StandardScaler()),
+                    ("clf", RandomForestClassifier(**RF_PARAMS)),
+                ]
+            )
+            holdout.fit(X_tr, y_tr)
+            y_pred = holdout.predict(X_va)
+            y_eval = y_va
+            print(classification_report(y_va, y_pred, labels=labels, zero_division=0))
 
     pipeline.fit(X, y)
-    if n_splits < 2:
-        print("Training set fit (no cross-validation):")
-        print(classification_report(y, pipeline.predict(X)))
+    if y_pred is None:
+        print("Training set fit (no held-out evaluation):")
+        y_pred = pipeline.predict(X)
+        y_eval = y
+        print(classification_report(y, y_pred, labels=labels, zero_division=0))
 
-    labels = sorted(df["label"].unique().tolist())
+    report_dict = classification_report(
+        y_eval,
+        y_pred,
+        labels=labels,
+        output_dict=True,
+        zero_division=0,
+    )
+    cm = confusion_matrix(y_eval, y_pred, labels=labels)
+
+    metrics: dict[str, float] = {
+        "accuracy": float(accuracy_score(y_eval, y_pred)),
+        "macro_f1": float(f1_score(y_eval, y_pred, average="macro", zero_division=0)),
+        "n_samples": float(len(df)),
+        "n_labels": float(len(labels)),
+        "cv_n_splits": float(n_splits),
+    }
+    for label in labels:
+        stats = report_dict.get(label, {})
+        if isinstance(stats, dict):
+            for stat_key in ("precision", "recall", "f1-score", "support"):
+                raw = stats.get(stat_key)
+                if raw is not None:
+                    safe_label = label.replace(" ", "_")
+                    metrics[f"{safe_label}_{stat_key.replace('-', '_')}"] = float(raw)
+
+    params = {
+        "classifier": "RandomForestClassifier",
+        "eval_method": eval_method,
+        "train_test_random_state": 42,
+        **{f"rf_{k}": v for k, v in RF_PARAMS.items()},
+    }
+
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, ARTIFACT_DIR / "model.joblib")
     joblib.dump(pipeline, ROOT / "model.pkl")
@@ -173,15 +238,24 @@ def train_and_save(df: pd.DataFrame) -> Pipeline:
         json.dump(labels, f, indent=2)
     with open(ROOT / "label_names.json", "w", encoding="utf-8") as f:
         json.dump(labels, f, indent=2)
+    meta = {
+        "n_samples": len(df),
+        "labels": labels,
+        "feature_names": FEATURE_NAMES,
+        "eval_method": eval_method,
+        "cv_n_splits": n_splits,
+        "metrics": {k: metrics[k] for k in ("accuracy", "macro_f1", "n_samples", "n_labels")},
+        "hyperparameters": RF_PARAMS,
+    }
     with open(ARTIFACT_DIR / "training_meta.json", "w", encoding="utf-8") as f:
-        json.dump(
-            {"n_samples": len(df), "labels": labels, "feature_names": FEATURE_NAMES},
-            f,
-            indent=2,
-        )
+        json.dump(meta, f, indent=2)
+    with open(ARTIFACT_DIR / "classification_report.json", "w", encoding="utf-8") as f:
+        json.dump(report_dict, f, indent=2)
+    with open(ARTIFACT_DIR / "confusion_matrix.json", "w", encoding="utf-8") as f:
+        json.dump({"labels": labels, "matrix": cm.tolist()}, f, indent=2)
     df.to_csv(ARTIFACT_DIR / "training_rows.csv", index=False)
     print(f"Wrote {ROOT / 'model.pkl'} and artifacts under {ARTIFACT_DIR}")
-    return pipeline
+    return pipeline, {"params": params, "metrics": metrics, "labels": labels}
 
 
 def _filter_kernel_argv(argv: list[str]) -> list[str]:
@@ -223,7 +297,7 @@ def main(argv: list[str] | None = None) -> None:
             args.max_files,
             require_las_magic=not args.no_las_magic_check,
         )
-    train_and_save(df)
+    train_and_save(df)[0]
 
 
 if __name__ == "__main__":
