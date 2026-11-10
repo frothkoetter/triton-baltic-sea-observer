@@ -46,7 +46,32 @@ def format_dtg(report_time: datetime) -> str:
     return f"{report_time.day:02d}{report_time.hour:02d}{report_time.minute:02d}Z {mon} {yy:02d}"
 
 
+_UNICODE_TO_LATIN: dict[str, str] = {
+    "\u2014": "--",  # em dash
+    "\u2013": "-",  # en dash
+    "\u2012": "-",  # figure dash
+    "\u2212": "-",  # minus sign
+    "\u2018": "'",  # left single quote
+    "\u2019": "'",  # right single quote
+    "\u201a": ",",  # single low-9 quotation mark
+    "\u201c": '"',  # left double quote
+    "\u201d": '"',  # right double quote
+    "\u201e": '"',  # double low-9 quotation mark
+    "\u2026": "...",  # ellipsis
+    "\u00a0": " ",  # nbsp
+    "\u200b": "",  # zero-width space
+    "\u2022": "*",  # bullet
+    "\u2192": "->",
+    "\u2190": "<-",
+}
+
+
 def _sanitize_for_pdf(text: str) -> str:
+    """Make LLM text safe for fpdf core fonts (latin-1 / Helvetica)."""
+    if not text:
+        return text
+    for char, repl in _UNICODE_TO_LATIN.items():
+        text = text.replace(char, repl)
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
@@ -143,7 +168,7 @@ def _strip_italic_wrappers(line: str) -> str:
 
 def inline_markdown_to_html(text: str) -> str:
     """Convert lightweight markdown emphasis to HTML for fpdf ``write_html``."""
-    escaped = html.escape(text)
+    escaped = html.escape(_sanitize_for_pdf(text))
     escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
     escaped = re.sub(
         r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", escaped
@@ -429,12 +454,15 @@ class NatoSitrepPDF(FPDF):
             elif block.kind == "table":
                 self.render_data_table([list(r) for r in block.rows])
             else:
-                fragment = inline_markdown_to_html(block.text)
+                safe = _sanitize_for_pdf(block.text)
+                fragment = inline_markdown_to_html(safe)
                 self.set_font("Helvetica", "", 9)
                 try:
-                    self.write_html(f"<p>{fragment}</p>")
+                    self.write_html(f"<p>{fragment}</p>", table_line_separators=True)
                 except Exception:
-                    self.body_paragraph(block.text)
+                    self.multi_cell(
+                        0, 4.5, safe, new_x="LMARGIN", new_y="NEXT"
+                    )
                 self.ln(1)
 
 
