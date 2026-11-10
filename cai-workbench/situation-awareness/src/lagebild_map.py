@@ -26,11 +26,24 @@ _BORDER_COLOR = "#9aa89a"
 _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 _last_basemap_backend: str | None = None
+_last_basemap_scale: str | None = None
+
+# Harbour-scale extent needs 10m coast; 110m looks like the bundled fallback polygons.
+_CARTOPY_PHYSICAL_SCALE = "10m"
 
 
 def basemap_backend() -> str | None:
     """Backend used by the last ``render_lagebild_map`` call (``cartopy`` or ``fallback``)."""
     return _last_basemap_backend
+
+
+def basemap_detail() -> str | None:
+    """Resolution label for the last map (e.g. ``cartopy:10m``, ``fallback:bundled``)."""
+    if _last_basemap_backend is None:
+        return None
+    if _last_basemap_backend == "cartopy" and _last_basemap_scale:
+        return f"cartopy:{_last_basemap_scale}"
+    return "fallback:bundled"
 
 
 def _max_severity(values: pd.Series) -> str:
@@ -163,37 +176,42 @@ def _plot_geojson_features(ax, geojson_path: Path, *, land: bool) -> None:
                 )
 
 
-def _setup_cartopy_axes(fig):
-    import cartopy.crs as ccrs
+def _add_cartopy_physical(ax, scale: str) -> None:
     import cartopy.feature as cfeature
 
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-    ax.set_extent(_MAP_EXTENT, crs=ccrs.PlateCarree())
     ax.add_feature(
-        cfeature.OCEAN.with_scale("110m"),
+        cfeature.OCEAN.with_scale(scale),
         facecolor=_SEA_COLOR,
         edgecolor="none",
         zorder=0,
     )
     ax.add_feature(
-        cfeature.LAND.with_scale("110m"),
+        cfeature.LAND.with_scale(scale),
         facecolor=_LAND_COLOR,
         edgecolor="none",
         zorder=1,
     )
     ax.add_feature(
-        cfeature.COASTLINE.with_scale("110m"),
+        cfeature.COASTLINE.with_scale(scale),
         edgecolor=_COASTLINE_COLOR,
-        linewidth=0.7,
+        linewidth=0.8,
         zorder=2,
     )
     ax.add_feature(
-        cfeature.BORDERS.with_scale("110m"),
+        cfeature.BORDERS.with_scale(scale),
         edgecolor=_BORDER_COLOR,
-        linewidth=0.4,
+        linewidth=0.35,
         linestyle="-",
         zorder=2,
     )
+
+
+def _setup_cartopy_axes(fig, *, scale: str = _CARTOPY_PHYSICAL_SCALE):
+    import cartopy.crs as ccrs
+
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    ax.set_extent(_MAP_EXTENT, crs=ccrs.PlateCarree())
+    _add_cartopy_physical(ax, scale)
     gl = ax.gridlines(draw_labels=False, linewidth=0.35, color="#a8b4c0", alpha=0.55, linestyle=":")
     gl.xlocator = plt.FixedLocator(range(10, 16))
     gl.ylocator = plt.FixedLocator([53.0, 53.5, 54.0, 54.5, 55.0])
@@ -215,12 +233,24 @@ def _setup_fallback_axes(fig):
     return ax
 
 
-def _setup_map_axes(fig) -> tuple[object, str]:
+def _setup_map_axes(fig) -> tuple[object, str, str]:
+    scales = (_CARTOPY_PHYSICAL_SCALE, "50m", "110m")
     try:
-        return _setup_cartopy_axes(fig), "cartopy"
+        import cartopy  # noqa: F401
     except ImportError:
-        pass
-    return _setup_fallback_axes(fig), "fallback"
+        return _setup_fallback_axes(fig), "fallback", "bundled"
+
+    for idx, scale in enumerate(scales):
+        try:
+            if idx > 0:
+                fig.clf()
+            ax = _setup_cartopy_axes(fig, scale=scale)
+            return ax, "cartopy", scale
+        except Exception:  # pragma: no cover - network / cache failures on CML
+            fig.clf()
+            continue
+
+    return _setup_fallback_axes(fig), "fallback", "bundled"
 
 
 def _overlay_harbours(
@@ -327,15 +357,16 @@ def render_lagebild_map(
     dataset_summary: str = "",
 ) -> Path:
     """Write PNG map; circle size = event count, ring = NEW/ESCALATED harbour."""
-    global _last_basemap_backend
+    global _last_basemap_backend, _last_basemap_scale
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     counts = _harbour_counts(df)
     changed = _changed_harbours(comparison_text, dataset_summary, counts)
 
     fig = plt.figure(figsize=(7.2, 5.4), dpi=120)
-    ax, backend = _setup_map_axes(fig)
+    ax, backend, scale = _setup_map_axes(fig)
     _last_basemap_backend = backend
+    _last_basemap_scale = scale if backend == "cartopy" else None
 
     if backend == "cartopy":
         import cartopy.crs as ccrs
