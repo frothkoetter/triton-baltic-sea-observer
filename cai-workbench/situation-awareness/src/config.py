@@ -40,9 +40,15 @@ class Settings:
             "LAGEBILD_MODEL_ID", "mistralai/mistral-7b-instruct-v0.3"
         )
     )
-    api_key: str | None = field(
-        default_factory=lambda: os.environ.get("LAGEBILD_API_KEY") or None
-    )
+    api_key: str | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        from .llm_client import normalize_api_key
+
+        raw = os.environ.get("LAGEBILD_API_KEY") or self.api_key
+        if raw:
+            self.api_key = normalize_api_key(raw)
+            os.environ["LAGEBILD_API_KEY"] = self.api_key
     jwt_path: Path = field(
         default_factory=lambda: Path(
             os.environ.get("LAGEBILD_JWT_PATH", "/tmp/jwt")

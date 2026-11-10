@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -13,7 +14,9 @@ from .config import Settings
 
 def normalize_api_key(raw: str) -> str:
     """Strip whitespace and an accidental ``Bearer `` prefix (OpenAI client adds it)."""
-    key = raw.strip()
+    key = raw.strip().strip("\ufeff")
+    for ws in ("\xa0", "\u200b"):
+        key = key.strip(ws)
     if key.lower().startswith("bearer "):
         key = key[7:].strip()
     if not key:
@@ -22,6 +25,9 @@ def normalize_api_key(raw: str) -> str:
 
 
 def resolve_api_key(settings: Settings) -> str:
+    env_key = os.environ.get("LAGEBILD_API_KEY")
+    if env_key:
+        return normalize_api_key(env_key)
     if settings.api_key:
         return normalize_api_key(settings.api_key)
     if settings.jwt_path.is_file():
