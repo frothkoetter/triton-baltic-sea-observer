@@ -26,7 +26,7 @@ Enable SQL persistence: `LAGEBILD_INSERT_SQL=1` (writes to `defense.Situation_Aw
 
 ## PDF (NATO SITREP layout)
 
-Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Companion PNGs include a **German Baltic harbour map** and a **data visualization** composite (source mix, harbour counts, severity, deltas or source×harbour). Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
+Each run writes `artifacts/reports/nato_sitrep_<timestamp>.pdf` using the NATO maritime format: classification banner, DTG, precedence, summary table, and numbered sections. Companion PNGs include a **German Baltic harbour map** (land/sea basemap via **cartopy** when installed, otherwise bundled Natural Earth 110m coast GeoJSON under `data/`) and a **data visualization** composite (source mix, harbour counts, severity, deltas or source×harbour). Visual reference: [`templates/nato_sitrep_reference.pdf`](templates/nato_sitrep_reference.pdf).
 
 Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRECEDENCE`, `LAGEBILD_PRECEDENCE_ESCALATED` (defaults to `FLASH / IMMEDIATE` when comparison contains `ESCALATED`).
 
@@ -62,7 +62,7 @@ Reports land in `artifacts/reports/` (`latest.pdf`, `index.json`).
 
 ```bash
 cd cai-workbench/situation-awareness
-pip install -r requirements.txt
+pip install -r requirements.txt   # includes cartopy for geographic harbour map; works without network at render time
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 

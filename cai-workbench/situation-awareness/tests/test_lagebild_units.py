@@ -17,7 +17,7 @@ from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
 from src.lagebild_charts import render_lagebild_charts
-from src.lagebild_map import render_lagebild_map
+from src.lagebild_map import basemap_backend, render_lagebild_map
 from src.report_pdf import (
     _is_primary_section_break,
     _sanitize_for_pdf,
@@ -194,6 +194,7 @@ class TestLagebildMap(unittest.TestCase):
             )
             self.assertTrue(path.is_file())
             self.assertGreater(path.stat().st_size, 500)
+            self.assertIn(basemap_backend(), ("cartopy", "fallback"))
 
 
 class TestMarkdownPdfHelpers(unittest.TestCase):
