@@ -15,6 +15,7 @@ sys.path.insert(0, str(_ROOT))
 from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
+from src.llm_client import _normalize_azure_base_url
 
 
 class TestDatasetSummary(unittest.TestCase):
@@ -67,6 +68,19 @@ UNCHANGED | Routine ferry traffic Wismar
         prior = "routine ferry Wismar"
         deltas = rule_based_theme_diff(cur, prior)
         self.assertTrue(any(d.status == "NEW" for d in deltas))
+
+
+class TestAzureNormalize(unittest.TestCase):
+    def test_strips_chat_completions_and_api_version(self) -> None:
+        url = (
+            "https://example.openai.azure.com/openai/deployments/x"
+            "/chat/completions?api-version=2025-01-01-preview"
+        )
+        base, ver = _normalize_azure_base_url(url)
+        self.assertEqual(
+            base, "https://example.openai.azure.com/openai/deployments/x"
+        )
+        self.assertEqual(ver, "2025-01-01-preview")
 
 
 class TestConfig(unittest.TestCase):

@@ -25,8 +25,37 @@ def resolve_api_key(settings: Settings) -> str:
     )
 
 
+def _normalize_azure_base_url(base_url: str) -> tuple[str, str | None]:
+    """Strip /chat/completions and api-version query from a pasted Azure endpoint."""
+    version = None
+    if "api-version=" in base_url:
+        from urllib.parse import parse_qs, urlsplit, urlunsplit
+
+        split = urlsplit(base_url)
+        qs = parse_qs(split.query)
+        if "api-version" in qs:
+            version = qs["api-version"][0]
+        base_url = urlunsplit((split.scheme, split.netloc, split.path, "", ""))
+    for suffix in ("/chat/completions", "/v1/chat/completions"):
+        if base_url.rstrip("/").endswith(suffix):
+            base_url = base_url.rstrip("/")[: -len(suffix)]
+    return base_url.rstrip("/"), version
+
+
 def build_client(settings: Settings) -> OpenAI:
-    return OpenAI(base_url=settings.llm_base_url, api_key=resolve_api_key(settings))
+    base_url = settings.llm_base_url.rstrip("/")
+    api_version = settings.azure_api_version
+    if "openai.azure.com" in base_url or "cognitiveservices.azure.com" in base_url:
+        base_url, parsed_ver = _normalize_azure_base_url(base_url)
+        api_version = api_version or parsed_ver
+        kwargs: dict = {
+            "base_url": base_url,
+            "api_key": resolve_api_key(settings),
+        }
+        if api_version:
+            kwargs["default_query"] = {"api-version": api_version}
+        return OpenAI(**kwargs)
+    return OpenAI(base_url=base_url, api_key=resolve_api_key(settings))
 
 
 def chat_completion_text(

@@ -85,6 +85,9 @@ class Settings:
     max_tokens: int = field(
         default_factory=lambda: int(os.environ.get("LAGEBILD_LLM_MAX_TOKENS", "2048"))
     )
+    azure_api_version: str | None = field(
+        default_factory=lambda: os.environ.get("LAGEBILD_AZURE_API_VERSION") or None
+    )
 
     def resolve_sample_csv(self, project_root: Path) -> Path:
         env_path = os.environ.get("LAGEBILD_SAMPLE_CSV")
