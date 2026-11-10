@@ -13,7 +13,8 @@ Train and deploy a vessel-type classifier on LiDAR `.las` data (Cloudera templat
 | `use_model_metrics.py` | Demo: call model, read/track delayed and aggregate metrics |
 | `entry.py` | CDSW application static file server (`CDSW_APP_PORT`) |
 | `lineage.yaml` | Optional model lineage metadata |
-| `model.pkl` | Fitted classifier (from `fit.py` / `train.py`) |
+| `model.pkl` | Fitted classifier (from `fit.py` / `train.py`, or copied from `bundled/`) |
+| `bundled/model.pkl` | Versioned pretrained RandomForest (9 vessel types); copied to `model.pkl` on build when missing |
 | `src/` | `features.py`, `labels.py`, `s3_client.py`, `s3_las_loader.py` |
 
 S3 uses the **S3 Object Store** data connection (`LIDAR_S3_CONNECTION_NAME`, default `S3 Object Store`).
@@ -45,7 +46,9 @@ Deploy **`classify.py`** with entry function **`classify`**. Request body:
 {"s3_uri": "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/<key>"}
 ```
 
-Run **`cdsw-build.sh`** (or install `requirements.txt`) before deploying so `laspy`, `boto3`, and `scikit-learn` are available.
+Run **`cdsw-build.sh`** (or install `requirements.txt`) before deploying so `laspy`, `boto3`, and `scikit-learn` are available. Build also copies **`bundled/model.pkl`** to **`model.pkl`** when you have not run `fit.py` yet (deploy without retraining).
+
+To refresh the checked-in weights, replace `bundled/model.pkl` and `bundled/label_names.json` (train on sklearn **1.7.x** to match `requirements.txt`).
 
 ## Metrics
 
