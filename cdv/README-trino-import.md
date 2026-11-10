@@ -14,7 +14,7 @@ Older Impala exports use `defense.<table>`. Trino needs the **catalog** qualifie
 
 ```text
 iceberg.defense.ais_events_ice
-iceberg.defense.lagebild
+iceberg.defense.lagebild (snapshot) and iceberg.defense.lagebild_all_events (full 24h stream; see cdw-analyse/lagebild_volume_compare.sql)
 …
 ```
 

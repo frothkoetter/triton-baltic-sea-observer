@@ -34,10 +34,12 @@ Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRE
 
 ## Data sources
 
-| Engine | View |
-|--------|------|
-| Impala (legacy) | `defense.lagebild` |
-| Trino / Iceberg | `iceberg.defense.lagebild` |
+| Engine | View (snapshot) | View (24h stream) |
+|--------|-----------------|-------------------|
+| Impala (legacy) | `defense.lagebild` | `defense.lagebild_all_events` |
+| Trino / Iceberg | `iceberg.defense.lagebild` | `iceberg.defense.lagebild_all_events` |
+
+**`defense.lagebild`** keeps the latest row per entity and harbour (24h window). **`defense.lagebild_all_events`** emits every qualifying row in that window (higher volume for AIS/Marine/RUS and all GPS jamming events). Compare counts with [`cdw-analyse/lagebild_volume_compare.sql`](../../cdw-analyse/lagebild_volume_compare.sql). Enable the stream in this pipeline with `LAGEBILD_ALL_EVENTS=1` or `LAGEBILD_VIEW=lagebild_all_events`.
 
 Default SQL loads **all Baltic harbours** from `defense.baltic_sea_harbours` plus offshore rows (`harbour_name IS NULL`) and explicit feeds (`GPS_Jammer`, `REF` area violations, `RUS_Fleet`). Set `LAGEBILD_GERMAN_ONLY=1` to restore the former German-only harbour filter. Override entirely with `LAGEBILD_SQL`.
 
@@ -53,6 +55,8 @@ See [`.env.example`](.env.example). Key settings:
 | `LAGEBILD_TRINO_CATALOG` | `iceberg` for Trino; empty for Impala names |
 | `LAGEBILD_SQL` | Optional query override |
 | `LAGEBILD_GERMAN_ONLY` | `1` = German harbours only (legacy default SQL) |
+| `LAGEBILD_ALL_EVENTS` | `1` = query `lagebild_all_events` (full 24h stream) |
+| `LAGEBILD_VIEW` | Override Trino/Impala view name (e.g. `lagebild_all_events`) |
 | `LAGEBILD_LLM_BASE_URL` | Model serving OpenAI-compatible base URL |
 | `LAGEBILD_MODEL_ID` | Default Mistral 7B instruct |
 | `LAGEBILD_API_KEY` / `LAGEBILD_JWT_PATH` | Auth |

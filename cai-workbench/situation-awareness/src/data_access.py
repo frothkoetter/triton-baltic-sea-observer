@@ -26,6 +26,9 @@ WHERE harbour_name IN (
    OR harbour_name IS NULL
 """.strip()
 
+# Same harbour/feed filter as BALTIC_WIDE_LAGEBILD_SQL; use with defense.lagebild_all_events.
+BALTIC_WIDE_LAGEBILD_ALL_EVENTS_SQL = BALTIC_WIDE_LAGEBILD_SQL
+
 
 def qualified_table(catalog: str, schema: str, table: str) -> str:
     """Build Trino-style qualified name; Impala often uses schema.table only."""
@@ -37,7 +40,9 @@ def qualified_table(catalog: str, schema: str, table: str) -> str:
 def default_lagebild_sql(settings: Settings) -> str:
     if settings.sql_override:
         return settings.sql_override.strip()
-    lagebild = qualified_table(settings.trino_catalog, "defense", "lagebild")
+    lagebild = qualified_table(
+        settings.trino_catalog, "defense", settings.lagebild_table
+    )
     harbours = qualified_table(settings.trino_catalog, "defense", "baltic_sea_harbours")
     template = (
         GERMAN_HARBOUR_FILTER_SQL
