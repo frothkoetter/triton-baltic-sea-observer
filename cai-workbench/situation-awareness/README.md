@@ -39,7 +39,7 @@ Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRE
 | Impala (legacy) | `defense.lagebild` |
 | Trino / Iceberg | `iceberg.defense.lagebild` |
 
-Default SQL filters **German** harbours via `defense.baltic_sea_harbours`. Override with `LAGEBILD_SQL`.
+Default SQL loads **all Baltic harbours** from `defense.baltic_sea_harbours` plus offshore rows (`harbour_name IS NULL`) and explicit feeds (`GPS_Jammer`, `REF` area violations, `RUS_Fleet`). Set `LAGEBILD_GERMAN_ONLY=1` to restore the former German-only harbour filter. Override entirely with `LAGEBILD_SQL`.
 
 Offline sample: `cai-workbench/data/lagebild/sample_lagebild.csv`.
 
@@ -52,6 +52,7 @@ See [`.env.example`](.env.example). Key settings:
 | `LAGEBILD_CONNECTION_NAME` | CML data connection |
 | `LAGEBILD_TRINO_CATALOG` | `iceberg` for Trino; empty for Impala names |
 | `LAGEBILD_SQL` | Optional query override |
+| `LAGEBILD_GERMAN_ONLY` | `1` = German harbours only (legacy default SQL) |
 | `LAGEBILD_LLM_BASE_URL` | Model serving OpenAI-compatible base URL |
 | `LAGEBILD_MODEL_ID` | Default Mistral 7B instruct |
 | `LAGEBILD_API_KEY` / `LAGEBILD_JWT_PATH` | Auth |

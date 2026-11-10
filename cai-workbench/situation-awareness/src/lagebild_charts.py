@@ -41,7 +41,7 @@ _SEVERITY_COLORS = {
     "critical": "#5c0a12",
     "unknown": "#9aa3ab",
 }
-_TOP_HARBOURS = 8
+_TOP_HARBOURS = 12
 
 
 def _source_color(label: str) -> str:

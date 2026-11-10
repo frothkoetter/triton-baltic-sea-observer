@@ -20,6 +20,18 @@ _TIMESTAMP_ALIASES = (
     "event_time",
     "observation_time",
 )
+_LAT_ALIASES = ("latitude", "Latitude", "lat", "ship_lat", "vessel_lat")
+_LON_ALIASES = ("longitude", "Longitude", "lon", "ship_lon", "vessel_lon")
+_AREA_ID_COLS = ("area_id", "Area_ID", "Area_Id")
+
+_AREA_ID_RE = re.compile(
+    r"\barea_id\s*[=:]\s*['\"]?([A-Za-z0-9][A-Za-z0-9 _\-]*)",
+    re.I,
+)
+_AREA_NAME_IN_DETAILS_RE = re.compile(
+    r"\b(?:area|zone|surveillance)\s*[:\-]\s*([A-Za-z][A-Za-z0-9 _\-]{2,40})",
+    re.I,
+)
 
 _HIGH_SEVERITY_RE = re.compile(
     r"\b(sanctions?|kilo|submarine|critical|frigate|torpedo|jammer|hostile)\b",
@@ -47,7 +59,20 @@ _FRIENDLY_SOURCE: dict[str, str] = {
     "stanag": "STANAG",
     "rus_fleet": "RUS Fleet",
     "rus fleet": "RUS Fleet",
+    "ref": "Area violation",
+    "area_violation": "Area violation",
+    "gps_jammer": "GPS Jammer",
 }
+
+_RADAR_PINNED_SOURCES = (
+    "GPS Jammer",
+    "Area violation",
+    "RUS Fleet",
+    "LiDAR",
+    "AIS",
+    "Marine",
+    "Buoy",
+)
 
 
 def _first_present(df: pd.DataFrame, names: tuple[str, ...]) -> str | None:
@@ -63,6 +88,11 @@ def friendly_source_label(value: object) -> str:
     text = str(value).strip()
     if not text:
         return "Other"
+    upper = text.upper()
+    if upper == "REF":
+        return "Area violation"
+    if upper == "GPS_JAMMER":
+        return "GPS Jammer"
     key = re.sub(r"[\s\-]+", "_", text).lower()
     key_space = text.lower()
     if key in _FRIENDLY_SOURCE:
@@ -76,6 +106,61 @@ def friendly_source_label(value: object) -> str:
     if key == "ais" or key.startswith("ais_"):
         return "AIS"
     return text.replace("_", " ").title() if "_" in text else text
+
+
+def extract_area_id(
+    details: object,
+    *,
+    row: pd.Series | None = None,
+) -> str | None:
+    """Pull surveillance ``area_id`` from column or ``details`` text (REF / area_violation rows)."""
+    if row is not None:
+        for col in _AREA_ID_COLS:
+            if col in row.index:
+                val = row[col]
+                if val is not None and not (isinstance(val, float) and np.isnan(val)):
+                    token = str(val).strip()
+                    if token:
+                        return token
+    if details is None or (isinstance(details, float) and np.isnan(details)):
+        return None
+    blob = str(details)
+    m = _AREA_ID_RE.search(blob)
+    if m:
+        return m.group(1).strip()
+    m = _AREA_NAME_IN_DETAILS_RE.search(blob)
+    if m:
+        return m.group(1).strip()
+    return None
+
+
+def viz_region_label(
+    harbour: object,
+    area_id: str | None,
+    latitude: object,
+    longitude: object,
+) -> str:
+    if harbour is not None and not (isinstance(harbour, float) and np.isnan(harbour)):
+        if not pd.isna(harbour):
+            name = str(harbour).strip()
+            if name and name.lower() not in ("none", "<na>", "nan"):
+                return name
+    if area_id is not None and not pd.isna(area_id):
+        token = str(area_id).strip()
+        if token:
+            return f"Area: {token}"
+    if latitude is not None and longitude is not None:
+        if not (
+            (isinstance(latitude, float) and np.isnan(latitude))
+            or (isinstance(longitude, float) and np.isnan(longitude))
+        ):
+            try:
+                lat = float(latitude)
+                lon = float(longitude)
+                return f"Offshore ({lat:.1f}°N, {lon:.1f}°E)"
+            except (TypeError, ValueError):
+                pass
+    return "Offshore"
 
 
 def infer_severity_from_details(text: object) -> str:
@@ -125,8 +210,38 @@ def normalize_lagebild_frame(df: pd.DataFrame) -> pd.DataFrame:
     elif ts_col is None and "event_timestamp" not in out.columns:
         out["event_timestamp"] = pd.NaT
 
+    lat_col = _first_present(out, _LAT_ALIASES)
+    if lat_col and lat_col != "latitude":
+        out["latitude"] = out[lat_col]
+    elif lat_col is None and "latitude" not in out.columns:
+        out["latitude"] = pd.NA
+
+    lon_col = _first_present(out, _LON_ALIASES)
+    if lon_col and lon_col != "longitude":
+        out["longitude"] = out[lon_col]
+    elif lon_col is None and "longitude" not in out.columns:
+        out["longitude"] = pd.NA
+
+    details_col = _first_present(out, _DETAILS_ALIASES)
+
+    raw_source = out["data_source"].copy() if "data_source" in out.columns else None
     if "data_source" in out.columns:
         out["data_source"] = out["data_source"].map(friendly_source_label)
+
+    if details_col or any(c in out.columns for c in _AREA_ID_COLS):
+        extracted = out.apply(
+            lambda row: extract_area_id(
+                row[details_col] if details_col and details_col in row.index else None,
+                row=row,
+            ),
+            axis=1,
+        )
+        if "area_id" not in out.columns:
+            out["area_id"] = extracted
+        else:
+            out["area_id"] = out["area_id"].fillna(extracted)
+    elif "area_id" not in out.columns:
+        out["area_id"] = pd.NA
 
     if "harbour_name" in out.columns:
         out["harbour_name"] = (
@@ -136,7 +251,37 @@ def normalize_lagebild_frame(df: pd.DataFrame) -> pd.DataFrame:
             .replace("", pd.NA)
         )
 
+    out["viz_region"] = out.apply(
+        lambda row: viz_region_label(
+            row.get("harbour_name"),
+            row.get("area_id") if "area_id" in row.index else None,
+            row.get("latitude"),
+            row.get("longitude"),
+        ),
+        axis=1,
+    )
+
     return out
+
+
+def baltic_harbour_counts(
+    df: pd.DataFrame,
+    *,
+    top_n: int = 12,
+    harbour_only: bool = True,
+) -> dict[str, int]:
+    """Top harbour names from data (all Baltic rows, not geo-clipped to Germany)."""
+    if df is None or df.empty:
+        return {}
+    work = normalize_lagebild_frame(df) if "viz_region" not in df.columns else df.copy()
+    col = "harbour_name" if harbour_only else "viz_region"
+    if col not in work.columns:
+        return {}
+    series = work[col].dropna().astype(str).str.strip()
+    series = series[series != ""]
+    if series.empty:
+        return {}
+    return {str(k): int(v) for k, v in series.value_counts().head(top_n).items()}
 
 
 def rollup_data_sources(
@@ -178,6 +323,50 @@ def rollup_data_sources(
     elif "Other" in head.index and head["Other"] == 0:
         head = head.drop("Other")
     return head.sort_values(ascending=False)
+
+
+def rollup_radar_sources(
+    series: pd.Series,
+    *,
+    top_n: int = 10,
+    min_spokes: int = 6,
+) -> pd.Series:
+    """
+    Radar-specific rollup: keep every feed with events, pin GPS Jammer / Area violation,
+    and use at least ``min_spokes`` dimensions when the data supports it.
+    """
+    if series is None or series.empty:
+        return pd.Series(dtype=int)
+
+    labels = series.fillna("Other").astype(str).map(friendly_source_label)
+    counts = labels.value_counts()
+    positive = counts[counts > 0]
+    if positive.empty:
+        return positive
+
+    order: list[str] = []
+    for name in positive.sort_values(ascending=False).index:
+        if name not in order:
+            order.append(str(name))
+
+    for pin in _RADAR_PINNED_SOURCES:
+        if pin in positive.index and pin not in order:
+            order.append(pin)
+
+    target = min(top_n, max(min_spokes, len(positive)) if len(positive) >= min_spokes else len(positive))
+    while len(order) < target:
+        added = False
+        for name in positive.sort_values(ascending=False).index:
+            if str(name) not in order:
+                order.append(str(name))
+                added = True
+                break
+        if not added:
+            break
+
+    order = order[:top_n]
+    out = positive.reindex(order).fillna(0).astype(int)
+    return out.sort_values(ascending=False)
 
 
 def _normalize_severity_key(value: object) -> str:

@@ -26,6 +26,9 @@ class Settings:
     sql_override: str | None = field(
         default_factory=lambda: os.environ.get("LAGEBILD_SQL") or None
     )
+    german_only_harbours: bool = field(
+        default_factory=lambda: _env_bool("LAGEBILD_GERMAN_ONLY", False)
+    )
     trino_catalog: str = field(
         default_factory=lambda: os.environ.get("LAGEBILD_TRINO_CATALOG", "iceberg")
     )
