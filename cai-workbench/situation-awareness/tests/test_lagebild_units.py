@@ -16,8 +16,15 @@ from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
-from src.report_pdf import format_dtg, write_report_pdf
-from src.config import Settings
+from src.report_pdf import (
+    format_dtg,
+    inline_markdown_to_html,
+    normalize_heading_line,
+    parse_body_blocks,
+    parse_markdown_table,
+    parse_section_heading,
+    write_report_pdf,
+)
 from datetime import datetime, timezone
 
 
@@ -94,6 +101,53 @@ class TestAzureNormalize(unittest.TestCase):
         self.assertEqual(ver, "2025-01-01-preview")
 
 
+class TestMarkdownPdfHelpers(unittest.TestCase):
+    def test_normalize_bold_numbered_heading(self) -> None:
+        self.assertEqual(
+            normalize_heading_line("**1. Executive Summary**"),
+            "EXECUTIVE SUMMARY",
+        )
+        num, title = parse_section_heading("**1. Executive Summary**")
+        self.assertEqual(num, "1")
+        self.assertEqual(title, "EXECUTIVE SUMMARY")
+        self.assertEqual(
+            normalize_heading_line("## 2. Threat Matrix"),
+            "THREAT MATRIX",
+        )
+
+    def test_parse_markdown_table(self) -> None:
+        lines = [
+            "| Harbour | Submarine | Level |",
+            "|---|---|",
+            "| Kiel | Possible | MEDIUM |",
+            "| Rostock | No | LOW |",
+        ]
+        grid = parse_markdown_table(lines)
+        self.assertEqual(grid[0], ["Harbour", "Submarine", "Level"])
+        self.assertEqual(grid[1][0], "Kiel")
+
+    def test_parse_body_blocks_caption_before_table(self) -> None:
+        body = (
+            "*Summary Table: harbour contacts*\n"
+            "| Harbour | Count |\n"
+            "|---|---:|\n"
+            "| Kiel | 3 |\n"
+            "\n"
+            "Narrative with **bold** emphasis."
+        )
+        blocks = parse_body_blocks(body)
+        kinds = [b.kind for b in blocks]
+        self.assertEqual(kinds[0], "caption")
+        self.assertEqual(kinds[1], "table")
+        self.assertEqual(blocks[-1].kind, "paragraph")
+
+    def test_inline_markdown_to_html(self) -> None:
+        out = inline_markdown_to_html("**critical** and *watch*")
+        self.assertIn("<b>critical</b>", out)
+        self.assertIn("<i>watch</i>", out)
+        self.assertNotIn("**", out)
+
+
 class TestNatoPdf(unittest.TestCase):
     def test_format_dtg(self) -> None:
         dt = datetime(2026, 10, 29, 13, 50, tzinfo=timezone.utc)
@@ -105,8 +159,17 @@ class TestNatoPdf(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             s = Settings()
             s.artifacts_dir = Path(tmp)
+            report = """**1. Executive Summary**
+**critical** AIS pattern near Kiel.
+
+*Summary Table: contacts*
+| Harbour | Submarine | Level |
+|---|---|---|
+| Kiel | Possible | MEDIUM |
+| Rostock | No | LOW |
+"""
             path = write_report_pdf(
-                "1. Executive Summary\nTest threat line.",
+                report,
                 None,
                 s,
                 datetime(2026, 10, 29, 13, 50, tzinfo=timezone.utc),
@@ -116,6 +179,18 @@ class TestNatoPdf(unittest.TestCase):
             self.assertTrue(path.name.startswith("nato_sitrep_"))
             self.assertTrue(path.read_bytes().startswith(b"%PDF"))
             self.assertGreater(path.stat().st_size, 500)
+            try:
+                from pypdf import PdfReader
+
+                text = "\n".join(
+                    p.extract_text() or "" for p in PdfReader(str(path)).pages
+                )
+                self.assertNotIn("**", text)
+                self.assertNotIn("| Harbour |", text)
+                self.assertIn("EXECUTIVE SUMMARY", text.upper())
+                self.assertIn("Kiel", text)
+            except ImportError:
+                pass
 
 
 class TestConfig(unittest.TestCase):
