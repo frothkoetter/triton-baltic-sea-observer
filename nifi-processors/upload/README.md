@@ -21,7 +21,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `baltic_ship_sim_state.py` | Route reset helpers + AIS / RUS fleet state paths |
 | `marine_fleet_registry.py` | Marine / STANAG fleet registry |
 | `lidar_vessel_geometry.py` | LiDAR vessel meshes |
-| `requirements.txt` | NiFi `pip install` base (`numpy`) |
+| `requirements.txt` | Empty on purpose; per-processor deps in `ProcessorDetails.dependencies` |
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
 
