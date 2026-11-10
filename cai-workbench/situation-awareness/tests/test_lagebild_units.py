@@ -17,6 +17,7 @@ from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
 from src.report_pdf import (
+    _sanitize_for_pdf,
     format_dtg,
     inline_markdown_to_html,
     normalize_heading_line,
@@ -147,6 +148,13 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertIn("<i>watch</i>", out)
         self.assertNotIn("**", out)
 
+    def test_sanitize_unicode_punctuation(self) -> None:
+        raw = "Kiel corridor — increased “contacts”…"
+        safe = _sanitize_for_pdf(raw)
+        safe.encode("latin-1")
+        self.assertIn("--", safe)
+        self.assertNotIn("\u2014", safe)
+
 
 class TestNatoPdf(unittest.TestCase):
     def test_format_dtg(self) -> None:
@@ -179,6 +187,13 @@ class TestNatoPdf(unittest.TestCase):
             self.assertTrue(path.name.startswith("nato_sitrep_"))
             self.assertTrue(path.read_bytes().startswith(b"%PDF"))
             self.assertGreater(path.stat().st_size, 500)
+            path2 = write_report_pdf(
+                "Idle traffic — no change near Greifswald.",
+                None,
+                s,
+                datetime(2026, 10, 29, 14, 0, tzinfo=timezone.utc),
+            )
+            self.assertTrue(path2.read_bytes().startswith(b"%PDF"))
             try:
                 from pypdf import PdfReader
 
