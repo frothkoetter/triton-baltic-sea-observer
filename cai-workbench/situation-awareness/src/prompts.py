@@ -32,6 +32,8 @@ Required sections:
 4. Harbours and Anomalies
 5. AIS Sanctions — explicit if any sanctioned vessel appears; otherwise state none observed
 6. Recommended Actions (MPA/USV verification, sanctions follow-up, LiDAR re-scan, etc.)
+   List each action as a numbered item (1., 2., …) or bullet (-). Do not prefix actions with
+   "SECTION 1:" or similar — those belong inside section 6 only.
 
 Data:
 {data_table}

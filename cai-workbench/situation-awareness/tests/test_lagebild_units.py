@@ -16,8 +16,11 @@ from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
+from src.lagebild_map import render_lagebild_map
 from src.report_pdf import (
+    _is_primary_section_break,
     _sanitize_for_pdf,
+    _split_report_sections,
     format_dtg,
     inline_markdown_to_html,
     normalize_heading_line,
@@ -102,6 +105,59 @@ class TestAzureNormalize(unittest.TestCase):
         self.assertEqual(ver, "2025-01-01-preview")
 
 
+class TestSectionSplitting(unittest.TestCase):
+    def test_nested_section_action_lines_stay_in_section_six(self) -> None:
+        report = """**6. Recommended Actions**
+SECTION 1: **IMMEDIATE MPA/USV VERIFICATION:** Deploy patrol near Kiel.
+SECTION 2: **SANCTIONS FOLLOW-UP:** Contact port authority Rostock.
+**7. Closing**
+All items closed.
+"""
+        self.assertFalse(
+            _is_primary_section_break("SECTION 1: **IMMEDIATE MPA/USV VERIFICATION:**")
+        )
+        sections = _split_report_sections(report)
+        titles = [t for t, _ in sections]
+        self.assertTrue(any("RECOMMENDED" in t.upper() for t in titles))
+        action_section = next(b for t, b in sections if "RECOMMENDED" in t.upper())
+        self.assertIn("IMMEDIATE MPA", action_section)
+        self.assertIn("SANCTIONS FOLLOW-UP", action_section)
+        self.assertLessEqual(len(sections), 3)
+
+    def test_primary_numbered_headings_still_split(self) -> None:
+        report = """**1. Executive Summary**
+Overview.
+
+**2. Threat Assessment**
+Details.
+"""
+        sections = _split_report_sections(report)
+        self.assertEqual(len(sections), 2)
+        self.assertIn("EXECUTIVE", sections[0][0].upper())
+
+
+class TestLagebildMap(unittest.TestCase):
+    def test_render_map_png(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "harbour_name": ["Kiel", "Kiel", "Rostock"],
+                "severity": ["high", "medium", "low"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "map.png"
+            render_lagebild_map(
+                df,
+                path,
+                comparison_text="NEW | LiDAR near Rostock",
+                dataset_summary="3 events; busiest harbours — Kiel (2)",
+            )
+            self.assertTrue(path.is_file())
+            self.assertGreater(path.stat().st_size, 500)
+
+
 class TestMarkdownPdfHelpers(unittest.TestCase):
     def test_normalize_bold_numbered_heading(self) -> None:
         self.assertEqual(
@@ -176,18 +232,28 @@ class TestNatoPdf(unittest.TestCase):
 | Kiel | Possible | MEDIUM |
 | Rostock | No | LOW |
 """
-            path = write_report_pdf(
+            df = pd.DataFrame(
+                {
+                    "harbour_name": ["Kiel", "Rostock"],
+                    "severity": ["medium", "low"],
+                }
+            )
+            path, map_path = write_report_pdf(
                 report,
                 None,
                 s,
                 datetime(2026, 10, 29, 13, 50, tzinfo=timezone.utc),
                 dataset_summary="75 events; busiest harbours — Rostock (12)",
                 row_count=75,
+                df_used=df,
             )
             self.assertTrue(path.name.startswith("nato_sitrep_"))
             self.assertTrue(path.read_bytes().startswith(b"%PDF"))
             self.assertGreater(path.stat().st_size, 500)
-            path2 = write_report_pdf(
+            self.assertIsNotNone(map_path)
+            assert map_path is not None
+            self.assertGreater(map_path.stat().st_size, 500)
+            path2, _ = write_report_pdf(
                 "Idle traffic — no change near Greifswald.",
                 None,
                 s,
