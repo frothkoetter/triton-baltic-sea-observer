@@ -4,3 +4,4 @@ openai>=1.0.0
 fpdf2>=2.7.0
 trino>=0.328.0
 matplotlib>=3.7.0
+cartopy>=0.22.0

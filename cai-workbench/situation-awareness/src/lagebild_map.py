@@ -1,7 +1,8 @@
-"""Static situation map for German Baltic harbours (matplotlib)."""
+"""Static situation map for German Baltic harbours (matplotlib + cartopy or bundled coast)."""
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -15,6 +16,21 @@ from .harbour_geo import coords_for_harbour, harbour_points
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 _STATUS_PREFIX = re.compile(r"^\s*(NEW|ESCALATED)\s*\|", re.I)
+
+# German Baltic + regional context
+_MAP_EXTENT = (9.5, 15.5, 53.0, 55.5)  # lon_min, lon_max, lat_min, lat_max
+_SEA_COLOR = "#e8f0f8"
+_LAND_COLOR = "#d4dcd4"
+_COASTLINE_COLOR = "#6a7a6a"
+_BORDER_COLOR = "#9aa89a"
+_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+
+_last_basemap_backend: str | None = None
+
+
+def basemap_backend() -> str | None:
+    """Backend used by the last ``render_lagebild_map`` call (``cartopy`` or ``fallback``)."""
+    return _last_basemap_backend
 
 
 def _max_severity(values: pd.Series) -> str:
@@ -90,6 +106,219 @@ def _severity_color(severity: str) -> tuple[float, float, float, float]:
     return palette.get(key, palette["medium"])
 
 
+def _plot_geojson_features(ax, geojson_path: Path, *, land: bool) -> None:
+    if not geojson_path.is_file():
+        return
+    with geojson_path.open(encoding="utf-8") as f:
+        collection = json.load(f)
+
+    def _iter_poly_coords(geom: dict) -> list:
+        gtype = geom.get("type")
+        coords = geom.get("coordinates", [])
+        if gtype == "Polygon":
+            return [coords]
+        if gtype == "MultiPolygon":
+            return coords
+        return []
+
+    def _iter_line_coords(geom: dict) -> list:
+        gtype = geom.get("type")
+        coords = geom.get("coordinates", [])
+        if gtype == "LineString":
+            return [coords]
+        if gtype == "MultiLineString":
+            return coords
+        if gtype == "Polygon":
+            return [ring for ring in coords]
+        if gtype == "MultiPolygon":
+            rings = []
+            for poly in coords:
+                rings.extend(poly)
+            return rings
+        return []
+
+    for feature in collection.get("features", []):
+        geom = feature.get("geometry") or {}
+        if land:
+            for poly in _iter_poly_coords(geom):
+                if not poly:
+                    continue
+                ring = poly[0]
+                lons = [pt[0] for pt in ring]
+                lats = [pt[1] for pt in ring]
+                ax.fill(lons, lats, facecolor=_LAND_COLOR, edgecolor="none", zorder=1)
+        else:
+            for line in _iter_line_coords(geom):
+                if len(line) < 2:
+                    continue
+                lons = [pt[0] for pt in line]
+                lats = [pt[1] for pt in line]
+                ax.plot(
+                    lons,
+                    lats,
+                    color=_COASTLINE_COLOR,
+                    linewidth=0.9,
+                    solid_capstyle="round",
+                    zorder=2,
+                )
+
+
+def _setup_cartopy_axes(fig):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    ax.set_extent(_MAP_EXTENT, crs=ccrs.PlateCarree())
+    ax.add_feature(
+        cfeature.OCEAN.with_scale("110m"),
+        facecolor=_SEA_COLOR,
+        edgecolor="none",
+        zorder=0,
+    )
+    ax.add_feature(
+        cfeature.LAND.with_scale("110m"),
+        facecolor=_LAND_COLOR,
+        edgecolor="none",
+        zorder=1,
+    )
+    ax.add_feature(
+        cfeature.COASTLINE.with_scale("110m"),
+        edgecolor=_COASTLINE_COLOR,
+        linewidth=0.7,
+        zorder=2,
+    )
+    ax.add_feature(
+        cfeature.BORDERS.with_scale("110m"),
+        edgecolor=_BORDER_COLOR,
+        linewidth=0.4,
+        linestyle="-",
+        zorder=2,
+    )
+    gl = ax.gridlines(draw_labels=False, linewidth=0.35, color="#a8b4c0", alpha=0.55, linestyle=":")
+    gl.xlocator = plt.FixedLocator(range(10, 16))
+    gl.ylocator = plt.FixedLocator([53.0, 53.5, 54.0, 54.5, 55.0])
+    return ax
+
+
+def _setup_fallback_axes(fig):
+    ax = fig.add_subplot(1, 1, 1)
+    lon_min, lon_max, lat_min, lat_max = _MAP_EXTENT
+    ax.set_xlim(lon_min, lon_max)
+    ax.set_ylim(lat_min, lat_max)
+    ax.set_facecolor(_SEA_COLOR)
+    _plot_geojson_features(ax, _DATA_DIR / "baltic_land_simplified.geojson", land=True)
+    _plot_geojson_features(ax, _DATA_DIR / "baltic_coast_simplified.geojson", land=False)
+    ax.set_aspect("equal", adjustable="box")
+    ax.grid(True, linestyle=":", alpha=0.35, color="#a8b4c0")
+    ax.set_xlabel("Longitude °E")
+    ax.set_ylabel("Latitude °N")
+    return ax
+
+
+def _setup_map_axes(fig) -> tuple[object, str]:
+    try:
+        return _setup_cartopy_axes(fig), "cartopy"
+    except ImportError:
+        pass
+    return _setup_fallback_axes(fig), "fallback"
+
+
+def _overlay_harbours(
+    ax,
+    counts: pd.DataFrame,
+    changed: set[str],
+    *,
+    transform=None,
+) -> None:
+    scatter_kw = {"transform": transform} if transform is not None else {}
+
+    if counts.empty:
+        for hp in harbour_points():
+            ax.scatter(
+                hp.longitude,
+                hp.latitude,
+                s=18,
+                c="#888888",
+                alpha=0.5,
+                zorder=3,
+                **scatter_kw,
+            )
+            ax.text(
+                hp.longitude + 0.03,
+                hp.latitude + 0.02,
+                hp.name,
+                fontsize=7,
+                zorder=5,
+                **scatter_kw,
+            )
+        return
+
+    max_count = max(int(c) for c in counts["count"]) or 1
+    for _, row in counts.iterrows():
+        name = str(row["harbour_name"])
+        coords = coords_for_harbour(name)
+        if not coords:
+            continue
+        lat, lon = coords
+        n = int(row["count"])
+        size = 80 + 220 * (n / max_count)
+        color = _severity_color(str(row.get("severity", "medium")))
+        ax.scatter(
+            lon, lat, s=size, c=[color], edgecolors="none", zorder=4, **scatter_kw
+        )
+        if name in changed:
+            ax.scatter(
+                lon,
+                lat,
+                s=size * 1.55,
+                facecolors="none",
+                edgecolors="#c9a227",
+                linewidths=2.4,
+                zorder=5,
+                **scatter_kw,
+            )
+            ax.scatter(
+                lon,
+                lat,
+                s=size * 1.72,
+                facecolors="none",
+                edgecolors="#b22222",
+                linewidths=1.0,
+                linestyle="--",
+                zorder=5,
+                **scatter_kw,
+            )
+        ax.text(
+            lon + 0.04,
+            lat + 0.025,
+            f"{name} ({n})",
+            fontsize=7.5,
+            zorder=6,
+            **scatter_kw,
+        )
+
+    for hp in harbour_points():
+        if hp.name not in set(counts["harbour_name"].astype(str)):
+            ax.scatter(
+                hp.longitude,
+                hp.latitude,
+                s=14,
+                c="#aaaaaa",
+                alpha=0.35,
+                zorder=3,
+                **scatter_kw,
+            )
+            ax.text(
+                hp.longitude + 0.02,
+                hp.latitude + 0.015,
+                hp.name,
+                fontsize=6,
+                alpha=0.6,
+                zorder=5,
+                **scatter_kw,
+            )
+
+
 def render_lagebild_map(
     df: pd.DataFrame,
     out_path: Path,
@@ -98,71 +327,46 @@ def render_lagebild_map(
     dataset_summary: str = "",
 ) -> Path:
     """Write PNG map; circle size = event count, ring = NEW/ESCALATED harbour."""
+    global _last_basemap_backend
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     counts = _harbour_counts(df)
     changed = _changed_harbours(comparison_text, dataset_summary, counts)
 
-    fig, ax = plt.subplots(figsize=(7.2, 5.4), dpi=120)
-    ax.set_title("German Baltic — harbour activity (Lagebild)", fontsize=11, pad=10)
-    ax.set_xlabel("Longitude °E")
-    ax.set_ylabel("Latitude °N")
+    fig = plt.figure(figsize=(7.2, 5.4), dpi=120)
+    ax, backend = _setup_map_axes(fig)
+    _last_basemap_backend = backend
 
-    # Background extent (German Baltic coast)
-    ax.set_xlim(10.0, 14.2)
-    ax.set_ylim(53.5, 54.75)
-    ax.set_facecolor("#e8f0f8")
-    ax.grid(True, linestyle=":", alpha=0.45)
+    if backend == "cartopy":
+        import cartopy.crs as ccrs
 
-    if counts.empty:
-        for hp in harbour_points():
-            ax.scatter(hp.longitude, hp.latitude, s=18, c="#888888", alpha=0.5)
-            ax.text(hp.longitude + 0.03, hp.latitude + 0.02, hp.name, fontsize=7)
+        transform = ccrs.PlateCarree()
+        ax.set_title(
+            "German Baltic — harbour activity (Lagebild)",
+            fontsize=11,
+            pad=10,
+        )
     else:
-        max_count = max(int(c) for c in counts["count"]) or 1
-        for _, row in counts.iterrows():
-            name = str(row["harbour_name"])
-            coords = coords_for_harbour(name)
-            if not coords:
-                continue
-            lat, lon = coords
-            n = int(row["count"])
-            size = 80 + 220 * (n / max_count)
-            color = _severity_color(str(row.get("severity", "medium")))
-            ax.scatter(lon, lat, s=size, c=[color], edgecolors="none", zorder=3)
-            if name in changed:
-                ax.scatter(
-                    lon,
-                    lat,
-                    s=size * 1.55,
-                    facecolors="none",
-                    edgecolors="#c9a227",
-                    linewidths=2.4,
-                    zorder=4,
-                )
-                ax.scatter(
-                    lon,
-                    lat,
-                    s=size * 1.72,
-                    facecolors="none",
-                    edgecolors="#b22222",
-                    linewidths=1.0,
-                    linestyle="--",
-                    zorder=4,
-                )
-            ax.text(lon + 0.04, lat + 0.025, f"{name} ({n})", fontsize=7.5, zorder=5)
+        transform = None
+        ax.set_title(
+            "German Baltic — harbour activity (Lagebild)",
+            fontsize=11,
+            pad=10,
+        )
 
-        for hp in harbour_points():
-            if hp.name not in set(counts["harbour_name"].astype(str)):
-                ax.scatter(hp.longitude, hp.latitude, s=14, c="#aaaaaa", alpha=0.35)
-                ax.text(hp.longitude + 0.02, hp.latitude + 0.015, hp.name, fontsize=6, alpha=0.6)
+    _overlay_harbours(ax, counts, changed, transform=transform)
 
     if changed:
+        lon_min, _, lat_min, _ = _MAP_EXTENT
+        legend_kw = {"transform": transform} if transform is not None else {}
         ax.text(
-            10.05,
-            53.58,
+            lon_min + 0.05,
+            lat_min + 0.08,
             "Gold/red ring: NEW or ESCALATED harbour",
             fontsize=7,
             style="italic",
+            zorder=7,
+            **legend_kw,
         )
 
     fig.tight_layout()
