@@ -16,6 +16,7 @@ from src.compare_reports import parse_comparison_sections, rule_based_theme_diff
 from src.config import Settings
 from src.data_access import dataframe_to_markdown_bounded, lagebild_dataset_summary
 from src.llm_client import _normalize_azure_base_url, normalize_api_key
+from src.lagebild_charts import render_lagebild_charts
 from src.lagebild_map import render_lagebild_map
 from src.report_pdf import (
     _is_primary_section_break,
@@ -136,6 +137,43 @@ Details.
         self.assertIn("EXECUTIVE", sections[0][0].upper())
 
 
+class TestLagebildCharts(unittest.TestCase):
+    def test_render_charts_png(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "data_source": ["AIS", "AIS", "LiDAR", "Buoy"],
+                "harbour_name": ["Kiel", "Rostock", "Kiel", "Wismar"],
+                "severity": ["high", "medium", "low", "medium"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "charts.png"
+            render_lagebild_charts(
+                df,
+                path,
+                comparison_text="NEW | Contact near Kiel\nUNCHANGED | Ferry corridor",
+            )
+            self.assertTrue(path.is_file())
+            self.assertGreater(path.stat().st_size, 1024)
+
+    def test_render_charts_without_comparison(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "data_source": ["AIS"],
+                "harbour_name": ["Kiel"],
+                "severity": ["low"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "charts.png"
+            render_lagebild_charts(df, path)
+            self.assertGreater(path.stat().st_size, 1024)
+
+
 class TestLagebildMap(unittest.TestCase):
     def test_render_map_png(self) -> None:
         import tempfile
@@ -238,7 +276,7 @@ class TestNatoPdf(unittest.TestCase):
                     "severity": ["medium", "low"],
                 }
             )
-            path, map_path = write_report_pdf(
+            path, map_path, charts_path = write_report_pdf(
                 report,
                 None,
                 s,
@@ -253,7 +291,10 @@ class TestNatoPdf(unittest.TestCase):
             self.assertIsNotNone(map_path)
             assert map_path is not None
             self.assertGreater(map_path.stat().st_size, 500)
-            path2, _ = write_report_pdf(
+            self.assertIsNotNone(charts_path)
+            assert charts_path is not None
+            self.assertGreater(charts_path.stat().st_size, 1024)
+            path2, _, _ = write_report_pdf(
                 "Idle traffic — no change near Greifswald.",
                 None,
                 s,

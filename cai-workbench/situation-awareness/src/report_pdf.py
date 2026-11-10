@@ -504,7 +504,7 @@ def write_report_pdf(
     dataset_summary: str = "",
     row_count: int | None = None,
     df_used: pd.DataFrame | None = None,
-) -> tuple[Path, Path | None]:
+) -> tuple[Path, Path | None, Path | None]:
     settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
     stamp = report_time.strftime("%Y%m%d_%H%M%S")
     base = f"nato_sitrep_{stamp}"
@@ -567,6 +567,27 @@ def write_report_pdf(
         except Exception:
             map_path = None
 
+    charts_path: Path | None = None
+    if df_used is not None and not df_used.empty:
+        charts_path = settings.artifacts_dir / f"{base}_charts.png"
+        try:
+            from .lagebild_charts import render_lagebild_charts
+
+            render_lagebild_charts(
+                df_used,
+                charts_path,
+                comparison_text=comparison_text,
+            )
+            if charts_path.is_file() and charts_path.stat().st_size > 0:
+                pdf.section_heading("SECTION: DATA VISUALIZATION")
+                content_w = pdf.w - pdf.l_margin - pdf.r_margin
+                pdf.image(str(charts_path), w=min(content_w, 180))
+                pdf.ln(4)
+            else:
+                charts_path = None
+        except Exception:
+            charts_path = None
+
     for idx, (title, body) in enumerate(_split_report_sections(report_text), start=1):
         if idx > 1 and pdf.get_y() > 240:
             pdf.add_page()
@@ -588,13 +609,14 @@ def write_report_pdf(
         "pdf": pdf_path.name,
         "text": txt_path.name,
         "map": map_path.name if map_path else None,
+        "charts": charts_path.name if charts_path else None,
         "dtg": dtg,
         "has_comparison": bool(comparison_text),
     }
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     _update_index(settings.artifacts_dir, meta)
     _link_latest(settings.artifacts_dir, pdf_path)
-    return pdf_path, map_path
+    return pdf_path, map_path, charts_path
 
 
 def _link_latest(artifacts_dir: Path, pdf_path: Path) -> None:
