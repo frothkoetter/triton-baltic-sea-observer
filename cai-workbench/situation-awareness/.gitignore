@@ -1,0 +1,4 @@
+artifacts/reports/*.pdf
+artifacts/reports/*.txt
+artifacts/reports/*.json
+!artifacts/reports/.gitkeep

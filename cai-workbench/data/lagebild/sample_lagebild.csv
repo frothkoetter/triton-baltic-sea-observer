@@ -1,0 +1,8 @@
+harbour_name,data_source,details,event_timestamp,severity
+Kiel,AIS,Vessel on sanctions watchlist; Reason: export control,2025-11-09 14:22:00,high
+Rostock,LiDAR,ML hint: frigate-class contact; confidence 0.81,2025-11-09 15:01:00,medium
+Wismar,Buoy,Magnetic anomaly delta 42 nT near fairway,2025-11-09 16:45:00,high
+Stralsund,AIS,None observed — routine ferry traffic,2025-11-09 12:10:00,low
+Travemünde,Social_Media,Port authority message: increased MPA patrols,2025-11-09 11:30:00,medium
+Sasnitz,Marine_Message,Subject: SAR exercise notification; NATO vigilance area,2025-11-09 09:00:00,medium
+Kiel,Buoy,Corroborates AIS track MMSI 123456789,2025-11-09 14:25:00,medium
