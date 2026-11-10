@@ -1,3 +1,11 @@
-# NiFi runs: pip install --target <processor-venv> -r requirements.txt <ProcessorDetails.dependencies>
-# for EVERY Python processor in python/extensions/. Keep this file minimal to save disk.
-numpy
+# NiFi installs this file for EVERY processor under python/extensions/ via:
+#   pip install --target <processor-venv> -r requirements.txt
+# plus each module's ProcessorDetails.dependencies.
+#
+# Keep this file EMPTY (stdlib-only processors like TwitterMessageGenerator must
+# not pull numpy here). Heavier deps belong only on processors that need them
+# (numpy, pyproj, laspy, … in ProcessorDetails.dependencies).
+#
+# If install fails with [Errno 28] No space left on device under
+# /var/opt/nifi/python/work/extensions/, prune old extension venvs and enlarge
+# the volume — do not add packages here to "fix" load errors.

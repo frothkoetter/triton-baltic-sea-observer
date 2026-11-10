@@ -52,7 +52,9 @@ Writes to **`dev/samples/`**. Open in CloudCompare; color by **Classification**.
 2. Do **not** upload `tests/`, `dev/`, or `test_*.py`.
 3. Reload Python extensions after changes.
 
-On NiFi, shared **`upload/requirements.txt`** is minimal (**numpy**); each processor adds **`ProcessorDetails.dependencies`** (`pyproj`, `laspy`, `faker`, …).
+On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it for every processor). Each processor adds what it needs via **`ProcessorDetails.dependencies`** (`numpy`, `pyproj`, `laspy`, …).
+
+**TwitterMessageGenerator not loading:** Check `nifi-app.log` for `Failed to install requirements for TwitterMessageGenerator`. Common cause: **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
 
 **Ship AIS:** **`upload/ShipSimulationRoutesGemini.py`** — civilian `ShipSimulationProcessor`. **`MarineShipSimulator` 1.7.0** — German Navy mission pattern (`ship.simulation.route` = `german_navy_missions`): home bases Kiel / Wilhelmshaven / Eckernförde / Warnemünde, Baltic or coastal patrol 1–4 weeks, ~7 days moored after return. Delete `/tmp/marineship_state.json` after upgrading from harbor-hopping 1.6.x.
 
