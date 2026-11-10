@@ -6,7 +6,7 @@ Place project-specific datasets here so CML sessions and jobs can use **paths in
 |-----------|---------|-------------------|
 | `lidar/` | `lidar-vessel-classifier` | `LIDAR_LOCAL_DIR=$PWD/data/lidar` or `fit.py --local-dir data/lidar` |
 | `ais/` | `ais-outlier-detector` | `run_local.py < data/ais/*.ndjson` or NiFi batch replay |
-| `lagebild/` | `lagebild.py` / notebook | Optional CSV/Parquet exports from `defense.lagebild` for offline prompts |
+| `lagebild/` | `situation-awareness/` | `sample_lagebild.csv` for offline notebook/job; optional Parquet exports from `defense.lagebild` |
 
 ## LiDAR
 
