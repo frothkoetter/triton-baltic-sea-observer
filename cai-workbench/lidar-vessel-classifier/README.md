@@ -21,10 +21,10 @@ S3 uses the **S3 Object Store** data connection (`LIDAR_S3_CONNECTION_NAME`, def
 
 Default data prefix: `s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/`
 
-**Local git data:** sample `.las` files live in [`../data/lidar/`](../data/lidar/) (sync with the repo). In a CML project rooted at `lidar-vessel-classifier/`:
+**Local git data:** sample `.las` files live in [`data/lidar/`](data/lidar/) inside this project (10 types including `sample_fishing_boat.las`).
 
 ```bash
-export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/../data/lidar"
+export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/data/lidar"
 python3 fit.py
 ```
 
@@ -46,7 +46,7 @@ On Cloudera AI, **MLflow is pre-installed** in ML Runtime sessions; this project
 2. Start an **ML Runtime** session (not Legacy Engine), install deps if needed (`./cdsw-build.sh`), then train:
 
 ```bash
-export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/../data/lidar"
+export LIDAR_LOCAL_DIR="${CDSW_WORKING_DIRECTORY}/data/lidar"
 export MLFLOW_EXPERIMENT_NAME="lidar-vessel-classifier"
 python3 fit.py
 ```

@@ -4,14 +4,14 @@ Place project-specific datasets here so CML sessions and jobs can use **paths in
 
 | Directory | Used by | Environment / CLI |
 |-----------|---------|-------------------|
-| `lidar/` | `lidar-vessel-classifier` | `LIDAR_LOCAL_DIR=$PWD/data/lidar` or `fit.py --local-dir data/lidar` |
+| *(LiDAR samples live under `lidar-vessel-classifier/data/lidar/`)* | `lidar-vessel-classifier` | `LIDAR_LOCAL_DIR=$PWD/data/lidar` inside that CML project |
 | `ais/` | `ais-outlier-detector` | `run_local.py < data/ais/*.ndjson` or NiFi batch replay |
 | `lagebild/` | `situation-awareness/` | `sample_lagebild.csv` for offline notebook/job; optional Parquet exports from `defense.lagebild` |
 
 ## LiDAR
 
-- Per-vessel `.las` files named `sample_<vessel_type>.las` match `src/s3_las_loader.label_from_key`.
-- Large fleet dumps (`baltic_fleet*.las`, `all_vessel_types_enu.las`) stay under `nifi-processors/dev/` or object store; copy only what you need into `data/lidar/`.
+- Sample `.las` files are committed under **`lidar-vessel-classifier/data/lidar/`** (includes `sample_fishing_boat.las`, class 11).
+- Large fleet dumps stay under `nifi-processors/dev/` or object store.
 
 ## AIS
 
