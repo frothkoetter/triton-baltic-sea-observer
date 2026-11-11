@@ -58,12 +58,12 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 
 **Ship AIS:** **`upload/ShipSimulationRoutesGemini.py`** — civilian `ShipSimulationProcessor`. **`MarineShipSimulator` 1.7.0** — German Navy mission pattern (`ship.simulation.route` = `german_navy_missions`): home bases Kiel / Wilhelmshaven / Eckernförde / Warnemünde, Baltic or coastal patrol 1–4 weeks, ~7 days moored after return. Delete `/tmp/marineship_state.json` after upgrading from harbor-hopping 1.6.x.
 
-**Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** (**1.1.0**) in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`). With **Dump State To Payload** = true (default), each run embeds pre-reset `/tmp` JSON under `snapshots` in the outgoing FlowFile, then deletes or clears routes—useful when the NiFi pod `/tmp` is not reachable.
+**Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** (**1.2.0**) in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`). With **Dump State To Payload** = true (default), each run embeds pre-reset `/tmp` JSON under `snapshots` in the outgoing FlowFile, then deletes or clears routes—useful when the NiFi pod `/tmp` is not reachable.
 
 **LiDAR disk:** Failed pip installs often trace to **`No space left on device`** under `/var/opt/nifi/python/work/extensions/`. Keep **`requirements.txt`** minimal; prune stale venv dirs.
 
 **Russian Baltic Fleet:** `upload/RusFleetPositionSimulator.py` with `rus_fleet_registry.py` / `rus_fleet_sim_engine.py`. FlowFile attribute `ship.simulation.route` = `rus_fleet_positions`; state `/tmp/rus_fleet_state.json`. Reset via **Reset RUS Fleet State** on `BalticShipRouteStateReset`. Details in `upload/README.md`.
 
-**German fishing boats:** `upload/FishingBoatSimulator.py` (**1.0.0**) with `fishing_fleet_registry.py` / `fishing_boat_mission_engine.py`. Route attribute `ship.simulation.route` = `german_fishing_tours`. NiFi property **Number of Fishing Boats** (default **10**, max 20). State `/tmp/fishing_boat_state.json`. LiDAR type **`fishing_boat`** (LAS class **10**) in `LidarSimulator` **4.4.0**.
+**German fishing boats:** `upload/FishingBoatSimulator.py` (**1.0.0**) with `fishing_fleet_registry.py` / `fishing_boat_mission_engine.py`. Route attribute `ship.simulation.route` = `german_fishing_tours`. NiFi property **Number of Fishing Boats** (default **10**, max 20). State `/tmp/fishing_boat_state.json`. Reset via **Reset Fishing Boat State** on `BalticShipRouteStateReset` **1.2.0**. LiDAR type **`fishing_boat`** (LAS class **10**) in `LidarSimulator` **4.4.0**.
 
 **Ghost processor:** If the flow references an old bundle (e.g. **1.2.9**), set **`ShipSimulationProcessor`** to **1.3.0** and remove obsolete extension files from the node.
