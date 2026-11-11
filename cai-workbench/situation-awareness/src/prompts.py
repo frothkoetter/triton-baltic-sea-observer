@@ -27,22 +27,26 @@ LiDAR class hints, message subjects).
 Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``):
 
 1. Executive Summary — short narrative paragraph.
-2. High-Priority Threat Assessment (Critical)
-3. Threat Trends and Geographic Hotspots (German Baltic ports; cross-source corroboration)
-4. Harbours and Anomalies — one bullet per harbour only (never repeat the same harbour
-   name); merge all anomalies, sources, and severities for that port into a single line
-5. AIS Sanctions — explicit if any sanctioned vessel appears; otherwise state none observed
-6. Recommended Actions (MPA/USV verification, sanctions follow-up, LiDAR re-scan, etc.)
+2. High-Priority Threat Assessment (Critical) — open with one bold callout line
+   (``**CRITICAL CONTACT: …**``) then ``* Topic: detail`` bullets for each priority item.
+3. Threat Trends and Geographic Hotspots — include a **markdown pipe table** titled
+   "Geographic Hotspots & Anomaly Matrix" with columns exactly:
+   ``| Sector / Port | Data Source | Threat Level | Tactical Assessment |``
+   One row per active harbour/sector (sorted by Threat Level: CRITICAL, then HIGH/MEDIUM, then LOW).
+   Threat Level must be one of: CRITICAL, HIGH, MEDIUM, LOW. After the table you may add brief bullets
+   only for cross-source items that do not fit a single row.
+4. Harbours and Anomalies — prefer the same 4-column table when ≥3 harbours have events;
+   otherwise one ``* HarbourName: detail`` bullet per harbour (no duplicate harbour names).
+5. AIS Sanctions — use a small table ``| Vessel | MMSI | Harbour | Status |`` when any
+   sanctioned vessel appears; otherwise one sentence "No sanctioned vessels observed."
+6. Conclusions & Directives — prefix each action ``DIRECTIVE 01:``, ``DIRECTIVE 02:``, … with
+   imperative C2 text (MPA/USV vectoring, sanctions follow-up, LiDAR re-scan).
 
-Format for sections 2–5: every distinct finding MUST be its own line starting with ``* `` (asterisk
-space), in the form ``* Topic: detail`` or ``* HarbourName: detail``. One bullet per line; wrap long
-lines but do not start continuation lines with a new ``*``. Example:
+Use ``* Topic: detail`` bullets in section 2 and when tables are not warranted. Wrap long lines;
+do not start continuation lines with a new ``*``.
 
-* Sanctioned Vessel: ARISTO detected via AIS at Gdynia (Blocked under E.O. 14024).
-* Greifswald: LiDAR frigate ML hint; marine feed reports operational status.
-
-Section 6: numbered actions (1., 2., …) or ``* `` bullets. Do not prefix actions with nested
-``SECTION 1:`` labels.
+Example matrix row:
+| Greifswald | LiDAR / AIS | CRITICAL | LiDAR frigate hint; sanctioned AIS track within 25 km. |
 
 Data:
 {data_table}

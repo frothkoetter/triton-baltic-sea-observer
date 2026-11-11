@@ -37,6 +37,17 @@ NATO_TABLE_HEADER_FILL = (210, 218, 226)
 NATO_TABLE_GRID = (80, 90, 100)
 NATO_CRITICAL_RED = (155, 28, 28)
 NATO_CRITICAL_FILL = (255, 236, 236)
+_THREAT_LEVEL_FILLS = {
+    "critical": NATO_CRITICAL_RED,
+    "high": (180, 45, 45),
+    "medium": (230, 120, 0),
+    "low": (33, 120, 181),
+}
+_TABLE_WIDTH_WEIGHTS = {
+    4: (0.20, 0.22, 0.14, 0.44),
+    3: (0.25, 0.35, 0.40),
+    2: (0.35, 0.65),
+}
 
 _CRITICAL_SECTION_RE = re.compile(r"\bCRITICAL\b", re.I)
 _CRITICAL_TERM_RE = re.compile(
@@ -402,6 +413,31 @@ def _bullet_label_key(label: str) -> str:
     return re.sub(r"\s+", " ", folded)
 
 
+def _threat_level_col_index(headers: list[str]) -> int | None:
+    for idx, raw in enumerate(headers):
+        h = raw.strip().lower()
+        if "threat" in h and "level" in h:
+            return idx
+        if h in {"severity", "level", "threat level"}:
+            return idx
+    return None
+
+
+def _threat_level_style(value: str) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
+    key = value.strip().lower()
+    for token, fill in _THREAT_LEVEL_FILLS.items():
+        if token in key:
+            return fill, (255, 255, 255)
+    return (255, 255, 255), (0, 0, 0)
+
+
+def _table_col_widths(ncols: int, content_w: float) -> list[float]:
+    weights = _TABLE_WIDTH_WEIGHTS.get(ncols)
+    if not weights:
+        return [content_w / ncols] * ncols
+    return [content_w * w for w in weights]
+
+
 def consolidate_labelled_bullets(blocks: list[BodyBlock]) -> list[BodyBlock]:
     """Merge ``Harbour:`` bullets that repeat the same label within one section."""
     merged: list[BodyBlock] = []
@@ -635,7 +671,7 @@ class NatoSitrepPDF(FPDF):
             elif block.kind == "caption":
                 total += 6.0
             elif block.kind == "table":
-                total += 5.5 * max(len(block.rows), 1) + 3.0
+                total += 6.5 * max(len(block.rows), 1) + 4.0
             elif block.kind == "bullet_list":
                 total += 4.5 * max(len(block.rows), 1) + 1.0
             elif block.kind == "paragraph":
@@ -878,28 +914,68 @@ class NatoSitrepPDF(FPDF):
             return
         content_w = self.w - self.l_margin - self.r_margin
         ncols = len(rows[0])
-        col_w = content_w / ncols
+        col_widths = _table_col_widths(ncols, content_w)
+        headers = [c.strip() for c in rows[0]]
+        threat_col = _threat_level_col_index(headers)
         self.set_draw_color(*NATO_TABLE_GRID)
+        line_h = 5.8
         for ridx, row in enumerate(rows):
             is_header = ridx == 0
+            padded = list(row) + [""] * (ncols - len(row))
             if is_header:
                 self.set_font("Helvetica", "B", 8)
-                self.set_fill_color(*NATO_TABLE_HEADER_FILL)
+                self.set_fill_color(*NATO_HEADER_BLUE)
+                self.set_text_color(255, 255, 255)
             else:
-                self.set_font("Helvetica", "", 8)
-                self.set_fill_color(255, 255, 255)
-            line_h = 5.5
-            for cell in row:
-                txt = _sanitize_for_pdf(cell)[:64]
-                self.cell(
-                    col_w,
-                    line_h,
+                self.set_font("Helvetica", "", 7.5)
+                self.set_text_color(0, 0, 0)
+            y_row = self.get_y()
+            x0 = self.l_margin
+            wrapped: list[tuple[str, int]] = []
+            max_lines = 1
+            for cidx, (cell, w) in enumerate(zip(padded[:ncols], col_widths)):
+                txt = _sanitize_for_pdf(cell.strip())
+                if not is_header and len(txt) > 96:
+                    txt = txt[:93] + "..."
+                n_lines = len(
+                    self.multi_cell(w, line_h, txt, split_only=True)
+                )
+                n_lines = max(n_lines, 1)
+                wrapped.append((txt, n_lines))
+                max_lines = max(max_lines, n_lines)
+            row_h = line_h * max_lines
+            if self.get_y() + row_h > self.h - self.b_margin:
+                self.add_page()
+                y_row = self.get_y()
+            for cidx, (w, (txt, _)) in enumerate(zip(col_widths, wrapped)):
+                cell = padded[cidx] if cidx < len(padded) else ""
+                if is_header:
+                    fill = True
+                    self.set_fill_color(*NATO_HEADER_BLUE)
+                    self.set_text_color(255, 255, 255)
+                elif threat_col is not None and cidx == threat_col:
+                    fill_rgb, text_rgb = _threat_level_style(cell)
+                    self.set_fill_color(*fill_rgb)
+                    self.set_text_color(*text_rgb)
+                    fill = True
+                else:
+                    self.set_fill_color(255, 255, 255)
+                    self.set_text_color(0, 0, 0)
+                    fill = False
+                self.set_xy(x0, y_row)
+                self.multi_cell(
+                    w,
+                    row_h,
                     txt,
                     border=1,
-                    fill=is_header,
+                    fill=fill,
+                    max_line_height=line_h,
+                    align="L",
                 )
-            self.ln()
-        self.ln(3)
+                x0 += w
+            self.set_text_color(0, 0, 0)
+            self.set_xy(self.l_margin, y_row + row_h)
+        self.ln(2)
 
     def render_markdown_body(self, body: str, *, framed: bool = False) -> None:
         blocks = parse_body_blocks(body)
