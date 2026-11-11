@@ -337,7 +337,8 @@ VESSEL_TYPE_CODES: Dict[str, int] = {
     "frigate": 7,
     "submarine": 8,
     "landing_ship": 9,
-    "fishing_boat": 10,
+    # 10 reserved for sea surface (lidar_sea_surface.LAS_CLASS_WATER_SURFACE)
+    "fishing_boat": 11,
 }
 
 

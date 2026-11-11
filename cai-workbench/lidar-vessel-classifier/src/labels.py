@@ -10,6 +10,7 @@ VESSEL_TYPE_CODES = {
     "frigate": 7,
     "submarine": 8,
     "landing_ship": 9,
+    "fishing_boat": 11,
 }
 
 CODE_TO_VESSEL_TYPE = {code: name for name, code in VESSEL_TYPE_CODES.items()}
