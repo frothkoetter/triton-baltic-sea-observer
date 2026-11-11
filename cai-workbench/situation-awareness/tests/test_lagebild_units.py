@@ -628,6 +628,28 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertIn("#9B1C1C", out)
         self.assertIn("submarine", out.lower())
 
+    def test_hotspot_matrix_table_pdf(self) -> None:
+        import tempfile
+
+        report = """**3. Threat Trends and Geographic Hotspots**
+| Sector / Port | Data Source | Threat Level | Tactical Assessment |
+|---|---|---|
+| Greifswald | LiDAR / AIS | CRITICAL | Frigate and submarine ML hints. |
+| Kiel | Buoy | MEDIUM | Magnetic anomaly logged. |
+| Stralsund | AIS | LOW | Routine traffic. |
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            s = Settings()
+            s.artifacts_dir = Path(tmp)
+            path, _, _, _ = write_report_pdf(
+                report,
+                None,
+                s,
+                datetime(2026, 11, 11, 14, 0, tzinfo=timezone.utc),
+                row_count=3,
+            )
+            self.assertGreater(path.stat().st_size, 1200)
+
     def test_framed_section_bullets_pdf(self) -> None:
         import tempfile
 
