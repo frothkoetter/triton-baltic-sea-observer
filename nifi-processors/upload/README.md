@@ -42,10 +42,12 @@ FlowFile attribute **`ship.simulation.route`** = **`german_fishing_tours`**.
 
 Processor property **Number of Fishing Boats** (default **10**).
 
-State: **`/tmp/fishing_boat_state.json`** — delete when changing boat count or after logic upgrades.
+State: **`/tmp/fishing_boat_state.json`** (count changes also use `/tmp/fishing_boat_version_state.json` on the simulator).
+
+Use **BalticShipRouteStateReset** **1.2.0** with **Reset Fishing Boat State** = true, or delete the file manually.
 
 ## After deploy
 
-Reload Python extensions; run route state reset or clear `/tmp/ship_state.json`, `/tmp/marineship_state.json`, and `/tmp/rus_fleet_state.json` when routing or fleet logic changes.
+Reload Python extensions; run route state reset or clear `/tmp/ship_state.json`, `/tmp/marineship_state.json`, `/tmp/rus_fleet_state.json`, and `/tmp/fishing_boat_state.json` when routing or fleet logic changes.
 
 Tests (from repo `nifi-processors/`): `python3 -m unittest tests.test_rus_fleet_sim test_baltic_ship_routing`

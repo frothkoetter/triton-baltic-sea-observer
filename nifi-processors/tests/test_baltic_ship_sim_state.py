@@ -10,6 +10,7 @@ from baltic_ship_sim_state import (
     AIS_SHIP_STATE_FILE,
     reset_baltic_ship_route_state,
 )
+from fishing_fleet_registry import FISHING_BOAT_STATE_FILE
 from marine_fleet_registry import MARINESHIP_STATE_FILE
 
 
@@ -69,6 +70,21 @@ class TestBalticShipSimState(unittest.TestCase):
             self.assertEqual(loaded[0]["RouteWaypoints"], [])
             self.assertEqual(loaded[0]["RouteIndex"], 0)
             self.assertEqual(loaded[0]["Latitude"], 54.0)
+
+    def test_delete_fishing_boat_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fishing = os.path.join(tmp, "fishing_boat_state.json")
+            with open(fishing, "w") as f:
+                json.dump([{"MMSI": "211871001", "Phase": "mission_patrol"}], f)
+            with patch("baltic_ship_sim_state.FISHING_BOAT_STATE_FILE", fishing):
+                result = reset_baltic_ship_route_state(
+                    reset_ais=False,
+                    reset_marine=False,
+                    reset_fishing=True,
+                    mode="delete_files",
+                )
+            self.assertEqual(result.deleted_files, [fishing])
+            self.assertFalse(os.path.exists(fishing))
 
 
 if __name__ == "__main__":

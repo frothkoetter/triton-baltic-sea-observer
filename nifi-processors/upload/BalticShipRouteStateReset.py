@@ -23,6 +23,7 @@ from baltic_ship_sim_state import (
     reset_baltic_ship_route_state,
     reset_payload,
 )
+from fishing_fleet_registry import FISHING_BOAT_STATE_FILE
 from marine_fleet_registry import MARINESHIP_STATE_FILE
 
 
@@ -33,12 +34,12 @@ class BalticShipRouteStateReset(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "1.1.0"
+        version = "1.2.0"
         description = (
-            "Resets Baltic AIS (ShipSimulationRoutesGemini) and marine "
-            "(MarineShipSimulator) routing state in /tmp JSON files only. "
-            "Optionally writes pre-reset file contents to the outgoing FlowFile "
-            "payload, then deletes or clears route fields. "
+            "Resets Baltic AIS (ShipSimulationRoutesGemini), marine "
+            "(MarineShipSimulator), RUS fleet, and fishing boat routing state "
+            "in /tmp JSON files only. Optionally writes pre-reset file contents "
+            "to the outgoing FlowFile payload, then deletes or clears route fields. "
             "Use after routing or water-mask upgrades without wiping other NiFi data."
         )
         dependencies: list[str] = []
@@ -60,6 +61,13 @@ class BalticShipRouteStateReset(FlowFileTransform):
     RESET_RUS_FLEET = PropertyDescriptor(
         name="Reset RUS Fleet State",
         description=f"Target {RUS_FLEET_STATE_FILE} (RusFleetPositionSimulator).",
+        allowable_values=["true", "false"],
+        default_value="false",
+        required=True,
+    )
+    RESET_FISHING = PropertyDescriptor(
+        name="Reset Fishing Boat State",
+        description=f"Target {FISHING_BOAT_STATE_FILE} (FishingBoatSimulator).",
         allowable_values=["true", "false"],
         default_value="false",
         required=True,
@@ -93,6 +101,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
             self.RESET_AIS,
             self.RESET_MARINE,
             self.RESET_RUS_FLEET,
+            self.RESET_FISHING,
             self.RESET_MODE,
             self.DUMP_STATE,
         ]
@@ -105,6 +114,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
             reset_ais = context.getProperty(self.RESET_AIS.name).getValue() == "true"
             reset_marine = context.getProperty(self.RESET_MARINE.name).getValue() == "true"
             reset_rus = context.getProperty(self.RESET_RUS_FLEET.name).getValue() == "true"
+            reset_fishing = context.getProperty(self.RESET_FISHING.name).getValue() == "true"
             mode_label = context.getProperty(self.RESET_MODE.name).getValue()
             mode = (
                 "clear_route_fields"
@@ -112,7 +122,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
                 else "delete_files"
             )
             dump_state = context.getProperty(self.DUMP_STATE.name).getValue() == "true"
-            if not reset_ais and not reset_marine and not reset_rus:
+            if not reset_ais and not reset_marine and not reset_rus and not reset_fishing:
                 return FlowFileTransformResult(
                     contents=b'{"skipped": true, "reason": "no targets selected"}',
                     attributes={"ship.route.reset": "skipped"},
@@ -123,6 +133,7 @@ class BalticShipRouteStateReset(FlowFileTransform):
                 reset_ais=reset_ais,
                 reset_marine=reset_marine,
                 reset_rus_fleet=reset_rus,
+                reset_fishing=reset_fishing,
                 mode=mode,
             )
             body = reset_payload(result, include_snapshots=dump_state)
