@@ -35,6 +35,21 @@ MONTHS_ZULU = (
 NATO_HEADER_BLUE = (0, 61, 122)
 NATO_TABLE_HEADER_FILL = (210, 218, 226)
 NATO_TABLE_GRID = (80, 90, 100)
+NATO_CRITICAL_RED = (155, 28, 28)
+NATO_CRITICAL_FILL = (255, 236, 236)
+
+_CRITICAL_SECTION_RE = re.compile(r"\bCRITICAL\b", re.I)
+_CRITICAL_TERM_RE = re.compile(
+    r"\b("
+    r"submarine(?:s)?|sanction(?:ed|s)?|blocked|"
+    r"frigate|corvette|landing\s+ship|LST|Ropucha|"
+    r"gas\s+tanker|oil\s+tanker|container\s+ship|"
+    r"high[- ]priority|probable|confidence\s+[\d.]+|"
+    r"E\.O\.\s+14024|Project\s+11356|surface\s+combatant(?:s)?|"
+    r"magnetic\s+anomaly|export\s+control"
+    r")\b",
+    re.I,
+)
 
 
 def format_dtg(report_time: datetime) -> str:
@@ -184,7 +199,7 @@ def parse_markdown_table(lines: list[str]) -> list[list[str]]:
 
 
 _MD_SUBHEADING_RE = re.compile(r"^#{1,3}\s+(.+)$")
-_BULLET_LINE_RE = re.compile(r"^-\s+(.+)$")
+_BULLET_LINE_RE = re.compile(r"^[\s]*(?:[-*•]|\u2022)\s+(.+)$")
 
 
 def _is_horizontal_rule(line: str) -> bool:
@@ -217,13 +232,32 @@ def _strip_italic_wrappers(line: str) -> str:
     return s
 
 
-def inline_markdown_to_html(text: str) -> str:
+def _is_critical_section(title: str) -> bool:
+    return bool(_CRITICAL_SECTION_RE.search(title))
+
+
+def _highlight_critical_terms_html(escaped: str) -> str:
+    """Wrap threat / sanctions terms in red bold after HTML escape."""
+
+    def repl(match: re.Match[str]) -> str:
+        return (
+            f'<font color="#9B1C1C"><b>{match.group(0)}</b></font>'
+        )
+
+    return _CRITICAL_TERM_RE.sub(repl, escaped)
+
+
+def inline_markdown_to_html(
+    text: str, *, emphasize_critical: bool = True
+) -> str:
     """Convert lightweight markdown emphasis to HTML for fpdf ``write_html``."""
     escaped = html.escape(_sanitize_for_pdf(text))
     escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
     escaped = re.sub(
         r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", escaped
     )
+    if emphasize_critical:
+        escaped = _highlight_critical_terms_html(escaped)
     return escaped
 
 
@@ -551,14 +585,14 @@ class NatoSitrepPDF(FPDF):
                 self.set_font("Helvetica", "", 9)
                 for row in block.rows:
                     item = row[0] if row else ""
-                    safe = _sanitize_for_pdf(item)
-                    fragment = inline_markdown_to_html(safe)
+                    fragment = self._bullet_item_html(item)
                     try:
                         self.write_html(
-                            f"<p>&nbsp;&nbsp;* {fragment}</p>",
+                            f"<p>&nbsp;&nbsp;&#8226; {fragment}</p>",
                             table_line_separators=True,
                         )
                     except Exception:
+                        safe = _sanitize_for_pdf(item)
                         self.multi_cell(
                             0, 4.5, f"* {safe}", new_x="LMARGIN", new_y="NEXT"
                         )
@@ -576,7 +610,11 @@ class NatoSitrepPDF(FPDF):
                 self.ln(1)
 
     def render_framed_block(
-        self, render_fn: Callable[[], None], *, estimated_height: float
+        self,
+        render_fn: Callable[[], None],
+        *,
+        estimated_height: float,
+        fill: tuple[int, int, int] | None = None,
     ) -> None:
         pad = 3.0
         x = self.l_margin
@@ -584,7 +622,7 @@ class NatoSitrepPDF(FPDF):
         y0 = self.get_y()
         frame_h0 = max(estimated_height, pad * 2)
 
-        self.set_fill_color(*NATO_TABLE_HEADER_FILL)
+        self.set_fill_color(*(fill or NATO_TABLE_HEADER_FILL))
         self.set_draw_color(*NATO_TABLE_GRID)
         self.set_line_width(0.25)
         self.rect(x, y0, content_w, frame_h0, style="DF")
@@ -602,7 +640,7 @@ class NatoSitrepPDF(FPDF):
 
         actual_h = y1 - y0
         if actual_h > frame_h0:
-            self.set_fill_color(*NATO_TABLE_HEADER_FILL)
+            self.set_fill_color(*(fill or NATO_TABLE_HEADER_FILL))
             self.rect(x, y0 + frame_h0, content_w, actual_h - frame_h0, style="F")
         self.set_draw_color(*NATO_TABLE_GRID)
         self.rect(x, y0, content_w, actual_h, style="D")
@@ -616,6 +654,71 @@ class NatoSitrepPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.multi_cell(0, 6, _sanitize_for_pdf(title))
         self.ln(2)
+
+    def _bullet_item_html(self, item: str) -> str:
+        safe = _sanitize_for_pdf(item)
+        cat = re.match(r"^\s*\*\*(.+?)\*\*\s*:?\s*$", safe)
+        if cat:
+            label = html.escape(cat.group(1).strip())
+            return f'<font color="#003D7A"><b>{label}</b></font>'
+        cat2 = re.match(r"^([A-Za-z][A-Za-z0-9 /\-]{2,40}):\s*$", safe)
+        if cat2:
+            label = html.escape(cat2.group(1).strip())
+            return f'<font color="#003D7A"><b>{label}:</b></font>'
+        return inline_markdown_to_html(safe)
+
+    def render_sitrep_section(self, title: str, body: str) -> None:
+        """Bordered section with title band and in-body critical emphasis."""
+        title = re.sub(r"^\*\*|\*\*$", "", title.strip())
+        critical = _is_critical_section(title)
+        blocks = parse_body_blocks(body)
+        pad = 3.0
+        content_w = self.w - self.l_margin - self.r_margin
+        inner_w = content_w - 2 * pad
+        title_band_h = 7.5
+        est_h = pad * 2 + title_band_h + 2 + self._estimate_blocks_height(
+            blocks, inner_w
+        )
+
+        def render_inner() -> None:
+            margin_l = self.l_margin
+            band_w = self.w - self.l_margin - self.r_margin
+            y_band = self.get_y()
+            if critical:
+                self.set_fill_color(*NATO_CRITICAL_RED)
+            else:
+                self.set_fill_color(*NATO_HEADER_BLUE)
+            self.rect(margin_l, y_band, band_w, title_band_h, style="F")
+            self.set_xy(margin_l + 2, y_band + 1.5)
+            self.set_font("Helvetica", "B", 9)
+            self.set_text_color(255, 255, 255)
+            title_html = inline_markdown_to_html(title, emphasize_critical=False)
+            if critical:
+                title_html = re.sub(
+                    r"(?i)(\(critical\)|\bcritical\b)",
+                    r'<font color="#FFE082"><b>\1</b></font>',
+                    title_html,
+                )
+            try:
+                self.write_html(
+                    f"<p>{title_html}</p>", table_line_separators=True
+                )
+            except Exception:
+                self.multi_cell(
+                    band_w - 4,
+                    5,
+                    _sanitize_for_pdf(title),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
+            self.set_text_color(0, 0, 0)
+            self.set_y(y_band + title_band_h + 2)
+            self._render_body_blocks(blocks)
+
+        section_fill = NATO_CRITICAL_FILL if critical else None
+        self.render_framed_block(
+            render_inner, estimated_height=est_h, fill=section_fill
+        )
 
     def body_paragraph(self, text: str) -> None:
         self.set_font("Helvetica", "", 9)
@@ -839,12 +942,11 @@ def write_report_pdf(
             zebra_path = None
 
     for idx, (title, body) in enumerate(_split_report_sections(report_text), start=1):
-        if idx > 1 and pdf.get_y() > 240:
+        if idx > 1 and pdf.get_y() > 220:
             pdf.add_page()
         if not title.upper().startswith("SECTION"):
             title = f"SECTION {idx}: {title}"
-        pdf.section_heading(title)
-        pdf.render_markdown_body(body)
+        pdf.render_sitrep_section(title, body)
 
     if comparison_text:
         pdf.add_page()
