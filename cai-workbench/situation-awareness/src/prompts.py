@@ -29,7 +29,8 @@ Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``)
 1. Executive Summary — short narrative paragraph.
 2. High-Priority Threat Assessment (Critical)
 3. Threat Trends and Geographic Hotspots (German Baltic ports; cross-source corroboration)
-4. Harbours and Anomalies
+4. Harbours and Anomalies — one bullet per harbour only (never repeat the same harbour
+   name); merge all anomalies, sources, and severities for that port into a single line
 5. AIS Sanctions — explicit if any sanctioned vessel appears; otherwise state none observed
 6. Recommended Actions (MPA/USV verification, sanctions follow-up, LiDAR re-scan, etc.)
 
