@@ -1046,6 +1046,424 @@ FROM
 
 ORDER BY harbour_name, "timestamp" DESC;
 
+-- VIEW: defense.lagebild_all_events — every qualifying row in the 24h window.
+-- Same feeds/thresholds as defense.lagebild but without ROW_NUMBER rn=1 latest-only dedupe.
+-- CROSS JOIN harbours may multiply rows when an event is within range of several ports.
+-- GPS jammer: all jamming rows in 24h; nearest harbour only (rn_nearest=1), not latest per geohash.
+CREATE OR REPLACE VIEW lagebild_all_events AS
+WITH Harbour_Ref AS (
+    -- Define the source for all harbors to check proximity against
+    SELECT
+        name AS harbour_name,
+        country AS harbour_country,
+        latitude AS Harbour_Lat,
+        longitude AS Harbour_Lon,
+        10000.0 AS Proximity_Meters -- 10 km in meters
+    FROM
+        defense.baltic_sea_harbours
+),
+
+-- CTE 1: Buoy detections (all events in 24h)
+LatestBuoyDetections AS (
+    SELECT
+        b.buoyid,
+        b.ts AS buoy_time,
+        b.geo_position_lat AS buoy_lat,
+        b.geo_position_lon AS buoy_lon,
+        b.payload_object_classification,
+        b.payload_magneticfield_anomaly,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        -- HYBRID DISTANCE CALCULATION
+        great_circle_distance(b.geo_position_lat, b.geo_position_lon, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.buoy_data b
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE
+        b.payload_detectionconfidence IS NOT NULL
+        AND try_cast(b.ts AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredBuoyDetections AS (
+    SELECT *
+    FROM LatestBuoyDetections
+    WHERE distance_m <= 2000 -- Filter only events within 5 km of the specific harbor
+),
+
+-- CTE 2: AIS events (all in 24h)
+LatestAisEvents AS (
+    SELECT
+        a.mmsi,
+        a.event_timestamp AS ship_time,
+        a.latitude AS ship_lat,
+        a.longitude AS ship_lon,
+        s.Name AS sanctioned_name,
+        s.Sanction_Reason,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(a.latitude, a.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.ais_events_ice a
+    CROSS JOIN
+        Harbour_Ref h
+    LEFT JOIN
+        defense.sanctioned_vessels s ON a.mmsi = s.mmsi
+    WHERE try_cast(a.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredAisEvents AS (
+    SELECT *
+    FROM LatestAisEvents
+    WHERE distance_m <= 30000 -- CORRECTED FILTER: Use 30km limit
+),
+
+-- CTE 3: Marine status (all in 24h)
+LatestMarineStatus AS (
+    SELECT
+        v.mmsi AS marine_mmsi,
+        v.event_timestamp AS marine_time,
+        v.longitude AS marine_lon,
+        v.latitude AS marine_lat,
+        v.operational_status,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(v.latitude, v.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.marine_vessel_status v
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE try_cast(v.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredMarineStatus AS (
+    SELECT *
+    FROM LatestMarineStatus
+    WHERE distance_m <= 30000 -- CORRECTED FILTER: Use 10km limit
+),
+
+-- CTE 4: Social media (all in 24h)
+LatestSocialMedia AS (
+    SELECT
+        s.tweet,
+        s.user_username,
+        s.priority,
+        s.ts AS social_time,
+        s.longitude AS social_lon,
+        s.latitude AS social_lat,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(s.latitude, s.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.social_media_messages s
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE try_cast(s.ts AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredSocialMedia AS (
+    SELECT *
+    FROM LatestSocialMedia
+    WHERE distance_m <= 50000
+),
+-- CTE 5: Marine messages (all in 24h)
+LatestMarineMessages AS (
+    SELECT
+        m.message_id,
+        CAST(m.message_timestamp AS TIMESTAMP) AS message_time,
+        m.message_latitude AS message_lat,
+        m.message_longitude AS message_lon,
+        m.message_subject,
+        m.message_from,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(m.message_latitude, m.message_longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.marine_messages m
+    CROSS JOIN
+        Harbour_Ref h
+    -- Use message_timestamp for the time filter
+    WHERE CAST(m.message_timestamp AS TIMESTAMP) >= current_timestamp - interval '24' hour
+),
+FilteredMarineMessages AS (
+    SELECT *
+    FROM LatestMarineMessages
+    WHERE distance_m <= 50000 -- Filter only events within 50 km (50000 m) of the specific harbor
+),
+
+LatestLidarSimulations AS (
+    SELECT
+        l.hadoop_file_url,
+        l.filename,
+        l.ingested_at AS lidar_time,
+        l.center_lat AS lidar_lat,
+        l.center_lon AS lidar_lon,
+        l.vessel_name,
+        l.vessel_type,
+        l.classification,
+        l.point_count,
+        l.heading_deg,
+        l.predicted_vessel_type,
+        l.model_confidence,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(l.center_lat, l.center_lon, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY COALESCE(l.hadoop_file_url, l.filename), h.harbour_name
+            ORDER BY l.ingested_at DESC
+        ) AS rn
+    FROM
+        defense.lidar_simulation_metadata l
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE
+        l.ingested_at >= current_timestamp - interval '24' hour
+        AND l.center_lat IS NOT NULL
+        AND l.center_lon IS NOT NULL
+),
+FilteredLidarSimulations AS (
+    SELECT *
+    FROM LatestLidarSimulations
+    WHERE distance_m <= 50000
+),
+
+-- CTE: Russian Baltic Fleet (positions + registry)
+LatestRusNavalPositions AS (
+    SELECT
+        p.mmsi,
+        p.event_timestamp AS rus_time,
+        p.latitude AS rus_lat,
+        p.longitude AS rus_lon,
+        p.speed AS rus_speed,
+        p.course AS rus_course,
+        p.status AS rus_status,
+        p.Destination AS rus_destination,
+        rf.name AS rus_name,
+        rf."class" AS rus_class,
+        rf.home_base AS rus_home_base,
+        rf.vessel_category AS rus_vessel_category,
+        rf.hull_number AS rus_hull_number,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(p.latitude, p.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.rus_naval_fleet_positions p
+    CROSS JOIN
+        Harbour_Ref h
+    LEFT JOIN
+        defense.rus_fleet rf ON p.mmsi = rf.mmsi
+    WHERE try_cast(p.event_timestamp AS timestamp) >= current_timestamp - interval '24' hour
+),
+FilteredRusNavalPositions AS (
+    SELECT *
+    FROM LatestRusNavalPositions
+    WHERE distance_m <= 30000
+),
+
+GpsJammerNearestHarbour AS (
+    SELECT
+        g.geohash,
+        coalesce(
+            try(from_iso8601_timestamp(g.ts)),
+            try(from_iso8601_timestamp(replace(g.ts, 'Z', '+00:00'))),
+            try_cast(replace(g.ts, 'Z', '') AS timestamp)
+        ) AS jammer_time,
+        g.latitude AS jammer_lat,
+        g.longitude AS jammer_lon,
+        g.adsb_nic,
+        g.signal_integrity,
+        g.jamming_indicator,
+        g.event_type,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY g.geohash, g.ts
+            ORDER BY great_circle_distance(g.latitude, g.longitude, h.Harbour_Lat, h.Harbour_Lon)
+        ) AS rn_nearest
+    FROM
+        defense.gps_jammer_events g
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE coalesce(
+            try(from_iso8601_timestamp(g.ts)),
+            try(from_iso8601_timestamp(replace(g.ts, 'Z', '+00:00'))),
+            try_cast(replace(g.ts, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+        AND g.jamming_indicator = true
+),
+FilteredGpsJammerEvents AS (
+    SELECT *
+    FROM GpsJammerNearestHarbour
+    WHERE rn_nearest = 1
+)
+
+-- FINAL SELECT: all qualifying events in the reporting window (volume, not snapshot)
+SELECT
+    'Buoy' AS Data_Source,
+    b.buoyid AS ID,
+    try_cast(b.buoy_time AS timestamp) AS "timestamp",
+    b.buoy_lat AS latitude,
+    b.buoy_lon AS longitude,
+    b.harbour_name AS harbour_name, -- Added to the final SELECT
+    b.distance_m AS dist_m_raw,
+    CAST(ROUND(b.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(b.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Object: ', b.payload_object_classification,
+        ' | Mag Anomaly: ', CAST(b.payload_magneticfield_anomaly AS VARCHAR)
+    ) AS details
+FROM
+    FilteredBuoyDetections b
+
+UNION ALL
+
+SELECT
+    'AIS' AS Data_Source,
+    CAST(a.mmsi AS VARCHAR) AS ID,
+    try_cast(a.ship_time AS timestamp) AS "timestamp",
+    a.ship_lat AS latitude,
+    a.ship_lon AS longitude,
+    a.harbour_name AS harbour_name, -- Added to the final SELECT
+    a.distance_m AS dist_m_raw,
+    CAST(ROUND(a.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(a.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Sanctioned: ', COALESCE(a.sanctioned_name, 'No'),
+        COALESCE(CONCAT(' (Sanction Reason: ', a.Sanction_Reason, ')'), '') -- Included sanctioned details
+    ) AS details
+FROM
+    FilteredAisEvents a
+
+UNION ALL
+
+SELECT
+    'Marine' AS Data_Source,
+    CAST(m.marine_mmsi AS VARCHAR) AS ID,
+    try_cast(m.marine_time AS timestamp) AS "timestamp",
+    m.marine_lat AS latitude,
+    m.marine_lon AS longitude,
+    m.harbour_name AS harbour_name, -- Added to the final SELECT
+    m.distance_m AS dist_m_raw,
+    CAST(ROUND(m.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(m.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Status: ', m.operational_status
+    ) AS details
+FROM
+    FilteredMarineStatus m
+
+UNION ALL
+
+SELECT
+    'SocialMedia' AS Data_Source,
+    s.user_username AS ID,
+    try_cast(s.social_time AS timestamp) AS "timestamp",
+    s.social_lat AS latitude,
+    s.social_lon AS longitude,
+    s.harbour_name AS harbour_name, -- Added to the final SELECT
+    s.distance_m AS dist_m_raw,
+    CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Prio: ', CAST(s.priority AS VARCHAR),
+        ' | Tweet: ', s.tweet
+    ) AS details
+FROM
+    FilteredSocialMedia s
+UNION ALL
+
+SELECT
+    'Marine_Message' AS Data_Source,
+    m.message_id AS ID,
+    try_cast(m.message_time AS timestamp) AS "timestamp",
+    m.message_lat AS latitude,
+    m.message_lon AS longitude,
+    m.harbour_name AS harbour_name,
+    m.distance_m AS dist_m_raw,
+    CAST(ROUND(m.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(m.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Subject: ', m.message_subject,
+        ' | From: ', m.message_from
+    ) AS details
+FROM
+    FilteredMarineMessages m
+
+UNION ALL
+
+SELECT
+    'LiDAR' AS Data_Source,
+    COALESCE(l.filename, l.hadoop_file_url) AS ID,
+    l.lidar_time AS "timestamp",
+    l.lidar_lat AS latitude,
+    l.lidar_lon AS longitude,
+    l.harbour_name AS harbour_name,
+    l.distance_m AS dist_m_raw,
+    CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Vessel: ', COALESCE(l.vessel_name, 'unknown'),
+        ' (', COALESCE(l.vessel_type, 'undefined'), ')',
+        ' | Class: ', CAST(l.classification AS VARCHAR),
+        ' | Points: ', CAST(l.point_count AS VARCHAR),
+        ' | Hdg: ', CAST(ROUND(l.heading_deg, 1) AS VARCHAR), '°',
+        COALESCE(
+            CONCAT(' | ML: ', l.predicted_vessel_type, ' (conf ', CAST(l.model_confidence AS VARCHAR), ')'),
+            ''
+        ),
+        COALESCE(CONCAT(' | LAS: ', l.hadoop_file_url), '')
+    ) AS details
+FROM
+    FilteredLidarSimulations l
+
+UNION ALL
+
+SELECT
+    'RUS_Fleet' AS Data_Source,
+    r.mmsi AS ID,
+    try_cast(r.rus_time AS timestamp) AS "timestamp",
+    r.rus_lat AS latitude,
+    r.rus_lon AS longitude,
+    r.harbour_name AS harbour_name,
+    r.distance_m AS dist_m_raw,
+    CAST(ROUND(r.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(r.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Unit: ', COALESCE(r.rus_name, r.mmsi),
+        COALESCE(CONCAT(' (', r.rus_class, ')'), ''),
+        ' | Home: ', COALESCE(r.rus_home_base, 'unknown'),
+        ' | Cat: ', COALESCE(r.rus_vessel_category, ''),
+        COALESCE(CONCAT(' | Hull: ', r.rus_hull_number), ''),
+        ' | Status: ', COALESCE(r.rus_status, ''),
+        ' | Dest: ', COALESCE(r.rus_destination, ''),
+        ' | SOG: ', CAST(ROUND(r.rus_speed, 1) AS VARCHAR), ' kn',
+        ' | COG: ', CAST(ROUND(r.rus_course, 0) AS VARCHAR), '°'
+    ) AS details
+FROM
+    FilteredRusNavalPositions r
+
+UNION ALL
+
+SELECT
+    'GPS_Jammer' AS Data_Source,
+    j.geohash AS ID,
+    j.jammer_time AS "timestamp",
+    j.jammer_lat AS latitude,
+    j.jammer_lon AS longitude,
+    j.harbour_name AS harbour_name,
+    j.distance_m AS dist_m_raw,
+    CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(j.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Geohash: ', j.geohash,
+        ' | NIC: ', CAST(j.adsb_nic AS VARCHAR),
+        ' | Signal integrity: ', CAST(ROUND(j.signal_integrity, 2) AS VARCHAR),
+        ' | Jamming: ', CAST(j.jamming_indicator AS VARCHAR),
+        COALESCE(CONCAT(' | Type: ', j.event_type), '')
+    ) AS details
+FROM
+    FilteredGpsJammerEvents j
+
+ORDER BY harbour_name, "timestamp" DESC;
+
+
 DROP TABLE IF EXISTS Situation_Awareness_Summary;
 CREATE TABLE Situation_Awareness_Summary (
   summary_timestamp timestamp,
