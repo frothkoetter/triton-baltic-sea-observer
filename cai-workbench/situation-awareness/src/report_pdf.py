@@ -395,6 +395,56 @@ def parse_body_blocks(body: str) -> list[BodyBlock]:
     return blocks
 
 
+def _bullet_label_key(label: str) -> str:
+    folded = label.strip().lower().replace("?", "")
+    if "gdyn" in folded or "gdan" in folded:
+        return "gdansk-gdynia"
+    return re.sub(r"\s+", " ", folded)
+
+
+def consolidate_labelled_bullets(blocks: list[BodyBlock]) -> list[BodyBlock]:
+    """Merge ``Harbour:`` bullets that repeat the same label within one section."""
+    merged: list[BodyBlock] = []
+    for block in blocks:
+        if block.kind != "bullet_list":
+            merged.append(block)
+            continue
+        groups: dict[str, tuple[str, list[str]]] = {}
+        order: list[str] = []
+        unlabelled = False
+        for row in block.rows:
+            item = (row[0] if row else "").strip()
+            if not item:
+                continue
+            m = re.match(r"^([^:]+):\s*(.*)$", item, re.S)
+            if not m:
+                unlabelled = True
+                break
+            label = m.group(1).strip()
+            body = m.group(2).strip()
+            key = _bullet_label_key(label)
+            if key not in groups:
+                order.append(key)
+                groups[key] = (label, [])
+            if body:
+                groups[key][1].append(body)
+        if unlabelled or not groups:
+            merged.append(block)
+            continue
+        rows: list[tuple[str, ...]] = []
+        for key in order:
+            disp, bodies = groups[key]
+            if len(bodies) > 1:
+                body = "; ".join(bodies)
+            elif bodies:
+                body = bodies[0]
+            else:
+                body = ""
+            rows.append((f"{disp}: {body}".strip(),))
+        merged.append(BodyBlock(kind="bullet_list", rows=tuple(rows)))
+    return merged
+
+
 def _split_report_sections(report_text: str) -> list[tuple[str, str]]:
     """Map LLM output into labelled SITREP sections when numbered headings exist."""
     lines = report_text.strip().splitlines()
@@ -673,38 +723,68 @@ class NatoSitrepPDF(FPDF):
         self.multi_cell(0, 6, _sanitize_for_pdf(title))
         self.ln(2)
 
+    def _draw_bullet_dot(self) -> None:
+        x = self.l_margin + 2.0
+        y = self.get_y() + 1.6
+        self.set_fill_color(45, 45, 45)
+        self.ellipse(x, y, 1.2, 1.2, style="F")
+
     def _render_bullet_line(self, item: str) -> None:
         safe = _sanitize_for_pdf(item)
         plain = re.sub(r"\*\*(.+?)\*\*", r"\1", safe).strip()
         labelled = re.match(r"^([^:]{2,56}):\s*(.+)$", plain)
         margin = self.l_margin
+        text_x = margin + 6.5
         content_w = self.w - self.l_margin - self.r_margin
-        bullet_prefix = "  * "
-        self.set_font("Helvetica", "", 9)
+        body_w = content_w - 6.5
+        line_h = 4.5
         if labelled:
             label = labelled.group(1).strip()
             body = labelled.group(2).strip()
+            self._draw_bullet_dot()
+            self.set_xy(text_x, self.get_y())
             self.set_font("Helvetica", "B", 9)
-            head = f"{bullet_prefix}{label}: "
-            self.set_x(margin)
-            self.cell(0, 4.5, head, new_x="LMARGIN", new_y="NEXT")
-            self.set_font("Helvetica", "", 9)
-            self.set_x(margin + 6)
             self.multi_cell(
-                content_w - 6,
-                4.5,
+                body_w,
+                line_h,
+                f"{label}:",
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+            self.set_x(text_x)
+            self.set_font("Helvetica", "", 9)
+            self.multi_cell(
+                body_w,
+                line_h,
                 body,
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
         else:
+            self._draw_bullet_dot()
+            self.set_x(text_x)
+            self.set_font("Helvetica", "", 9)
             self.multi_cell(
-                0,
-                4.5,
-                f"{bullet_prefix}{plain}",
+                body_w,
+                line_h,
+                plain,
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
+
+    def _title_band_height(self, title: str, band_w: float) -> float:
+        line_h = 5.0
+        text_w = max(band_w - 4.0, 20.0)
+        self.set_font("Helvetica", "B", 9)
+        n_lines = len(
+            self.multi_cell(
+                text_w,
+                line_h,
+                _sanitize_for_pdf(title),
+                split_only=True,
+            )
+        )
+        return max(8.0, n_lines * line_h + 3.0)
 
     def _write_html_or_plain(self, html: str, plain: str) -> None:
         """``write_html`` on core fonts rejects some entities; never leave the page closed."""
@@ -747,38 +827,37 @@ class NatoSitrepPDF(FPDF):
         """Bordered section with title band and in-body critical emphasis."""
         title = re.sub(r"^\*\*|\*\*$", "", title.strip())
         critical = _is_critical_section(title)
-        blocks = parse_body_blocks(body)
+        blocks = consolidate_labelled_bullets(parse_body_blocks(body))
         pad = 3.0
         content_w = self.w - self.l_margin - self.r_margin
         inner_w = content_w - 2 * pad
-        title_band_h = 7.5
+        band_w = content_w
+        title_band_h = self._title_band_height(title, band_w)
         est_h = pad * 2 + title_band_h + 2 + self._estimate_blocks_height(
             blocks, inner_w
         )
+        title_plain = _sanitize_for_pdf(title)
 
         def render_inner() -> None:
             margin_l = self.l_margin
-            band_w = self.w - self.l_margin - self.r_margin
             y_band = self.get_y()
             if critical:
                 self.set_fill_color(*NATO_CRITICAL_RED)
             else:
                 self.set_fill_color(*NATO_HEADER_BLUE)
             self.rect(margin_l, y_band, band_w, title_band_h, style="F")
+            line_h = 5.0
+            text_w = band_w - 4.0
             self.set_xy(margin_l + 2, y_band + 1.5)
             self.set_font("Helvetica", "B", 9)
             self.set_text_color(255, 255, 255)
-            title_html = inline_markdown_to_html(title, emphasize_critical=False)
-            if critical:
-                title_html = re.sub(
-                    r"(?i)(\(critical\)|\bcritical\b)",
-                    r'<font color="#FFE082"><b>\1</b></font>',
-                    title_html,
-                )
-            title_plain = _sanitize_for_pdf(title)
-            self._write_html_or_plain(
-                f"<p>{title_html}</p>",
+            self.multi_cell(
+                text_w,
+                line_h,
                 title_plain,
+                align="C",
+                new_x="LMARGIN",
+                new_y="NEXT",
             )
             self.set_text_color(0, 0, 0)
             self.set_y(y_band + title_band_h + 2)

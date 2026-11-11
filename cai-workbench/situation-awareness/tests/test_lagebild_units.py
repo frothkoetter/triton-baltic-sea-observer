@@ -44,6 +44,7 @@ from src.report_pdf import (
     format_dtg,
     inline_markdown_to_html,
     normalize_heading_line,
+    consolidate_labelled_bullets,
     parse_body_blocks,
     parse_markdown_table,
     parse_section_heading,
@@ -593,6 +594,20 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         rows = [b for b in blocks if b.kind == "bullet_list"][0].rows
         self.assertIn("0.32", rows[0][0])
         self.assertIn("Greifswald", rows[1][0])
+
+    def test_consolidate_duplicate_harbour_bullets(self) -> None:
+        body = (
+            " * Greifswald: Frigate detected.\n"
+            " * Greifswald: Submarine ML hints.\n"
+            " * Kaliningrad: GPS jamming.\n"
+        )
+        blocks = consolidate_labelled_bullets(parse_body_blocks(body))
+        bullets = [b for b in blocks if b.kind == "bullet_list"][0]
+        self.assertEqual(len(bullets.rows), 2)
+        greif = bullets.rows[0][0]
+        self.assertIn("Greifswald", greif)
+        self.assertIn("Frigate", greif)
+        self.assertIn("Submarine", greif)
 
     def test_split_section_number_from_section_prefix(self) -> None:
         report = (
