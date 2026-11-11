@@ -590,6 +590,27 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertIn("#9B1C1C", out)
         self.assertIn("submarine", out.lower())
 
+    def test_framed_section_bullets_pdf(self) -> None:
+        import tempfile
+
+        report = """**2. High-Priority Threat Assessment (CRITICAL)**
+ * Submarine Activity:
+ * LiDAR detected probable submarine near Greifswald (confidence 0.32).
+ * Sanctioned Vessels:
+ * AIS confirms blocked vessel near Greifswald.
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            s = Settings()
+            s.artifacts_dir = Path(tmp)
+            path, _, _, _ = write_report_pdf(
+                report,
+                None,
+                s,
+                datetime(2026, 11, 11, 12, 0, tzinfo=timezone.utc),
+                row_count=2,
+            )
+            self.assertGreater(path.stat().st_size, 800)
+
     def test_is_critical_section(self) -> None:
         self.assertTrue(
             _is_critical_section(

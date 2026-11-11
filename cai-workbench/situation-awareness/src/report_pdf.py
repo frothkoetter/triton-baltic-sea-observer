@@ -236,6 +236,18 @@ def _is_critical_section(title: str) -> bool:
     return bool(_CRITICAL_SECTION_RE.search(title))
 
 
+def _latin1_encodable(text: str) -> bool:
+    try:
+        text.encode("latin-1")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _strip_html_tags(fragment: str) -> str:
+    return re.sub(r"<[^>]+>", "", fragment)
+
+
 def _highlight_critical_terms_html(escaped: str) -> str:
     """Wrap threat / sanctions terms in red bold after HTML escape."""
 
@@ -585,28 +597,32 @@ class NatoSitrepPDF(FPDF):
                 self.set_font("Helvetica", "", 9)
                 for row in block.rows:
                     item = row[0] if row else ""
-                    fragment = self._bullet_item_html(item)
-                    try:
-                        self.write_html(
-                            f"<p>&nbsp;&nbsp;&#8226; {fragment}</p>",
-                            table_line_separators=True,
+                    safe = _sanitize_for_pdf(item)
+                    plain = re.sub(r"\*\*(.+?)\*\*", r"\1", safe)
+                    is_category = bool(
+                        re.match(
+                            r"^[A-Za-z][A-Za-z0-9 /\-]{2,48}:\s*$",
+                            plain.strip(),
                         )
-                    except Exception:
-                        safe = _sanitize_for_pdf(item)
-                        self.multi_cell(
-                            0, 4.5, f"* {safe}", new_x="LMARGIN", new_y="NEXT"
-                        )
+                    )
+                    if is_category:
+                        self.set_font("Helvetica", "B", 9)
+                    self.multi_cell(
+                        0,
+                        4.5,
+                        f"  * {plain.strip()}",
+                        new_x="LMARGIN",
+                        new_y="NEXT",
+                    )
+                    if is_category:
+                        self.set_font("Helvetica", "", 9)
                 self.ln(1)
             else:
                 safe = _sanitize_for_pdf(block.text)
+                plain = re.sub(r"\*\*(.+?)\*\*", r"\1", safe)
                 fragment = inline_markdown_to_html(safe)
                 self.set_font("Helvetica", "", 9)
-                try:
-                    self.write_html(f"<p>{fragment}</p>", table_line_separators=True)
-                except Exception:
-                    self.multi_cell(
-                        0, 4.5, safe, new_x="LMARGIN", new_y="NEXT"
-                    )
+                self._write_html_or_plain(f"<p>{fragment}</p>", plain)
                 self.ln(1)
 
     def render_framed_block(
@@ -655,6 +671,31 @@ class NatoSitrepPDF(FPDF):
         self.multi_cell(0, 6, _sanitize_for_pdf(title))
         self.ln(2)
 
+    def _write_html_or_plain(self, html: str, plain: str) -> None:
+        """``write_html`` on core fonts rejects some entities; never leave the page closed."""
+        visible = _strip_html_tags(html)
+        if not _latin1_encodable(visible):
+            self.multi_cell(
+                0,
+                4.5,
+                _sanitize_for_pdf(plain),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+            return
+        try:
+            self.write_html(html, table_line_separators=True)
+        except Exception:
+            if not getattr(self, "page", None):
+                raise
+            self.multi_cell(
+                0,
+                4.5,
+                _sanitize_for_pdf(plain),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+
     def _bullet_item_html(self, item: str) -> str:
         safe = _sanitize_for_pdf(item)
         cat = re.match(r"^\s*\*\*(.+?)\*\*\s*:?\s*$", safe)
@@ -699,18 +740,11 @@ class NatoSitrepPDF(FPDF):
                     r'<font color="#FFE082"><b>\1</b></font>',
                     title_html,
                 )
-            try:
-                self.write_html(
-                    f"<p>{title_html}</p>", table_line_separators=True
-                )
-            except Exception:
-                self.multi_cell(
-                    band_w - 4,
-                    5,
-                    _sanitize_for_pdf(title),
-                    new_x="LMARGIN",
-                    new_y="NEXT",
-                )
+            title_plain = _sanitize_for_pdf(title)
+            self._write_html_or_plain(
+                f"<p>{title_html}</p>",
+                title_plain,
+            )
             self.set_text_color(0, 0, 0)
             self.set_y(y_band + title_band_h + 2)
             self._render_body_blocks(blocks)
