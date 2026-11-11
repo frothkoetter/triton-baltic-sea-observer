@@ -83,10 +83,18 @@ _UNICODE_TO_LATIN: dict[str, str] = {
 }
 
 
+_PORT_MOJIBAKE_RE = (
+    (re.compile(r"Gda\?sk", re.I), "Gdansk"),
+    (re.compile(r"Bolder\?ja", re.I), "Bolderaja"),
+)
+
+
 def _sanitize_for_pdf(text: str) -> str:
     """Make LLM text safe for fpdf core fonts (latin-1 / Helvetica)."""
     if not text:
         return text
+    for pattern, repl in _PORT_MOJIBAKE_RE:
+        text = pattern.sub(repl, text)
     for char, repl in _UNICODE_TO_LATIN.items():
         text = text.replace(char, repl)
     return text.encode("latin-1", errors="replace").decode("latin-1")
@@ -124,11 +132,13 @@ def normalize_heading_line(line: str) -> str | None:
 def _is_primary_section_break(line: str) -> bool:
     """True only for top-level report sections, not nested SECTION N: action lines."""
     stripped = line.strip()
-    if not stripped or len(stripped) > 120:
+    if not stripped:
         return False
     if _PRIMARY_NUMBERED_SECTION_RE.match(stripped):
         return True
     m = re.match(r"^SECTION\s+\d+\s*:\s*(.+)$", stripped, re.I)
+    if m and len(stripped) > 220:
+        return False
     if m:
         rest = m.group(1)
         if "**" in rest:
@@ -160,6 +170,10 @@ def parse_section_heading(line: str) -> tuple[str | None, str | None]:
             return None, None
         num_m = re.match(r"^(\d+)\.", prefix, re.I)
         number = num_m.group(1) if num_m else None
+        if number is None:
+            sec_m = re.match(r"^SECTION\s+(\d+)", prefix, re.I)
+            if sec_m:
+                number = sec_m.group(1)
         return number, body.upper()
     if stripped.startswith("**") and stripped.endswith("**"):
         inner = stripped.strip("*").strip()
@@ -326,11 +340,19 @@ def parse_body_blocks(body: str) -> list[BodyBlock]:
             flush_para()
             bullets: list[str] = []
             while i < len(lines):
-                bm = _BULLET_LINE_RE.match(lines[i].strip())
-                if not bm:
+                raw = lines[i].strip()
+                bm = _BULLET_LINE_RE.match(raw)
+                if bm:
+                    bullets.append(bm.group(1).strip())
+                    i += 1
+                    continue
+                if not raw or _is_primary_section_break(raw):
                     break
-                bullets.append(bm.group(1).strip())
-                i += 1
+                if bullets and not _is_markdown_table_row(raw):
+                    bullets[-1] = f"{bullets[-1]} {raw}"
+                    i += 1
+                    continue
+                break
             if bullets:
                 frozen = tuple((b,) for b in bullets)
                 blocks.append(BodyBlock(kind="bullet_list", rows=frozen))
@@ -594,28 +616,8 @@ class NatoSitrepPDF(FPDF):
             elif block.kind == "table":
                 self.render_data_table([list(r) for r in block.rows])
             elif block.kind == "bullet_list":
-                self.set_font("Helvetica", "", 9)
                 for row in block.rows:
-                    item = row[0] if row else ""
-                    safe = _sanitize_for_pdf(item)
-                    plain = re.sub(r"\*\*(.+?)\*\*", r"\1", safe)
-                    is_category = bool(
-                        re.match(
-                            r"^[A-Za-z][A-Za-z0-9 /\-]{2,48}:\s*$",
-                            plain.strip(),
-                        )
-                    )
-                    if is_category:
-                        self.set_font("Helvetica", "B", 9)
-                    self.multi_cell(
-                        0,
-                        4.5,
-                        f"  * {plain.strip()}",
-                        new_x="LMARGIN",
-                        new_y="NEXT",
-                    )
-                    if is_category:
-                        self.set_font("Helvetica", "", 9)
+                    self._render_bullet_line(row[0] if row else "")
                 self.ln(1)
             else:
                 safe = _sanitize_for_pdf(block.text)
@@ -670,6 +672,39 @@ class NatoSitrepPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.multi_cell(0, 6, _sanitize_for_pdf(title))
         self.ln(2)
+
+    def _render_bullet_line(self, item: str) -> None:
+        safe = _sanitize_for_pdf(item)
+        plain = re.sub(r"\*\*(.+?)\*\*", r"\1", safe).strip()
+        labelled = re.match(r"^([^:]{2,56}):\s*(.+)$", plain)
+        margin = self.l_margin
+        content_w = self.w - self.l_margin - self.r_margin
+        bullet_prefix = "  * "
+        self.set_font("Helvetica", "", 9)
+        if labelled:
+            label = labelled.group(1).strip()
+            body = labelled.group(2).strip()
+            self.set_font("Helvetica", "B", 9)
+            head = f"{bullet_prefix}{label}: "
+            self.set_x(margin)
+            self.cell(0, 4.5, head, new_x="LMARGIN", new_y="NEXT")
+            self.set_font("Helvetica", "", 9)
+            self.set_x(margin + 6)
+            self.multi_cell(
+                content_w - 6,
+                4.5,
+                body,
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+        else:
+            self.multi_cell(
+                0,
+                4.5,
+                f"{bullet_prefix}{plain}",
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
 
     def _write_html_or_plain(self, html: str, plain: str) -> None:
         """``write_html`` on core fonts rejects some entities; never leave the page closed."""
