@@ -64,4 +64,6 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 
 **Russian Baltic Fleet:** `upload/RusFleetPositionSimulator.py` with `rus_fleet_registry.py` / `rus_fleet_sim_engine.py`. FlowFile attribute `ship.simulation.route` = `rus_fleet_positions`; state `/tmp/rus_fleet_state.json`. Reset via **Reset RUS Fleet State** on `BalticShipRouteStateReset`. Details in `upload/README.md`.
 
+**German fishing boats:** `upload/FishingBoatSimulator.py` (**1.0.0**) with `fishing_fleet_registry.py` / `fishing_boat_mission_engine.py`. Route attribute `ship.simulation.route` = `german_fishing_tours`. NiFi property **Number of Fishing Boats** (default **10**, max 20). State `/tmp/fishing_boat_state.json`. LiDAR type **`fishing_boat`** (LAS class **10**) in `LidarSimulator` **4.4.0**.
+
 **Ghost processor:** If the flow references an old bundle (e.g. **1.2.9**), set **`ShipSimulationProcessor`** to **1.3.0** and remove obsolete extension files from the node.

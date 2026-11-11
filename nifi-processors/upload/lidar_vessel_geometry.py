@@ -286,6 +286,31 @@ def build_submarine(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
     return _concat([hull, sail, planes])
 
 
+def build_fishing_boat(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
+    """Small trawler — wheelhouse, mast, net boom."""
+    L, B, H = spec.length_m, spec.beam_m, spec.height_m
+    n = spec.point_count
+    n_hull = int(n * 0.5)
+    n_house = int(n * 0.22)
+    n_mast = int(n * 0.12)
+    n_gear = n - n_hull - n_house - n_mast
+    hull = _sample_hull_like(n_hull, rng, L, B, draft=H * 0.38, freeboard=H * 0.22)
+    house = _superstructure(L * 0.18, B, base_x=-L * 0.08, width_ratio=0.55, height=H * 0.48, n=n_house, rng=rng)
+    mast = _sample_cylinder(
+        n_mast, rng, length=H * 0.55, radius=max(0.08, B * 0.02), axis="z",
+        center=(L * 0.1, 0.0, H * 0.35 + H * 0.27),
+    )
+    boom = _sample_cylinder(
+        max(1, n_gear // 2), rng, length=L * 0.35, radius=max(0.05, B * 0.01), axis="x",
+        center=(L * 0.2, B * 0.15, H * 0.32),
+    )
+    net_winch = _sample_box_surface(
+        max(1, n_gear - max(1, n_gear // 2)), rng,
+        L * 0.28, L * 0.38, -B * 0.22, B * 0.08, H * 0.18, H * 0.28,
+    )
+    return _concat([hull, house, mast, boom, net_winch])
+
+
 def build_landing_ship(spec: VesselSpec, rng: np.random.Generator) -> PointCloud:
     """Ropucha-class LST scale — boxy hull, bow ramp block."""
     L, B, H = spec.length_m, spec.beam_m, spec.height_m
@@ -312,6 +337,7 @@ VESSEL_TYPE_CODES: Dict[str, int] = {
     "frigate": 7,
     "submarine": 8,
     "landing_ship": 9,
+    "fishing_boat": 10,
 }
 
 
@@ -325,6 +351,7 @@ BUILDERS: Dict[str, Callable[[VesselSpec, np.random.Generator], PointCloud]] = {
     "frigate": build_frigate,
     "submarine": build_submarine,
     "landing_ship": build_landing_ship,
+    "fishing_boat": build_fishing_boat,
 }
 
 
@@ -340,6 +367,7 @@ def baltic_fleet_scene() -> List[VesselSpec]:
         VesselSpec("frigate", "Frigate (Project 11356)", 124, 15, 22, 55_000, heading_deg=300),
         VesselSpec("submarine", "Diesel Sub (Kilo-class)", 73, 10, 12, 40_000, heading_deg=135),
         VesselSpec("landing_ship", "LST (Ropucha-class)", 112, 15, 16, 42_000, heading_deg=75),
+        VesselSpec("fishing_boat", "Baltic Trawler", 28, 8, 12, 18_000, heading_deg=140),
     ]
 
 
