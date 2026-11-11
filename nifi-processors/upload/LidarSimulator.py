@@ -158,6 +158,7 @@ def build_single_vessel_points(
     sea_surface_budget: int = DEFAULT_SEA_SURFACE_BUDGET,
     wave_amplitude_m: float = 0.6,
     wave_length_m: float = 18.0,
+    target_vessel_type: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray, VesselSpec, float, float, bool]:
     """
     Pick one vessel archetype, random heading, and Baltic position.
@@ -168,7 +169,18 @@ def build_single_vessel_points(
     """
     rng = np.random.default_rng(seed)
     templates = baltic_fleet_scene()
-    template = templates[int(rng.integers(0, len(templates)))]
+    if target_vessel_type and str(target_vessel_type).strip().lower() not in (
+        "",
+        "random",
+        "any",
+    ):
+        wanted = str(target_vessel_type).strip().lower()
+        picked = [t for t in templates if t.vessel_type == wanted]
+        if not picked:
+            raise ValueError(f"Unknown target_vessel_type: {target_vessel_type!r}")
+        template = picked[0]
+    else:
+        template = templates[int(rng.integers(0, len(templates)))]
     is_unclassified = float(rng.random()) < float(unclassified_fraction)
     center_lon, center_lat = _sample_scene_center(rng, near_port=is_unclassified)
     heading = float(rng.uniform(0.0, 360.0))
@@ -355,11 +367,12 @@ class LidarSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "4.4.0"
+        version = "4.5.0"
         description = (
             "Generates one random parametric vessel as LAS 1.4 EPSG:4326. "
             "Positions are offshore Baltic water only. "
             "Optional sparse sea-surface points (class 10) around the hull. "
+            "Vessel types use LAS classes 1–9 and 11 (fishing_boat); "
             "~10% unclassified (class 0) near ports (5–20 km)."
         )
         dependencies = ["numpy", "laspy", "pyproj"]
@@ -404,6 +417,28 @@ class LidarSimulator(FlowFileTransform):
         default_value="0.6",
         required=False,
     )
+    TARGET_VESSEL_TYPE = PropertyDescriptor(
+        name="Target Vessel Type",
+        description=(
+            "Force a vessel archetype (e.g. fishing_boat). "
+            "Use random for uniform pick across the Baltic fleet scene."
+        ),
+        allowable_values=[
+            "random",
+            "oil_tanker",
+            "gas_tanker",
+            "container_ship",
+            "ferry",
+            "sailing",
+            "corvette",
+            "frigate",
+            "submarine",
+            "landing_ship",
+            "fishing_boat",
+        ],
+        default_value="random",
+        required=True,
+    )
 
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
@@ -414,6 +449,7 @@ class LidarSimulator(FlowFileTransform):
             self.UNCLASSIFIED_FRACTION,
             self.SEA_SURFACE_BUDGET,
             self.WAVE_AMPLITUDE_M,
+            self.TARGET_VESSEL_TYPE,
         ]
 
     def getPropertyDescriptors(self):
@@ -438,6 +474,7 @@ class LidarSimulator(FlowFileTransform):
         )
         amp_raw = context.getProperty(self.WAVE_AMPLITUDE_M.name).getValue()
         wave_amp = float(amp_raw) if amp_raw and str(amp_raw).strip() else 0.6
+        target_type = context.getProperty(self.TARGET_VESSEL_TYPE.name).getValue()
 
         points, classification, spec, center_lon, center_lat, is_unclassified = (
             build_single_vessel_points(
@@ -445,6 +482,7 @@ class LidarSimulator(FlowFileTransform):
                 unclassified_fraction=unclassified_fraction,
                 sea_surface_budget=max(0, sea_budget),
                 wave_amplitude_m=max(0.0, wave_amp),
+                target_vessel_type=target_type,
             )
         )
         with tempfile.TemporaryDirectory(prefix="lidar_sim_") as tmp_dir:
