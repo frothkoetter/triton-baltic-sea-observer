@@ -1,4 +1,4 @@
-"""Static situation map for German Baltic harbours (matplotlib + cartopy or bundled coast)."""
+"""Static Baltic Sea situation map (all harbours / events; cartopy or bundled coast)."""
 
 from __future__ import annotations
 
@@ -12,14 +12,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .harbour_geo import coords_for_harbour, harbour_points
+from .harbour_geo import canonical_harbour_name, coords_for_harbour, harbour_points
 from .lagebild_viz_prep import normalize_lagebild_frame
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 _STATUS_PREFIX = re.compile(r"^\s*(NEW|ESCALATED)\s*\|", re.I)
 
-# German Baltic + regional context
-_MAP_EXTENT = (9.5, 15.5, 53.0, 55.5)  # lon_min, lon_max, lat_min, lat_max
+# Full Baltic basin (German coast through Gulf of Finland / St. Petersburg)
+_MAP_EXTENT = (9.0, 32.0, 53.2, 66.2)  # lon_min, lon_max, lat_min, lat_max
 _SEA_COLOR = "#e8f0f8"
 _LAND_COLOR = "#d4dcd4"
 _COASTLINE_COLOR = "#6a7a6a"
@@ -59,21 +59,62 @@ def _max_severity(values: pd.Series) -> str:
     return best
 
 
+def _coords_from_chunk(
+    name: str, chunk: pd.DataFrame
+) -> tuple[float, float] | None:
+    coords = coords_for_harbour(name)
+    if coords:
+        return coords
+    if chunk.empty:
+        return None
+    if "latitude" not in chunk.columns or "longitude" not in chunk.columns:
+        return None
+    pts = chunk.dropna(subset=["latitude", "longitude"])
+    if pts.empty:
+        return None
+    lat = float(pts["latitude"].astype(float).mean())
+    lon = float(pts["longitude"].astype(float).mean())
+    if not (_MAP_EXTENT[2] - 2 <= lat <= _MAP_EXTENT[3] + 2):
+        return None
+    if not (_MAP_EXTENT[0] - 2 <= lon <= _MAP_EXTENT[1] + 2):
+        return None
+    return lat, lon
+
+
 def _harbour_counts(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty or "harbour_name" not in df.columns:
-        return pd.DataFrame(columns=["harbour_name", "count", "severity"])
+        return pd.DataFrame(
+            columns=[
+                "harbour_name",
+                "count",
+                "severity",
+                "latitude",
+                "longitude",
+            ]
+        )
 
     grouped = df.groupby("harbour_name", dropna=True)
     rows: list[dict[str, object]] = []
     for harbour, chunk in grouped:
-        name = str(harbour).strip()
-        if not name or coords_for_harbour(name) is None:
+        raw = str(harbour).strip()
+        if not raw:
+            continue
+        name = canonical_harbour_name(raw) or raw
+        if _coords_from_chunk(name, chunk) is None:
             continue
         severity = (
             _max_severity(chunk["severity"]) if "severity" in chunk.columns else "medium"
         )
+        lat, lon = _coords_from_chunk(name, chunk)
+        assert lat is not None and lon is not None
         rows.append(
-            {"harbour_name": name, "count": len(chunk), "severity": severity}
+            {
+                "harbour_name": name,
+                "count": len(chunk),
+                "severity": severity,
+                "latitude": lat,
+                "longitude": lon,
+            }
         )
     return pd.DataFrame(rows)
 
@@ -214,8 +255,8 @@ def _setup_cartopy_axes(fig, *, scale: str = _CARTOPY_PHYSICAL_SCALE):
     ax.set_extent(_MAP_EXTENT, crs=ccrs.PlateCarree())
     _add_cartopy_physical(ax, scale)
     gl = ax.gridlines(draw_labels=False, linewidth=0.35, color="#a8b4c0", alpha=0.55, linestyle=":")
-    gl.xlocator = plt.FixedLocator(range(10, 16))
-    gl.ylocator = plt.FixedLocator([53.0, 53.5, 54.0, 54.5, 55.0])
+    gl.xlocator = plt.FixedLocator(range(10, 33, 4))
+    gl.ylocator = plt.FixedLocator([54, 58, 62, 66])
     return ax
 
 
@@ -235,7 +276,7 @@ def _setup_fallback_axes(fig):
 
 
 def _setup_map_axes(fig) -> tuple[object, str, str]:
-    scales = (_CARTOPY_PHYSICAL_SCALE, "50m", "110m")
+    scales = ("50m", "110m", _CARTOPY_PHYSICAL_SCALE)
     try:
         import cartopy  # noqa: F401
     except ImportError:
@@ -313,10 +354,14 @@ def _overlay_harbours(
     max_count = max(int(c) for c in counts["count"]) or 1
     for _, row in counts.iterrows():
         name = str(row["harbour_name"])
-        coords = coords_for_harbour(name)
-        if not coords:
-            continue
-        lat, lon = coords
+        if "latitude" in row and "longitude" in row:
+            lat = float(row["latitude"])
+            lon = float(row["longitude"])
+        else:
+            coords = coords_for_harbour(name)
+            if not coords:
+                continue
+            lat, lon = coords
         n = int(row["count"])
         size = 80 + 220 * (n / max_count)
         color = _severity_color(str(row.get("severity", "medium")))
@@ -346,34 +391,54 @@ def _overlay_harbours(
                 **scatter_kw,
             )
         ax.text(
-            lon + 0.04,
-            lat + 0.025,
+            lon + 0.12,
+            lat + 0.06,
             f"{name} ({n})",
-            fontsize=7.5,
+            fontsize=6.0,
             zorder=6,
             **scatter_kw,
         )
 
+    plotted = set(counts["harbour_name"].astype(str))
     for hp in harbour_points():
-        if hp.name not in set(counts["harbour_name"].astype(str)):
-            ax.scatter(
-                hp.longitude,
-                hp.latitude,
-                s=14,
-                c="#aaaaaa",
-                alpha=0.35,
-                zorder=3,
-                **scatter_kw,
-            )
-            ax.text(
-                hp.longitude + 0.02,
-                hp.latitude + 0.015,
-                hp.name,
-                fontsize=6,
-                alpha=0.6,
-                zorder=5,
-                **scatter_kw,
-            )
+        if hp.name in plotted:
+            continue
+        ax.scatter(
+            hp.longitude,
+            hp.latitude,
+            s=10,
+            c="#aaaaaa",
+            alpha=0.25,
+            zorder=3,
+            **scatter_kw,
+        )
+
+
+def _overlay_offshore_events(ax, df: pd.DataFrame, *, transform) -> None:
+    """Events without a mapped harbour name but with coordinates."""
+    if df.empty or "harbour_name" not in df.columns:
+        return
+    mask = df["harbour_name"].isna() | (
+        df["harbour_name"].astype(str).str.strip() == ""
+    )
+    if "latitude" not in df.columns or "longitude" not in df.columns:
+        return
+    off = df[mask].dropna(subset=["latitude", "longitude"])
+    if off.empty:
+        return
+    kw = {"transform": transform} if transform is not None else {}
+    ax.scatter(
+        off["longitude"].astype(float),
+        off["latitude"].astype(float),
+        s=28,
+        c="#5c6bc0",
+        alpha=0.75,
+        edgecolors="white",
+        linewidths=0.4,
+        zorder=5,
+        label="Offshore / area",
+        **kw,
+    )
 
 
 def render_lagebild_map(
@@ -391,7 +456,7 @@ def render_lagebild_map(
     counts = _harbour_counts(work)
     changed = _changed_harbours(comparison_text, dataset_summary, counts)
 
-    fig = plt.figure(figsize=(7.2, 5.4), dpi=120)
+    fig = plt.figure(figsize=(8.4, 5.8), dpi=120)
     ax, backend, scale = _setup_map_axes(fig)
     _last_basemap_backend = backend
     _last_basemap_scale = scale if backend == "cartopy" else None
@@ -401,19 +466,20 @@ def render_lagebild_map(
 
         transform = ccrs.PlateCarree()
         ax.set_title(
-            "Baltic Sea — harbour & jammer activity (Lagebild)",
+            "Baltic Sea — all harbours & events (Lagebild)",
             fontsize=11,
             pad=10,
         )
     else:
         transform = None
         ax.set_title(
-            "Baltic Sea — harbour & jammer activity (Lagebild)",
+            "Baltic Sea — all harbours & events (Lagebild)",
             fontsize=11,
             pad=10,
         )
 
     _overlay_harbours(ax, counts, changed, transform=transform)
+    _overlay_offshore_events(ax, work, transform=transform)
     _overlay_gps_jammers(ax, work, transform=transform)
 
     if changed:

@@ -860,32 +860,12 @@ def write_report_pdf(
     )
 
     map_path: Path | None = None
+    charts_path: Path | None = None
     if df_used is not None and not df_used.empty:
         from .lagebild_viz_prep import normalize_lagebild_frame
 
         df_used = normalize_lagebild_frame(df_used)
-        map_path = settings.artifacts_dir / f"{base}_map.png"
-        try:
-            from .lagebild_map import render_lagebild_map
-
-            render_lagebild_map(
-                df_used,
-                map_path,
-                comparison_text=comparison_text,
-                dataset_summary=dataset_summary,
-            )
-            if map_path.is_file() and map_path.stat().st_size > 0:
-                pdf.section_heading("SECTION: SITUATION MAP (GERMAN BALTIC)")
-                content_w = pdf.w - pdf.l_margin - pdf.r_margin
-                pdf.image(str(map_path), w=min(content_w, 180))
-                pdf.ln(4)
-            else:
-                map_path = None
-        except Exception:
-            map_path = None
-
-    charts_path: Path | None = None
-    if df_used is not None and not df_used.empty:
+        content_w = pdf.w - pdf.l_margin - pdf.r_margin
         charts_path = settings.artifacts_dir / f"{base}_charts.png"
         try:
             from .lagebild_charts import render_lagebild_charts
@@ -897,13 +877,31 @@ def write_report_pdf(
             )
             if charts_path.is_file() and charts_path.stat().st_size > 0:
                 pdf.section_heading("SECTION: DATA VISUALIZATION")
-                content_w = pdf.w - pdf.l_margin - pdf.r_margin
                 pdf.image(str(charts_path), w=min(content_w, 180))
                 pdf.ln(4)
             else:
                 charts_path = None
         except Exception:
             charts_path = None
+
+        map_path = settings.artifacts_dir / f"{base}_map.png"
+        try:
+            from .lagebild_map import render_lagebild_map
+
+            render_lagebild_map(
+                df_used,
+                map_path,
+                comparison_text=comparison_text,
+                dataset_summary=dataset_summary,
+            )
+            if map_path.is_file() and map_path.stat().st_size > 0:
+                pdf.section_heading("SECTION: SITUATION MAP (BALTIC SEA)")
+                pdf.image(str(map_path), w=min(content_w, 180))
+                pdf.ln(4)
+            else:
+                map_path = None
+        except Exception:
+            map_path = None
 
     source_counts: dict[str, int] = {}
     harbour_counts: dict[str, int] = {}

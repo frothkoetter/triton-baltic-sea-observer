@@ -448,6 +448,15 @@ class TestLagebildCharts(unittest.TestCase):
             self.assertGreater(path.stat().st_size, 1024)
 
 
+class TestHarbourGeo(unittest.TestCase):
+    def test_canonical_polish_harbour(self) -> None:
+        from src.harbour_geo import canonical_harbour_name, coords_for_harbour
+
+        self.assertEqual(canonical_harbour_name("Gdynia"), "Gdynia")
+        self.assertEqual(canonical_harbour_name("gdansk"), "Gdańsk")
+        self.assertIsNotNone(coords_for_harbour("Gda?sk"))
+
+
 class TestLagebildMap(unittest.TestCase):
     def test_render_map_png(self) -> None:
         import tempfile
@@ -469,6 +478,20 @@ class TestLagebildMap(unittest.TestCase):
             self.assertTrue(path.is_file())
             self.assertGreater(path.stat().st_size, 500)
             self.assertIn(basemap_backend(), ("cartopy", "fallback"))
+
+    def test_render_map_polish_harbour(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "harbour_name": ["Gdynia", "Gdańsk"],
+                "severity": ["high", "medium"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "map_baltic.png"
+            render_lagebild_map(df, path, dataset_summary="2 events")
+            self.assertGreater(path.stat().st_size, 500)
 
 
 class TestMarkdownPdfHelpers(unittest.TestCase):
