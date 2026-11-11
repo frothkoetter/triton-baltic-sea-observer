@@ -24,16 +24,24 @@ The table rows come from defense.lagebild (Trino: iceberg.defense.lagebild). Use
 (AIS, Buoy, LiDAR, Social_Media, Marine_Message, etc.) and details (sanctions, magnetic anomalies,
 LiDAR class hints, message subjects).
 
-Required sections:
+Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``):
 
-1. Executive Summary
+1. Executive Summary — short narrative paragraph.
 2. High-Priority Threat Assessment (Critical)
 3. Threat Trends and Geographic Hotspots (German Baltic ports; cross-source corroboration)
 4. Harbours and Anomalies
 5. AIS Sanctions — explicit if any sanctioned vessel appears; otherwise state none observed
 6. Recommended Actions (MPA/USV verification, sanctions follow-up, LiDAR re-scan, etc.)
-   List each action as a numbered item (1., 2., …) or bullet (-). Do not prefix actions with
-   "SECTION 1:" or similar — those belong inside section 6 only.
+
+Format for sections 2–5: every distinct finding MUST be its own line starting with ``* `` (asterisk
+space), in the form ``* Topic: detail`` or ``* HarbourName: detail``. One bullet per line; wrap long
+lines but do not start continuation lines with a new ``*``. Example:
+
+* Sanctioned Vessel: ARISTO detected via AIS at Gdynia (Blocked under E.O. 14024).
+* Greifswald: LiDAR frigate ML hint; marine feed reports operational status.
+
+Section 6: numbered actions (1., 2., …) or ``* `` bullets. Do not prefix actions with nested
+``SECTION 1:`` labels.
 
 Data:
 {data_table}

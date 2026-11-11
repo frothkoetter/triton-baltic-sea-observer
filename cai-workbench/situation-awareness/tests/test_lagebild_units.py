@@ -583,6 +583,29 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertEqual(len(bullets), 1)
         self.assertEqual(len(bullets[0].rows), 4)
 
+    def test_parse_bullet_line_continuation(self) -> None:
+        body = (
+            " * Submarine ML Hints: LiDAR near Gdynia (confidence\n"
+            "0.32-0.54).\n"
+            " * Greifswald: High event density.\n"
+        )
+        blocks = parse_body_blocks(body)
+        rows = [b for b in blocks if b.kind == "bullet_list"][0].rows
+        self.assertIn("0.32", rows[0][0])
+        self.assertIn("Greifswald", rows[1][0])
+
+    def test_split_section_number_from_section_prefix(self) -> None:
+        report = (
+            "SECTION 2: HIGH-PRIORITY THREAT ASSESSMENT (CRITICAL)\n"
+            " * Sanctioned Vessel: ARISTO at Gdynia.\n\n"
+            "SECTION 3: THREAT TRENDS\n"
+            " * Kaliningrad: GPS jamming.\n"
+        )
+        sections = _split_report_sections(report)
+        self.assertEqual(len(sections), 2)
+        self.assertIn("SECTION 2:", sections[0][0])
+        self.assertIn("ARISTO", sections[0][1])
+
     def test_critical_term_highlight(self) -> None:
         out = inline_markdown_to_html(
             "sanctioned vessel and submarine confidence 0.32"
