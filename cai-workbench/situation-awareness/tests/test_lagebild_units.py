@@ -37,6 +37,7 @@ from src.lagebild_zebra import (
     variance_table_row_labels,
 )
 from src.report_pdf import (
+    _is_critical_section,
     _is_primary_section_break,
     _sanitize_for_pdf,
     _split_report_sections,
@@ -447,6 +448,15 @@ class TestLagebildCharts(unittest.TestCase):
             self.assertGreater(path.stat().st_size, 1024)
 
 
+class TestHarbourGeo(unittest.TestCase):
+    def test_canonical_polish_harbour(self) -> None:
+        from src.harbour_geo import canonical_harbour_name, coords_for_harbour
+
+        self.assertEqual(canonical_harbour_name("Gdynia"), "Gdynia")
+        self.assertEqual(canonical_harbour_name("gdansk"), "Gdańsk")
+        self.assertIsNotNone(coords_for_harbour("Gda?sk"))
+
+
 class TestLagebildMap(unittest.TestCase):
     def test_render_map_png(self) -> None:
         import tempfile
@@ -468,6 +478,20 @@ class TestLagebildMap(unittest.TestCase):
             self.assertTrue(path.is_file())
             self.assertGreater(path.stat().st_size, 500)
             self.assertIn(basemap_backend(), ("cartopy", "fallback"))
+
+    def test_render_map_polish_harbour(self) -> None:
+        import tempfile
+
+        df = pd.DataFrame(
+            {
+                "harbour_name": ["Gdynia", "Gdańsk"],
+                "severity": ["high", "medium"],
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "map_baltic.png"
+            render_lagebild_map(df, path, dataset_summary="2 events")
+            self.assertGreater(path.stat().st_size, 500)
 
 
 class TestMarkdownPdfHelpers(unittest.TestCase):
@@ -546,6 +570,33 @@ class TestMarkdownPdfHelpers(unittest.TestCase):
         self.assertIn("<b>critical</b>", out)
         self.assertIn("<i>watch</i>", out)
         self.assertNotIn("**", out)
+
+    def test_parse_asterisk_bullets(self) -> None:
+        body = (
+            " * Submarine Activity:\n"
+            " * LiDAR detected probable submarine near Greifswald.\n"
+            " * Surface Combatants:\n"
+            " * Frigate contact confidence 1.0.\n"
+        )
+        blocks = parse_body_blocks(body)
+        bullets = [b for b in blocks if b.kind == "bullet_list"]
+        self.assertEqual(len(bullets), 1)
+        self.assertEqual(len(bullets[0].rows), 4)
+
+    def test_critical_term_highlight(self) -> None:
+        out = inline_markdown_to_html(
+            "sanctioned vessel and submarine confidence 0.32"
+        )
+        self.assertIn("#9B1C1C", out)
+        self.assertIn("submarine", out.lower())
+
+    def test_is_critical_section(self) -> None:
+        self.assertTrue(
+            _is_critical_section(
+                "SECTION 2: HIGH-PRIORITY THREAT ASSESSMENT (CRITICAL)"
+            )
+        )
+        self.assertFalse(_is_critical_section("SECTION 3: TRENDS"))
 
     def test_sanitize_unicode_punctuation(self) -> None:
         raw = "Kiel corridor — increased “contacts”…"
