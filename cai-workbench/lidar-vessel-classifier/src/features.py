@@ -156,3 +156,45 @@ def ground_truth_label_from_las_bytes(payload: bytes) -> str | None:
     values, counts = np.unique(vessel_cls, return_counts=True)
     code = int(values[counts.argmax()])
     return CODE_TO_VESSEL_TYPE.get(code)
+
+
+def las_classification_histogram(payload: bytes) -> dict[int, int]:
+    """Per-code point counts for LAS classification (training skip diagnostics)."""
+    import laspy
+
+    with laspy.open(io.BytesIO(payload)) as reader:
+        las = reader.read()
+    if not hasattr(las, "classification"):
+        return {}
+    cls = np.asarray(las.classification)
+    if cls.size == 0:
+        return {}
+    values, counts = np.unique(cls, return_counts=True)
+    return {int(v): int(c) for v, c in zip(values, counts)}
+
+
+def explain_missing_las_label(payload: bytes) -> str:
+    """
+    Human hint when ``ground_truth_label_from_las_bytes`` and filename heuristics fail.
+    """
+    hist = las_classification_histogram(payload)
+    if not hist:
+        return "no classification dimension or empty file"
+    try:
+        from src.labels import CODE_TO_VESSEL_TYPE
+    except ImportError:
+        from labels import CODE_TO_VESSEL_TYPE
+    vessel_codes = set(CODE_TO_VESSEL_TYPE.keys())
+    labeled = {k: v for k, v in hist.items() if k in vessel_codes}
+    if labeled:
+        return f"unexpected vessel mix {labeled}"
+    top = sorted(hist.items(), key=lambda kv: kv[1], reverse=True)[:4]
+    code_str = ", ".join(f"{k}:{v}" for k, v in top)
+    if hist.get(10) and not any(k in vessel_codes for k in hist):
+        return (
+            f"only non-vessel LAS classes ({code_str}); "
+            "class 10 is sea surface — fishing hulls need class 11 (LidarSimulator 4.5.0+)"
+        )
+    if hist.get(0):
+        return f"unclassified-heavy ({code_str}); use lower Unclassified Fraction on NiFi"
+    return f"no vessel codes 1–9,11 in file ({code_str})"

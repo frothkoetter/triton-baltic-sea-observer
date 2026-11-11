@@ -63,7 +63,11 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_te
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.features import extract_features_from_las_bytes, ground_truth_label_from_las_bytes
+from src.features import (
+    explain_missing_las_label,
+    extract_features_from_las_bytes,
+    ground_truth_label_from_las_bytes,
+)
 from src.labels import FEATURE_NAMES
 from src.s3_las_loader import iter_las_objects, label_from_key
 
@@ -91,7 +95,7 @@ def load_training_table_from_dir(local_dir: Path, max_files: int | None) -> pd.D
         features = extract_features_from_las_bytes(body)
         label = ground_truth_label_from_las_bytes(body) or label_from_key(path.name)
         if not label:
-            print(f"skip (no label): {path}")
+            print(f"skip (no label): {path} — {explain_missing_las_label(body)}")
             continue
         row = {name: float(val) for name, val in zip(FEATURE_NAMES, features)}
         row["label"] = label
@@ -118,7 +122,9 @@ def load_training_table(
         features = extract_features_from_las_bytes(obj.body)
         label = ground_truth_label_from_las_bytes(obj.body) or label_from_key(obj.key)
         if not label:
-            print(f"skip (no label): {obj.s3_uri}")
+            print(
+                f"skip (no label): {obj.s3_uri} — {explain_missing_las_label(obj.body)}"
+            )
             continue
         row = {name: float(val) for name, val in zip(FEATURE_NAMES, features)}
         row["label"] = label
