@@ -103,6 +103,12 @@ def test_segmented_sql_has_bbox_columns():
     assert "min_lon" in sql and "seg_wkt" in sql
 
 
+def test_ais_daten_view_parses_multiple_timestamp_formats():
+    sql = (ROOT / "sql" / "03a_refresh_ais_daten_view.sql").read_text(encoding="utf-8")
+    assert "date_parse" in sql
+    assert "from_iso8601_timestamp" in sql
+
+
 def test_blackout_query_uses_gap_and_spherical():
     q = (ROOT / "sql/queries/08_ais_blackout_pipelines.sql").read_text(encoding="utf-8")
     assert "luecke_minuten" in q

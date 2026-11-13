@@ -24,10 +24,22 @@ DROP VIEW IF EXISTS ais_daten;
 CREATE VIEW ais_daten AS
 SELECT
     mmsi,
-    from_iso8601_timestamp(event_timestamp) AS zeitstempel,
+    COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+    ) AS zeitstempel,
     longitude AS lon,
     latitude AS lat,
     speed AS sog,
     course AS cog
 FROM ais_events_ice
-WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+WHERE latitude IS NOT NULL
+  AND longitude IS NOT NULL
+  AND COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+      ) IS NOT NULL;
