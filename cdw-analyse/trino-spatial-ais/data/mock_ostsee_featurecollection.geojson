@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Nord Stream 1 Mock GeoJSON","medium":"Gas","status":"In use","operator":"Mock","country":"DE-RU"},"geometry":{"type":"MultiLineString","coordinates":[[[13.6512,54.1523],[14.8045,54.8511],[16.2019,55.4088],[19.5,57.2]]]}}]}
