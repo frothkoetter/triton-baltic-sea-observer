@@ -25,6 +25,7 @@ run_file() {
 run_file "$ROOT/sql/01_schema_spatial_core.sql"
 run_file "$ROOT/sql/02_view_area_violation.sql"
 run_file "$ROOT/sql/03_ostsee_infrastruktur.sql"
+run_file "$ROOT/sql/03a_refresh_ais_daten_view.sql"
 run_file "$ROOT/sql/04_geojson_staging.sql"
 run_file "$ROOT/sql/05_ostsee_pipelines_segmented.sql"
 echo "Spatial lab applied (incl. GeoJSON staging + segmented pipelines) under ${TRINO_CATALOG}.${TRINO_SCHEMA}"
