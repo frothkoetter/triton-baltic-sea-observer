@@ -571,6 +571,16 @@ WHERE
     )
   ) <= 10;
 
+DROP TABLE IF EXISTS ais_baseline_sketches;
+CREATE TABLE ais_baseline_sketches (
+  quadkey varchar COMMENT 'Bing quadkey zoom 11 (~11 km grid).',
+  vessel_type varchar COMMENT 'Vessel type from ships or Unknown.',
+  course_sector varchar COMMENT 'Course sector N, NE, E, SE, S, SW, W, NW.',
+  speed_tdigest varbinary COMMENT 'Serialized T-Digest of SOG.',
+  mmsi_set_digest varbinary COMMENT 'Serialized SetDigest of MMSIs.',
+  updated_at timestamp COMMENT 'Last baseline update (UTC).'
+);
+
 DROP TABLE IF EXISTS vessel_outliers;
 CREATE TABLE vessel_outliers (
   MMSI bigint COMMENT 'The unique 9-digit Maritime Mobile Service Identity number of the vessel.',

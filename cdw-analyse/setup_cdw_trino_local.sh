@@ -138,5 +138,7 @@ conn.close()
 PY
 
 echo ""
+echo ""
+echo "Optional: ./run_outlier_detection_trino.sh (see README_outlier_detection_trino.md)"
 echo "Done. JDBC: ${TRINO_JDBC_URL}"
 echo "CLI: trino --server https://${TRINO_HOST}:${TRINO_PORT} --user ${TRINO_USER} --password --catalog ${TRINO_CATALOG} --schema ${TRINO_SCHEMA}"
