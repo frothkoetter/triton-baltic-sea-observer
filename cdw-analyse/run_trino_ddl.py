@@ -92,10 +92,33 @@ def split_statements(text: str) -> List[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
+def apply_jdbc_url_env() -> None:
+    """Populate TRINO_HOST/PORT/CATALOG/SCHEMA from TRINO_JDBC_URL when set."""
+    url = os.environ.get("TRINO_JDBC_URL", "").strip()
+    if not url:
+        return
+    m = re.match(
+        r"^jdbc:trino://([^:/?#]+)(?::(\d+))?(?:/([^/?#]+))?(?:/([^/?#]+))?",
+        url,
+        re.IGNORECASE,
+    )
+    if not m:
+        raise ValueError(f"Invalid TRINO_JDBC_URL: {url}")
+    host, port, catalog, schema = m.groups()
+    os.environ.setdefault("TRINO_HOST", host)
+    if port:
+        os.environ.setdefault("TRINO_PORT", port)
+    if catalog:
+        os.environ.setdefault("TRINO_CATALOG", catalog)
+    if schema:
+        os.environ.setdefault("TRINO_SCHEMA", schema)
+
+
 def connect():
+    apply_jdbc_url_env()
     host = os.environ.get(
         "TRINO_HOST",
-        "cdw-aw-se-trino.dw-se-sandbox-aws.a465-9q4k.cloudera.site",
+        "cdw-triton.dw-triton-cdp-env.a465-9q4k.cloudera.site",
     )
     user = os.environ["TRINO_USER"]
     password = os.environ["TRINO_PASSWORD"]
@@ -140,7 +163,8 @@ def main() -> int:
     if not os.environ.get("TRINO_USER") or not os.environ.get("TRINO_PASSWORD"):
         print("Set TRINO_USER and TRINO_PASSWORD", file=sys.stderr)
         return 2
-    ok, errors = run_file(path, stop_on_error=len(sys.argv) <= 2)
+    continue_on_error = len(sys.argv) > 2 or os.environ.get("TRINO_CONTINUE_ON_ERROR") == "1"
+    ok, errors = run_file(path, stop_on_error=not continue_on_error)
     print(f"OK statements: {ok}")
     for e in errors:
         print("\nERROR:\n", e)

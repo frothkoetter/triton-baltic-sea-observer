@@ -1,6 +1,7 @@
 -- CDW Trino / Iceberg: connect to catalog ``iceberg``, schema ``defense``
 -- (JDBC host cdw-aw-se-trino…cloudera.site:443). Impala-style ``STORED BY ICEBERG`` removed.
--- Full apply: TRINO_USER=… TRINO_PASSWORD=… python3 run_trino_ddl.py
+-- Full local apply: ./setup_cdw_trino_local.sh (see .env.trino.local.example)
+-- Or: TRINO_USER=… TRINO_PASSWORD=… python3 run_trino_ddl.py
 -- Re-run: DROP TABLE IF EXISTS before each CREATE; safe to re-apply full DDL+INSERT.
 
 CREATE SCHEMA IF NOT EXISTS iceberg.defense;

@@ -1,0 +1,5 @@
+.env.trino.local
+.venv/
+__pycache__/
+*.pyc
+logs/
