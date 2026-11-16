@@ -74,6 +74,14 @@ HARBOR_PAIR_FALLBACKS: Dict[str, Tuple[str, ...]] = {
     "Travemünde": ("Rostock", "Stralsund", "Kiel", "Karlskrona", "Klaipėda", "Riga"),
     "Paldiski": ("Tallinn", "Helsinki", "Riga", "Ventspils", "Bolderāja", "Liepāja"),
     "Primorsk": ("St. Petersburg", "Helsinki", "Tallinn", "Riga", "Ventspils", "Rostock"),
+    "Wilhelmshaven": ("Hamburg", "Bremerhaven", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
+    "Hamburg": ("Bremerhaven", "Wilhelmshaven", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
+    "Bremerhaven": ("Wilhelmshaven", "Hamburg", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
+    "Emden": ("Wilhelmshaven", "Bremerhaven", "Hamburg", "Kiel", "Rostock", "Travemünde"),
+    "Cuxhaven": ("Hamburg", "Bremerhaven", "Wilhelmshaven", "Kiel", "Rostock", "Travemünde"),
+    "Rotterdam": ("Antwerp", "IJmuiden", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
+    "Antwerp": ("Rotterdam", "IJmuiden", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
+    "IJmuiden": ("Rotterdam", "Antwerp", "Cuxhaven", "Kiel", "Rostock", "Travemünde"),
 }
 
 _ROUTING_SEEDS: List[Tuple[float, float]] | None = None

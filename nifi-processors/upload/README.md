@@ -15,6 +15,9 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
 | `RusFleetPositionSimulator.py` | Russian Baltic Fleet positions (`rus_fleet_positions`) |
 | `FishingBoatSimulator.py` | German fishing fleet AIS (`german_fishing_tours`) |
+| `NorthSeaBalticTradeSimulator.py` | North Sea ↔ Baltic trade AIS (`north_sea_baltic_trade`) |
+| `north_sea_baltic_fleet_registry.py` | Deterministic trade fleet MMSI `311040001+` |
+| `north_sea_baltic_transit_engine.py` | Hub/port cycle, moored fast-path, pair-route cache |
 | `fishing_fleet_registry.py` | 20 German trawlers, MMSI `2118710xx`, home ports |
 | `fishing_boat_mission_engine.py` | Home-port tours (12–36 h), low speed |
 | `rus_fleet_registry.py` | Fleet MMSI `RUS273xxx`, home bases, patrol seeds |
@@ -35,6 +38,16 @@ FlowFile attribute **`ship.simulation.route`** = **`rus_fleet_positions`**.
 State: **`/tmp/rus_fleet_state.json`** (separate from `/tmp/ship_state.json` and `/tmp/marineship_state.json`).
 
 Use **BalticShipRouteStateReset** with **Reset RUS Fleet State** = true, or delete the file manually.
+
+## North Sea ↔ Baltic trade route
+
+FlowFile attribute **`ship.simulation.route`** = **`north_sea_baltic_trade`**.
+
+Processor property **Number of Ships** (default **1000**, max **2000**). State **`/tmp/nsb_trade_state.json`**; count file **`/tmp/nsb_trade_version_state.json`**.
+
+Benchmark: `NUM_SHIPS=1000 PYTHONPATH=upload:tests python3 tests/benchmark_nsb_trade_runtime.py`.
+
+Seed **`ships`** rows: `cdw-analyse/ships_nsb_trade_1000.sql` (or `dev/generate_nsb_ships_sql.py`).
 
 ## German fishing fleet route
 
