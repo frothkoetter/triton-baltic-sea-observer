@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Literal, Sequence
 
 from fishing_fleet_registry import FISHING_BOAT_STATE_FILE
 from marine_fleet_registry import MARINESHIP_STATE_FILE
+from north_sea_baltic_fleet_registry import NSB_TRADE_STATE_FILE
 
 AIS_SHIP_STATE_FILE = "/tmp/ship_state.json"
 RUS_FLEET_STATE_FILE = "/tmp/rus_fleet_state.json"
@@ -37,6 +38,7 @@ def _state_paths(
     reset_marine: bool,
     reset_rus_fleet: bool = False,
     reset_fishing: bool = False,
+    reset_nsb_trade: bool = False,
 ) -> List[str]:
     paths: List[str] = []
     if reset_ais:
@@ -47,6 +49,8 @@ def _state_paths(
         paths.append(RUS_FLEET_STATE_FILE)
     if reset_fishing:
         paths.append(FISHING_BOAT_STATE_FILE)
+    if reset_nsb_trade:
+        paths.append(NSB_TRADE_STATE_FILE)
     return paths
 
 
@@ -90,6 +94,7 @@ def reset_baltic_ship_route_state(
     reset_marine: bool = True,
     reset_rus_fleet: bool = False,
     reset_fishing: bool = False,
+    reset_nsb_trade: bool = False,
     mode: ResetMode = "delete_files",
 ) -> RouteStateResetResult:
     """
@@ -100,7 +105,13 @@ def reset_baltic_ship_route_state(
     ``RouteIndex`` so the next tick recomputes water-only routes.
     """
     result = RouteStateResetResult(mode=mode)
-    for path in _state_paths(reset_ais, reset_marine, reset_rus_fleet, reset_fishing):
+    for path in _state_paths(
+        reset_ais,
+        reset_marine,
+        reset_rus_fleet,
+        reset_fishing,
+        reset_nsb_trade,
+    ):
         _snapshot_state_file(path, result)
         if mode == "delete_files":
             if not os.path.exists(path):
