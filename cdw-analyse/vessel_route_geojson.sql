@@ -1,5 +1,5 @@
--- GeoJSON Route features per MMSI from ais_events_ice (iceberg.defense).
--- Each row: one GeoJSON Feature (properties.type = Route) with LineString coordinates.
+-- AIS routes per MMSI from ais_events_ice (iceberg.defense).
+-- Metadata columns + geo_json (LineString geometry only).
 -- Run: ./run_vessel_route_geojson.sh
 -- Doc: README_vessel_route_geojson.md
 
@@ -117,23 +117,45 @@ geo AS (
     LEFT JOIN end_ports ep ON a.mmsi = ep.mmsi
 )
 SELECT
-    mmsi,
+    'Route' AS route_type,
+    g.mmsi,
+    g.start_timestamp,
+    g.end_timestamp,
+    g.start_port,
+    g.end_port,
+    g.point_count,
+    (g.end_timestamp - g.start_timestamp) AS journey_duration,
+    date_diff('second', g.start_timestamp, g.end_timestamp) AS journey_duration_seconds,
     format(
-        '{"type":"Feature","properties":{"type":"Route","mmsi":%s,"start_timestamp":"%s","end_timestamp":"%s","start_port":"%s","end_port":"%s","point_count":%s},"geometry":{"type":"LineString","coordinates":%s}}',
-        cast(mmsi AS varchar),
-        cast(start_timestamp AS varchar),
-        cast(end_timestamp AS varchar),
-        replace(start_port, '"', '\"'),
-        replace(end_port, '"', '\"'),
-        cast(point_count AS varchar),
-        coords_json
-    ) AS route_geojson
-FROM geo;
+        '{"type":"LineString","coordinates":%s}',
+        g.coords_json
+    ) AS geo_json
+FROM geo g;
 
 -- Example: single vessel
--- SELECT route_geojson FROM vessel_ais_route_geojson WHERE mmsi = 311040004;
+-- SELECT route_type, mmsi, start_port, end_port, journey_duration, geo_json
+-- FROM vessel_ais_route_geojson WHERE mmsi = 311040004;
 
--- Example: FeatureCollection (cap at 50 routes for map tools)
+-- Example: full GeoJSON Feature (map tools)
+-- SELECT format(
+--   '{"type":"Feature","properties":{"type":"%s","mmsi":%s,"start_timestamp":"%s","end_timestamp":"%s","start_port":"%s","end_port":"%s","point_count":%s,"journey_duration_seconds":%s},"geometry":%s}',
+--   route_type, cast(mmsi as varchar), cast(start_timestamp as varchar), cast(end_timestamp as varchar),
+--   replace(start_port, '"', '\"'), replace(end_port, '"', '\"'), cast(point_count as varchar),
+--   cast(journey_duration_seconds as varchar), geo_json
+-- ) AS route_feature
+-- FROM vessel_ais_route_geojson WHERE mmsi = 311040004;
+
+-- Example: FeatureCollection (cap at 50 routes)
 -- SELECT format('{"type":"FeatureCollection","features":[%s]}',
---   array_join(array_agg(route_geojson), ','))
--- FROM (SELECT route_geojson FROM vessel_ais_route_geojson ORDER BY mmsi LIMIT 50);
+--   array_join(array_agg(route_feature), ','))
+-- FROM (
+--   SELECT format(
+--     '{"type":"Feature","properties":{"type":"%s","mmsi":%s,"start_timestamp":"%s","end_timestamp":"%s","start_port":"%s","end_port":"%s","point_count":%s,"journey_duration_seconds":%s},"geometry":%s}',
+--     route_type, cast(mmsi as varchar), cast(start_timestamp as varchar), cast(end_timestamp as varchar),
+--     replace(start_port, '"', '\"'), replace(end_port, '"', '\"'), cast(point_count as varchar),
+--     cast(journey_duration_seconds as varchar), geo_json
+--   ) AS route_feature
+--   FROM vessel_ais_route_geojson
+--   ORDER BY mmsi
+--   LIMIT 50
+-- ) t;

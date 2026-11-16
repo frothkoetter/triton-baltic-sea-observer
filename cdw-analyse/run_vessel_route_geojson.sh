@@ -39,12 +39,20 @@ conn = trino.dbapi.connect(
 cur = conn.cursor()
 cur.execute("SELECT COUNT(*) FROM vessel_ais_route_geojson")
 print("routes in view (24h):", cur.fetchone()[0])
-cur.execute(f"SELECT route_geojson FROM vessel_ais_route_geojson WHERE mmsi = {mmsi}")
+cur.execute(
+    f"""SELECT route_type, mmsi, start_timestamp, end_timestamp, start_port, end_port,
+               point_count, cast(journey_duration as varchar), journey_duration_seconds, geo_json
+        FROM vessel_ais_route_geojson WHERE mmsi = {mmsi}"""
+)
 row = cur.fetchone()
 if row:
-    feat = json.loads(row[0])
-    print(json.dumps(feat["properties"], indent=2))
-    print("coordinates:", len(feat["geometry"]["coordinates"]))
+    keys = [
+        "route_type", "mmsi", "start_timestamp", "end_timestamp", "start_port", "end_port",
+        "point_count", "journey_duration", "journey_duration_seconds",
+    ]
+    print(json.dumps(dict(zip(keys, row[:-1])), indent=2, default=str))
+    geom = json.loads(row[-1])
+    print("coordinates:", len(geom["coordinates"]))
 else:
     print("No route for MMSI")
 conn.close()
