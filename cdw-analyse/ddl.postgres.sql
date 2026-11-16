@@ -37,7 +37,19 @@ INSERT INTO baltic_sea_harbours VALUES
 ('Rønne', 'Denmark', 55.1037, 14.7065),
 ('Visby', 'Sweden', 57.6409, 18.2960),
 ('Bolderāja', 'Latvia', 56.9950, 24.0500),
-('Primorsk', 'Russia', 60.3565, 28.6094);
+('Primorsk', 'Russia', 60.3565, 28.6094),
+('Hamburg', 'Germany', 53.551, 9.993),
+('Bremerhaven', 'Germany', 53.539, 8.580),
+('Wilhelmshaven', 'Germany', 53.513, 8.145),
+('Emden', 'Germany', 53.367, 7.206),
+('Cuxhaven', 'Germany', 53.867, 8.697),
+('Rotterdam', 'Netherlands', 51.949, 4.145),
+('Antwerp', 'Belgium', 51.263, 4.397),
+('IJmuiden', 'Netherlands', 52.463, 4.556),
+('Eckernförde', 'Germany', 54.473, 9.838),
+('Warnemünde', 'Germany', 54.176, 12.089),
+('Baltiysk', 'Russia', 54.64, 19.82),
+('Kronstadt', 'Russia', 59.99, 29.77);
 
 
 -- Table: public.sanctioned_vessels
