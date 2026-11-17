@@ -9,11 +9,8 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    for base in (
-        Path("/home/cdsw"),
-        Path.cwd(),
-        Path(__file__).resolve().parents[2],
-    ):
+    here = Path(__file__).resolve()
+    for base in (here.parents[2], Path.cwd(), Path("/home/cdsw")):
         if (base / "cdw-analyse" / "run_trino_ddl.py").is_file():
             return base.resolve()
     raise RuntimeError("Repository root not found (expected cdw-analyse/run_trino_ddl.py)")
@@ -31,10 +28,17 @@ def main() -> int:
         os.environ.setdefault("TRINO_CONTINUE_ON_ERROR", "1")
         stop_on_error = False
     elif job in ("lagebild_views", "lagebild", "views"):
-        from run_lagebild_views import main as views_main
+        import importlib.util
 
-        os.chdir(cdw)
-        return views_main()
+        views_runner = Path(__file__).resolve().parent / "lagebild_views_trino.py"
+        spec = importlib.util.spec_from_file_location(
+            "lagebild_views_trino", views_runner
+        )
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"Cannot load {views_runner}")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return int(mod.main())
     else:
         sql_rel = os.environ.get("TRINO_SQL_FILE", "").strip()
         if not sql_rel:
