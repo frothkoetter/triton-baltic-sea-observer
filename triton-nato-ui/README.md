@@ -38,6 +38,7 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
    | `S3_WORKLOAD_PASSWORD` | Workload **secret** |
    | `S3_ENDPOINT_URL` | Optional S3 API endpoint |
    | `S3_LIDAR_ALLOWED_PREFIX` | Optional allowlist, e.g. `s3a://goes-se-sandbox/...` |
+   | `SITREP_S3_PREFIX` | Same as `LAGEBILD_S3_PREFIX` — hourly SITREP PDF + `index.json` |
    | Optional `IMPALA_*` | Lagebild tabs |
 
 6. **Create Application** → wait for **Running** → open URL → **NBA HITL** (`#nba`)

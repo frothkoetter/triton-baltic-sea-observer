@@ -27,6 +27,11 @@ import {
   listNbaIncidents,
 } from "./nba.js";
 import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
+import {
+  fetchSitrepPdfBase64,
+  listSitrepReports,
+  sitrepConfigured,
+} from "./sitrep.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -75,6 +80,9 @@ app.get("/api/health", async (_req, res) => {
     },
     lidar: {
       s3Configured: s3Configured(),
+    },
+    sitrep: {
+      configured: sitrepConfigured(),
     },
   });
 });
@@ -151,6 +159,26 @@ app.get("/api/observation-areas", async (_req, res) => {
 
 app.get("/api/lidar/scans", async (_req, res) => {
   res.json(await getLidarScans());
+});
+
+app.get("/api/sitrep/reports", async (_req, res) => {
+  const result = await listSitrepReports();
+  if (!result.ok) {
+    return res.status(result.error?.includes("Set") ? 503 : 502).json(result);
+  }
+  res.json(result);
+});
+
+app.get("/api/sitrep/reports/:pdfName/pdf", async (req, res) => {
+  const name = req.params.pdfName;
+  const result = await fetchSitrepPdfBase64(name);
+  if (!result.ok) {
+    return res.status(404).json(result);
+  }
+  const buf = Buffer.from(result.content_base64, "base64");
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="${name}"`);
+  res.send(buf);
 });
 
 app.get("/api/lidar/points", async (req, res) => {

@@ -671,3 +671,67 @@ a {
   line-height: 1.45;
   margin-top: 10px;
 }
+
+.sitrep-page .sitrep-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sitrep-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+@media (max-width: 960px) {
+  .sitrep-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sitrep-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 72vh;
+  overflow: auto;
+}
+
+.sitrep-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  padding: 8px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sitrep-item:hover,
+.sitrep-item.active {
+  background: var(--bg-elevated);
+  border-color: var(--border-subtle);
+}
+
+.sitrep-meta {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.sitrep-pdf-frame {
+  width: 100%;
+  min-height: 75vh;
+  border: 1px solid var(--border-subtle);
+  background: #1a1a1a;
+}
