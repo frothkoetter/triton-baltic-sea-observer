@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Cloudera AI Application entry (required Python host script).
+Cloudera AI Application entry — must listen on CDSW_APP_PORT.
 
-Listens via Node/Express on CDSW_APP_PORT (or CDSW_READONLY_PORT).
-See: https://docs.cloudera.com/machine-learning/cloud/applications/topics/ml-applications-c.html
+Starts Node via run-node-server.sh (see Cloudera Applications docs).
 """
 from __future__ import annotations
 
@@ -14,55 +13,44 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 os.chdir(ROOT)
+os.environ["NVM_DIR"] = str(ROOT / ".nvm")
 
-# Cloudera AI injects the public application port here.
-port = (
-    os.environ.get("CDSW_APP_PORT")
-    or os.environ.get("CDSW_READONLY_PORT")
-    or os.environ.get("API_PORT")
-    or "8090"
-)
-os.environ["CDSW_APP_PORT"] = str(port)
-os.environ["API_PORT"] = str(port)
-os.environ.setdefault("NODE_ENV", "production")
+port = os.environ.get("CDSW_APP_PORT") or os.environ.get("CDSW_READONLY_PORT") or ""
+cwd = os.environ.get("CDSW_WORKING_DIRECTORY", os.getcwd())
 
-dist_index = ROOT / "dist" / "index.html"
-if not dist_index.is_file():
-    print("dist/ missing — running cdsw-build.sh (Node + vite build)…", flush=True)
-    subprocess.check_call(["bash", str(ROOT / "cdsw-build.sh")])
+print("=== triton-nato-ui entry ===", flush=True)
+print(f"CDSW_WORKING_DIRECTORY={cwd}", flush=True)
+print(f"CDSW_APP_PORT={port!r}", flush=True)
+print(f"ROOT={ROOT}", flush=True)
+print(f"dist exists={(ROOT / 'dist' / 'index.html').is_file()}", flush=True)
+print(f"node_modules exists={(ROOT / 'node_modules').is_dir()}", flush=True)
 
+req = ROOT / "requirements-cml-app.txt"
+if req.is_file():
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
+        check=False,
+    )
 
-def resolve_node() -> str:
-    node = "node"
-    which = subprocess.run(["which", "node"], capture_output=True, text=True)
-    if which.returncode == 0 and which.stdout.strip():
-        return which.stdout.strip()
-    nvm = Path.home() / ".nvm" / "nvm.sh"
-    if nvm.is_file():
-        # Find node via login shell that sources nvm
-        out = subprocess.run(
-            ["bash", "-lc", "source ~/.nvm/nvm.sh && command -v node"],
-            capture_output=True,
-            text=True,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return out.stdout.strip()
-    for pattern in (Path.home() / "node-v20.20.2-linux-x64",):
-        candidate = pattern / "bin" / "node"
-        if candidate.is_file():
-            return str(candidate)
-    for glob in sorted(Path.home().glob("node-v20.*-linux-x64")):
-        candidate = glob / "bin" / "node"
-        if candidate.is_file():
-            return str(candidate)
-    return node
+if not (ROOT / "dist" / "index.html").is_file() or not (ROOT / "node_modules").is_dir():
+    print("Running cdsw-build.sh (first-time / missing artifacts)…", flush=True)
+    try:
+        subprocess.check_call(["bash", str(ROOT / "cdsw-build.sh")], timeout=1800)
+    except subprocess.CalledProcessError as exc:
+        print(f"cdsw-build.sh failed: {exc}", file=sys.stderr, flush=True)
+        sys.exit(1)
+    except subprocess.TimeoutExpired:
+        print("cdsw-build.sh timed out (30m). Build once in a Session, then restart app.", file=sys.stderr)
+        sys.exit(1)
 
-
-node_bin = resolve_node()
-server = ROOT / "server" / "index.js"
-if not server.is_file():
-    print(f"Missing {server}", file=sys.stderr)
+runner = ROOT / "run-node-server.sh"
+if not runner.is_file():
+    print(f"Missing {runner}", file=sys.stderr)
     sys.exit(1)
 
-print(f"Triton NATO UI → port {port} (node={node_bin})", flush=True)
-os.execv(node_bin, [node_bin, str(server)])
+print("Starting Node server…", flush=True)
+try:
+    os.execv("/bin/bash", ["/bin/bash", str(runner)])
+except OSError as exc:
+    print(f"exec failed: {exc}", file=sys.stderr)
+    sys.exit(1)
