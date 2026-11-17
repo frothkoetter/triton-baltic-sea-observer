@@ -34,7 +34,9 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 | **Argumente** | Keine — alles über **Job Environment** (siehe `.env.example`) |
 | Schedule | `0 * * * *` |
 
-Session ohne Job-Wizard: `bash run-from-session.sh` oder `python3 cml_job.py`
+Session: `python3 cml_job.py` aus diesem Ordner (nach `git pull`).
+
+**Job-Modus:** Wenn das Log `Cell In[…]` und `No module named 'run_hourly'` zeigt, führt CML **Notebook-Zellen** aus, nicht das ganze Skript. Im Job: **Script** = `cml_job.py`, **nicht** „Python 3“-Editor/Run-all-cells; Kernel = Python 3 **Scheduled** (kein interaktives Notebook).
 
 If the log shows `Cell In[8]`, `cml_root`, or `__file__ is not defined`, the job runs as a **notebook cell**. Fix: job command `bash run-from-session.sh` (absolute: `bash /home/cdsw/cai-workbench/situation-awareness/run-from-session.sh`).
 
