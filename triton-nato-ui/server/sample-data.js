@@ -96,6 +96,62 @@ export const lidarScans = [
   },
 ];
 
+export const germanFleetPositions = [
+  {
+    mmsi: "MAR123411",
+    unit_name: "FGS Braunschweig",
+    unit_class: "Korvetten",
+    latitude: 54.32,
+    longitude: 10.12,
+    speed: 12.5,
+    course: 95,
+    status: "Underway",
+    operational_status: "Patrol",
+    event_timestamp: "2026-11-17T18:00:00Z",
+  },
+  {
+    mmsi: "MAR123404",
+    unit_name: "FGS Sachsen",
+    unit_class: "Fregatten",
+    latitude: 54.09,
+    longitude: 12.14,
+    speed: 8.0,
+    course: 210,
+    status: "Underway",
+    operational_status: "Exercise",
+    event_timestamp: "2026-11-17T17:30:00Z",
+  },
+];
+
+export const russianFleetPositions = [
+  {
+    mmsi: "RUS273842",
+    unit_name: "Neustrashimy",
+    unit_class: "Frigate",
+    home_base: "Baltiysk",
+    vessel_category: "Surface Combatant",
+    latitude: 54.64,
+    longitude: 19.82,
+    speed: 6.2,
+    course: 45,
+    status: "Underway",
+    event_timestamp: "2026-11-17T17:00:00Z",
+  },
+  {
+    mmsi: "RUS273901",
+    unit_name: "Ivan Gren",
+    unit_class: "Landing Ship",
+    home_base: "Kronstadt",
+    vessel_category: "Amphibious",
+    latitude: 59.99,
+    longitude: 29.77,
+    speed: 4.1,
+    course: 180,
+    status: "Moored",
+    event_timestamp: "2026-11-17T16:45:00Z",
+  },
+];
+
 export const vesselOutliers = [
   {
     mmsi: 211234567,

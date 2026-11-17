@@ -158,6 +158,24 @@ export async function getObservationAreas() {
 }
 
 /** vessel_outliers for map; falls back to sample when warehouse unavailable. */
+export async function getFleetPositions() {
+  const [german, russian] = await Promise.all([
+    runQueryOrSample(PREDEFINED.germanFleetPositions, () => sample.germanFleetPositions),
+    runQueryOrSample(PREDEFINED.russianFleetPositions, () => sample.russianFleetPositions),
+  ]);
+  const source =
+    german.source === "sample" && russian.source === "sample"
+      ? "sample"
+      : german.source ?? russian.source ?? "unknown";
+  return {
+    ok: german.ok || russian.ok,
+    source,
+    german: german.rows ?? [],
+    russian: russian.rows ?? [],
+    fallbackReason: german.fallbackReason ?? russian.fallbackReason,
+  };
+}
+
 export async function getVesselOutliers() {
   const live = await queryWarehouse(PREDEFINED.vesselOutliersMap);
   if (live.ok && (live.rows?.length ?? 0) > 0) {

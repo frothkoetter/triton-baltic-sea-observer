@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
-import { TacticalMap, type OutlierRow } from "../components/TacticalMap";
+import { TacticalMap, type FleetPosition, type OutlierRow } from "../components/TacticalMap";
 
 export type AisRow = {
   mmsi: number;
@@ -24,6 +24,28 @@ type Kpis = {
   alerts: number;
   source?: string;
 };
+
+function normalizeFleet(row: Record<string, unknown>): FleetPosition | null {
+  const lat = Number(row.latitude ?? row.Latitude);
+  const lon = Number(row.longitude ?? row.Longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return {
+    mmsi: String(row.mmsi ?? row.MMSI ?? ""),
+    latitude: lat,
+    longitude: lon,
+    unit_name: row.unit_name ? String(row.unit_name) : undefined,
+    unit_class: row.unit_class ? String(row.unit_class) : undefined,
+    speed: Number(row.speed ?? row.Speed ?? NaN),
+    course: Number(row.course ?? row.Course ?? NaN),
+    status: row.status ? String(row.status) : undefined,
+    operational_status: row.operational_status
+      ? String(row.operational_status)
+      : undefined,
+    home_base: row.home_base ? String(row.home_base) : undefined,
+    vessel_category: row.vessel_category ? String(row.vessel_category) : undefined,
+    event_timestamp: String(row.event_timestamp ?? row.Event_Timestamp ?? ""),
+  };
+}
 
 function normalizeOutlier(row: Record<string, unknown>): OutlierRow | null {
   const lat = Number(row.latitude ?? row.Latitude);
@@ -48,14 +70,28 @@ export function LagebildPage() {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [source, setSource] = useState("…");
   const [outliers, setOutliers] = useState<OutlierRow[]>([]);
-  const [layers, setLayers] = useState({ ais: true, areas: true, sanctions: true, outliers: true });
+  const [germanFleet, setGermanFleet] = useState<FleetPosition[]>([]);
+  const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
+  const [layers, setLayers] = useState({
+    ais: true,
+    areas: true,
+    sanctions: true,
+    outliers: true,
+    germanFleet: true,
+    russianFleet: true,
+  });
 
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, outlierRes, kpiRes] = await Promise.all([
+      const [aisRes, areaRes, outlierRes, fleetRes, kpiRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
         fetchJson<{ rows?: typeof areas; source?: string }>("/api/observation-areas"),
         fetchJson<{ rows?: OutlierRow[]; source?: string }>("/api/vessel-outliers"),
+        fetchJson<{
+          german?: Record<string, unknown>[];
+          russian?: Record<string, unknown>[];
+          source?: string;
+        }>("/api/fleet-positions"),
         fetchJson<Kpis & { ok: boolean }>("/api/kpis"),
       ]);
       setAis(aisRes.rows ?? []);
@@ -65,8 +101,18 @@ export function LagebildPage() {
           .map((r) => normalizeOutlier(r as Record<string, unknown>))
           .filter((r): r is OutlierRow => r != null)
       );
+      setGermanFleet(
+        (fleetRes.german ?? [])
+          .map((r) => normalizeFleet(r))
+          .filter((r): r is FleetPosition => r != null)
+      );
+      setRussianFleet(
+        (fleetRes.russian ?? [])
+          .map((r) => normalizeFleet(r))
+          .filter((r): r is FleetPosition => r != null)
+      );
       setKpis(kpiRes);
-      setSource(aisRes.source ?? "unknown");
+      setSource(aisRes.source ?? fleetRes.source ?? "unknown");
     })();
   }, []);
 
@@ -94,7 +140,16 @@ export function LagebildPage() {
       </div>
 
       <div className="layer-toggles">
-        {(["ais", "outliers", "areas", "sanctions"] as const).map((key) => (
+        {(
+          [
+            "ais",
+            "germanFleet",
+            "russianFleet",
+            "outliers",
+            "areas",
+            "sanctions",
+          ] as const
+        ).map((key) => (
           <button
             key={key}
             type="button"
@@ -103,11 +158,15 @@ export function LagebildPage() {
           >
             {key === "ais"
               ? "AIS Live"
-              : key === "outliers"
-                ? `AIS Outliers (${outliers.length})`
-                : key === "areas"
-                  ? "Restricted Areas"
-                  : "Sanctions overlay"}
+              : key === "germanFleet"
+                ? `DEU Fleet (${germanFleet.length})`
+                : key === "russianFleet"
+                  ? `RUS Fleet (${russianFleet.length})`
+                  : key === "outliers"
+                    ? `AIS Outliers (${outliers.length})`
+                    : key === "areas"
+                      ? "Restricted Areas"
+                      : "Sanctions overlay"}
           </button>
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
@@ -121,6 +180,8 @@ export function LagebildPage() {
           ships={layers.ais ? filtered : []}
           areas={layers.areas ? areas : []}
           outliers={layers.outliers ? outliers : []}
+          germanFleet={layers.germanFleet ? germanFleet : []}
+          russianFleet={layers.russianFleet ? russianFleet : []}
           showSanctions={layers.sanctions}
         />
       </section>
