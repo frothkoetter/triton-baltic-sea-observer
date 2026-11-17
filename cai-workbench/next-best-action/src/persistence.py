@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from .alert_types import NbaAlert
 from .config import Settings
+from .hitl import sitrep_link_for_alert
 from .scoring import CoaScore
 from .snapshot_bundle import SnapshotBundle
 from . import trino_client
@@ -20,14 +21,16 @@ def insert_incident(alert: NbaAlert, status: str, best_coa_id: str | None, setti
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
     payload = _esc(json.dumps(alert.payload, ensure_ascii=False))
     best = "NULL" if best_coa_id is None else f"'{_esc(best_coa_id)}'"
+    link = sitrep_link_for_alert(alert.payload, alert.flow_uuid, alert.priority)
+    link_sql = "NULL" if not link else f"'{_esc(link)}'"
     sql = (
         f"INSERT INTO {settings.trino_catalog}.{settings.trino_schema}.nba_incidents "
         f"(flow_uuid, status, alert_type, priority, latitude, longitude, theatre, "
-        f"created_at, updated_at, alert_payload, best_coa_id, notes) VALUES ("
+        f"created_at, updated_at, alert_payload, best_coa_id, sitrep_link, notes) VALUES ("
         f"'{_esc(alert.flow_uuid)}', '{_esc(status)}', '{_esc(alert.alert_type)}', "
         f"'{_esc(alert.priority)}', {alert.latitude}, {alert.longitude}, "
         f"'{_esc(alert.theatre)}', TIMESTAMP '{now}', TIMESTAMP '{now}', "
-        f"'{payload}', {best}, NULL)"
+        f"'{payload}', {best}, {link_sql}, NULL)"
     )
     trino_client.execute_sql(sql)
 

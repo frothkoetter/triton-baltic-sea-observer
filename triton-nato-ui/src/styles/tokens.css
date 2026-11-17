@@ -231,6 +231,72 @@ a {
   font-family: "IBM Plex Mono", Consolas, monospace;
 }
 
+.nba-hitl .panel-head h1 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.nba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.nba-list,
+.nba-detail {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  padding: 12px;
+  border-radius: 4px;
+  min-height: 320px;
+}
+
+.nba-meta {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 4px 12px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.nba-meta dt {
+  color: var(--text-muted);
+}
+
+.row-selected {
+  background: var(--bg-elevated);
+}
+
+.btn-approve {
+  background: var(--classification-unclass);
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.btn-approve:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nba-msg {
+  color: var(--accent-amber);
+  font-size: 13px;
+}
+
+.data-table.compact td,
+.data-table.compact th {
+  padding: 4px 6px;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
 .map-wrap {
   height: 420px;
   border: 1px solid var(--border-subtle);

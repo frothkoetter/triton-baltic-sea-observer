@@ -130,10 +130,14 @@ CML: `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino` (stündlich 
 
 Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministischer Flow + optional LLM.
 
-### Phase 4 — UI & HITL
+### Phase 4 — UI & HITL (umgesetzt)
 
-- `triton-nato-ui`: COA-Matrix, `approved_coa_id` zurück nach Trino.
-- Verknüpfung SITREP: `LAGEBILD_PRECEDENCE_ESCALATED` als weicher Link zum NBA-Incident.
+| Komponente | Ort |
+| :---- | :---- |
+| UI | `triton-nato-ui` Tab **NBA HITL** (`src/pages/NbaHitl.tsx`) |
+| API | `GET /api/nba/incidents`, `…/coa-runs`, `POST …/approve` |
+| Trino | `server/trino-bridge.py`, DDL `nba_schema_phase4_hitl.sql` |
+| Persist | `approved_coa_id`, `sitrep_link` (`hitl.py`, `persistence.py`) |
 
 ### Phase 5 — Governance & MCP (optional, CDP)
 
@@ -198,7 +202,7 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 4):** `triton-nato-ui` COA-Matrix, HITL `approved_coa_id`.
+**Als Nächstes (Phase 5):** Governance / MCP (optional).
 
 Referenzen:
 

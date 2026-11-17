@@ -39,6 +39,19 @@ The MVP maps this to `impyla` with `use_http_transport=true`. Browser OAuth cann
 
 If Impala is unreachable (503, VPN, or auth failure), map and analysis panels automatically use **sample data**; the status bar shows `SAMPLE DATA`.
 
+## NBA HITL (Phase 4)
+
+Tab **NBA HITL** (`#nba`): lists `nba_incidents`, COA matrix from `nba_coa_runs`, operator **Approve** writes `approved_coa_id` to Trino.
+
+Requires `TRINO_USER` / `TRINO_PASSWORD` in `.env.local` (see `.env.example`). Apply DDL:
+
+```bash
+cd cdw-analyse
+python3 run_trino_ddl.py sql/nba_schema_phase4_hitl.sql
+```
+
+Without Trino, the panel uses embedded sample incidents.
+
 ## SQL workspace
 
 Read-only: `SELECT`, `WITH`, `SHOW`, `DESCRIBE`, `EXPLAIN` only. DDL/DML is rejected server-side.

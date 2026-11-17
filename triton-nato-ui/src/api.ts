@@ -35,3 +35,58 @@ export async function fetchProximityAlerts(): Promise<ProximityAlertsResponse> {
   const res = await fetch("/api/proximity-alerts");
   return res.json() as Promise<ProximityAlertsResponse>;
 }
+
+export type NbaIncident = {
+  flow_uuid: string;
+  status?: string;
+  alert_type?: string;
+  priority?: string;
+  theatre?: string;
+  latitude?: number;
+  longitude?: number;
+  best_coa_id?: string | null;
+  approved_coa_id?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
+  sitrep_link?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type NbaCoaRun = {
+  coa_id: string;
+  rank?: number | null;
+  score_total?: number | null;
+  gates_passed?: boolean;
+  detail_json?: string;
+};
+
+export async function fetchNbaIncidents(): Promise<{
+  ok?: boolean;
+  rows?: NbaIncident[];
+  source?: string;
+  fallbackReason?: string;
+}> {
+  return fetchJson("/api/nba/incidents");
+}
+
+export async function fetchNbaCoaRuns(flowUuid: string): Promise<{
+  ok?: boolean;
+  rows?: NbaCoaRun[];
+  source?: string;
+}> {
+  return fetchJson(`/api/nba/incidents/${encodeURIComponent(flowUuid)}/coa-runs`);
+}
+
+export async function approveNbaCoa(
+  flowUuid: string,
+  coaId: string,
+  approvedBy?: string
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(`/api/nba/incidents/${encodeURIComponent(flowUuid)}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ coaId, approvedBy }),
+  });
+  return res.json() as Promise<{ ok: boolean; error?: string }>;
+}

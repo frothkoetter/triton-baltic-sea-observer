@@ -4,20 +4,22 @@ import { FilterRail } from "./components/FilterRail";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
 import { ProximityPage } from "./pages/Proximity";
+import { NbaHitlPage } from "./pages/NbaHitl";
 import { SqlWorkspacePage } from "./pages/SqlWorkspace";
 
-type Zone = "lagebild" | "analysen" | "proximity" | "sql";
+type Zone = "lagebild" | "analysen" | "proximity" | "sql" | "nba";
 
 const ZONE_HASH: Record<Zone, string> = {
   lagebild: "",
   analysen: "analysen",
   proximity: "proximity",
   sql: "sql",
+  nba: "nba",
 };
 
 function zoneFromHash(): Zone {
   const h = window.location.hash.replace(/^#/, "");
-  if (h === "analysen" || h === "proximity" || h === "sql") return h;
+  if (h === "analysen" || h === "proximity" || h === "sql" || h === "nba") return h;
   return "lagebild";
 }
 
@@ -88,6 +90,7 @@ export default function App() {
               ["analysen", "Analysen"],
               ["proximity", "Schiffsnähe"],
               ["sql", "SQL"],
+              ["nba", "NBA HITL"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -120,6 +123,7 @@ export default function App() {
           {zone === "analysen" && <AnalysenPage />}
           {zone === "proximity" && <ProximityPage />}
           {zone === "sql" && <SqlWorkspacePage />}
+          {zone === "nba" && <NbaHitlPage />}
         </main>
       </div>
 

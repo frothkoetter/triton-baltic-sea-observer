@@ -19,6 +19,12 @@ import {
 } from "./impala.js";
 import { DATASET_STARTER_SQL } from "./queries.js";
 import { fetchProximityAlertsLive } from "./proximity-alerts.js";
+import {
+  approveNbaIncident,
+  getNbaCoaRuns,
+  getNbaTrinoState,
+  listNbaIncidents,
+} from "./nba.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,12 +39,51 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", async (_req, res) => {
   const state = getConnectionState();
+  const nbaTrino = getNbaTrinoState();
   res.json({
     ok: true,
     database: process.env.IMPALA_DATABASE || "defense",
     dataSource: state.live ? "impala" : "sample",
     impala: state,
+    nba: {
+      trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),
+      trinoLive: nbaTrino.live,
+      lastError: nbaTrino.lastError,
+    },
   });
+});
+
+app.get("/api/nba/incidents", async (_req, res) => {
+  res.json(await listNbaIncidents());
+});
+
+app.get("/api/nba/incidents/:flowUuid/coa-runs", async (req, res) => {
+  try {
+    const data = await getNbaCoaRuns(req.params.flowUuid);
+    res.json(data);
+  } catch (err) {
+    res.status(400).json({ ok: false, error: String(err.message || err) });
+  }
+});
+
+app.post("/api/nba/incidents/:flowUuid/approve", async (req, res) => {
+  const { coaId, approvedBy } = req.body ?? {};
+  if (!coaId) {
+    return res.status(400).json({ ok: false, error: "coaId required" });
+  }
+  try {
+    const result = await approveNbaIncident(
+      req.params.flowUuid,
+      coaId,
+      approvedBy || "nato-ui-operator"
+    );
+    if (!result.ok) {
+      return res.status(503).json(result);
+    }
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: String(err.message || err) });
+  }
 });
 
 app.get("/api/tables", async (_req, res) => {

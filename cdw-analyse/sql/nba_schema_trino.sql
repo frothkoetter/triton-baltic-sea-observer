@@ -20,6 +20,10 @@ CREATE TABLE nba_incidents (
     updated_at timestamp(6) COMMENT 'UTC last update',
     alert_payload varchar COMMENT 'JSON alert context',
     best_coa_id varchar COMMENT 'Winning COA id after scoring',
+    approved_coa_id varchar COMMENT 'Operator-approved COA (Phase 4 HITL)',
+    approved_at timestamp(6) COMMENT 'UTC approval time',
+    approved_by varchar COMMENT 'Operator or role id',
+    sitrep_link varchar COMMENT 'Soft link: SITREP precedence or ESCALATED line',
     notes varchar COMMENT 'Optional operator notes'
 );
 
