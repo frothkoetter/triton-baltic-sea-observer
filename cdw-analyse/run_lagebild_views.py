@@ -11,6 +11,22 @@ from run_trino_ddl import connect, transform_sql
 
 _VIEW_NAMES = ("lagebild", "lagebild_all_events")
 
+_ORDER_BY_TAIL = re.compile(
+    r"\nORDER BY harbour_name,\s*\"timestamp\"\s+DESC\s*;?\s*",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_view_body(body: str) -> str:
+    """Trino rejects ORDER BY inside CREATE VIEW; drop trailing header comments."""
+    body = _ORDER_BY_TAIL.sub("\n", body)
+    lines = body.rstrip().splitlines()
+    while lines and lines[-1].strip().startswith("--"):
+        lines.pop()
+    while lines and lines[-1].strip() == ";":
+        lines.pop()
+    return "\n".join(lines).strip()
+
 
 def _repo_sql_path() -> str:
     return os.path.join(os.path.dirname(__file__), "create_db_tables_trino.sql")
@@ -28,12 +44,14 @@ def extract_view_statements(text: str) -> list[str]:
         rest = transformed[start + len(marker) :]
         next_create = re.search(r"\nCREATE OR REPLACE VIEW \w+ AS", rest)
         if name == _VIEW_NAMES[-1]:
-            # Last view: stop at next non-view DDL (e.g. DROP TABLE).
             stop = re.search(r"\nDROP TABLE\b", rest)
             body_end = stop.start() if stop else len(rest)
         else:
-            body_end = next_create.start() if next_create else len(rest)
-        body = rest[:body_end].strip()
+            boundary = _ORDER_BY_TAIL.search(rest)
+            if not boundary and next_create:
+                boundary = next_create
+            body_end = boundary.start() if boundary else len(rest)
+        body = _sanitize_view_body(rest[:body_end].strip())
         stmt = f"{marker}\n{body}".strip()
         if not stmt.endswith(";"):
             stmt += ";"
