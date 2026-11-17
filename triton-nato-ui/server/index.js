@@ -9,6 +9,7 @@ import {
   getConnectionState,
   getDatasets,
   getFleet,
+  getFleetPositions,
   getKpis,
   getLidarScans,
   getObservationAreas,
@@ -168,6 +169,10 @@ app.get("/api/ais", async (_req, res) => {
 
 app.get("/api/vessel-outliers", async (_req, res) => {
   res.json(await getVesselOutliers());
+});
+
+app.get("/api/fleet-positions", async (_req, res) => {
+  res.json(await getFleetPositions());
 });
 
 app.get("/api/analyses/fleet", async (_req, res) => {

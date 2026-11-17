@@ -61,6 +61,81 @@ export const PREDEFINED = {
     ) DESC
     LIMIT 400
   `,
+  /** German Navy — latest `marine_vessel_status` per unit (joined to `german_navy_fleet`). */
+  germanFleetPositions: `
+    WITH ranked AS (
+      SELECT
+        m.mmsi,
+        m.event_timestamp,
+        m.latitude,
+        m.longitude,
+        m.speed,
+        m.course,
+        m.status,
+        m.operational_status,
+        g.name AS unit_name,
+        g.class AS unit_class,
+        row_number() OVER (
+          PARTITION BY m.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(m.event_timestamp)),
+            try(from_iso8601_timestamp(replace(m.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(m.event_timestamp, 'Z', '') AS timestamp)
+          ) DESC
+        ) AS rn
+      FROM defense.marine_vessel_status m
+      INNER JOIN defense.german_navy_fleet g ON CAST(m.mmsi AS varchar) = g.mmsi
+      WHERE m.latitude IS NOT NULL AND m.longitude IS NOT NULL
+    )
+    SELECT
+      mmsi, event_timestamp, latitude, longitude, speed, course, status,
+      operational_status, unit_name, unit_class
+    FROM ranked
+    WHERE rn = 1
+    ORDER BY unit_name
+    LIMIT 80
+  `,
+  /** Russian Baltic Fleet — latest positions + registry metadata. */
+  russianFleetPositions: `
+    WITH ranked AS (
+      SELECT
+        p.mmsi,
+        p.event_timestamp,
+        p.latitude,
+        p.longitude,
+        p.speed,
+        p.course,
+        p.status,
+        p.Destination AS destination,
+        rf.name AS unit_name,
+        rf.class AS unit_class,
+        rf.home_base,
+        rf.vessel_category,
+        row_number() OVER (
+          PARTITION BY p.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(p.event_timestamp)),
+            try(from_iso8601_timestamp(replace(p.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(p.event_timestamp, 'Z', '') AS timestamp)
+          ) DESC
+        ) AS rn
+      FROM defense.rus_naval_fleet_positions p
+      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+        AND coalesce(
+          try(from_iso8601_timestamp(p.event_timestamp)),
+          try(from_iso8601_timestamp(replace(p.event_timestamp, 'Z', '+00:00'))),
+          try_cast(replace(p.event_timestamp, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+    )
+    SELECT
+      mmsi, event_timestamp, latitude, longitude, speed, course, status,
+      destination, unit_name, unit_class, home_base, vessel_category
+    FROM ranked
+    WHERE rn = 1
+    ORDER BY unit_name
+    LIMIT 80
+  `,
   /** Same events as UC1 SITREP (harbour-scoped dedupe in defense.lagebild). */
   lagebildOutliersMap: `
     SELECT
