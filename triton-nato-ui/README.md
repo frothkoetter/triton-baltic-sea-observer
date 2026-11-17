@@ -35,16 +35,15 @@ Use a **Cloudera AI Application** (long-running web app) on the same project:
 
 Open the Application URL → **NBA HITL** (`#nba`).
 
-**One-off in a session (if `conda` exists):**
+**One-off in a session (no conda):** `cdsw-build.sh` installs **nvm + Node 20** (or tarball) when `npm` is missing:
 
 ```bash
 cd /home/cdsw/triton-nato-ui
-conda install -y -c conda-forge nodejs=20
 bash cdsw-build.sh
 bash cdsw-app-start.sh
 ```
 
-Then use **Session → Port forwarding** for `API_PORT` (default `8090`).
+Ensure **`.env.local`** or Application env has `TRINO_USER` / `TRINO_PASSWORD`. Port-forward **8090** or open the Application URL → `#nba`.
 
 ## Environment
 
