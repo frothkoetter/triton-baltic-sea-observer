@@ -4,12 +4,12 @@ import {
   MapContainer,
   Polyline,
   Popup,
-  TileLayer,
   Tooltip,
   useMap,
 } from "react-leaflet";
 import type { ProximityEvent } from "../lib/proximity";
 import { distanceLineColor, pairMidpoint } from "../lib/proximity";
+import { BasemapTileLayer } from "./BasemapTileLayer";
 
 const BALTIC_BOUNDS: [[number, number], [number, number]] = [
   [53.5, 10],
@@ -49,10 +49,7 @@ export function ProximityMap({ events, selectedId }: Props) {
         maxBoundsViscosity={0.85}
         style={{ height: "100%", width: "100%" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
+        <BasemapTileLayer />
         <FlyToSelection events={events} selectedId={selectedId} />
         {events.map((ev) => {
           const selected = ev.id === selectedId;

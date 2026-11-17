@@ -32,6 +32,7 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
    | `TRINO_SCHEMA` | `defense` |
    | `TRITON_FORCE_SAMPLE_DATA` | `false` |
    | `CDSW_APP_POLLING_ENDPOINT` | `/healthz` (so status leaves **Starting**; same idea as [Flask sample](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html)) |
+   | `MAPBOX_ACCESS_TOKEN` | Mapbox `pk.…` (maps; **do not commit**) |
    | Optional `IMPALA_*` | Lagebild tabs |
 
 6. **Create Application** → wait for **Running** → open URL → **NBA HITL** (`#nba`)

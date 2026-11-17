@@ -1,5 +1,6 @@
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import { CircleMarker, MapContainer, Tooltip } from "react-leaflet";
 import type { AisRow } from "../pages/Lagebild";
+import { BasemapTileLayer } from "./BasemapTileLayer";
 
 type Area = { area_id: string; center_latitude: number; center_longitude: number };
 
@@ -14,10 +15,7 @@ export function TacticalMap({ ships, areas, showSanctions }: Props) {
   return (
     <div className="map-wrap">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
-        <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
+        <BasemapTileLayer />
         {areas.map((a) => (
           <CircleMarker
             key={a.area_id}

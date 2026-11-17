@@ -47,6 +47,12 @@ app.get("/healthcheck", healthProbe);
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
+app.get("/api/map-config", (_req, res) => {
+  const mapboxToken =
+    process.env.MAPBOX_ACCESS_TOKEN || process.env.VITE_MAPBOX_TOKEN || "";
+  res.json({ mapboxToken });
+});
+
 app.get("/api/health", async (_req, res) => {
   const state = getConnectionState();
   const nbaTrino = getNbaTrinoState();
