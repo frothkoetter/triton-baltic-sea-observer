@@ -10,10 +10,11 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 |-------|--------|
 | Type | **Scheduled Job** — **not** a notebook cell |
 | **Script** | `cai-workbench/next-best-action/run_nba.py` or `entry.py` |
-| **Command** | `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino --phase 2` |
-| Build | `bash cdsw-build.sh` once per environment |
+| **Command** | `bash run-from-session.sh --no-demo --exit-if-quiet --persist-trino --phase 2` |
+| **Alt. script** | `python3 entry.py` (same args via job env / argv if your CML passes them) |
+| Build | runs inside `run-from-session.sh` |
 
-`Cell In[…]` + `NameError: __file__` ⇒ wrong job type; use script path above.
+**Wichtig:** Logs mit `Cell In[8]` oder `No module named 'cml_root'` ⇒ Job läuft als **Notebook**, nicht als Shell/Python-Skript. Im Job-Editor **„Run command“** / **bash** wählen, **nicht** `run_nba.py` in einer Python-Session-Zelle ausführen.
 
 ## Quickstart
 

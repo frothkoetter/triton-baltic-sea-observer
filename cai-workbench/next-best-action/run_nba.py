@@ -8,9 +8,63 @@ import os
 import sys
 from pathlib import Path
 
-from cml_root import install_job_root, resolve_job_root
 
-_ROOT = install_job_root(resolve_job_root("run_nba.py", "entry.py"))
+def _install_job_root(root: Path) -> Path:
+    root = root.resolve()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    os.chdir(root)
+    return root
+
+
+def _resolve_job_root() -> Path:
+    markers = ("run_nba.py", "entry.py")
+    mod = globals().get("__file__")
+    if mod:
+        root = Path(mod).resolve().parent
+        if any((root / m).is_file() for m in markers):
+            return root
+    work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
+    if work in ("", "/"):
+        work = ""
+    candidates: list[Path] = []
+    if work:
+        base = Path(work)
+        candidates.extend(
+            [
+                base / "cai-workbench" / "next-best-action",
+                base / "next-best-action",
+                base,
+            ]
+        )
+    home = Path.home()
+    candidates.extend(
+        [
+            home / "cai-workbench" / "next-best-action",
+            home,
+            Path("/home/cdsw") / "cai-workbench" / "next-best-action",
+        ]
+    )
+    candidates.extend([Path.cwd(), Path.cwd() / "next-best-action"])
+    seen: set[Path] = set()
+    for c in candidates:
+        try:
+            cr = c.resolve()
+        except OSError:
+            continue
+        if cr in seen:
+            continue
+        seen.add(cr)
+        if any((cr / m).is_file() for m in markers):
+            return cr
+    raise RuntimeError(
+        "NBA job root not found. CML Scheduled Job command must be:\n"
+        "  bash /home/cdsw/cai-workbench/next-best-action/run-from-session.sh ...\n"
+        "Do not paste run_nba.py into a notebook cell (Cell In[...])."
+    )
+
+
+_ROOT = _install_job_root(_resolve_job_root())
 
 from src.alert_rules import NoAlertFound
 from src.config import Settings

@@ -35,7 +35,7 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 | **Command** | `bash run-from-session.sh` **or** `python3 run_hourly.py` (cwd = this directory) |
 | Schedule | `0 * * * *` |
 
-If the log shows `Cell In[8]` and `__file__ is not defined`, the job is running as a **notebook cell**, not as a script. Fix the job to execute `python3 run_hourly.py` or set **Script** to `entry.py`.
+If the log shows `Cell In[8]`, `cml_root`, or `__file__ is not defined`, the job runs as a **notebook cell**. Fix: job command `bash run-from-session.sh` (absolute: `bash /home/cdsw/cai-workbench/situation-awareness/run-from-session.sh`).
 
 Optional flags: `python run_hourly.py --use-sample` (offline), `python run_hourly.py --skip-llm` (PDF shell without model).
 
