@@ -32,6 +32,50 @@ export const PREDEFINED = {
   observationAreas: `
     SELECT area_id, center_latitude, center_longitude FROM defense.observation_areas
   `,
+  /** Latest maritime anomalies for Lagebild map (Trino pipeline + legacy NiFi rows). */
+  vesselOutliersMap: `
+    SELECT
+      mmsi,
+      event_timestamp,
+      latitude,
+      longitude,
+      speed,
+      course,
+      status,
+      outlier_type,
+      reason,
+      severity_level
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND coalesce(
+        try(from_iso8601_timestamp(event_timestamp)),
+        try(from_iso8601_timestamp(replace(event_timestamp, 'Z', '+00:00'))),
+        try_cast(replace(event_timestamp, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '24' hour
+    ORDER BY coalesce(
+      try(from_iso8601_timestamp(event_timestamp)),
+      try(from_iso8601_timestamp(replace(event_timestamp, 'Z', '+00:00'))),
+      try_cast(replace(event_timestamp, 'Z', '') AS timestamp)
+    ) DESC
+    LIMIT 400
+  `,
+  /** Same events as UC1 SITREP (harbour-scoped dedupe in defense.lagebild). */
+  lagebildOutliersMap: `
+    SELECT
+      id AS mmsi,
+      "timestamp" AS event_timestamp,
+      latitude,
+      longitude,
+      harbour_name,
+      details AS reason,
+      'AIS_Outlier' AS outlier_type
+    FROM defense.lagebild
+    WHERE Data_Source = 'AIS_Outlier'
+    ORDER BY "timestamp" DESC
+    LIMIT 200
+  `,
   lidarScans: `
     SELECT filename, vessel_name, vessel_type, classification,
            center_lat, center_lon, heading_deg, point_count,

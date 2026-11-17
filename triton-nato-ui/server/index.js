@@ -12,6 +12,7 @@ import {
   getKpis,
   getLidarScans,
   getObservationAreas,
+  getVesselOutliers,
   getSanctions,
   getSurveillance,
   listTables,
@@ -163,6 +164,10 @@ app.get("/api/kpis", async (_req, res) => {
 
 app.get("/api/ais", async (_req, res) => {
   res.json(await getAis());
+});
+
+app.get("/api/vessel-outliers", async (_req, res) => {
+  res.json(await getVesselOutliers());
 });
 
 app.get("/api/analyses/fleet", async (_req, res) => {
