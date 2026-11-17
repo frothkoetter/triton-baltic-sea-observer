@@ -25,7 +25,22 @@ Then create/restart the Application.
 
 Do **not** use `bash cdsw-app-start.sh` as the Application script.
 
-## If status = Failure
+## If status stays **Starting** (logs show Node listening)
+
+Cloudera health-checks the process bound to **CDSW_APP_PORT**. Do **not** set a fixed `API_PORT=8091` in Application env if it overrides the platform port.
+
+1. Remove `API_PORT` from Application environment (only use platform `CDSW_APP_PORT`).
+2. `git pull` and **Restart** (uses `execv` so Node is the main listener, not a Python child).
+3. Confirm logs end with `Triton API listening on http://0.0.0.0:<port>`.
+4. Open the **Application subdomain URL** (not Session port forward only).
+
+Probe manually from a session on the same cluster (if allowed):
+
+```bash
+curl -sS "http://127.0.0.1:${CDSW_APP_PORT}/healthz"
+```
+
+If status = Failure
 
 Open **Application logs** and check:
 

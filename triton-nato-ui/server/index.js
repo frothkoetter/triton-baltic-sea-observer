@@ -36,6 +36,11 @@ const PORT = Number(
   process.env.CDSW_APP_PORT || process.env.API_PORT || 3001
 );
 
+// Cloudera AI readiness probes (fast; no Impala/Trino).
+app.get("/healthz", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
+
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 

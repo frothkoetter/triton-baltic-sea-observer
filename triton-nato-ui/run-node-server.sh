@@ -10,7 +10,11 @@ if [[ -s "$NVM_DIR/nvm.sh" ]]; then
   nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true
 fi
 
-PORT="${CDSW_APP_PORT:-${API_PORT:-8090}}"
+if [[ -z "${CDSW_APP_PORT:-}" && -z "${CDSW_READONLY_PORT:-}" ]]; then
+  PORT="${API_PORT:-8090}"
+else
+  PORT="${CDSW_APP_PORT:-$CDSW_READONLY_PORT}"
+fi
 export CDSW_APP_PORT="$PORT"
 export API_PORT="$PORT"
 export NODE_ENV="${NODE_ENV:-production}"

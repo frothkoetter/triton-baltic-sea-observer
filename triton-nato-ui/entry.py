@@ -50,12 +50,15 @@ if not port:
         flush=True,
     )
 
-req = ROOT / "requirements-cml-app.txt"
-if req.is_file():
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
-        check=False,
-    )
+try:
+    import trino  # noqa: F401
+except ImportError:
+    req = ROOT / "requirements-cml-app.txt"
+    if req.is_file():
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
+            check=False,
+        )
 
 if not (ROOT / "dist" / "index.html").is_file() or not (ROOT / "node_modules").is_dir():
     print("Running cdsw-build.sh …", flush=True)
@@ -73,9 +76,9 @@ if not runner.is_file():
     print(f"Missing {runner}", file=sys.stderr)
     sys.exit(1)
 
-print("Starting Node server…", flush=True)
-# Keep Python parent alive (some CML runners echo notebook-style logs; subprocess is safer than execv).
-rc = subprocess.call(["/bin/bash", str(runner)])
-if rc != 0:
-    print(f"run-node-server.sh exited with {rc}", file=sys.stderr, flush=True)
-sys.exit(rc)
+if not port:
+    print("ERROR: CDSW_APP_PORT required for Cloudera AI Application.", file=sys.stderr)
+    sys.exit(1)
+
+print("Starting Node server (execv — main process must hold CDSW_APP_PORT)…", flush=True)
+os.execv("/bin/bash", ["/bin/bash", str(runner)])
