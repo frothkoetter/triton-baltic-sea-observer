@@ -66,6 +66,22 @@ a {
   background: var(--bg-panel);
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
 .app-title {
   font-weight: 600;
   letter-spacing: 0.04em;
