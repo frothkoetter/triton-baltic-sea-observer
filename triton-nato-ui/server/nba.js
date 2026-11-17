@@ -1,20 +1,9 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { nbaIncidentsSample, nbaCoaRunsSample } from "./nba-sample.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const BRIDGE = path.join(__dirname, "trino-bridge.py");
-
-const CATALOG = process.env.TRINO_CATALOG || "iceberg";
-const SCHEMA = process.env.TRINO_SCHEMA || "defense";
-const FQ = `${CATALOG}.${SCHEMA}`;
-
-let trinoState = {
-  checked: false,
-  live: false,
-  lastError: null,
-};
+import {
+  getTrinoState,
+  runTrino,
+  TRINO_FQ as FQ,
+} from "./trino-client.js";
 
 function esc(value) {
   return String(value).replace(/'/g, "''");
@@ -36,44 +25,8 @@ function escCoa(value) {
   return v;
 }
 
-function runTrino(sql, mode = "query") {
-  return new Promise((resolve, reject) => {
-    const child = spawn("python3", [BRIDGE, sql, mode], {
-      env: { ...process.env },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let out = "";
-    let err = "";
-    child.stdout.on("data", (d) => {
-      out += d.toString();
-    });
-    child.stderr.on("data", (d) => {
-      err += d.toString();
-    });
-    child.on("close", (code) => {
-      try {
-        const parsed = JSON.parse(out || "{}");
-        trinoState.checked = true;
-        if (parsed.ok) {
-          trinoState.live = true;
-          trinoState.lastError = null;
-        } else {
-          trinoState.live = false;
-          trinoState.lastError = parsed.error || err;
-        }
-        if (code !== 0 && !parsed.error) {
-          parsed.error = err || `Bridge exited ${code}`;
-        }
-        resolve(parsed);
-      } catch {
-        reject(new Error(err || out || "Invalid Trino bridge response"));
-      }
-    });
-  });
-}
-
 export function getNbaTrinoState() {
-  return { ...trinoState };
+  return getTrinoState();
 }
 
 const INCIDENTS_SQL = `

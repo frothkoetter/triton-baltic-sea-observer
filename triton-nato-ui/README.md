@@ -30,6 +30,7 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
    | `TRINO_PASSWORD` | secret |
    | `TRINO_CATALOG` | `iceberg` |
    | `TRINO_SCHEMA` | `defense` |
+   | `LAGEBILD_DATA_ENGINE` | `auto` (Lagebild AIS uses **Trino** when `TRINO_*` set) |
    | `TRITON_FORCE_SAMPLE_DATA` | `false` |
    | `CDSW_APP_POLLING_ENDPOINT` | `/healthz` (so status leaves **Starting**; same idea as [Flask sample](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html)) |
    | `MAPBOX_ACCESS_TOKEN` | Mapbox `pk.…` (maps; **do not commit**) |

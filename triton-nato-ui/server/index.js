@@ -14,7 +14,7 @@ import {
   getSanctions,
   getSurveillance,
   listTables,
-  queryImpala,
+  queryWarehouse,
   runQueryOrSample,
 } from "./impala.js";
 import { DATASET_STARTER_SQL } from "./queries.js";
@@ -56,10 +56,15 @@ app.get("/api/map-config", (_req, res) => {
 app.get("/api/health", async (_req, res) => {
   const state = getConnectionState();
   const nbaTrino = getNbaTrinoState();
+  const liveEngine = state.live ? state.engine || "impala" : "sample";
   res.json({
     ok: true,
-    database: process.env.IMPALA_DATABASE || "defense",
-    dataSource: state.live ? "impala" : "sample",
+    database:
+      process.env.TRINO_SCHEMA ||
+      process.env.IMPALA_DATABASE ||
+      "defense",
+    catalog: process.env.TRINO_CATALOG || "iceberg",
+    dataSource: liveEngine,
     impala: state,
     nba: {
       trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),
@@ -150,14 +155,14 @@ app.post("/api/query", async (req, res) => {
   if (!check.ok) {
     return res.status(400).json({ ok: false, error: check.error });
   }
-  const impala = await queryImpala(check.sql);
-  if (impala.ok) {
-    return res.json(impala);
+  const result = await queryWarehouse(check.sql);
+  if (result.ok) {
+    return res.json(result);
   }
   return res.status(503).json({
     ok: false,
-    error: impala.error,
-    hint: "Set IMPALA_* in .env.local or use TRITON_FORCE_SAMPLE_DATA=true for demo panels",
+    error: result.error,
+    hint: "Set TRINO_USER/TRINO_PASSWORD (preferred) or IMPALA_* in Application env",
   });
 });
 

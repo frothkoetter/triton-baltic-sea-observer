@@ -26,8 +26,14 @@ function zoneFromHash(): Zone {
 type Health = {
   dataSource: string;
   database: string;
-  impala: { lastError?: string | null };
+  catalog?: string;
+  impala: { lastError?: string | null; engine?: string | null };
+  nba?: { trinoLive?: boolean; lastError?: string | null };
 };
+
+function isLiveFeed(source: string | undefined) {
+  return source === "impala" || source === "trino";
+}
 
 export default function App() {
   const [zone, setZone] = useState<Zone>(() => zoneFromHash());
@@ -71,12 +77,11 @@ export default function App() {
     return new Date().toISOString().slice(11, 19) + "Z";
   }, [zone]);
 
-  const feedStatus =
-    health?.dataSource === "impala" ? (
-      <span className="status-ok">DATA FEED OK</span>
-    ) : (
-      <span className="status-warn">SAMPLE DATA</span>
-    );
+  const feedStatus = isLiveFeed(health?.dataSource) ? (
+    <span className="status-ok">DATA FEED OK</span>
+  ) : (
+    <span className="status-warn">SAMPLE DATA</span>
+  );
 
   return (
     <div className="app-root">
@@ -129,11 +134,18 @@ export default function App() {
 
       <footer className="status-bar">
         <span>{feedStatus}</span>
-        <span>AIS: {health?.dataSource === "impala" ? "LIVE" : "DEMO"}</span>
-        <span>Schema: {health?.database ?? "defense"}</span>
+        <span>
+          AIS: {isLiveFeed(health?.dataSource)
+            ? `LIVE (${health?.dataSource})`
+            : "DEMO"}
+        </span>
+        <span>
+          Schema: {health?.catalog ? `${health.catalog}.` : ""}
+          {health?.database ?? "defense"}
+        </span>
         <span className="status-alert">Alerts: 2</span>
-        {health?.impala?.lastError && health.dataSource !== "impala" && (
-          <span title={health.impala.lastError}>Impala: offline</span>
+        {health?.impala?.lastError && !isLiveFeed(health?.dataSource) && (
+          <span title={health.impala.lastError}>Warehouse: offline</span>
         )}
       </footer>
       <div className="classification-banner">NATO UNCLASSIFIED // TRAINING</div>
