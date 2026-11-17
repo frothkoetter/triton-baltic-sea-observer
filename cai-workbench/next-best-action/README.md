@@ -13,8 +13,9 @@ cd cai-workbench/next-best-action
 set -a && source ../../cdw-analyse/.env.trino.local && set +a
 export TRINO_JDBC_URL TRINO_USER TRINO_PASSWORD
 
-python3 run_nba.py --demo-greifswald
-python3 run_nba.py --demo-greifswald --persist-trino   # after DDL apply
+python3 run_nba.py --demo-greifswald --phase 1   # default phase 1: simulation + scoring
+python3 run_nba.py --demo-greifswald --phase 0   # snapshot + COA only
+python3 run_nba.py --demo-greifswald --persist-trino
 ```
 
 DDL einspielen:

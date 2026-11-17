@@ -13,7 +13,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from src.config import Settings
-from src.pipeline import run_phase0
+from src.pipeline import run_phase0, run_phase1, run_pipeline
 
 
 def main() -> int:
@@ -33,6 +33,13 @@ def main() -> int:
         action="store_true",
         help="Write nba_* tables on CDW Trino",
     )
+    parser.add_argument(
+        "--phase",
+        type=int,
+        choices=(0, 1),
+        default=None,
+        help="Pipeline phase (default: NBA_PHASE env or 1)",
+    )
     args = parser.parse_args()
 
     if args.demo_greifswald:
@@ -45,8 +52,12 @@ def main() -> int:
     settings = Settings()
     settings.artifacts_dir = (_ROOT / settings.artifacts_dir).resolve()
 
+    if args.phase is not None:
+        os.environ["NBA_PHASE"] = str(args.phase)
+        settings = Settings()
+
     try:
-        result = run_phase0(settings)
+        result = run_pipeline(settings)
     except Exception as exc:
         print(f"NBA job failed: {exc}", file=sys.stderr)
         return 1
@@ -55,6 +66,14 @@ def main() -> int:
     print(f"theatre={result.alert.theatre}")
     print(f"best_coa_id={result.best_coa_id}")
     print(f"artifacts={result.artifact_dir}")
+    if result.sensor_gates:
+        print(f"sensor_gates={result.sensor_gates}")
+    if result.simulations:
+        for sim in result.simulations:
+            print(
+                f"  sim COA {sim.coa_id}: discovery={sim.final_discovery:.3f} "
+                f"ticks={sim.ticks}"
+            )
     for score in result.ranked_coas:
         flag = "PASS" if score.gates_passed else "FAIL"
         print(

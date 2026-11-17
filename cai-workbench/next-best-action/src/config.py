@@ -46,3 +46,7 @@ class Settings:
     # Greifswald / Adlergrund reference
     demo_lat: float = field(default_factory=lambda: float(os.environ.get("NBA_DEMO_LAT", "54.55")))
     demo_lon: float = field(default_factory=lambda: float(os.environ.get("NBA_DEMO_LON", "14.10")))
+    sim_ticks: int = field(
+        default_factory=lambda: int(os.environ.get("NBA_SIM_TICKS", "6"))
+    )
+    phase: int = field(default_factory=lambda: int(os.environ.get("NBA_PHASE", "1")))

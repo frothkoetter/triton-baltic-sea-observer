@@ -182,7 +182,9 @@ FOR VERSION AS OF 7500014872264610121;
 - `cdw-analyse/sql/nba_schema_trino.sql` + CML-Modul `cai-workbench/next-best-action/` (`run_nba.py`, Snapshot-Bündel, COA A–D, Tests).
 - Live gegen `cdw-triton`: Snapshot-IDs aus `ships` / `ais_events_ice`, Best COA **A** (Greifswald-Demo).
 
-**Als Nächstes (Phase 1):** `sim_adapter.py`, Alert-SQL aus Pipeline-Blackout, kein LLM.
+**Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
+
+**Als Nächstes (Phase 2):** CML-Schedule, Alert-SQL Pipeline-Blackout, ereignisgesteuert ohne `--demo-greifswald`.
 
 Referenzen:
 
