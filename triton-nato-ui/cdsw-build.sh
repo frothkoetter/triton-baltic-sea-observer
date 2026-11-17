@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Cloudera AI: install Node (if missing), npm deps, production build.
 set -euo pipefail
-cd "$(dirname "$0")"
-export NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+export NVM_DIR="${NVM_DIR:-$ROOT/.nvm}"
 mkdir -p "$NVM_DIR"
 
 install_node_nvm() {
@@ -19,12 +20,16 @@ install_node_nvm() {
 
 install_node_tarball() {
   local ver="v20.18.0"
-  local dir="$HOME/node-${ver}-linux-x64"
-  if [[ ! -x "$dir/bin/node" ]]; then
-    echo "Downloading Node ${ver} tarball …"
-    curl -fsSL "https://nodejs.org/dist/${ver}/node-${ver}-linux-x64.tar.xz" \
-      | tar -xJ -C "$HOME"
+  local dir="$ROOT/.node-runtime"
+  if [[ -x "$dir/bin/node" ]]; then
+    export PATH="$dir/bin:$PATH"
+    return
   fi
+  echo "Downloading Node ${ver} into .node-runtime …"
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  curl -fsSL "https://nodejs.org/dist/${ver}/node-${ver}-linux-x64.tar.xz" \
+    | tar -xJ --strip-components=1 -C "$dir"
   export PATH="$dir/bin:$PATH"
 }
 
@@ -42,4 +47,7 @@ fi
 
 npm ci 2>/dev/null || npm install
 npm run build
-echo "Build OK: dist/ + server/ (node $(node -v), npm $(npm -v))"
+
+NODE_BIN="$(command -v node)"
+echo "$NODE_BIN" > "$ROOT/.node-bin"
+echo "Build OK: dist/ + server/ (node $(node -v), npm $(npm -v)) at $NODE_BIN"

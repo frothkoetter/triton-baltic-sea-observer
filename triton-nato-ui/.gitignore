@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .nvm/
+.node-runtime/
+.node-bin
 .env
 .env.local
 .env.*.local

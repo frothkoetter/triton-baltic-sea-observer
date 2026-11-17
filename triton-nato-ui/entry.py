@@ -80,5 +80,19 @@ if not port:
     print("ERROR: CDSW_APP_PORT required for Cloudera AI Application.", file=sys.stderr)
     sys.exit(1)
 
-print("Starting Node server (execv — main process must hold CDSW_APP_PORT)…", flush=True)
-os.execv("/bin/bash", ["/bin/bash", str(runner)])
+print("Starting Node server…", flush=True)
+proc = subprocess.run(
+    ["/bin/bash", str(runner)],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+)
+if proc.stdout:
+    print(proc.stdout, flush=True)
+if proc.returncode != 0:
+    print(
+        f"run-node-server.sh exited {proc.returncode} — re-run: bash cdsw-build.sh",
+        file=sys.stderr,
+        flush=True,
+    )
+sys.exit(proc.returncode)
