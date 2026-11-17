@@ -36,6 +36,18 @@ Tables written:
 
 Time windows are in-SQL (`interval '4' hour` etc.); tune in `outlier_detection_trino.sql` for your ingest rate.
 
+## CML scheduled job (Workbench)
+
+Prefer a **`.py` scheduled job** instead of shell on CML:
+
+| Setting | Value |
+|---------|--------|
+| Script | `/home/cdsw/cai-workbench/trino-jobs/cml_job.py` |
+| Env | `TRINO_JOB=outliers` (default), `TRINO_USER` / `TRINO_PASSWORD` (or `LAGEBILD_TRINO_*`) |
+| Build | `bash cai-workbench/trino-jobs/cdsw-build.sh` |
+
+After deploying view DDL, run once with `TRINO_JOB=lagebild_views` so UC1 sees `AIS_Outlier` in `defense.lagebild` ([`run_lagebild_views.py`](run_lagebild_views.py)).
+
 ## Run locally
 
 ```bash

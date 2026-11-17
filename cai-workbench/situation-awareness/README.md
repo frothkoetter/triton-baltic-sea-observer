@@ -61,7 +61,7 @@ Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRE
 | Impala (legacy) | `defense.lagebild` | `defense.lagebild_all_events` |
 | Trino / Iceberg | `iceberg.defense.lagebild` | `iceberg.defense.lagebild_all_events` |
 
-**`defense.lagebild`** keeps the latest row per entity and harbour (24h window). **`defense.lagebild_all_events`** emits every qualifying row in that window (higher volume for AIS/Marine/RUS and all GPS jamming events). Compare counts with [`cdw-analyse/lagebild_volume_compare.sql`](../../cdw-analyse/lagebild_volume_compare.sql). Enable the stream in this pipeline with `LAGEBILD_ALL_EVENTS=1` or `LAGEBILD_VIEW=lagebild_all_events`.
+**`defense.lagebild`** keeps the latest row per entity and harbour (24h window). **`defense.lagebild_all_events`** emits every qualifying row in that window (higher volume for AIS/Marine/RUS and all GPS jamming events). **`AIS_Outlier`** rows come from `vessel_outliers` (see [`cai-workbench/trino-jobs`](../trino-jobs/README.md) for the hourly Trino job). Compare counts with [`cdw-analyse/lagebild_volume_compare.sql`](../../cdw-analyse/lagebild_volume_compare.sql). Enable the stream in this pipeline with `LAGEBILD_ALL_EVENTS=1` or `LAGEBILD_VIEW=lagebild_all_events`.
 
 Default SQL loads **all Baltic harbours** from `defense.baltic_sea_harbours` plus offshore rows (`harbour_name IS NULL`) and explicit feeds (`GPS_Jammer`, `REF` area violations, `RUS_Fleet`). Set `LAGEBILD_GERMAN_ONLY=1` to restore the former German-only harbour filter. Override entirely with `LAGEBILD_SQL`.
 

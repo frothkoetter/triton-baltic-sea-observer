@@ -62,6 +62,7 @@ _FRIENDLY_SOURCE: dict[str, str] = {
     "ref": "Area violation",
     "area_violation": "Area violation",
     "gps_jammer": "GPS Jammer",
+    "ais_outlier": "AIS Outlier",
 }
 
 _RADAR_PINNED_SOURCES = (
@@ -167,6 +168,20 @@ def infer_severity_from_details(text: object) -> str:
     if text is None or (isinstance(text, float) and np.isnan(text)):
         return "medium"
     blob = str(text)
+    sev_match = re.search(r"\bSev:\s*(\d+)\b", blob, re.I)
+    if sev_match:
+        try:
+            level = int(sev_match.group(1))
+        except ValueError:
+            level = 0
+        if level >= 5:
+            return "critical"
+        if level >= 4:
+            return "high"
+        if level >= 2:
+            return "medium"
+        if level >= 0:
+            return "low"
     if _HIGH_SEVERITY_RE.search(blob):
         return "high"
     if _LOW_SEVERITY_RE.search(blob):
