@@ -7,9 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .agent_flow import run_agent_flow
 from .alert_rules import next_alert
 from .alert_types import NbaAlert
 from .config import Settings
+from .maritime_incident_state import MaritimeIncidentState
 from .env_gates import evaluate_sensor_gates
 from .persistence import insert_coa_scores, insert_incident, insert_snapshots
 from .scoring import EnvironmentContext, rank_coas
@@ -26,6 +28,7 @@ class PipelineResult:
     artifact_dir: Path
     simulations: list | None = None
     sensor_gates: dict[str, Any] | None = None
+    agent_state: MaritimeIncidentState | None = None
 
 
 def _write_artifacts(
@@ -39,7 +42,7 @@ def _write_artifacts(
     best: str | None,
     simulations: list | None,
     sensor_gates: dict | None,
-) -> None:
+) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     audit: dict[str, Any] = {
         "phase": phase,
@@ -69,6 +72,7 @@ def _write_artifacts(
             json.dumps([s.to_dict() for s in simulations], indent=2),
             encoding="utf-8",
         )
+    return audit
 
 
 def run_phase0(settings: Settings | None = None) -> PipelineResult:
@@ -83,8 +87,16 @@ def run_phase1(settings: Settings | None = None) -> PipelineResult:
     return _run_pipeline(settings)
 
 
+def run_phase3(settings: Settings | None = None) -> PipelineResult:
+    settings = settings or Settings()
+    settings.phase = 3
+    return _run_pipeline(settings)
+
+
 def run_pipeline(settings: Settings | None = None) -> PipelineResult:
     settings = settings or Settings()
+    if settings.phase >= 3:
+        return run_phase3(settings)
     if settings.phase >= 1:
         return run_phase1(settings)
     return run_phase0(settings)
@@ -108,7 +120,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
     best = next((s.coa.coa_id for s in ranked if s.gates_passed), None)
     out_dir = settings.artifacts_dir / alert.flow_uuid
 
-    _write_artifacts(
+    audit = _write_artifacts(
         out_dir,
         phase=settings.phase,
         alert=alert,
@@ -119,6 +131,23 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         simulations=simulations,
         sensor_gates=gates.to_dict(),
     )
+
+    agent_state = None
+    if settings.phase >= 3:
+        agent_state = run_agent_flow(
+            settings=settings,
+            alert=alert,
+            bundle=bundle,
+            ranked=ranked,
+            best_coa_id=best,
+            artifact_dir=out_dir,
+            sensor_gates=gates.to_dict(),
+        )
+        audit["playbook_best_coa_id"] = agent_state.playbook_best_coa_id
+        audit["agent_narrative_preview"] = (agent_state.agent_narrative or "")[:400]
+        (out_dir / "audit.json").write_text(
+            json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
 
     if settings.persist_trino and best is not None:
         insert_incident(alert, "SCORED", best, settings)
@@ -133,4 +162,5 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         artifact_dir=out_dir,
         simulations=simulations,
         sensor_gates=gates.to_dict(),
+        agent_state=agent_state,
     )

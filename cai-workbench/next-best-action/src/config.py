@@ -64,6 +64,9 @@ class Settings:
         default_factory=lambda: _env_bool("NBA_PIPELINE_BLACKOUT", True)
     )
     lagebild_artifacts_dir: Path | None = field(default=None)
+    skip_llm: bool = field(
+        default_factory=lambda: _env_bool("NBA_SKIP_LLM", False)
+    )
 
     def __post_init__(self) -> None:
         raw = os.environ.get("NBA_LAGEBILD_ARTIFACTS_DIR")

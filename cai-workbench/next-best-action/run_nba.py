@@ -47,9 +47,14 @@ def main() -> int:
     parser.add_argument(
         "--phase",
         type=int,
-        choices=(0, 1),
+        choices=(0, 1, 3),
         default=None,
-        help="Pipeline phase (default: NBA_PHASE env or 1)",
+        help="Pipeline phase: 0=COA only, 1=+sim, 3=+playbook/LLM (default NBA_PHASE)",
+    )
+    parser.add_argument(
+        "--skip-llm",
+        action="store_true",
+        help="Phase 3: template narrative only (no model call)",
     )
     args = parser.parse_args()
 
@@ -63,6 +68,8 @@ def main() -> int:
         os.environ["NBA_OFFLINE"] = "1"
     if args.persist_trino:
         os.environ["NBA_PERSIST_TRINO"] = "1"
+    if args.skip_llm:
+        os.environ["NBA_SKIP_LLM"] = "1"
 
     settings = Settings()
     settings.artifacts_dir = (_ROOT / settings.artifacts_dir).resolve()
@@ -86,6 +93,11 @@ def main() -> int:
     print(f"flow_uuid={result.alert.flow_uuid}")
     print(f"theatre={result.alert.theatre}")
     print(f"best_coa_id={result.best_coa_id}")
+    if result.agent_state:
+        print(f"playbook_best_coa_id={result.agent_state.playbook_best_coa_id}")
+        print(f"incident_state={result.artifact_dir}/incident_state.json")
+        if result.agent_state.llm_used:
+            print("agent_llm=1")
     print(f"artifacts={result.artifact_dir}")
     if result.sensor_gates:
         print(f"sensor_gates={result.sensor_gates}")

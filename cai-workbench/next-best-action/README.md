@@ -25,6 +25,17 @@ python3 run_nba.py --no-demo --exit-if-quiet --persist-trino
 
 Alert SQL: `sql/alerts/pipeline_blackout_top1.sql`, `sql/alerts/lagebild_nba_candidates.sql` (requires `ais_daten`, `ostsee_pipelines_segmented` for pipeline path).
 
+## Phase 3 — Playbook + LLM narrative
+
+```bash
+python3 run_nba.py --demo-greifswald --phase 3 --skip-llm
+# Live model (reuse Lagebild Azure/Mistral env):
+export LAGEBILD_LLM_BASE_URL LAGEBILD_API_KEY LAGEBILD_MODEL_ID
+python3 run_nba.py --no-demo --phase 3 --exit-if-quiet
+```
+
+Outputs: `incident_state.json`, `agent_narrative.md`, `state_history/`. Dedupe für `gps_jammer` nutzt `lagebild_id` (Geohash) in Trino.
+
 DDL einspielen:
 
 ```bash

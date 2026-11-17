@@ -1,0 +1,35 @@
+{
+  "version": "2026-11",
+  "references": [
+    "MC 362/2 Collective OPSEC",
+    "UNCLOS Art. 19/25 innocent passage (indicative)"
+  ],
+  "alert_rules": [
+    {
+      "id": "JAMMER_PASSIVE_BIAS",
+      "alert_types": ["gps_jammer", "lagebild_flash"],
+      "message": "GPS jamming: prefer passive/multidomain (SAR/ELINT) before heavy surface approach.",
+      "disallow_coa_flags": ["requires_heavy_surface"],
+      "unless_priority": "FLASH"
+    },
+    {
+      "id": "PIPELINE_SOVEREIGN_SENSITIVE",
+      "alert_types": ["ais_pipeline_blackout"],
+      "message": "Pipeline corridor: coordinate national C2; avoid public-domain disclosure of exact segment.",
+      "required_notes": ["pipeline_sovereignty"]
+    },
+    {
+      "id": "RUS_FLEET_DEESCALATION",
+      "alert_types": ["rus_fleet_proximity"],
+      "message": "Russian fleet proximity: passive ISR first; surface escalation requires explicit ROE gate.",
+      "disallow_coa_flags": ["requires_heavy_surface"],
+      "unless_best_discovery_below": 0.5
+    }
+  ],
+  "coa_legal_notes": {
+    "A": "Multidomain cueing; share metadata under existing bilateral arrangements.",
+    "B": "Heavy surface + EO — confirm territorial sea / EEZ tasking.",
+    "C": "K130 + ALB — shallow-water only; depth and turbidity gates apply.",
+    "D": "Passive/partner — default MC 362–compatible first response."
+  }
+}

@@ -59,14 +59,25 @@ def recent_incident_exists(alert: NbaAlert, settings: Settings) -> bool:
     hours = settings.dedupe_hours
     if hours <= 0 or not trino_client.trino_configured():
         return False
-    q = (
+    lid = alert.payload.get("lagebild_id")
+    base = (
         f"SELECT flow_uuid FROM {settings.trino_catalog}.{settings.trino_schema}.nba_incidents "
         f"WHERE alert_type = '{_esc(alert.alert_type)}' "
-        f"AND ABS(latitude - {alert.latitude}) < 0.05 "
-        f"AND ABS(longitude - {alert.longitude}) < 0.05 "
         f"AND created_at >= current_timestamp - interval '{int(hours)}' hour "
-        "LIMIT 1"
     )
+    if alert.alert_type == "gps_jammer" and lid:
+        q = (
+            base
+            + f" AND json_extract_scalar(alert_payload, '$.lagebild_id') = '{_esc(str(lid))}' "
+            "LIMIT 1"
+        )
+    else:
+        q = (
+            base
+            + f"AND ABS(latitude - {alert.latitude}) < 0.05 "
+            f"AND ABS(longitude - {alert.longitude}) < 0.05 "
+            "LIMIT 1"
+        )
     try:
         rows = trino_client.fetch_all(q)
         return bool(rows)

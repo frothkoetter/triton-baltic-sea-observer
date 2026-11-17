@@ -119,11 +119,16 @@ CML: `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino` (stündlich 
 
 - Optional später: Webhook von `triton-nato-ui` (Phase 4).
 
-### Phase 3 — Agenten (CrewAI Flow)
+### Phase 3 — Agenten (umgesetzt, CrewAI-ready)
 
-- Pydantic `MaritimeIncidentState`, `@persist` unter `artifacts/nba/`.
-- LLM wie UC1: `llm_client`-Pattern, Triton OpenAI-kompatibel.
-- **Regeln außerhalb LLM:** MC-362/UNCLOS zunächst als Python/JSON-Playbook; später Semantica SHACL.
+| Komponente | Ort |
+| :---- | :---- |
+| State | `maritime_incident_state.py` + `state_persist.py` → `incident_state.json` |
+| Playbook | `data/rules_playbook.json`, `rules_engine.py` |
+| LLM-Narrativ | `llm_client.py` (NBA_* oder LAGEBILD_*), `agent_flow.py` |
+| Pipeline | `NBA_PHASE=3`, `run_nba.py --phase 3 --skip-llm` |
+
+Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministischer Flow + optional LLM.
 
 ### Phase 4 — UI & HITL
 
@@ -193,7 +198,7 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 3):** CrewAI-Flow, `@persist` State, LLM-Playbook.
+**Als Nächstes (Phase 4):** `triton-nato-ui` COA-Matrix, HITL `approved_coa_id`.
 
 Referenzen:
 
