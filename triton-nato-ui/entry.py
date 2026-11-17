@@ -81,18 +81,11 @@ if not port:
     sys.exit(1)
 
 print("Starting Node server…", flush=True)
-proc = subprocess.run(
-    ["/bin/bash", str(runner)],
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    text=True,
-)
-if proc.stdout:
-    print(proc.stdout, flush=True)
-if proc.returncode != 0:
+rc = subprocess.call(["/bin/bash", str(runner)])
+if rc != 0:
     print(
-        f"run-node-server.sh exited {proc.returncode} — re-run: bash cdsw-build.sh",
+        f"run-node-server.sh exited {rc} — in Session: bash cdsw-build.sh",
         file=sys.stderr,
         flush=True,
     )
-sys.exit(proc.returncode)
+sys.exit(rc)
