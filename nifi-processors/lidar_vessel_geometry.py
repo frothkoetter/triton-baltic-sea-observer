@@ -299,6 +299,9 @@ def build_landing_ship(spec: VesselSpec, rng: np.random.Generator) -> PointCloud
     return _concat([hull, cargo, ramp])
 
 
+# ASPRS LAS: 0 = never classified (used for ~10% ambiguous contacts near ports).
+LAS_CLASS_NEVER_CLASSIFIED = 0
+
 VESSEL_TYPE_CODES: Dict[str, int] = {
     "oil_tanker": 1,
     "gas_tanker": 2,
