@@ -1159,10 +1159,10 @@ SELECT
     ) AS details
 FROM
     FilteredVesselOutliers v
-
-ORDER BY harbour_name, "timestamp" DESC;
+;
 
 -- VIEW: defense.lagebild_all_events — every qualifying row in the 24h window.
+-- (Trino: no ORDER BY in view definitions — order in SELECT at query time.)
 -- Same feeds/thresholds as defense.lagebild but without ROW_NUMBER rn=1 latest-only dedupe.
 -- CROSS JOIN harbours may multiply rows when an event is within range of several ports.
 -- GPS jammer: all jamming rows in 24h; nearest harbour only (rn_nearest=1), not latest per geohash.
@@ -1638,8 +1638,7 @@ SELECT
     ) AS details
 FROM
     FilteredVesselOutliers v
-
-ORDER BY harbour_name, "timestamp" DESC;
+;
 
 
 DROP TABLE IF EXISTS Situation_Awareness_Summary;

@@ -23,7 +23,7 @@ def _trino_all_events_section() -> str:
     sql_path = _REPO / "cdw-analyse" / "create_db_tables_trino.sql"
     text = sql_path.read_text(encoding="utf-8")
     start = text.index("CREATE OR REPLACE VIEW lagebild_all_events AS")
-    end = text.index('ORDER BY harbour_name, "timestamp" DESC;', start)
+    end = text.index("\nDROP TABLE IF EXISTS Situation_Awareness_Summary", start)
     return text[start:end]
 
 

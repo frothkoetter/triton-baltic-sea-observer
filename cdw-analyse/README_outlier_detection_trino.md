@@ -46,7 +46,7 @@ Prefer a **`.py` scheduled job** instead of shell on CML:
 | Env | `TRINO_JOB=outliers` (default), `TRINO_USER` / `TRINO_PASSWORD` (or `LAGEBILD_TRINO_*`) |
 | Build | `bash cai-workbench/trino-jobs/cdsw-build.sh` |
 
-After deploying view DDL, run once with `TRINO_JOB=lagebild_views` so UC1 sees `AIS_Outlier` in `defense.lagebild` ([`run_lagebild_views.py`](run_lagebild_views.py)).
+After deploying view DDL, run once with `TRINO_JOB=lagebild_views` so UC1 sees `AIS_Outlier` in `defense.lagebild` ([`run_lagebild_views.py`](run_lagebild_views.py)). Trino views omit `ORDER BY` (Impala/Hive DDL used to include it); `run_lagebild_views.py` strips any legacy `ORDER BY` tail.
 
 ## Run locally
 
