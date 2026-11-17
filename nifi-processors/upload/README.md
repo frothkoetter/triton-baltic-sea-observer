@@ -37,6 +37,8 @@ FlowFile attribute **`ship.simulation.route`** = **`rus_fleet_positions`**.
 
 State: **`/tmp/rus_fleet_state.json`** (separate from `/tmp/ship_state.json` and `/tmp/marineship_state.json`).
 
+Ships at **home_port** periodically roll new patrol missions (`RusFleetPositionSimulator` **1.0.1**+). After upgrading, reset state so stuck `home_port` rows are not reused.
+
 Use **BalticShipRouteStateReset** with **Reset RUS Fleet State** = true, or delete the file manually.
 
 ## North Sea ↔ Baltic trade route

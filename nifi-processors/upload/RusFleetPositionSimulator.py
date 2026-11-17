@@ -38,7 +38,7 @@ class RusFleetPositionSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "1.0.0"
+        version = "1.0.1"
         description = (
             "Russian Baltic Fleet AIS-style positions (route rus_fleet_positions). "
             "Missions patrol Baltic operational boxes; ~33% active at init; "

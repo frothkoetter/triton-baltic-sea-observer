@@ -36,9 +36,9 @@ class TestRusFleetSim(unittest.TestCase):
         ships = initialize_rus_fleet_ships(len(RUS_BALTIC_FLEET), rng=rng)
         active = count_mission_ships(ships)
         ratio = active / len(ships)
-        self.assertGreaterEqual(ratio, 0.28)
-        self.assertLessEqual(ratio, 0.40)
-        self.assertAlmostEqual(MISSION_ELIGIBLE_FRACTION, 0.33, places=2)
+        self.assertGreaterEqual(ratio, 0.38)
+        self.assertLessEqual(ratio, 0.52)
+        self.assertAlmostEqual(MISSION_ELIGIBLE_FRACTION, 0.45, places=2)
 
     def test_home_base_distribution_standby(self):
         rng = random.Random(7)
@@ -73,6 +73,22 @@ class TestRusFleetSim(unittest.TestCase):
         self.assertGreater(PORT_STAY_TICKS, 100)
         self.assertLessEqual(MISSION_MAX_TICKS, MISSION_MIN_TICKS * 3)
         self.assertGreaterEqual(ANCHOR_MAX_TICKS, 1)
+
+    def test_home_port_ships_eventually_deploy(self):
+        rng = random.Random(101)
+        ships = initialize_rus_fleet_ships(len(RUS_BALTIC_FLEET), rng=rng)
+        home_ids = []
+        for ship in ships:
+            if ship.get("Phase") == "home_port":
+                ship["HomePortIdleTicks"] = 12
+                home_ids.append(ship["MMSI"])
+        self.assertTrue(home_ids)
+        for _ in range(40):
+            update_rus_fleet_movements(ships, rng=rng)
+        still_at_home = sum(
+            1 for s in ships if s.get("MMSI") in home_ids and s.get("Phase") == "home_port"
+        )
+        self.assertLess(still_at_home, len(home_ids))
 
     def test_mission_ticks_decrement_on_patrol(self):
         rng = random.Random(123)
