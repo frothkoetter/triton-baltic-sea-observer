@@ -97,6 +97,19 @@ WHEN NOT MATCHED THEN INSERT (
 );
 
 -- =========================================================================================
+-- STEP 1b: ROLLING PURGE (recompute detections each job; avoids million-row accumulation)
+-- =========================================================================================
+DELETE FROM vessel_outliers
+WHERE Outlier_Type IN (
+    'Inconsistent Maneuvering',
+    'Misreported Status',
+    'Loitering',
+    'MMSI Teleportation',
+    'Dark Vessel',
+    'Rendezvous'
+);
+
+-- =========================================================================================
 -- STEP 2: CASE 1 — KINEMATICS, MISREPORTED STATUS, LOITERING
 -- =========================================================================================
 
@@ -217,17 +230,32 @@ WITH ordered_ais AS (
             try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
         ) AS ts,
         a.latitude, a.longitude, a.speed, a.course, a.status, a.Destination,
-        LAG(a.latitude) OVER (PARTITION BY a.mmsi ORDER BY a.event_timestamp) AS prev_lat,
-        LAG(a.longitude) OVER (PARTITION BY a.mmsi ORDER BY a.event_timestamp) AS prev_lon,
+        LAG(a.latitude) OVER (
+            PARTITION BY a.mmsi ORDER BY coalesce(
+                try(from_iso8601_timestamp(a.event_timestamp)),
+                try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
+            )
+        ) AS prev_lat,
+        LAG(a.longitude) OVER (
+            PARTITION BY a.mmsi ORDER BY coalesce(
+                try(from_iso8601_timestamp(a.event_timestamp)),
+                try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
+            )
+        ) AS prev_lon,
         LAG(coalesce(
             try(from_iso8601_timestamp(a.event_timestamp)),
             try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
-        )) OVER (PARTITION BY a.mmsi ORDER BY a.event_timestamp) AS prev_ts
+        )) OVER (
+            PARTITION BY a.mmsi ORDER BY coalesce(
+                try(from_iso8601_timestamp(a.event_timestamp)),
+                try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
+            )
+        ) AS prev_ts
     FROM ais_events_ice a
     WHERE coalesce(
             try(from_iso8601_timestamp(a.event_timestamp)),
             try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
-        ) >= current_timestamp - interval '6' hour
+        ) >= current_timestamp - interval '4' hour
 ),
 hops AS (
     SELECT
@@ -244,10 +272,12 @@ teleport AS (
     SELECT
         mmsi, event_timestamp, latitude, longitude, speed, course, status, Destination,
         'MMSI Teleportation' AS outlier_type,
-        format('Implied hop speed %.0f kn over %.1f nm in %.2f h', hop_nm / NULLIF(hop_h, 0), hop_nm, hop_h) AS reason,
+        format('Implied hop speed %.0f kn over %.2f nm in %.1f min', hop_nm / NULLIF(hop_h, 0), hop_nm, hop_h * 60.0) AS reason,
         80 AS severity_level
     FROM hops
-    WHERE hop_h > 0 AND hop_nm / hop_h > 55.0
+    WHERE hop_h >= (2.0 / 60.0)
+      AND hop_nm >= 0.25
+      AND hop_nm / hop_h > 75.0
 )
 SELECT
     mmsi, event_timestamp, latitude, longitude, speed, course, status, Destination,
@@ -312,10 +342,20 @@ INSERT INTO vessel_outliers (
     MMSI, Event_Timestamp, Latitude, Longitude, Speed, Course, Status, Destination,
     Outlier_Type, Reason, Recommendation, Severity_Level
 )
-WITH recent AS (
+WITH recent_raw AS (
     SELECT
-        a.mmsi, a.event_timestamp, a.latitude, a.longitude, a.speed, a.course,
-        a.status, a.Destination,
+        a.mmsi,
+        a.event_timestamp,
+        coalesce(
+            try(from_iso8601_timestamp(a.event_timestamp)),
+            try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
+        ) AS ts,
+        a.latitude,
+        a.longitude,
+        a.speed,
+        a.course,
+        a.status,
+        a.Destination,
         date_trunc('minute', coalesce(
             try(from_iso8601_timestamp(a.event_timestamp)),
             try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
@@ -324,12 +364,33 @@ WITH recent AS (
     WHERE coalesce(
             try(from_iso8601_timestamp(a.event_timestamp)),
             try_cast(replace(a.event_timestamp, 'Z', '') AS timestamp)
-        ) >= current_timestamp - interval '4' hour
+        ) >= current_timestamp - interval '2' hour
+      AND a.latitude BETWEEN 53.0 AND 60.5
+      AND a.longitude BETWEEN 10.0 AND 21.0
+      AND a.mmsi > 0
+),
+recent AS (
+    SELECT *
+    FROM (
+        SELECT
+            r.*,
+            row_number() OVER (PARTITION BY r.mmsi, r.ts_min ORDER BY r.ts DESC) AS rn
+        FROM recent_raw r
+    ) x
+    WHERE rn = 1
 ),
 pairs AS (
     SELECT
-        a.mmsi AS mmsi_a, b.mmsi AS mmsi_b,
-        a.event_timestamp, a.latitude, a.longitude, a.speed, a.course, a.status, a.Destination,
+        a.mmsi AS mmsi_a,
+        b.mmsi AS mmsi_b,
+        a.event_timestamp,
+        a.latitude,
+        a.longitude,
+        a.speed,
+        a.course,
+        a.status,
+        a.Destination,
+        a.ts_min,
         ST_Distance(
             to_spherical_geography(ST_Point(a.longitude, a.latitude)),
             to_spherical_geography(ST_Point(b.longitude, b.latitude))
@@ -340,16 +401,35 @@ pairs AS (
     WHERE ST_Distance(
             to_spherical_geography(ST_Point(a.longitude, a.latitude)),
             to_spherical_geography(ST_Point(b.longitude, b.latitude))
-        ) <= 5000
+        ) <= 500
+      AND COALESCE(a.speed, 99) < 4.0
+      AND COALESCE(b.speed, 99) < 4.0
+),
+pair_once AS (
+    SELECT
+        p.*,
+        row_number() OVER (
+            PARTITION BY p.mmsi_a, p.mmsi_b, p.ts_min
+            ORDER BY p.dist_km
+        ) AS rn
+    FROM pairs p
 )
 SELECT
-    mmsi_a AS mmsi, event_timestamp, latitude, longitude, speed, course, status, Destination,
+    mmsi_a AS mmsi,
+    event_timestamp,
+    latitude,
+    longitude,
+    speed,
+    course,
+    status,
+    Destination,
     'Rendezvous' AS outlier_type,
-    format('Within %.2f km of MMSI %s at same minute', dist_km, CAST(mmsi_b AS varchar)) AS reason,
+    format(
+        'STS candidate: %.0f m from MMSI %s, both SOG < 4 kn (same minute)',
+        dist_km * 1000.0,
+        CAST(mmsi_b AS varchar)
+    ) AS reason,
     'Assess STS transfer risk; check sanctions lists' AS recommendation,
     60 AS severity_level
-FROM pairs p
-WHERE NOT EXISTS (
-    SELECT 1 FROM vessel_outliers v
-    WHERE v.MMSI = p.mmsi_a AND v.Event_Timestamp = p.event_timestamp AND v.Outlier_Type = 'Rendezvous'
-);
+FROM pair_once p
+WHERE rn = 1;

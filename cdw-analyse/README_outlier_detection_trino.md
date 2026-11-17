@@ -30,9 +30,11 @@ Tables written:
 |------|------|----------------|-----------------|
 | 1 | Baseline | — | Merge 24h AIS into `ais_baseline_sketches` (zoom-11 Bing tiles) |
 | 2 | Kinematics / loitering | `Inconsistent Maneuvering`, `Misreported Status`, `Loitering` | SOG vs baseline P99; moored + SOG; long dwell in few tiles |
-| 3 | Spoofing | `MMSI Teleportation` | Implied hop speed &gt; 55 kn between consecutive AIS points |
+| 3 | Spoofing | `MMSI Teleportation` | Implied hop &gt; 75 kn, hop ≥ 0.25 nm, gap ≥ 2 min (LAG ordered by parsed timestamp) |
 | 4 | Dark vessel | `Dark Vessel` | MAD buoy echo with no AIS within 5 km (synthetic MMSI `-1`) |
-| 5 | STS | `Rendezvous` | Two MMSIs within 5 km in the same minute |
+| 5 | STS | `Rendezvous` | Baltic 2h window: ≤500 m, both SOG &lt; 4 kn, latest AIS per MMSI/minute, pair dedupe |
+
+Each job run **deletes** rows for the Trino rule types above, then recomputes (prevents million-row `Rendezvous` buildup). Legacy NiFi labels (e.g. `Route Deviation`) are untouched.
 
 Time windows are in-SQL (`interval '4' hour` etc.); tune in `outlier_detection_trino.sql` for your ingest rate.
 
