@@ -50,4 +50,12 @@ npm run build
 
 NODE_BIN="$(command -v node)"
 echo "$NODE_BIN" > "$ROOT/.node-bin"
+
+if [[ -f "$ROOT/requirements-cml-app.txt" ]]; then
+  echo "Installing Python bridge deps (trino, boto3, laspy, numpy) …"
+  python3 -m pip install -q -r "$ROOT/requirements-cml-app.txt" || {
+    echo "WARN: pip install requirements-cml-app.txt failed (LiDAR LAS needs laspy)"
+  }
+fi
+
 echo "Build OK: dist/ + server/ (node $(node -v), npm $(npm -v)) at $NODE_BIN"

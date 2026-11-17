@@ -80,8 +80,24 @@ Open **Application logs** and check:
 | `dist/ missing` | Same |
 | `Cannot find module` | Run `bash cdsw-build.sh` |
 | Python `trino` errors on API only | OK at startup; set `TRINO_*` env |
+| LiDAR: `No module named 'laspy'` | Run once in Session: `python3 -m pip install -r requirements-cml-app.txt`; **Restart Application** (`entry.py` installs laspy when trino is present but laspy is not) |
+| Startup: `Installing Python bridge deps (laspy)` | Normal on first restart after `git pull` |
 
 Paste the **last 30 lines** of Application logs for debugging.
+
+## LiDAR LAS — Python `laspy`
+
+`requirements-cml-app.txt` includes **laspy**, **numpy**, **boto3**, **trino**. The Application only pip-installs when any of those are missing (older builds only checked **trino**).
+
+**Session (once, persists in project venv/site-packages):**
+
+```bash
+cd "${CDSW_WORKING_DIRECTORY:-/home/cdsw}/triton-nato-ui"
+python3 -m pip install -r requirements-cml-app.txt
+python3 -c "import laspy; print('laspy', laspy.__version__)"
+```
+
+Then **Restart** the Application. LiDAR tab should load real points instead of “stylized preview”.
 
 ## S3 errors (LiDAR LAS / SITREP PDF)
 

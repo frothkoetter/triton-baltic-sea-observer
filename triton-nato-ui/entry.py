@@ -68,15 +68,45 @@ if not port:
         flush=True,
     )
 
-try:
-    import trino  # noqa: F401
-except ImportError:
+_BRIDGE_PYTHON_MODULES = ("trino", "boto3", "laspy", "numpy")
+
+
+def _import_missing(module: str) -> bool:
+    try:
+        __import__(module)
+        return False
+    except ImportError:
+        return True
+
+
+def ensure_cml_python_deps() -> None:
+    """Install LAS/S3/Trino bridge deps (laspy is often missing when trino is preinstalled)."""
     req = ROOT / "requirements-cml-app.txt"
-    if req.is_file():
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
-            check=False,
+    if not req.is_file():
+        return
+    missing = [m for m in _BRIDGE_PYTHON_MODULES if _import_missing(m)]
+    if not missing:
+        return
+    print(
+        f"Installing Python bridge deps ({', '.join(missing)}) from {req.name} …",
+        flush=True,
+    )
+    rc = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
+        check=False,
+    ).returncode
+    if rc != 0:
+        print(f"WARN: pip install exited {rc}", flush=True)
+    still = [m for m in missing if _import_missing(m)]
+    if still:
+        print(
+            f"WARN: still missing after pip: {', '.join(still)} "
+            f"(Session: {sys.executable} -m pip install -r {req})",
+            flush=True,
         )
+
+
+ensure_cml_python_deps()
 
 if not (ROOT / "dist" / "index.html").is_file() or not (ROOT / "node_modules").is_dir():
     print("Running cdsw-build.sh …", flush=True)
