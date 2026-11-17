@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
+import { RouteTrackMap } from "../components/RouteTrackMap";
 import { TacticalMap, type FleetPosition, type OutlierRow } from "../components/TacticalMap";
+import {
+  filterAisRows,
+  filterFleetBySelection,
+  filterOutliersByAis,
+  fleetLayersAllowed,
+  type LagebildFilters,
+} from "../lib/lagebild-filters";
+import { buildTracksQueryString, rowsToTracks, type PositionTrack } from "../lib/position-tracks";
 
 export type AisRow = {
   mmsi: number;
@@ -24,6 +33,8 @@ type Kpis = {
   alerts: number;
   source?: string;
 };
+
+type Props = LagebildFilters;
 
 function normalizeFleet(row: Record<string, unknown>): FleetPosition | null {
   const lat = Number(row.latitude ?? row.Latitude);
@@ -64,14 +75,24 @@ function normalizeOutlier(row: Record<string, unknown>): OutlierRow | null {
   };
 }
 
-export function LagebildPage() {
+const filtersActive = (f: LagebildFilters) => Boolean(f.flag || f.vesselType || f.shipName);
+
+export function LagebildPage({ flag, vesselType, shipName }: Props) {
+  const filters = useMemo(
+    () => ({ flag, vesselType, shipName }),
+    [flag, vesselType, shipName]
+  );
+
   const [ais, setAis] = useState<AisRow[]>([]);
   const [areas, setAreas] = useState<{ area_id: string; center_latitude: number; center_longitude: number }[]>([]);
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [source, setSource] = useState("…");
+  const [trackSource, setTrackSource] = useState("…");
   const [outliers, setOutliers] = useState<OutlierRow[]>([]);
   const [germanFleet, setGermanFleet] = useState<FleetPosition[]>([]);
   const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
+  const [tracks, setTracks] = useState<PositionTrack[]>([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
   const [layers, setLayers] = useState({
     ais: true,
     areas: true,
@@ -79,6 +100,7 @@ export function LagebildPage() {
     outliers: true,
     germanFleet: true,
     russianFleet: true,
+    routeTracks: true,
   });
 
   useEffect(() => {
@@ -116,10 +138,74 @@ export function LagebildPage() {
     })();
   }, []);
 
-  const filtered = useMemo(() => ais.filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude)), [ais]);
+  useEffect(() => {
+    if (!layers.routeTracks) {
+      setTracks([]);
+      return;
+    }
+    let cancelled = false;
+    setTracksLoading(true);
+    void (async () => {
+      const qs = buildTracksQueryString({
+        hours: 24,
+        flag: filters.flag,
+        vesselType: filters.vesselType,
+        shipName: filters.shipName,
+        ais: layers.ais,
+        german: layers.germanFleet,
+        russian: layers.russianFleet,
+      });
+      const res = await fetchJson<{
+        rows?: Record<string, unknown>[];
+        source?: string;
+      }>(`/api/position-tracks?${qs}`);
+      if (cancelled) return;
+      setTracks(rowsToTracks(res.rows ?? []));
+      setTrackSource(res.source ?? "unknown");
+      setTracksLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, layers.routeTracks, layers.ais, layers.germanFleet, layers.russianFleet]);
+
+  const filteredAis = useMemo(() => filterAisRows(ais, filters), [ais, filters]);
+
+  const filteredOutliers = useMemo(
+    () => filterOutliersByAis(outliers, filteredAis, filters),
+    [outliers, filteredAis, filters]
+  );
+
+  const fleetAllow = useMemo(() => fleetLayersAllowed(filters), [filters]);
+
+  const filteredGerman = useMemo(
+    () =>
+      fleetAllow.german ? filterFleetBySelection(germanFleet, filters, ais) : [],
+    [germanFleet, filters, ais, fleetAllow.german]
+  );
+
+  const filteredRussian = useMemo(
+    () =>
+      fleetAllow.russian ? filterFleetBySelection(russianFleet, filters, ais) : [],
+    [russianFleet, filters, ais, fleetAllow.russian]
+  );
+
+  const trackLegend = useMemo(() => {
+    const aisN = tracks.filter((t) => t.kind === "ais").length;
+    const deN = tracks.filter((t) => t.kind === "deu_fleet").length;
+    const ruN = tracks.filter((t) => t.kind === "rus_fleet").length;
+    return { aisN, deN, ruN, total: tracks.length };
+  }, [tracks]);
 
   return (
     <div>
+      {filtersActive(filters) && (
+        <div className="filter-active-banner" role="status">
+          Filter Rail active — map, table, and tracks respect flag / type / ship (
+          {filteredAis.length} AIS matches)
+        </div>
+      )}
+
       <div className="kpi-row">
         <div className="kpi">
           <div className="kpi-value">{kpis?.fleetUnits ?? "—"}</div>
@@ -146,6 +232,7 @@ export function LagebildPage() {
             "germanFleet",
             "russianFleet",
             "outliers",
+            "routeTracks",
             "areas",
             "sanctions",
           ] as const
@@ -157,16 +244,18 @@ export function LagebildPage() {
             onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
           >
             {key === "ais"
-              ? "AIS Live"
+              ? `AIS Live (${filteredAis.length})`
               : key === "germanFleet"
-                ? `DEU Fleet (${germanFleet.length})`
+                ? `DEU Fleet (${filteredGerman.length})`
                 : key === "russianFleet"
-                  ? `RUS Fleet (${russianFleet.length})`
+                  ? `RUS Fleet (${filteredRussian.length})`
                   : key === "outliers"
-                    ? `AIS Outliers (${outliers.length})`
-                    : key === "areas"
-                      ? "Restricted Areas"
-                      : "Sanctions overlay"}
+                    ? `AIS Outliers (${filteredOutliers.length})`
+                    : key === "routeTracks"
+                      ? `Route tracks 24h (${trackLegend.total})`
+                      : key === "areas"
+                        ? "Restricted Areas"
+                        : "Sanctions overlay"}
           </button>
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
@@ -177,20 +266,40 @@ export function LagebildPage() {
       <section className="panel">
         <h2 className="panel-title">Lagebild — AIS &amp; Anomalies (visual 123)</h2>
         <TacticalMap
-          ships={layers.ais ? filtered : []}
+          ships={layers.ais ? filteredAis : []}
           areas={layers.areas ? areas : []}
-          outliers={layers.outliers ? outliers : []}
-          germanFleet={layers.germanFleet ? germanFleet : []}
-          russianFleet={layers.russianFleet ? russianFleet : []}
+          outliers={layers.outliers ? filteredOutliers : []}
+          germanFleet={layers.germanFleet ? filteredGerman : []}
+          russianFleet={layers.russianFleet ? filteredRussian : []}
           showSanctions={layers.sanctions}
         />
+      </section>
+
+      <section className="panel" style={{ marginTop: 8 }}>
+        <h2 className="panel-title">
+          Position tracks — AIS events, DEU &amp; RUS fleet (24h)
+        </h2>
+        <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
+          {layers.routeTracks ? (
+            <>
+              {tracksLoading ? "Loading tracks…" : `${trackLegend.total} routes`}
+              {" · "}
+              AIS {trackLegend.aisN} · DEU {trackLegend.deN} · RUS {trackLegend.ruN}
+              {" · "}
+              source {trackSource}
+            </>
+          ) : (
+            "Enable “Route tracks 24h” to load histories from ais_events_ice, marine_vessel_status, rus_naval_fleet_positions."
+          )}
+        </p>
+        {layers.routeTracks && <RouteTrackMap tracks={tracks} />}
       </section>
 
       <section className="panel" style={{ marginTop: 8 }}>
         <h2 className="panel-title">AIS Positions (102)</h2>
         <DataTable
           columns={["mmsi", "ship_name", "vessel_type", "flag", "latitude", "longitude", "speed", "event_timestamp"]}
-          rows={filtered.slice(0, 50) as unknown as Record<string, unknown>[]}
+          rows={filteredAis.slice(0, 50) as unknown as Record<string, unknown>[]}
         />
       </section>
     </div>

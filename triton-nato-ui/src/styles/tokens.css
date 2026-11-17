@@ -302,6 +302,19 @@ a {
   border: 1px solid var(--border-subtle);
 }
 
+.map-wrap-tracks {
+  height: 380px;
+}
+
+.filter-active-banner {
+  font-size: 12px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(61, 220, 132, 0.08);
+  color: var(--text-muted);
+}
+
 .proximity-map-wrap {
   height: 100%;
   min-height: 360px;

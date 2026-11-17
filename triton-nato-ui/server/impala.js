@@ -3,7 +3,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lagebildEnginePreference, queryTrinoDefense } from "./data-engine.js";
 import * as sample from "./sample-data.js";
-import { PREDEFINED } from "./queries.js";
+import {
+  PREDEFINED,
+  buildAisTrackSql,
+  buildGermanFleetTrackSql,
+  buildRussianFleetTrackSql,
+} from "./queries.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
@@ -135,6 +140,72 @@ export async function listTables() {
 
 export async function getAis() {
   return runQueryOrSample(PREDEFINED.aisLatest, () => sample.aisShips);
+}
+
+function filterSampleTrackRows(rows, { flag, vesselType, shipName } = {}) {
+  return rows.filter((r) => {
+    if (flag && r.flag !== flag) return false;
+    if (vesselType && r.vessel_type !== vesselType) return false;
+    if (shipName && r.ship_name !== shipName) return false;
+    return true;
+  });
+}
+
+/** Time-ordered positions for route map (AIS + DEU + RUS). */
+export async function getPositionTracks(opts = {}) {
+  const hours = Math.min(72, Math.max(1, Number(opts.hours) || 24));
+  const flag = String(opts.flag ?? "").trim();
+  const vesselType = String(opts.vesselType ?? "").trim();
+  const shipName = String(opts.shipName ?? "").trim();
+  const includeAis = opts.ais !== false;
+  const includeGerman = opts.german !== false;
+  const includeRussian = opts.russian !== false;
+
+  const filterArgs = { hours, flag, vesselType, shipName };
+  const jobs = [];
+  if (includeAis) {
+    jobs.push(
+      runQueryOrSample(buildAisTrackSql(filterArgs), () =>
+        filterSampleTrackRows(
+          sample.samplePositionTrackRows().filter((r) => r.track_kind === "ais"),
+          { flag, vesselType, shipName }
+        )
+      )
+    );
+  }
+  if (includeGerman) {
+    jobs.push(
+      runQueryOrSample(buildGermanFleetTrackSql({ hours, shipName }), () =>
+        filterSampleTrackRows(
+          sample.samplePositionTrackRows().filter((r) => r.track_kind === "deu_fleet"),
+          { shipName }
+        )
+      )
+    );
+  }
+  if (includeRussian) {
+    jobs.push(
+      runQueryOrSample(buildRussianFleetTrackSql({ hours, shipName }), () =>
+        filterSampleTrackRows(
+          sample.samplePositionTrackRows().filter((r) => r.track_kind === "rus_fleet"),
+          { shipName }
+        )
+      )
+    );
+  }
+
+  const parts = await Promise.all(jobs);
+  const rows = parts.flatMap((p) => p.rows ?? []);
+  const source = parts.every((p) => p.source === "sample")
+    ? "sample"
+    : parts.find((p) => p.source && p.source !== "sample")?.source ?? "live";
+  return {
+    ok: parts.some((p) => p.ok),
+    source,
+    rows,
+    hours,
+    filters: { flag, vesselType, shipName },
+  };
 }
 
 export async function getFleet() {

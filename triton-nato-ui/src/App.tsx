@@ -138,7 +138,9 @@ export default function App() {
           onShipName={setShipName}
         />
         <main className="main-pane">
-          {zone === "lagebild" && <LagebildPage />}
+          {zone === "lagebild" && (
+            <LagebildPage flag={flag} vesselType={vesselType} shipName={shipName} />
+          )}
           {zone === "analysen" && <AnalysenPage />}
           {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}
