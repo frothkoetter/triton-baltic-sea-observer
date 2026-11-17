@@ -32,6 +32,13 @@ from rus_fleet_registry import (
 PORT_STAY_HOURS = 7 * 24
 PORT_STAY_TICKS = int(PORT_STAY_HOURS / SIMULATION_HOURS_PER_TICK)
 
+# Ships in home_port were previously stuck at anchor forever after init.
+HOME_PORT_DEPLOY_MIN_TICKS = 6
+HOME_PORT_DEPLOY_ELIGIBLE_P = 0.35
+HOME_PORT_DEPLOY_STANDBY_P = 0.12
+PORT_EXIT_MISSION_ELIGIBLE_P = 0.75
+PORT_EXIT_MISSION_STANDBY_P = 0.25
+
 MISSION_MIN_DAYS = 14
 MISSION_MAX_DAYS = 30
 MISSION_MIN_TICKS = int(MISSION_MIN_DAYS * 24 / SIMULATION_HOURS_PER_TICK)
@@ -117,6 +124,10 @@ def _start_mission(ship: Dict[str, Any], rng: random.Random) -> None:
         float(zone["Longitude"]),
         float(zone["Latitude"]),
     )
+    if not ship["RouteWaypoints"]:
+        ship["RouteWaypoints"] = [
+            {"lat": float(zone["Latitude"]), "lon": float(zone["Longitude"])}
+        ]
     ship["RouteIndex"] = 0
     ship["Speed"] = rng.uniform(8.0, 14.0)
     ship["Status"] = "Underway using engine"
@@ -132,6 +143,10 @@ def _begin_return_home(ship: Dict[str, Any]) -> None:
         float(base["Longitude"]),
         float(base["Latitude"]),
     )
+    if not ship["RouteWaypoints"]:
+        ship["RouteWaypoints"] = [
+            {"lat": float(base["Latitude"]), "lon": float(base["Longitude"])}
+        ]
     ship["RouteIndex"] = 0
     ship["Speed"] = max(float(ship.get("Speed") or 0), 8.0)
     ship["Status"] = "Underway using engine"
@@ -183,6 +198,7 @@ def initialize_rus_fleet_ships(
             "AnchorTicksRemaining": 0,
             "PatrolZones": [],
             "PatrolIndex": 0,
+            "HomePortIdleTicks": 0,
         }
         _place_at_home_base(ship, base, rng)
         if unit["mmsi"] in mission_units:
@@ -272,11 +288,28 @@ def update_rus_fleet_movements(
                 continue
             ship["Phase"] = "home_port"
             _place_at_home_base(ship, base, rng)
-            if rng.random() < MISSION_ELIGIBLE_FRACTION:
+            unit = ship.get("_unit") or {}
+            p = (
+                PORT_EXIT_MISSION_ELIGIBLE_P
+                if unit.get("default_mission_state") == "eligible_mission"
+                else PORT_EXIT_MISSION_STANDBY_P
+            )
+            if rng.random() < p:
                 _start_mission(ship, rng)
+            else:
+                ship["HomePortIdleTicks"] = 0
             continue
 
         if phase == "home_port":
+            idle = int(ship.get("HomePortIdleTicks") or 0) + 1
+            ship["HomePortIdleTicks"] = idle
+            unit = ship.get("_unit") or {}
+            eligible = unit.get("default_mission_state") == "eligible_mission"
+            deploy_p = HOME_PORT_DEPLOY_ELIGIBLE_P if eligible else HOME_PORT_DEPLOY_STANDBY_P
+            if idle >= HOME_PORT_DEPLOY_MIN_TICKS and rng.random() < deploy_p:
+                _start_mission(ship, rng)
+                ship["HomePortIdleTicks"] = 0
+                continue
             ship["Speed"] = 0.0
             ship["Status"] = "Anchored"
             continue
@@ -305,7 +338,18 @@ def update_rus_fleet_movements(
             _tick_mission_complete_at_home(ship, float(ship["Latitude"]), float(ship["Longitude"]), base)
             continue
         if target is None:
-            continue
+            dest = ship.get("Destination") or {}
+            if phase in ("mission_patrol", "mission_return") and dest.get("Latitude") is not None:
+                ship["RouteWaypoints"] = [
+                    {
+                        "lat": float(dest["Latitude"]),
+                        "lon": float(dest["Longitude"]),
+                    }
+                ]
+                ship["RouteIndex"] = 0
+                target = route_target(ship)
+            if target is None:
+                continue
 
         target_lat, target_lon = target
         new_lat, new_lon = move_towards_on_water(
