@@ -20,7 +20,7 @@ from german_navy_mission_engine import (
     save_german_navy_state,
     update_german_navy_movements,
 )
-from marine_fleet_registry import MARINESHIP_STATE_FILE, NAME_BY_MMSI
+from marine_fleet_registry import MARINESHIP_STATE_FILE, MARINE_POSITION_DECIMALS, NAME_BY_MMSI
 
 STATE_FILE = MARINESHIP_STATE_FILE
 VERSION_STATE_FILE = "/tmp/marineship_version_state.json"
@@ -40,8 +40,8 @@ def generate_ais_message(ship: Dict[str, Any]) -> Dict[str, Union[str, float, in
         "MMSI": ship["MMSI"],
         "message_from": ship.get("Name") or NAME_BY_MMSI.get(ship["MMSI"], ship["MMSI"]),
         "Event_Timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-        "Latitude": round(float(ship["Latitude"]), 5),
-        "Longitude": round(float(ship["Longitude"]), 5),
+        "Latitude": round(float(ship["Latitude"]), MARINE_POSITION_DECIMALS),
+        "Longitude": round(float(ship["Longitude"]), MARINE_POSITION_DECIMALS),
         "Speed": round(float(ship.get("Speed") or 0), 1),
         "Course": round(float(ship.get("Course") or 0), 1),
         "Status": ship.get("Status", "Unknown"),
