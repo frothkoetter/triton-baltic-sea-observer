@@ -175,11 +175,14 @@ FOR VERSION AS OF 7500014872264610121;
 | Branching-Wunsch aus Bericht | Nur Hive/Spark separat evaluieren, nicht Trino-Pfad |
 | `rollback_to_snapshot` | Nur manuelle Ops, nicht Automatisierung |
 
-## 8. Nächster konkreter Schritt (Sprint 0)
+## 8. Phase 0 Status
 
-1. `cdw-analyse/sql/nba_schema_trino.sql` anlegen und per `run_trino_ddl.py` anwenden.
-2. Paket `cai-workbench/next-best-action/` mit `snapshot_bundle.py` + `tests/test_snapshot_bundle.py` (gegen `ships` / `ais_events_ice`).
-3. `README.md` im gleichen Ordner mit Quickstart (`.env.trino.local`).
+**Umgesetzt (Sprint 0):**
+
+- `cdw-analyse/sql/nba_schema_trino.sql` + CML-Modul `cai-workbench/next-best-action/` (`run_nba.py`, Snapshot-Bündel, COA A–D, Tests).
+- Live gegen `cdw-triton`: Snapshot-IDs aus `ships` / `ais_events_ice`, Best COA **A** (Greifswald-Demo).
+
+**Als Nächstes (Phase 1):** `sim_adapter.py`, Alert-SQL aus Pipeline-Blackout, kein LLM.
 
 Referenzen:
 
