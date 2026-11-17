@@ -18,13 +18,17 @@ _ORDER_BY_TAIL = re.compile(
 
 
 def _sanitize_view_body(body: str) -> str:
-    """Trino rejects ORDER BY inside CREATE VIEW; drop trailing header comments."""
+    """Trino rejects ORDER BY inside CREATE VIEW; drop statement-splitting semicolons."""
     body = _ORDER_BY_TAIL.sub("\n", body)
     lines = body.rstrip().splitlines()
-    while lines and lines[-1].strip().startswith("--"):
-        lines.pop()
-    while lines and lines[-1].strip() == ";":
-        lines.pop()
+    while lines:
+        tail = lines[-1].strip()
+        if not tail or tail == ";" or tail.startswith("--"):
+            lines.pop()
+            continue
+        break
+    if lines:
+        lines[-1] = re.sub(r";\s*$", "", lines[-1]).rstrip()
     return "\n".join(lines).strip()
 
 
@@ -52,9 +56,8 @@ def extract_view_statements(text: str) -> list[str]:
                 boundary = next_create
             body_end = boundary.start() if boundary else len(rest)
         body = _sanitize_view_body(rest[:body_end].strip())
+        # Trino dbapi: do not terminate the CREATE VIEW query with an inner ';'
         stmt = f"{marker}\n{body}".strip()
-        if not stmt.endswith(";"):
-            stmt += ";"
         out.append(stmt)
     return out
 
