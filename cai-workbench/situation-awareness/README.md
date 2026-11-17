@@ -15,10 +15,17 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 
 ## Hourly job (CML / CDSW)
 
-1. Create a **Scheduled Job** pointing at this directory.
-2. **Build command:** `bash cdsw-build.sh`
-3. **Job command:** `python run_hourly.py`
-4. Schedule: hourly (cron `0 * * * *`).
+| Field | Value |
+|-------|--------|
+| Type | **Scheduled Job** (not “Run notebook” / not pasting into a cell) |
+| Project dir | Repo root **or** this folder |
+| **Script** | `cai-workbench/situation-awareness/run_hourly.py` **or** `entry.py` |
+| **Kernel** | Python 3 / ML Runtime `python3` |
+| Build (optional) | `bash cai-workbench/situation-awareness/cdsw-build.sh` |
+| **Command** | `python3 run_hourly.py` (from this directory) |
+| Schedule | `0 * * * *` |
+
+If the log shows `Cell In[8]` and `__file__ is not defined`, the job is running as a **notebook cell**, not as a script. Fix the job to execute `python3 run_hourly.py` or set **Script** to `entry.py`.
 
 Optional flags: `python run_hourly.py --use-sample` (offline), `python run_hourly.py --skip-llm` (PDF shell without model).
 

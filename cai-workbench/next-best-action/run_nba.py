@@ -8,9 +8,9 @@ import os
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+from cml_root import install_job_root, resolve_job_root
+
+_ROOT = install_job_root(resolve_job_root("run_nba.py", "entry.py"))
 
 from src.alert_rules import NoAlertFound
 from src.config import Settings

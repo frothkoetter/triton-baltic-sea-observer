@@ -7,10 +7,10 @@ import argparse
 import sys
 from pathlib import Path
 
-# Ensure package root is on path when run as a CML job.
-_ROOT = Path(__file__).resolve().parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+from cml_root import install_job_root, resolve_job_root
+
+# CML: run as script (python3 run_hourly.py) — not as notebook cell (__file__ undefined).
+_ROOT = install_job_root(resolve_job_root("run_hourly.py", "entry.py"))
 
 from lagebild import execute_sql_insert, run_pipeline
 from src.config import Settings

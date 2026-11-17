@@ -4,6 +4,17 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 
 **Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · UC1: [`../situation-awareness/`](../situation-awareness/)
 
+## CML Scheduled Job (UC2)
+
+| Field | Value |
+|-------|--------|
+| Type | **Scheduled Job** — **not** a notebook cell |
+| **Script** | `cai-workbench/next-best-action/run_nba.py` or `entry.py` |
+| **Command** | `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino --phase 2` |
+| Build | `bash cdsw-build.sh` once per environment |
+
+`Cell In[…]` + `NameError: __file__` ⇒ wrong job type; use script path above.
+
 ## Quickstart
 
 ```bash
