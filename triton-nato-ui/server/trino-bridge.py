@@ -38,6 +38,7 @@ def connect():
     password = os.environ.get("TRINO_PASSWORD", "")
     if not user or not password:
         raise RuntimeError("Set TRINO_USER and TRINO_PASSWORD (or TRINO_JDBC_URL)")
+    # Password only via BasicAuthentication — dbapi.connect() has no password= kwarg.
     return trino.dbapi.connect(
         host=os.environ.get(
             "TRINO_HOST",
@@ -45,7 +46,6 @@ def connect():
         ),
         port=int(os.environ.get("TRINO_PORT", "443")),
         user=user,
-        password=password,
         catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
         schema=os.environ.get("TRINO_SCHEMA", "defense"),
         http_scheme="https",
