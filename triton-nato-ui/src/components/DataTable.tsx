@@ -2,9 +2,10 @@ type Props = {
   columns: string[];
   rows: Record<string, unknown>[];
   hostileColumn?: string;
+  onRowClick?: (row: Record<string, unknown>) => void;
 };
 
-export function DataTable({ columns, rows, hostileColumn }: Props) {
+export function DataTable({ columns, rows, hostileColumn, onRowClick }: Props) {
   if (!rows.length) {
     return <p className="mono" style={{ color: "var(--text-muted)" }}>No rows</p>;
   }
@@ -26,6 +27,8 @@ export function DataTable({ columns, rows, hostileColumn }: Props) {
               className={
                 hostileColumn && row[hostileColumn] ? "hostile-row" : undefined
               }
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              style={onRowClick ? { cursor: "pointer" } : undefined}
             >
               {cols.map((c) => (
                 <td key={c} className="mono">

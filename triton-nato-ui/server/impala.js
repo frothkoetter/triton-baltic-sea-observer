@@ -157,6 +157,10 @@ export async function getObservationAreas() {
   return runQueryOrSample(PREDEFINED.observationAreas, () => sample.observationAreas);
 }
 
+export async function getLidarScans() {
+  return runQueryOrSample(PREDEFINED.lidarScans, () => sample.lidarScans);
+}
+
 export async function getKpis() {
   if (forceSample()) {
     return { ok: true, source: "sample", ...sample.kpis };

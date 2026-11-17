@@ -32,6 +32,14 @@ export const PREDEFINED = {
   observationAreas: `
     SELECT area_id, center_latitude, center_longitude FROM defense.observation_areas
   `,
+  lidarScans: `
+    SELECT filename, vessel_name, vessel_type, classification,
+           center_lat, center_lon, heading_deg, point_count,
+           hadoop_file_url, predicted_vessel_type, model_confidence, ingested_at
+    FROM defense.lidar_simulation_metadata
+    ORDER BY ingested_at DESC
+    LIMIT 200
+  `,
   fleetKpi: `SELECT COUNT(*) AS cnt FROM defense.german_navy_fleet`,
   personnelKpi: `SELECT SUM(crew_size) AS cnt FROM defense.german_navy_fleet`,
   surveillanceKpi: `SELECT COUNT(*) AS cnt FROM defense.maritime_surveillance_reports`,
@@ -50,4 +58,5 @@ export const DATASET_STARTER_SQL = {
   PersonalReport: PREDEFINED.fleet,
   "Social Media": `SELECT * FROM defense.social_media_messages LIMIT 200`,
   "AIS Vessel Tracker": PREDEFINED.aisLatest,
+  LiDARSimulationMetadata: PREDEFINED.lidarScans,
 };

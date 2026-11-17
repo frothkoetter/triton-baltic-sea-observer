@@ -563,3 +563,111 @@ a {
 .hostile-row {
   color: var(--status-hostile);
 }
+
+.lidar-page .lidar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lidar-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.lidar-filter select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 4px 8px;
+}
+
+.lidar-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+@media (max-width: 1100px) {
+  .lidar-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lidar-map-panel .map-wrap,
+.lidar-map-wrap {
+  min-height: 380px;
+  height: 380px;
+}
+
+.lidar-preview {
+  min-height: 200px;
+}
+
+.lidar-preview.empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 24px 8px;
+}
+
+.lidar-preview-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.lidar-preview .type-pill {
+  display: inline-block;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  margin-left: 8px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.lidar-preview-svg {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.lidar-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.lidar-meta-table th {
+  text-align: left;
+  padding: 5px 8px 5px 0;
+  color: var(--text-muted);
+  font-weight: 600;
+  width: 32%;
+  vertical-align: top;
+}
+
+.lidar-meta-table td {
+  padding: 5px 0;
+  word-break: break-word;
+}
+
+.lidar-uri {
+  font-size: 10px;
+}
+
+.lidar-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-top: 10px;
+}

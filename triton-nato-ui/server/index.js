@@ -10,6 +10,7 @@ import {
   getDatasets,
   getFleet,
   getKpis,
+  getLidarScans,
   getObservationAreas,
   getSanctions,
   getSurveillance,
@@ -142,6 +143,10 @@ app.get("/api/analyses/surveillance", async (_req, res) => {
 
 app.get("/api/observation-areas", async (_req, res) => {
   res.json(await getObservationAreas());
+});
+
+app.get("/api/lidar/scans", async (_req, res) => {
+  res.json(await getLidarScans());
 });
 
 app.get("/api/proximity-alerts", async (_req, res) => {
