@@ -87,36 +87,67 @@ def fetch_las_bytes(uri: str) -> bytes:
     return client.get_object(Bucket=bucket, Key=key)["Body"].read()
 
 
-def points_from_las(data: bytes, limit: int = 1200) -> list[dict]:
+def _to_local_meters(xs, ys, zs):
+    import numpy as np
+
+    xs = np.asarray(xs, dtype=np.float64)
+    ys = np.asarray(ys, dtype=np.float64)
+    zs = np.asarray(zs, dtype=np.float64)
+    span = max(float(xs.max() - xs.min()), float(ys.max() - ys.min()), 1e-9)
+    if span < 3.0 and abs(float(np.median(xs))) <= 180 and abs(float(np.median(ys))) <= 90:
+        cx = float(np.median(xs))
+        cy = float(np.median(ys))
+        scale_x = 111_320.0 * max(0.5, abs(np.cos(np.radians(cy))))
+        lx = (xs - cx) * scale_x
+        ly = (ys - cy) * 111_320.0
+    else:
+        lx = xs - float(np.median(xs))
+        ly = ys - float(np.median(ys))
+    lz = zs - float(np.median(zs))
+    return lx, ly, lz
+
+
+def points_from_las(data: bytes, limit: int | None = None) -> list[dict]:
     import laspy
     import numpy as np
+
+    if limit is None:
+        limit = int(os.environ.get("LIDAR_POINTS_LIMIT", "12000"))
+    limit = max(500, min(limit, 25000))
 
     las = laspy.read(BytesIO(data))
     n = len(las.points)
     if n == 0:
         return []
+
     if n > limit:
-        idx = np.linspace(0, n - 1, limit, dtype=int)
+        rng = np.random.default_rng(42)
+        idx = rng.choice(n, size=limit, replace=False)
+        idx.sort()
     else:
         idx = np.arange(n, dtype=int)
+
     xs = np.asarray(las.x)[idx]
     ys = np.asarray(las.y)[idx]
     zs = np.asarray(las.z)[idx]
     cls = np.asarray(las.classification)[idx]
-    cx = float(np.median(xs))
-    cy = float(np.median(ys))
-    out = []
-    for x, y, z, c in zip(xs, ys, zs, cls):
-        # Scene-local metres-ish for SVG (WGS84 deltas scaled)
-        out.append(
-            {
-                "x": float((x - cx) * 111320 * max(0.5, abs(np.cos(np.radians(cy))))),
-                "y": float((y - cy) * 111320),
-                "z": float(z),
-                "cls": int(c),
-            }
-        )
-    return out
+    intensity = None
+    if hasattr(las, "intensity"):
+        intensity = np.asarray(las.intensity)[idx]
+
+    lx, ly, lz = _to_local_meters(xs, ys, zs)
+    out: list[dict] = []
+    for i in range(len(idx)):
+        row = {
+            "x": float(lx[i]),
+            "y": float(ly[i]),
+            "z": float(lz[i]),
+            "cls": int(cls[i]),
+        }
+        if intensity is not None:
+            row["intensity"] = int(intensity[i])
+        out.append(row)
+    return out, n
 
 
 def main() -> None:
@@ -127,6 +158,14 @@ def main() -> None:
     try:
         raw = fetch_las_bytes(uri)
         points = points_from_las(raw)
+        las = None
+        try:
+            import laspy
+
+            las = laspy.read(BytesIO(raw))
+            total = len(las.points)
+        except Exception:
+            total = len(points)
         print(
             json.dumps(
                 {
@@ -134,8 +173,10 @@ def main() -> None:
                     "source": "s3",
                     "uri": uri,
                     "point_count": len(points),
+                    "point_count_total": total,
                     "points": points,
-                }
+                },
+                separators=(",", ":"),
             )
         )
     except Exception as exc:
