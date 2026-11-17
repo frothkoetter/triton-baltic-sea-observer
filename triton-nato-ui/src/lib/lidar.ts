@@ -79,3 +79,22 @@ export function pseudoLidarPoints(
 export function scanKey(scan: LidarScan): string {
   return scan.filename || `${scan.center_lat},${scan.center_lon}`;
 }
+
+/** Accept API point arrays; tolerate legacy tuple-shaped JSON from old bridge. */
+export function normalizeViewerPoints(raw: unknown): PseudoPoint[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  const first = raw[0];
+  if (typeof first === "number") return [];
+  if (Array.isArray(first)) {
+    return normalizeViewerPoints(first);
+  }
+  const out: PseudoPoint[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const p = row as Record<string, unknown>;
+    if (typeof p.x !== "number" || typeof p.y !== "number" || typeof p.z !== "number") continue;
+    const cls = typeof p.cls === "number" ? p.cls : 0;
+    out.push({ x: p.x, y: p.y, z: p.z, cls });
+  }
+  return out;
+}

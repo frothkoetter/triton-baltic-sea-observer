@@ -78,7 +78,7 @@ def _to_local_meters(xs, ys, zs):
     return lx, ly, lz
 
 
-def points_from_las(data: bytes, limit: int | None = None) -> list[dict]:
+def points_from_las(data: bytes, limit: int | None = None) -> tuple[list[dict], int]:
     import laspy
     import numpy as np
 
@@ -89,12 +89,11 @@ def points_from_las(data: bytes, limit: int | None = None) -> list[dict]:
     las = laspy.read(BytesIO(data))
     n = len(las.points)
     if n == 0:
-        return []
+        return [], 0
 
     if n > limit:
-        rng = np.random.default_rng(42)
-        idx = rng.choice(n, size=limit, replace=False)
-        idx.sort()
+        step = max(1, n // limit)
+        idx = np.arange(0, n, step, dtype=np.int64)[:limit]
     else:
         idx = np.arange(n, dtype=int)
 
@@ -128,15 +127,9 @@ def main() -> None:
     uri = sys.argv[1]
     try:
         raw = fetch_las_bytes(uri)
-        points = points_from_las(raw)
-        las = None
-        try:
-            import laspy
-
-            las = laspy.read(BytesIO(raw))
-            total = len(las.points)
-        except Exception:
-            total = len(points)
+        points, total = points_from_las(raw)
+        if not points:
+            raise ValueError("LAS contains no points")
         print(
             json.dumps(
                 {
