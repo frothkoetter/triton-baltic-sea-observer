@@ -142,7 +142,7 @@ loitering_stats AS (
 ),
 with_baseline AS (
     SELECT r.*,
-           value_at(CAST(b.speed_tdigest AS tdigest), 0.99) AS speed_p99
+           value_at_quantile(CAST(b.speed_tdigest AS tdigest), 0.99) AS speed_p99
     FROM recent_events r
     LEFT JOIN ais_baseline_sketches b
       ON r.quadkey = b.quadkey AND r.vessel_type = b.vessel_type AND r.course_sector = b.course_sector

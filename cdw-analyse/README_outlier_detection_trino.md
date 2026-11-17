@@ -36,6 +36,8 @@ Tables written:
 
 Time windows are in-SQL (`interval '4' hour` etc.); tune in `outlier_detection_trino.sql` for your ingest rate.
 
+**Trino API:** baseline P99 uses `value_at_quantile(CAST(speed_tdigest AS tdigest), 0.99)` (not legacy `value_at`, which is not registered on CDW Trino).
+
 ## CML scheduled job (Workbench)
 
 Prefer a **`.py` scheduled job** instead of shell on CML:
