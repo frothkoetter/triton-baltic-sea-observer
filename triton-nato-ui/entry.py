@@ -34,12 +34,30 @@ ROOT = resolve_root()
 os.chdir(ROOT)
 os.environ["NVM_DIR"] = str(ROOT / ".nvm")
 
-port = os.environ.get("CDSW_APP_PORT") or os.environ.get("CDSW_READONLY_PORT") or ""
+app_port = os.environ.get("CDSW_APP_PORT", "").strip()
+ro_port = os.environ.get("CDSW_READONLY_PORT", "").strip()
+api_port = os.environ.get("API_PORT", "").strip()
+# Platform-injected port for the Application script (never override in Application env).
+port = app_port or ro_port
 cwd = os.environ.get("CDSW_WORKING_DIRECTORY", os.getcwd())
 
 print("=== triton-nato-ui entry ===", flush=True)
 print(f"CDSW_WORKING_DIRECTORY={cwd}", flush=True)
-print(f"CDSW_APP_PORT={port!r}", flush=True)
+print(f"CDSW_APP_PORT={app_port!r}", flush=True)
+print(f"CDSW_READONLY_PORT={ro_port!r}", flush=True)
+if api_port:
+    print(
+        f"WARN: API_PORT={api_port!r} in env — remove from Application/Project "
+        "(Node uses CDSW_APP_PORT only)",
+        flush=True,
+    )
+if app_port and ro_port and app_port != ro_port:
+    print(
+        "NOTE: CDSW_APP_PORT and CDSW_READONLY_PORT differ — "
+        "subdomain proxy usually matches ONE of them (see Engine container log "
+        "'port scope' for tritonnato).",
+        flush=True,
+    )
 print(f"ROOT={ROOT}", flush=True)
 print(f"dist exists={(ROOT / 'dist' / 'index.html').is_file()}", flush=True)
 print(f"node_modules exists={(ROOT / 'node_modules').is_dir()}", flush=True)

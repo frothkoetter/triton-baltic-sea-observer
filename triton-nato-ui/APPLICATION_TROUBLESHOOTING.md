@@ -37,6 +37,22 @@ Do **not** use `bash cdsw-app-start.sh` as the Application script.
 
 Session `curl` to `127.0.0.1:8091` **does not** reach an Application — different engine/pod. Use the **Application subdomain URL**.
 
+## Port mismatch (Node 8091, subdomain on 8100)
+
+In **container/engine** logs, find:
+
+```text
+port scope":{"subdomain":"tritonnato","port":8100,...
+```
+
+Node must listen on **that** port. If Application logs say `127.0.0.1:8091` but `tritonnato` is **8100**, the public URL never reaches Express → **Starting** / blank UI.
+
+**Fix:**
+
+1. **Application → Environment** and **Project → Environment**: remove `API_PORT`, `CDSW_APP_PORT`, `CDSW_READONLY_PORT` (no manual ports).
+2. **Restart** the Application; in startup logs `CDSW_APP_PORT` should match the `port scope` port (e.g. `8100`).
+3. If you see `Failed to add app port` / `Duplicate port 0`, recreate the Application with a valid subdomain; do not set port env vars by hand.
+
 ## If status stays **Starting** (logs show Node listening)
 
 Cloudera periodically **polls** `CDSW_APP_POLLING_ENDPOINT` (default `/`) on **CDSW_APP_PORT**. Do **not** set a fixed `API_PORT=8091` in Application env.
