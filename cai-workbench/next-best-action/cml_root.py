@@ -65,3 +65,14 @@ def install_job_root(root: Path) -> Path:
         sys.path.insert(0, str(root))
     os.chdir(root)
     return root
+
+
+def exit_job(rc: int) -> None:
+    in_kernel = (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+    if in_kernel and rc == 0:
+        return
+    raise SystemExit(rc)

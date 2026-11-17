@@ -189,5 +189,16 @@ def main() -> int:
     return 0
 
 
+def _exit_job(rc: int) -> None:
+    in_kernel = (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+    if in_kernel and rc == 0:
+        return
+    raise SystemExit(rc)
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    _exit_job(main())

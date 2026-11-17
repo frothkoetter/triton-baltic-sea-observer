@@ -71,3 +71,20 @@ def install_job_root(root: Path) -> Path:
         sys.path.insert(0, str(root))
     os.chdir(root)
     return root
+
+
+def exit_job(rc: int) -> None:
+    """
+    Exit batch jobs with a status code.
+
+    Jupyter/CML ipykernel treats any SystemExit as a failed engine (even code 0).
+    On success in-kernel, return normally instead of raising SystemExit(0).
+    """
+    in_kernel = (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+    if in_kernel and rc == 0:
+        return
+    raise SystemExit(rc)

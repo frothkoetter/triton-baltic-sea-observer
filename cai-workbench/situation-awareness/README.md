@@ -37,6 +37,8 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 
 If the log shows `Cell In[8]`, `cml_root`, or `__file__ is not defined`, the job runs as a **notebook cell**. Fix: job command `bash run-from-session.sh` (absolute: `bash /home/cdsw/cai-workbench/situation-awareness/run-from-session.sh`).
 
+`SystemExit: 0` + **Engine exited with status 1** ⇒ Jupyter-Kernel; der Job war oft **erfolgreich**, wird aber als Failure gewertet. Use `bash run-from-session.sh` (newer code avoids raising exit 0 in-kernel).
+
 Optional flags: `python run_hourly.py --use-sample` (offline), `python run_hourly.py --skip-llm` (PDF shell without model).
 
 Enable SQL persistence: `LAGEBILD_INSERT_SQL=1` (writes to `defense.Situation_Awareness_Summary`).
