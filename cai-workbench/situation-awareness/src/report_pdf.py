@@ -1194,6 +1194,16 @@ def write_report_pdf(
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     _update_index(settings.artifacts_dir, meta)
     _link_latest(settings.artifacts_dir, pdf_path)
+    try:
+        from .s3_artifacts import upload_report_artifacts
+
+        meta = upload_report_artifacts(settings.artifacts_dir, meta)
+        meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        _refresh_index_record(settings.artifacts_dir, meta)
+    except Exception as exc:
+        import sys
+
+        print(f"WARN: S3 artifact upload skipped: {exc}", file=sys.stderr)
     return pdf_path, map_path, charts_path, zebra_path
 
 
@@ -1216,6 +1226,28 @@ def _update_index(artifacts_dir: Path, meta: dict) -> None:
     records.sort(key=lambda r: r.get("timestamp", ""), reverse=True)
     records = records[:96]
     index_path.write_text(json.dumps(records, indent=2), encoding="utf-8")
+
+
+def _refresh_index_record(artifacts_dir: Path, meta: dict) -> None:
+    """Replace newest index row with meta that includes s3_* fields."""
+    index_path = artifacts_dir / "index.json"
+    if not index_path.is_file():
+        return
+    records: list[dict] = json.loads(index_path.read_text(encoding="utf-8"))
+    pdf_name = meta.get("pdf")
+    for i, row in enumerate(records):
+        if row.get("pdf") == pdf_name:
+            records[i] = meta
+            break
+    index_path.write_text(json.dumps(records, indent=2), encoding="utf-8")
+    try:
+        from .s3_artifacts import s3_upload_enabled, upload_file, parse_prefix_uri, _prefix_uri, _object_key
+
+        if s3_upload_enabled():
+            bucket, prefix = parse_prefix_uri(_prefix_uri())
+            upload_file(index_path, bucket, _object_key(prefix, "index.json"))
+    except Exception:
+        pass
 
 
 def load_report_texts(

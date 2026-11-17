@@ -7,21 +7,31 @@ import { ProximityPage } from "./pages/Proximity";
 import { NbaHitlPage } from "./pages/NbaHitl";
 import { SqlWorkspacePage } from "./pages/SqlWorkspace";
 import { LidarPage } from "./pages/Lidar";
+import { SitrepPage } from "./pages/Sitrep";
 
-type Zone = "lagebild" | "analysen" | "proximity" | "lidar" | "sql" | "nba";
+type Zone = "lagebild" | "analysen" | "proximity" | "lidar" | "sitrep" | "sql" | "nba";
 
 const ZONE_HASH: Record<Zone, string> = {
   lagebild: "",
   analysen: "analysen",
   proximity: "proximity",
   lidar: "lidar",
+  sitrep: "sitrep",
   sql: "sql",
   nba: "nba",
 };
 
 function zoneFromHash(): Zone {
   const h = window.location.hash.replace(/^#/, "");
-  if (h === "analysen" || h === "proximity" || h === "lidar" || h === "sql" || h === "nba") return h;
+  if (
+    h === "analysen" ||
+    h === "proximity" ||
+    h === "lidar" ||
+    h === "sitrep" ||
+    h === "sql" ||
+    h === "nba"
+  )
+    return h;
   return "lagebild";
 }
 
@@ -97,6 +107,7 @@ export default function App() {
               ["analysen", "Analysen"],
               ["proximity", "Schiffsnähe"],
               ["lidar", "LiDAR"],
+              ["sitrep", "SITREP"],
               ["sql", "SQL"],
               ["nba", "NBA HITL"],
             ] as const
@@ -131,6 +142,7 @@ export default function App() {
           {zone === "analysen" && <AnalysenPage />}
           {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}
+          {zone === "sitrep" && <SitrepPage />}
           {zone === "sql" && <SqlWorkspacePage />}
           {zone === "nba" && <NbaHitlPage />}
         </main>
