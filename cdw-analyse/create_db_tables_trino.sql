@@ -919,6 +919,53 @@ FilteredGpsJammerEvents AS (
     SELECT *
     FROM GpsJammerLatestPerTile
     WHERE rn_latest = 1
+),
+
+-- CTE: AIS anomaly outliers (vessel_outliers job output)
+LatestVesselOutliers AS (
+    SELECT
+        o.mmsi,
+        coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) AS outlier_time,
+        o.latitude AS outlier_lat,
+        o.longitude AS outlier_lon,
+        o.outlier_type,
+        o.reason,
+        o.recommendation,
+        o.severity_level,
+        o.speed,
+        o.course,
+        o.status,
+        o.destination,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(o.latitude, o.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY o.mmsi, o.outlier_type, h.harbour_name
+            ORDER BY coalesce(
+                try(from_iso8601_timestamp(o.event_timestamp)),
+                try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+                try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+            ) DESC
+        ) AS rn
+    FROM
+        defense.vessel_outliers o
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+),
+FilteredVesselOutliers AS (
+    SELECT *
+    FROM LatestVesselOutliers
+    WHERE rn = 1
+      AND distance_m <= 30000
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
@@ -1087,6 +1134,31 @@ SELECT
     ) AS details
 FROM
     FilteredGpsJammerEvents j
+
+UNION ALL
+
+SELECT
+    'AIS_Outlier' AS Data_Source,
+    CAST(v.mmsi AS VARCHAR) AS ID,
+    v.outlier_time AS "timestamp",
+    v.outlier_lat AS latitude,
+    v.outlier_lon AS longitude,
+    v.harbour_name AS harbour_name,
+    v.distance_m AS dist_m_raw,
+    CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Type: ', COALESCE(v.outlier_type, 'unknown'),
+        ' | Sev: ', CAST(COALESCE(v.severity_level, 0) AS VARCHAR),
+        ' | Reason: ', COALESCE(v.reason, ''),
+        COALESCE(CONCAT(' | Rec: ', v.recommendation), ''),
+        COALESCE(CONCAT(' | SOG: ', CAST(ROUND(v.speed, 1) AS VARCHAR), ' kn'), ''),
+        COALESCE(CONCAT(' | COG: ', CAST(ROUND(v.course, 0) AS VARCHAR), '°'), ''),
+        COALESCE(CONCAT(' | Status: ', v.status), ''),
+        COALESCE(CONCAT(' | Dest: ', v.destination), '')
+    ) AS details
+FROM
+    FilteredVesselOutliers v
 
 ORDER BY harbour_name, "timestamp" DESC;
 
@@ -1336,6 +1408,43 @@ FilteredGpsJammerEvents AS (
     SELECT *
     FROM GpsJammerNearestHarbour
     WHERE rn_nearest = 1
+),
+
+LatestVesselOutliers AS (
+    SELECT
+        o.mmsi,
+        coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) AS outlier_time,
+        o.latitude AS outlier_lat,
+        o.longitude AS outlier_lon,
+        o.outlier_type,
+        o.reason,
+        o.recommendation,
+        o.severity_level,
+        o.speed,
+        o.course,
+        o.status,
+        o.destination,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(o.latitude, o.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.vessel_outliers o
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+),
+FilteredVesselOutliers AS (
+    SELECT *
+    FROM LatestVesselOutliers
+    WHERE distance_m <= 30000
 )
 
 -- FINAL SELECT: all qualifying events in the reporting window (volume, not snapshot)
@@ -1504,6 +1613,31 @@ SELECT
     ) AS details
 FROM
     FilteredGpsJammerEvents j
+
+UNION ALL
+
+SELECT
+    'AIS_Outlier' AS Data_Source,
+    CAST(v.mmsi AS VARCHAR) AS ID,
+    v.outlier_time AS "timestamp",
+    v.outlier_lat AS latitude,
+    v.outlier_lon AS longitude,
+    v.harbour_name AS harbour_name,
+    v.distance_m AS dist_m_raw,
+    CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Type: ', COALESCE(v.outlier_type, 'unknown'),
+        ' | Sev: ', CAST(COALESCE(v.severity_level, 0) AS VARCHAR),
+        ' | Reason: ', COALESCE(v.reason, ''),
+        COALESCE(CONCAT(' | Rec: ', v.recommendation), ''),
+        COALESCE(CONCAT(' | SOG: ', CAST(ROUND(v.speed, 1) AS VARCHAR), ' kn'), ''),
+        COALESCE(CONCAT(' | COG: ', CAST(ROUND(v.course, 0) AS VARCHAR), '°'), ''),
+        COALESCE(CONCAT(' | Status: ', v.status), ''),
+        COALESCE(CONCAT(' | Dest: ', v.destination), '')
+    ) AS details
+FROM
+    FilteredVesselOutliers v
 
 ORDER BY harbour_name, "timestamp" DESC;
 

@@ -28,7 +28,9 @@ Reporting time (analyst run): {report_time}
 
 The table rows come from defense.lagebild (Trino: iceberg.defense.lagebild). Columns **harbour_country**
 and **harbour_affiliation** (when present) are authoritative for port state (Germany/Russia/etc.).
-Use Data_Source (AIS, LiDAR, RUS_Fleet, GPS_Jammer, …) and details text.
+Use Data_Source (AIS, AIS_Outlier, LiDAR, RUS_Fleet, GPS_Jammer, …) and details text.
+**AIS_Outlier** rows are Trino anomaly detections (rendezvous, dark vessel, kinematics, …);
+use **Sev:** in details (0–5) for Threat Level — Sev 4–5 → CRITICAL/HIGH, Sev 2–3 → MEDIUM, Sev 0–1 → LOW unless Reason implies higher priority.
 
 Executive summary must:
 - Lead with **German / allied Baltic ports** when those rows exist.

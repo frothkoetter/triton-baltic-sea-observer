@@ -22,7 +22,7 @@ SELECT * FROM {qualified_lagebild}
 WHERE harbour_name IN (
     SELECT name FROM {qualified_harbours}
 )
-   OR Data_Source IN ('GPS_Jammer', 'REF', 'RUS_Fleet')
+   OR Data_Source IN ('GPS_Jammer', 'REF', 'RUS_Fleet', 'AIS_Outlier')
    OR harbour_name IS NULL
 """.strip()
 
