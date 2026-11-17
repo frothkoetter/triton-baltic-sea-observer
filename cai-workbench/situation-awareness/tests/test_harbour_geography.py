@@ -48,5 +48,15 @@ class HarbourGeographyTests(unittest.TestCase):
         self.assertFalse(geography_warnings(ok))
 
 
+class GeoRewriteTests(unittest.TestCase):
+    def test_rule_fix_german_primarily_baltiysk(self) -> None:
+        from src.geo_rewrite import rule_based_geography_fix
+
+        bad = "German Baltic harbours--primarily Baltiysk--show fleet activity."
+        fixed = rule_based_geography_fix(bad)
+        self.assertNotRegex(fixed, r"German\s+Baltic\s+harbours[^\n]*primarily\s+Baltiysk", re.I)
+        self.assertIn("Baltiysk, Russia", fixed)
+
+
 if __name__ == "__main__":
     unittest.main()

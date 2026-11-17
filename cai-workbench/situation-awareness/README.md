@@ -65,7 +65,7 @@ Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRE
 
 Default SQL loads **all Baltic harbours** from `defense.baltic_sea_harbours` plus offshore rows (`harbour_name IS NULL`) and explicit feeds (`GPS_Jammer`, `REF` area violations, `RUS_Fleet`). Set `LAGEBILD_GERMAN_ONLY=1` to restore the former German-only harbour filter. Override entirely with `LAGEBILD_SQL`.
 
-**LLM geography:** **Baltiysk** is **Russia** (Kaliningrad), not a German port — prompts and `harbour_country` / `harbour_affiliation` columns ground the model; job logs print `WARN:` if text still says “German … Baltiysk”.
+**LLM geography:** **Baltiysk** is **Russia** (Kaliningrad), not a German port — prompts and `harbour_country` / `harbour_affiliation` columns ground the model. If the draft still mislabels ports, **`LAGEBILD_GEO_REWRITE=1`** (default) runs a **second LLM pass** plus regex fallback; logs: `INFO: geography rewrite …`.
 
 Offline sample: `cai-workbench/data/lagebild/sample_lagebild.csv`.
 

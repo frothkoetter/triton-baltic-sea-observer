@@ -90,6 +90,9 @@ class Settings:
     azure_api_version: str | None = field(
         default_factory=lambda: os.environ.get("LAGEBILD_AZURE_API_VERSION") or None
     )
+    geo_rewrite_enabled: bool = field(
+        default_factory=lambda: _env_bool("LAGEBILD_GEO_REWRITE", True)
+    )
 
     def __post_init__(self) -> None:
         from .llm_client import normalize_api_key

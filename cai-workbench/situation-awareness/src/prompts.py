@@ -76,6 +76,35 @@ Highlight critical changes and recommend next actions for C2.
 Do not describe Baltiysk or Kronstadt as German harbours (they are Russian Federation)."""
 
 
+def build_geography_rewrite_prompt(
+    report_text: str,
+    warnings: list[str],
+    geography_context: str,
+) -> list[dict[str, str]]:
+    issues = "\n".join(f"- {w}" for w in warnings)
+    user = f"""The following NATO Baltic SITREP draft has GEOGRAPHY ERRORS. Produce a corrected full report.
+
+{geography_context}
+
+ERRORS TO FIX:
+{issues}
+
+RULES:
+- Baltiysk and Kronstadt are **Russia** (adversary naval bases), never German/NATO harbours.
+- German Baltic ports are in **Germany** only (Kiel, Rostock, Wismar, Greifswald, …).
+- Split narrative: allied German/allied sectors vs adversary activity at Russian ports.
+- Keep the same section structure and headings as the draft; fix facts only; do not invent events not in the draft.
+- Output the complete revised report (markdown), no preamble.
+
+DRAFT:
+{report_text}
+"""
+    return [
+        {"role": "system", "content": SYSTEM_SITUATION},
+        {"role": "user", "content": user},
+    ]
+
+
 def build_comparison_prompt(
     current_report: str,
     report_24h: str | None,

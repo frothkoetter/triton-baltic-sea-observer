@@ -20,7 +20,8 @@ from .data_access import (
 from .llm_client import chat_completion_text
 from .prompts import build_comparison_prompt, build_situation_prompt
 from .lagebild_viz_prep import normalize_lagebild_frame
-from .harbour_geography import enrich_harbour_columns, geography_context_block, geography_warnings
+from .geo_rewrite import ensure_report_geography
+from .harbour_geography import enrich_harbour_columns, geography_context_block
 from .report_pdf import load_report_texts, write_report_pdf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -71,10 +72,12 @@ def run_pipeline(
         report_text = chat_completion_text(
             settings, messages, stream=bool(on_llm_token), on_token=on_llm_token
         )
-        for warn in geography_warnings(report_text):
-            import sys
-
-            print(f"WARN: {warn}", file=sys.stderr)
+        report_text, _ = ensure_report_geography(
+            settings,
+            report_text,
+            geography_context_block(df_used),
+            on_llm_token=on_llm_token,
+        )
         comparison_text = None
         if not skip_comparison:
             report_24h = load_report_texts(settings.artifacts_dir, 24.0, report_time)
