@@ -25,4 +25,5 @@ if [[ ! -f "$ROOT/dist/index.html" ]]; then
   exit 1
 fi
 
+echo "Node $(node -v) listening on 0.0.0.0:${PORT}"
 exec node "$ROOT/server/index.js"

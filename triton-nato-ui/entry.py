@@ -74,8 +74,8 @@ if not runner.is_file():
     sys.exit(1)
 
 print("Starting Node server…", flush=True)
-try:
-    os.execv("/bin/bash", ["/bin/bash", str(runner)])
-except OSError as exc:
-    print(f"exec failed: {exc}", file=sys.stderr)
-    sys.exit(1)
+# Keep Python parent alive (some CML runners echo notebook-style logs; subprocess is safer than execv).
+rc = subprocess.call(["/bin/bash", str(runner)])
+if rc != 0:
+    print(f"run-node-server.sh exited with {rc}", file=sys.stderr, flush=True)
+sys.exit(rc)
