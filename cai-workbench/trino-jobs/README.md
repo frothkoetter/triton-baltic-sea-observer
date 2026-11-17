@@ -32,3 +32,15 @@ SELECT Outlier_Type, COUNT(*) FROM iceberg.defense.vessel_outliers GROUP BY 1;
 ```
 
 Build step (session or project): `bash cai-workbench/trino-jobs/cdsw-build.sh`
+
+## Manual test in a CML session
+
+From `~/cai-workbench/trino-jobs` (CML does not need `./` if the file is not executable):
+
+```bash
+export TRINO_USER=… TRINO_PASSWORD=…   # or LAGEBILD_TRINO_*
+TRINO_JOB=lagebild_views python3 cml_job.py
+# or: bash -c 'TRINO_JOB=lagebild_views exec python3 cml_job.py'
+```
+
+If you prefer `./cml_job.py`, run `chmod +x cml_job.py` once after git pull (executable bit is set in repo).
