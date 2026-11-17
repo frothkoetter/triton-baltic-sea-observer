@@ -50,3 +50,22 @@ class Settings:
         default_factory=lambda: int(os.environ.get("NBA_SIM_TICKS", "6"))
     )
     phase: int = field(default_factory=lambda: int(os.environ.get("NBA_PHASE", "1")))
+
+    exit_if_quiet: bool = field(
+        default_factory=lambda: _env_bool("NBA_EXIT_IF_QUIET", False)
+    )
+    dedupe_hours: float = field(
+        default_factory=lambda: float(os.environ.get("NBA_DEDUPE_HOURS", "6"))
+    )
+    alert_candidate_limit: int = field(
+        default_factory=lambda: int(os.environ.get("NBA_ALERT_LIMIT", "5"))
+    )
+    enable_pipeline_blackout: bool = field(
+        default_factory=lambda: _env_bool("NBA_PIPELINE_BLACKOUT", True)
+    )
+    lagebild_artifacts_dir: Path | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        raw = os.environ.get("NBA_LAGEBILD_ARTIFACTS_DIR")
+        if raw:
+            self.lagebild_artifacts_dir = Path(raw)

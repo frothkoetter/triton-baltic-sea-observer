@@ -12,8 +12,9 @@ _ROOT = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from src.alert_rules import NoAlertFound
 from src.config import Settings
-from src.pipeline import run_phase0, run_phase1, run_pipeline
+from src.pipeline import run_pipeline
 
 
 def main() -> int:
@@ -22,6 +23,16 @@ def main() -> int:
         "--demo-greifswald",
         action="store_true",
         help="Force Greifswald/Adlergrund demo alert",
+    )
+    parser.add_argument(
+        "--no-demo",
+        action="store_true",
+        help="Event-driven mode: detect alerts from Trino/SITREP (no Greifswald)",
+    )
+    parser.add_argument(
+        "--exit-if-quiet",
+        action="store_true",
+        help="Exit 0 when no alert is found (CML schedule idle)",
     )
     parser.add_argument(
         "--offline",
@@ -44,6 +55,10 @@ def main() -> int:
 
     if args.demo_greifswald:
         os.environ["NBA_DEMO_GREIFSWALD"] = "1"
+    if args.no_demo:
+        os.environ["NBA_DEMO_GREIFSWALD"] = "0"
+    if args.exit_if_quiet:
+        os.environ["NBA_EXIT_IF_QUIET"] = "1"
     if args.offline:
         os.environ["NBA_OFFLINE"] = "1"
     if args.persist_trino:
@@ -58,6 +73,12 @@ def main() -> int:
 
     try:
         result = run_pipeline(settings)
+    except NoAlertFound as exc:
+        if settings.exit_if_quiet:
+            print(f"NBA idle: {exc}")
+            return 0
+        print(f"NBA job failed: {exc}", file=sys.stderr)
+        return 2
     except Exception as exc:
         print(f"NBA job failed: {exc}", file=sys.stderr)
         return 1

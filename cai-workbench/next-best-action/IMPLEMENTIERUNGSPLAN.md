@@ -105,10 +105,19 @@ flowchart LR
 
 **Explizit nicht:** Iceberg-Branches, `rollback_to_snapshot` auf `ships`/`ais_events_ice`.
 
-### Phase 2 — Ereignisgesteuerter CML-Job
+### Phase 2 — Ereignisgesteuerter CML-Job (umgesetzt)
 
-- Job neben `run_hourly.py`: Trigger über CML Schedule **oder** INSERT in `nba_incidents` (status `NEW`).
-- Optional: Webhook von `triton-nato-ui` (Phase 4).
+| Komponente | Ort |
+| :---- | :---- |
+| Pipeline-Blackout (Top-1) | `sql/alerts/pipeline_blackout_top1.sql` |
+| Lagebild-Kandidaten | `sql/alerts/lagebild_nba_candidates.sql` |
+| Detektion + Priorität | `src/alert_detector.py` |
+| SITREP `ESCALATED` | `src/sitrep_bridge.py` |
+| Dedupe / Idle | `alert_rules.py`, `NBA_DEDUPE_HOURS`, `--exit-if-quiet` |
+
+CML: `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino` (stündlich neben UC1).
+
+- Optional später: Webhook von `triton-nato-ui` (Phase 4).
 
 ### Phase 3 — Agenten (CrewAI Flow)
 
@@ -184,7 +193,7 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 2):** CML-Schedule, Alert-SQL Pipeline-Blackout, ereignisgesteuert ohne `--demo-greifswald`.
+**Als Nächstes (Phase 3):** CrewAI-Flow, `@persist` State, LLM-Playbook.
 
 Referenzen:
 

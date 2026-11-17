@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from .alert_rules import NbaAlert
+from .alert_types import NbaAlert
 from .config import Settings
 from .scoring import CoaScore
 from .snapshot_bundle import SnapshotBundle

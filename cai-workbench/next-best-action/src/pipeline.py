@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .alert_rules import NbaAlert, next_alert
+from .alert_rules import next_alert
+from .alert_types import NbaAlert
 from .config import Settings
 from .env_gates import evaluate_sensor_gates
 from .persistence import insert_coa_scores, insert_incident, insert_snapshots

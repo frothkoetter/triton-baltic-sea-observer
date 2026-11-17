@@ -1,4 +1,4 @@
-# Next Best Action (NBA) — CML module (Phase 0)
+# Next Best Action (NBA) — CML module (Phase 0–2)
 
 Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observer-Stack (Trino/Iceberg, NiFi-Simulatoren, optional CrewAI).
 
@@ -16,7 +16,14 @@ export TRINO_JDBC_URL TRINO_USER TRINO_PASSWORD
 python3 run_nba.py --demo-greifswald --phase 1   # default phase 1: simulation + scoring
 python3 run_nba.py --demo-greifswald --phase 0   # snapshot + COA only
 python3 run_nba.py --demo-greifswald --persist-trino
+
+# Phase 2 — event-driven CML (no Greifswald unless an alert fires)
+python3 run_nba.py --no-demo --exit-if-quiet --persist-trino
 ```
+
+**Phase 2 env (optional):** `NBA_DEDUPE_HOURS` (default 6), `NBA_PIPELINE_BLACKOUT=1`, `NBA_LAGEBILD_ARTIFACTS_DIR` (UC1 `artifacts/reports`), `NBA_EXIT_IF_QUIET=1` for scheduled idle exit 0.
+
+Alert SQL: `sql/alerts/pipeline_blackout_top1.sql`, `sql/alerts/lagebild_nba_candidates.sql` (requires `ais_daten`, `ostsee_pipelines_segmented` for pipeline path).
 
 DDL einspielen:
 
