@@ -30,12 +30,14 @@ export function classificationLabel(code: number | null | undefined): string {
   return String(code);
 }
 
+export type PseudoPoint = { x: number; y: number; z: number; cls: number };
+
 /** Deterministic pseudo point cloud for UI preview (not LAS decode). */
 export function pseudoLidarPoints(
   seed: string,
   vesselType: string,
-  pointBudget = 220
-): { x: number; y: number; cls: number }[] {
+  pointBudget = 1800
+): PseudoPoint[] {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
@@ -51,19 +53,25 @@ export function pseudoLidarPoints(
   const hullLen =
     vesselType.includes("submarine") ? 18 : vesselType.includes("frigate") ? 42 : vesselType.includes("tanker") ? 55 : 32;
   const hullBeam = vesselType.includes("submarine") ? 6 : 12;
-  const out: { x: number; y: number; cls: number }[] = [];
+  const out: PseudoPoint[] = [];
 
   for (let i = 0; i < pointBudget; i++) {
     const along = (rand() - 0.5) * hullLen;
     const across = (rand() - 0.5) * hullBeam;
     const jitterX = (rand() - 0.5) * 2;
     const jitterY = (rand() - 0.5) * 2;
+    const jitterZ = (rand() - 0.5) * 4;
     const clsRoll = rand();
     let cls = 5;
     if (clsRoll > 0.92) cls = 10;
     else if (clsRoll > 0.85) cls = 2;
     else if (vesselType === "undefined" || vesselType === "") cls = 0;
-    out.push({ x: along + jitterX, y: across + jitterY, cls });
+    out.push({
+      x: along + jitterX,
+      y: across + jitterY,
+      z: jitterZ + (rand() - 0.3) * 3,
+      cls,
+    });
   }
   return out;
 }
