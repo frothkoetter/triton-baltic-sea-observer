@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
-import { TacticalMap } from "../components/TacticalMap";
+import { TacticalMap, type OutlierRow } from "../components/TacticalMap";
 
 export type AisRow = {
   mmsi: number;
@@ -25,22 +25,46 @@ type Kpis = {
   source?: string;
 };
 
+function normalizeOutlier(row: Record<string, unknown>): OutlierRow | null {
+  const lat = Number(row.latitude ?? row.Latitude);
+  const lon = Number(row.longitude ?? row.Longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return {
+    mmsi: Number(row.mmsi ?? row.MMSI ?? row.id ?? row.ID),
+    latitude: lat,
+    longitude: lon,
+    event_timestamp: String(row.event_timestamp ?? row.Event_Timestamp ?? ""),
+    outlier_type: String(row.outlier_type ?? row.Outlier_Type ?? "Anomaly"),
+    reason: String(row.reason ?? row.Reason ?? row.details ?? ""),
+    severity_level: Number(row.severity_level ?? row.Severity_Level ?? 50),
+    speed: Number(row.speed ?? row.Speed ?? NaN),
+    harbour_name: row.harbour_name ? String(row.harbour_name) : undefined,
+  };
+}
+
 export function LagebildPage() {
   const [ais, setAis] = useState<AisRow[]>([]);
   const [areas, setAreas] = useState<{ area_id: string; center_latitude: number; center_longitude: number }[]>([]);
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [source, setSource] = useState("…");
-  const [layers, setLayers] = useState({ ais: true, areas: true, sanctions: true });
+  const [outliers, setOutliers] = useState<OutlierRow[]>([]);
+  const [layers, setLayers] = useState({ ais: true, areas: true, sanctions: true, outliers: true });
 
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, kpiRes] = await Promise.all([
+      const [aisRes, areaRes, outlierRes, kpiRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
         fetchJson<{ rows?: typeof areas; source?: string }>("/api/observation-areas"),
+        fetchJson<{ rows?: OutlierRow[]; source?: string }>("/api/vessel-outliers"),
         fetchJson<Kpis & { ok: boolean }>("/api/kpis"),
       ]);
       setAis(aisRes.rows ?? []);
       setAreas(areaRes.rows ?? []);
+      setOutliers(
+        (outlierRes.rows ?? [])
+          .map((r) => normalizeOutlier(r as Record<string, unknown>))
+          .filter((r): r is OutlierRow => r != null)
+      );
       setKpis(kpiRes);
       setSource(aisRes.source ?? "unknown");
     })();
@@ -70,14 +94,20 @@ export function LagebildPage() {
       </div>
 
       <div className="layer-toggles">
-        {(["ais", "areas", "sanctions"] as const).map((key) => (
+        {(["ais", "outliers", "areas", "sanctions"] as const).map((key) => (
           <button
             key={key}
             type="button"
             className={`chip ${layers[key] ? "on" : ""}`}
             onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
           >
-            {key === "ais" ? "AIS Live" : key === "areas" ? "Restricted Areas" : "Sanctions overlay"}
+            {key === "ais"
+              ? "AIS Live"
+              : key === "outliers"
+                ? `AIS Outliers (${outliers.length})`
+                : key === "areas"
+                  ? "Restricted Areas"
+                  : "Sanctions overlay"}
           </button>
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
@@ -86,10 +116,11 @@ export function LagebildPage() {
       </div>
 
       <section className="panel">
-        <h2 className="panel-title">Lagebild — AIS Layer (visual 123)</h2>
+        <h2 className="panel-title">Lagebild — AIS &amp; Anomalies (visual 123)</h2>
         <TacticalMap
           ships={layers.ais ? filtered : []}
           areas={layers.areas ? areas : []}
+          outliers={layers.outliers ? outliers : []}
           showSanctions={layers.sanctions}
         />
       </section>

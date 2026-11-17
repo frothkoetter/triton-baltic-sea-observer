@@ -157,6 +157,19 @@ export async function getObservationAreas() {
   return runQueryOrSample(PREDEFINED.observationAreas, () => sample.observationAreas);
 }
 
+/** vessel_outliers for map; falls back to sample when warehouse unavailable. */
+export async function getVesselOutliers() {
+  const live = await queryWarehouse(PREDEFINED.vesselOutliersMap);
+  if (live.ok && (live.rows?.length ?? 0) > 0) {
+    return live;
+  }
+  const lagebild = await queryWarehouse(PREDEFINED.lagebildOutliersMap);
+  if (lagebild.ok && (lagebild.rows?.length ?? 0) > 0) {
+    return lagebild;
+  }
+  return runQueryOrSample(PREDEFINED.vesselOutliersMap, () => sample.vesselOutliers);
+}
+
 export async function getLidarScans() {
   return runQueryOrSample(PREDEFINED.lidarScans, () => sample.lidarScans);
 }

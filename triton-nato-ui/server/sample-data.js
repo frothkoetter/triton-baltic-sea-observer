@@ -96,6 +96,45 @@ export const lidarScans = [
   },
 ];
 
+export const vesselOutliers = [
+  {
+    mmsi: 211234567,
+    event_timestamp: "2026-11-17T18:12:00Z",
+    latitude: 54.71,
+    longitude: 13.08,
+    speed: 0.8,
+    course: 182,
+    status: "Under way",
+    outlier_type: "Rendezvous",
+    reason: "STS candidate: 320 m from MMSI 211234568, both SOG < 4 kn",
+    severity_level: 60,
+  },
+  {
+    mmsi: 273445566,
+    event_timestamp: "2026-11-17T17:40:00Z",
+    latitude: 55.38,
+    longitude: 18.79,
+    speed: 22.1,
+    course: 91,
+    status: "Under way",
+    outlier_type: "MMSI Teleportation",
+    reason: "Implied hop speed 89 kn over 1.2 nm in 3.0 min",
+    severity_level: 80,
+  },
+  {
+    mmsi: 636022401,
+    event_timestamp: "2026-11-17T16:05:00Z",
+    latitude: 55.97,
+    longitude: 17.78,
+    speed: 12.0,
+    course: 210,
+    status: "Moored",
+    outlier_type: "Misreported Status",
+    reason: 'Status "Moored" with SOG 12.0 kn',
+    severity_level: 55,
+  },
+];
+
 export const aisShips = [
   { mmsi: 123456007, ship_name: "Blue Horizon", vessel_type: "Container", flag: "Singapore", latitude: 54.52, longitude: 18.54, speed: 12.4, course: 285, event_timestamp: "2025-10-15T08:12:00Z", status: "Underway" },
   { mmsi: 123456014, ship_name: "Maritime Queen", vessel_type: "Naval", flag: "United States", latitude: 54.09, longitude: 12.14, speed: 8.1, course: 45, event_timestamp: "2025-10-15T08:10:00Z", status: "Underway" },
