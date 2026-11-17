@@ -20,6 +20,7 @@ from .data_access import (
 from .llm_client import chat_completion_text
 from .prompts import build_comparison_prompt, build_situation_prompt
 from .lagebild_viz_prep import normalize_lagebild_frame
+from .harbour_geography import enrich_harbour_columns, geography_context_block, geography_warnings
 from .report_pdf import load_report_texts, write_report_pdf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -52,8 +53,10 @@ def run_pipeline(
 
     dataframe, data_source = load_lagebild_dataframe(settings, PROJECT_ROOT)
     dataframe = normalize_lagebild_frame(dataframe)
+    dataframe = enrich_harbour_columns(dataframe)
     md_table, df_used = dataframe_to_markdown_bounded(dataframe, settings.max_char_limit)
-    dataset_summary = lagebild_dataset_summary(df_used)
+    df_used = enrich_harbour_columns(df_used)
+    dataset_summary = geography_context_block(df_used) + "\n\n" + lagebild_dataset_summary(df_used)
     report_time = datetime.now(timezone.utc)
     report_time_str = report_time.strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -68,6 +71,10 @@ def run_pipeline(
         report_text = chat_completion_text(
             settings, messages, stream=bool(on_llm_token), on_token=on_llm_token
         )
+        for warn in geography_warnings(report_text):
+            import sys
+
+            print(f"WARN: {warn}", file=sys.stderr)
         comparison_text = None
         if not skip_comparison:
             report_24h = load_report_texts(settings.artifacts_dir, 24.0, report_time)

@@ -5,7 +5,13 @@ from __future__ import annotations
 SYSTEM_SITUATION = """You are a NATO Baltic maritime situation analyst supporting C2 decision-makers.
 Write clear, structured assessments in English unless the user asks otherwise.
 Ground every claim in the supplied table; distinguish corroborated multi-source events from single-source hints.
-Use military brevity; avoid speculation beyond the data."""
+Use military brevity; avoid speculation beyond the data.
+
+Geography rules (mandatory):
+- **Baltiysk** and **Kronstadt** are **Russian Federation** naval bases — never describe them as German or NATO harbours.
+- **German Baltic harbours** are ports in **Germany** (e.g. Kiel, Rostock, Wismar, Greifswald, Warnemünde, Eckernförde).
+- **RUS_Fleet** events are **adversary** Russian Navy activity; cite the correct port/country from harbour_name and harbour_country columns.
+- Do not merge adversary-base activity into an "allied harbour" narrative."""
 
 
 def build_situation_prompt(
@@ -14,15 +20,20 @@ def build_situation_prompt(
     data_table: str,
 ) -> list[dict[str, str]]:
     user = f"""--- MILITARY SITUATION REPORT ---
-Analyst task: produce a situation picture (Lagebild) for German Baltic harbours from consolidated feeds.
+Analyst task: NATO Baltic theatre Lagebild from consolidated feeds — **separate allied vs adversary geography**.
 
 Reporting time (analyst run): {report_time}
 
-Dataset overview: {dataset_summary}
+{dataset_summary}
 
-The table rows come from defense.lagebild (Trino: iceberg.defense.lagebild). Use Data_Source
-(AIS, Buoy, LiDAR, Social_Media, Marine_Message, etc.) and details (sanctions, magnetic anomalies,
-LiDAR class hints, message subjects).
+The table rows come from defense.lagebild (Trino: iceberg.defense.lagebild). Columns **harbour_country**
+and **harbour_affiliation** (when present) are authoritative for port state (Germany/Russia/etc.).
+Use Data_Source (AIS, LiDAR, RUS_Fleet, GPS_Jammer, …) and details text.
+
+Executive summary must:
+- Lead with **German / allied Baltic ports** when those rows exist.
+- Describe **Baltiysk / Russian bases** only as **adversary naval activity (Russia)** — never as "German Baltic harbours".
+- Never write that Russian fleet units are "at German harbours" unless harbour_country=Germany in the table for that row.
 
 Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``):
 
@@ -35,8 +46,8 @@ Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``)
    One row per active harbour/sector (sorted by Threat Level: CRITICAL, then HIGH/MEDIUM, then LOW).
    Threat Level must be one of: CRITICAL, HIGH, MEDIUM, LOW. After the table you may add brief bullets
    only for cross-source items that do not fit a single row.
-4. Harbours and Anomalies — prefer the same 4-column table when ≥3 harbours have events;
-   otherwise one ``* HarbourName: detail`` bullet per harbour (no duplicate harbour names).
+4. Harbours and Anomalies — **different content from section 3**: per-harbour bullets with
+   ``* HarbourName (Country): detail``; include country for non-German ports; no duplicate of section 3 table.
 5. AIS Sanctions — use a small table ``| Vessel | MMSI | Harbour | Status |`` when any
    sanctioned vessel appears; otherwise one sentence "No sanctioned vessels observed."
 6. Conclusions & Directives — prefix each action ``DIRECTIVE 01:``, ``DIRECTIVE 02:``, … with
@@ -45,8 +56,9 @@ Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``)
 Use ``* Topic: detail`` bullets in section 2 and when tables are not warranted. Wrap long lines;
 do not start continuation lines with a new ``*``.
 
-Example matrix row:
-| Greifswald | LiDAR / AIS | CRITICAL | LiDAR frigate hint; sanctioned AIS track within 25 km. |
+Example matrix rows:
+| Greifswald | LiDAR / AIS | CRITICAL | Allied (DE); LiDAR hint; AIS within 25 km. |
+| Baltiysk | RUS Fleet / LiDAR | HIGH | **Russia**; adversary corvette/landing ship movements — not a German port. |
 
 Data:
 {data_table}
@@ -60,7 +72,8 @@ END OF DATA."""
 
 COMPARISON_SYSTEM = """You compare consecutive NATO Baltic situation reports.
 Classify each thematic change as NEW, ESCALATED, DE-ESCALATED, or UNCHANGED.
-Highlight critical changes and recommend next actions for C2."""
+Highlight critical changes and recommend next actions for C2.
+Do not describe Baltiysk or Kronstadt as German harbours (they are Russian Federation)."""
 
 
 def build_comparison_prompt(
