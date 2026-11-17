@@ -13,6 +13,7 @@ import {
   getKpis,
   getLidarScans,
   getObservationAreas,
+  getPositionTracks,
   getVesselOutliers,
   getSanctions,
   getSurveillance,
@@ -173,6 +174,21 @@ app.get("/api/vessel-outliers", async (_req, res) => {
 
 app.get("/api/fleet-positions", async (_req, res) => {
   res.json(await getFleetPositions());
+});
+
+app.get("/api/position-tracks", async (req, res) => {
+  const q = req.query ?? {};
+  res.json(
+    await getPositionTracks({
+      hours: q.hours,
+      flag: q.flag,
+      vesselType: q.vessel_type,
+      shipName: q.ship_name,
+      ais: q.ais !== "0" && q.ais !== "false",
+      german: q.german !== "0" && q.german !== "false",
+      russian: q.russian !== "0" && q.russian !== "false",
+    })
+  );
 });
 
 app.get("/api/analyses/fleet", async (_req, res) => {

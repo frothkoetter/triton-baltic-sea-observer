@@ -191,6 +191,85 @@ export const vesselOutliers = [
   },
 ];
 
+function demoTrackPoints(lat, lon, n = 8, dLat = 0.08, dLon = 0.12) {
+  const rows = [];
+  for (let i = 0; i < n; i += 1) {
+    rows.push({
+      latitude: lat + dLat * i * 0.35,
+      longitude: lon + dLon * Math.sin(i * 0.7) * 0.4 + dLon * i * 0.15,
+    });
+  }
+  return rows;
+}
+
+/** Multi-point histories for `/api/position-tracks` sample mode. */
+export function samplePositionTrackRows() {
+  const rows = [];
+  const pushSeries = (mmsi, meta, baseLat, baseLon, kind, tsBase) => {
+    demoTrackPoints(baseLat, baseLon).forEach((p, i) => {
+      rows.push({
+        mmsi,
+        ...meta,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        speed: 8 + i,
+        course: 90 + i * 10,
+        event_timestamp: new Date(Date.parse(tsBase) + i * 3600000).toISOString(),
+        track_kind: kind,
+      });
+    });
+  };
+  pushSeries(
+    123456007,
+    { ship_name: "Blue Horizon", vessel_type: "Container", flag: "Singapore" },
+    54.2,
+    17.8,
+    "ais",
+    "2026-11-17T10:00:00Z"
+  );
+  pushSeries(
+    636022401,
+    { ship_name: "HS ATLANTICA", vessel_type: "Crude Oil Tanker", flag: "Liberia" },
+    55.5,
+    17.2,
+    "ais",
+    "2026-11-17T11:00:00Z"
+  );
+  pushSeries(
+    "MAR123411",
+    { ship_name: "FGS Braunschweig", vessel_type: "Korvetten", flag: "Germany" },
+    54.0,
+    10.5,
+    "deu_fleet",
+    "2026-11-17T12:00:00Z"
+  );
+  pushSeries(
+    "MAR123404",
+    { ship_name: "FGS Sachsen", vessel_type: "Fregatten", flag: "Germany" },
+    54.2,
+    11.8,
+    "deu_fleet",
+    "2026-11-17T12:30:00Z"
+  );
+  pushSeries(
+    "RUS273842",
+    { ship_name: "Neustrashimy", vessel_type: "Frigate", flag: "Russia" },
+    54.5,
+    19.2,
+    "rus_fleet",
+    "2026-11-17T13:00:00Z"
+  );
+  pushSeries(
+    "RUS273901",
+    { ship_name: "Ivan Gren", vessel_type: "Landing Ship", flag: "Russia" },
+    59.5,
+    28.9,
+    "rus_fleet",
+    "2026-11-17T13:30:00Z"
+  );
+  return rows;
+}
+
 export const aisShips = [
   { mmsi: 123456007, ship_name: "Blue Horizon", vessel_type: "Container", flag: "Singapore", latitude: 54.52, longitude: 18.54, speed: 12.4, course: 285, event_timestamp: "2025-10-15T08:12:00Z", status: "Underway" },
   { mmsi: 123456014, ship_name: "Maritime Queen", vessel_type: "Naval", flag: "United States", latitude: 54.09, longitude: 12.14, speed: 8.1, course: 45, event_timestamp: "2025-10-15T08:10:00Z", status: "Underway" },

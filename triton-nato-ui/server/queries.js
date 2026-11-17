@@ -1,5 +1,99 @@
 /** Read-only SQL templates aligned with CDV dataset names (defense schema). */
 
+function sqlLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+const tsParse = (alias) => `coalesce(
+  try(from_iso8601_timestamp(${alias})),
+  try(from_iso8601_timestamp(replace(${alias}, 'Z', '+00:00'))),
+  try_cast(replace(${alias}, 'Z', '') AS timestamp)
+)`;
+
+/** AIS position history for route map (optional Filter Rail predicates on ships). */
+export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipName = "" } = {}) {
+  const predicates = [
+    "a.latitude IS NOT NULL",
+    "a.longitude IS NOT NULL",
+    `${tsParse("a.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
+  ];
+  if (flag) predicates.push(`s.flag = ${sqlLiteral(flag)}`);
+  if (vesselType) predicates.push(`s.vessel_type = ${sqlLiteral(vesselType)}`);
+  if (shipName) predicates.push(`s.ship_name = ${sqlLiteral(shipName)}`);
+  return `
+    SELECT
+      CAST(a.mmsi AS varchar) AS mmsi,
+      s.ship_name,
+      s.vessel_type,
+      s.flag,
+      a.latitude,
+      a.longitude,
+      a.speed,
+      a.course,
+      a.event_timestamp,
+      'ais' AS track_kind
+    FROM defense.ais_events_ice a
+    LEFT JOIN defense.ships s ON a.mmsi = s.mmsi
+    WHERE ${predicates.join("\n      AND ")}
+    ORDER BY a.mmsi, ${tsParse("a.event_timestamp")} ASC
+    LIMIT 25000
+  `;
+}
+
+export function buildGermanFleetTrackSql({ hours = 24, shipName = "" } = {}) {
+  const predicates = [
+    "m.latitude IS NOT NULL",
+    "m.longitude IS NOT NULL",
+    `${tsParse("m.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
+  ];
+  if (shipName) predicates.push(`g.name = ${sqlLiteral(shipName)}`);
+  return `
+    SELECT
+      CAST(m.mmsi AS varchar) AS mmsi,
+      g.name AS ship_name,
+      g.class AS vessel_type,
+      'Germany' AS flag,
+      m.latitude,
+      m.longitude,
+      m.speed,
+      m.course,
+      m.event_timestamp,
+      'deu_fleet' AS track_kind
+    FROM defense.marine_vessel_status m
+    INNER JOIN defense.german_navy_fleet g ON CAST(m.mmsi AS varchar) = g.mmsi
+    WHERE ${predicates.join("\n      AND ")}
+    ORDER BY m.mmsi, ${tsParse("m.event_timestamp")} ASC
+    LIMIT 15000
+  `;
+}
+
+export function buildRussianFleetTrackSql({ hours = 24, shipName = "" } = {}) {
+  const predicates = [
+    "p.latitude IS NOT NULL",
+    "p.longitude IS NOT NULL",
+    `${tsParse("p.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
+  ];
+  if (shipName) predicates.push(`rf.name = ${sqlLiteral(shipName)}`);
+  return `
+    SELECT
+      p.mmsi AS mmsi,
+      rf.name AS ship_name,
+      rf.class AS vessel_type,
+      'Russia' AS flag,
+      p.latitude,
+      p.longitude,
+      p.speed,
+      p.course,
+      p.event_timestamp,
+      'rus_fleet' AS track_kind
+    FROM defense.rus_naval_fleet_positions p
+    LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+    WHERE ${predicates.join("\n      AND ")}
+    ORDER BY p.mmsi, ${tsParse("p.event_timestamp")} ASC
+    LIMIT 15000
+  `;
+}
+
 export const PREDEFINED = {
   aisLatest: `
     SELECT a.mmsi, s.ship_name, s.vessel_type, s.flag,
