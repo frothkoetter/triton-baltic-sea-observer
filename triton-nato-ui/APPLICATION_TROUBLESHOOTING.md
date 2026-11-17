@@ -25,16 +25,28 @@ Then create/restart the Application.
 
 Do **not** use `bash cdsw-app-start.sh` as the Application script.
 
+## Cloudera samples vs triton-nato-ui
+
+| Topic | [Flask example](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html) / [Shiny](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-example--a-shiny-application.html) | This project |
+|-------|---------------|--------------|
+| Port | `os.getenv('CDSW_APP_PORT')` or `CDSW_READONLY_PORT` — **never hard-code** | `entry.py` → Node reads same vars |
+| Bind address | **`127.0.0.1`** in the engine (proxy in front) | Express binds `127.0.0.1` when `CDSW_*_PORT` set |
+| Entry script | Python `app.run(...)` on that port | Python `entry.py` starts `server/index.js` |
+| Session embed | Shiny uses `CDSW_READONLY_PORT` + grid icon / `public-<session-id>` URL | Use **Applications** for long-running NATO UI |
+| Health / **Running** | Optional `CDSW_APP_POLLING_ENDPOINT` (default `/`) + `/healthcheck` | Set **`CDSW_APP_POLLING_ENDPOINT=/healthz`** (or `/healthcheck`) |
+
+Session `curl` to `127.0.0.1:8091` **does not** reach an Application — different engine/pod. Use the **Application subdomain URL**.
+
 ## If status stays **Starting** (logs show Node listening)
 
-Cloudera health-checks the process bound to **CDSW_APP_PORT**. Do **not** set a fixed `API_PORT=8091` in Application env if it overrides the platform port.
+Cloudera periodically **polls** `CDSW_APP_POLLING_ENDPOINT` (default `/`) on **CDSW_APP_PORT**. Do **not** set a fixed `API_PORT=8091` in Application env.
 
-1. Remove `API_PORT` from Application environment (only use platform `CDSW_APP_PORT`).
-2. `git pull` and **Restart** (uses `execv` so Node is the main listener, not a Python child).
-3. Confirm logs end with `Triton API listening on http://0.0.0.0:<port>`.
-4. Open the **Application subdomain URL** (not Session port forward only).
+1. Application env: `CDSW_APP_POLLING_ENDPOINT=/healthz` (matches Flask-style custom probe).
+2. Remove manual `API_PORT` — only platform `CDSW_APP_PORT`.
+3. `git pull` and **Restart**; logs should end with `Triton API listening on http://127.0.0.1:<port>`.
+4. Open the **Application subdomain** (`https://<subdomain>.<domain>/`), not a Session.
 
-Probe manually from a session on the same cluster (if allowed):
+Inside the **Application engine** (if you get a shell there), not a random Session:
 
 ```bash
 curl -sS "http://127.0.0.1:${CDSW_APP_PORT}/healthz"

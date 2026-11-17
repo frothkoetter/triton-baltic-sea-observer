@@ -55,5 +55,5 @@ if [[ ! -f "$ROOT/dist/index.html" ]]; then
   exit 1
 fi
 
-echo "Node $("$NODE_BIN" -v) listening on 0.0.0.0:${PORT} (bin=$NODE_BIN)"
+echo "Node $("$NODE_BIN" -v) starting on CDSW port ${PORT} (bin=$NODE_BIN)"
 exec "$NODE_BIN" "$ROOT/server/index.js"

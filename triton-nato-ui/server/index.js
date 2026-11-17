@@ -37,9 +37,12 @@ const PORT = Number(
 );
 
 // Cloudera AI readiness probes (fast; no Impala/Trino).
-app.get("/healthz", (_req, res) => {
+// Set CDSW_APP_POLLING_ENDPOINT=/healthz or /healthcheck on the Application.
+const healthProbe = (_req, res) => {
   res.status(200).type("text/plain").send("ok");
-});
+};
+app.get("/healthz", healthProbe);
+app.get("/healthcheck", healthProbe);
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -163,6 +166,12 @@ app.get("*", (req, res, next) => {
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Triton API listening on http://0.0.0.0:${PORT}`);
+// Cloudera docs: bind CDSW_APP_PORT / CDSW_READONLY_PORT on 127.0.0.1 (in-engine proxy).
+const HOST =
+  process.env.CDSW_APP_PORT || process.env.CDSW_READONLY_PORT
+    ? "127.0.0.1"
+    : "0.0.0.0";
+
+app.listen(PORT, HOST, () => {
+  console.log(`Triton API listening on http://${HOST}:${PORT}`);
 });

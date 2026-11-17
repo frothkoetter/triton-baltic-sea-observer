@@ -31,11 +31,12 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
    | `TRINO_CATALOG` | `iceberg` |
    | `TRINO_SCHEMA` | `defense` |
    | `TRITON_FORCE_SAMPLE_DATA` | `false` |
+   | `CDSW_APP_POLLING_ENDPOINT` | `/healthz` (so status leaves **Starting**; same idea as [Flask sample](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html)) |
    | Optional `IMPALA_*` | Lagebild tabs |
 
 6. **Create Application** → wait for **Running** → open URL → **NBA HITL** (`#nba`)
 
-**`entry.py`** runs `cdsw-build.sh` once if `dist/` is missing (installs Node via nvm), then `exec`s `server/index.js` bound to `CDSW_APP_PORT`.
+**`entry.py`** runs `cdsw-build.sh` once if `dist/` is missing (installs Node via nvm), then starts `server/index.js` on **`CDSW_APP_PORT`** at **`127.0.0.1`** (Cloudera proxy pattern; see [Analytical Applications](https://docs.cloudera.com/machine-learning/cloud/applications/topics/ml-applications-c.html)).
 
 **Session test** (before deploy): in a session with port forwarding, run:
 
