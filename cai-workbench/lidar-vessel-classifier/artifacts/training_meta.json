@@ -1,0 +1,28 @@
+{
+  "n_samples": 10,
+  "labels": [
+    "container_ship",
+    "corvette",
+    "ferry",
+    "frigate",
+    "gas_tanker",
+    "landing_ship",
+    "oil_tanker",
+    "sailing",
+    "submarine"
+  ],
+  "feature_names": [
+    "n_points",
+    "extent_x",
+    "extent_y",
+    "extent_z",
+    "mean_z",
+    "std_z",
+    "mean_intensity",
+    "std_intensity",
+    "linearity",
+    "planarity",
+    "sphericity",
+    "dominant_class_ratio"
+  ]
+}

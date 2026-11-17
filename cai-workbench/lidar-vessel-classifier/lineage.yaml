@@ -1,0 +1,7 @@
+## Lineage for LiDAR vessel classifier (optional — edit for your Hive/Iceberg tables)
+##
+lidar-vessel-classifier:
+  metadata:
+    training_file: "fit.py"
+    deployment_function: "predict"
+    s3_training_prefix: "s3://cdwh-buk-7dbf40cb/data/user/frothkoetter/geospatial/"

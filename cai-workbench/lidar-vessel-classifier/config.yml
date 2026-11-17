@@ -1,0 +1,8 @@
+{
+    name: 'lidar-vessel-classifier',
+    skipInAirgap: true,
+    scripts: [
+        'fit.py',
+        'predict.py'
+    ]
+}
