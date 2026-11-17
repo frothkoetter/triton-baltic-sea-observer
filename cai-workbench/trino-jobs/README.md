@@ -33,6 +33,21 @@ SELECT Outlier_Type, COUNT(*) FROM iceberg.defense.vessel_outliers GROUP BY 1;
 
 Build step (session or project): `bash cai-workbench/trino-jobs/cdsw-build.sh`
 
+## `OK statements: 0/2` / syntax error at line 501 (`;`)
+
+The job reads `~/cdw-analyse/run_lagebild_views.py` from the **full git repo**, not only `cai-workbench`. A feature-branch checkout often leaves that file old while `git pull` says "Already up to date".
+
+```bash
+cd /home/cdsw
+git fetch origin main
+git checkout main
+git pull origin main
+grep 'drop statement-splitting' cdw-analyse/run_lagebild_views.py
+TRINO_JOB=lagebild_views python3 cai-workbench/trino-jobs/cml_job.py
+```
+
+Expect `OK statements: 2/2`. Set `TRINO_JOB_DEBUG=1` to print which `run_lagebild_views.py` path is used.
+
 ## Manual test in a CML session
 
 From `~/cai-workbench/trino-jobs` (CML does not need `./` if the file is not executable):

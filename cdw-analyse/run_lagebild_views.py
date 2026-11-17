@@ -72,6 +72,11 @@ def run_views(path: str | None = None) -> tuple[int, list[str]]:
     ok = 0
     for i, stmt in enumerate(stmts, 1):
         preview = stmt.split("\n", 1)[0][:120]
+        tail = stmt.rstrip().splitlines()[-1] if stmt.strip() else ""
+        if tail.strip() == ";":
+            raise RuntimeError(
+                f"Internal bug: view SQL still has trailing ';' line — update run_lagebild_views.py"
+            )
         try:
             cur.execute(stmt)
             ok += 1
