@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import type { LidarScan } from "../lib/lidar";
-import { classificationLabel, pseudoLidarPoints } from "../lib/lidar";
+import { classificationLabel, normalizeViewerPoints, pseudoLidarPoints } from "../lib/lidar";
 import { LidarPointCanvas, type ViewerPoint } from "./LidarPointCanvas";
 
 type Props = {
@@ -29,27 +29,37 @@ export function LidarPointPreview({ scan }: Props) {
     setLasError(null);
     if (!scan?.hadoop_file_url) return;
     const uri = encodeURIComponent(scan.hadoop_file_url);
+    let cancelled = false;
     setLoading(true);
     void (async () => {
       const res = await fetchJson<{
         ok?: boolean;
-        points?: ViewerPoint[];
+        points?: unknown;
         point_count_total?: number;
         error?: string;
       }>(`/api/lidar/points?hadoop_file_url=${uri}`);
+      if (cancelled) return;
       setLoading(false);
-      if (res.ok && res.points?.length) {
-        setLivePoints(res.points);
-        setTotalPoints(res.point_count_total ?? res.points.length);
+      const normalized = res.ok ? normalizeViewerPoints(res.points) : [];
+      if (normalized.length >= 50) {
+        setLivePoints(normalized);
+        setTotalPoints(res.point_count_total ?? normalized.length);
         setLasSource("s3");
+        setLasError(null);
       } else {
-        setLasError(res.error ?? "Could not load LAS from object store");
+        setLasError(
+          res.error ??
+            (res.ok ? "LAS returned no valid points (check bridge version)" : "Could not load LAS from object store")
+        );
         setLasSource("pseudo");
       }
     })();
-  }, [scan?.hadoop_file_url, scan?.filename]);
+    return () => {
+      cancelled = true;
+    };
+  }, [scan?.hadoop_file_url]);
 
-  const points = livePoints ?? pseudo;
+  const points = livePoints && livePoints.length >= 50 ? livePoints : pseudo;
   const previewLabel =
     lasSource === "s3"
       ? `S3 LAS · ${scan?.filename ?? ""}`
