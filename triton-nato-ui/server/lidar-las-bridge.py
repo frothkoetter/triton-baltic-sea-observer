@@ -32,46 +32,17 @@ def allowed_uri(uri: str) -> bool:
 
 
 def s3_client():
-    import boto3
+    # Local import; server/ on PYTHONPATH when run from triton-nato-ui
+    import sys
+    from pathlib import Path
 
-    access_key = (
-      os.environ.get("S3_ACCESS_KEY_ID")
-      or os.environ.get("S3_WORKLOAD_USER")
-      or os.environ.get("AWS_ACCESS_KEY_ID")
-    )
-    secret_key = (
-        os.environ.get("S3_SECRET_ACCESS_KEY")
-        or os.environ.get("S3_WORKLOAD_PASSWORD")
-        or os.environ.get("AWS_SECRET_ACCESS_KEY")
-    )
-    endpoint = os.environ.get("S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL")
-    region = os.environ.get("AWS_DEFAULT_REGION", "eu-central-1")
+    root = Path(__file__).resolve().parent
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from s3_boto import get_s3_client
 
-    if access_key and secret_key:
-        return boto3.client(
-            "s3",
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            endpoint_url=endpoint or None,
-            region_name=region,
-        )
-
-    mode = os.environ.get("LIDAR_USE_CML_S3", "auto").lower()
-    if mode not in ("0", "false", "no"):
-        try:
-            import cml.data_v1 as cmldata
-
-            conn = cmldata.get_connection(
-                os.environ.get("LIDAR_S3_CONNECTION_NAME", "S3 Object Store")
-            )
-            return conn.get_base_connection()
-        except Exception:
-            if mode in ("1", "true", "yes"):
-                raise
-
-    raise RuntimeError(
-        "Set S3_WORKLOAD_USER + S3_WORKLOAD_PASSWORD (or AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)"
-    )
+    client, _mode = get_s3_client()
+    return client
 
 
 def fetch_las_bytes(uri: str) -> bytes:

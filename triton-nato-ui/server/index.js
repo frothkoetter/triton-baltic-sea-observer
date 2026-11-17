@@ -54,6 +54,34 @@ app.get("/healthcheck", healthProbe);
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
+app.get("/api/s3/diagnose", async (req, res) => {
+  const { spawn } = await import("node:child_process");
+  const prefix =
+    req.query.prefix ||
+    process.env.SITREP_S3_PREFIX ||
+    process.env.LAGEBILD_S3_PREFIX ||
+  "";
+  const script = path.join(__dirname, "s3_boto.py");
+  await new Promise((resolve) => {
+    const child = spawn("python3", [script, String(prefix)], {
+      env: { ...process.env },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let out = "";
+    child.stdout.on("data", (d) => {
+      out += d.toString();
+    });
+    child.on("close", () => {
+      try {
+        res.json(JSON.parse(out || "{}"));
+      } catch {
+        res.status(500).json({ ok: false, error: out || "diagnose failed" });
+      }
+      resolve();
+    });
+  });
+});
+
 app.get("/api/map-config", (_req, res) => {
   const mapboxToken =
     process.env.MAPBOX_ACCESS_TOKEN || process.env.VITE_MAPBOX_TOKEN || "";

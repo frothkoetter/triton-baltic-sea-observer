@@ -25,29 +25,16 @@ def parse_prefix_uri(uri: str) -> tuple[str, str]:
 
 
 def s3_client():
-    import boto3
+    import sys
+    from pathlib import Path
 
-    access_key = (
-        os.environ.get("S3_ACCESS_KEY_ID")
-        or os.environ.get("S3_WORKLOAD_USER")
-        or os.environ.get("AWS_ACCESS_KEY_ID")
-    )
-    secret_key = (
-        os.environ.get("S3_SECRET_ACCESS_KEY")
-        or os.environ.get("S3_WORKLOAD_PASSWORD")
-        or os.environ.get("AWS_SECRET_ACCESS_KEY")
-    )
-    endpoint = os.environ.get("S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL")
-    region = os.environ.get("AWS_DEFAULT_REGION", "eu-central-1")
-    if not access_key or not secret_key:
-        raise RuntimeError("Set S3_WORKLOAD_USER + S3_WORKLOAD_PASSWORD")
-    return boto3.client(
-        "s3",
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        endpoint_url=endpoint or None,
-        region_name=region,
-    )
+    root = Path(__file__).resolve().parent
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from s3_boto import get_s3_client
+
+    client, _mode = get_s3_client()
+    return client
 
 
 def s3_prefix() -> tuple[str, str] | None:

@@ -44,45 +44,44 @@ def parse_prefix_uri(uri: str) -> tuple[str, str]:
 
 
 def s3_client():
-    import boto3
-
-    access_key = (
-        os.environ.get("S3_ACCESS_KEY_ID")
-        or os.environ.get("S3_WORKLOAD_USER")
-        or os.environ.get("AWS_ACCESS_KEY_ID")
+    prefer_cml = os.environ.get("S3_USE_EXPLICIT_KEYS", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
     )
-    secret_key = (
-        os.environ.get("S3_SECRET_ACCESS_KEY")
-        or os.environ.get("S3_WORKLOAD_PASSWORD")
-        or os.environ.get("AWS_SECRET_ACCESS_KEY")
-    )
-    endpoint = os.environ.get("S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL")
-    region = os.environ.get("AWS_DEFAULT_REGION", "eu-central-1")
-
-    if access_key and secret_key:
-        return boto3.client(
-            "s3",
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            endpoint_url=endpoint or None,
-            region_name=region,
-        )
-
-    mode = os.environ.get("LAGEBILD_USE_CML_S3", "auto").lower()
-    if mode not in ("0", "false", "no"):
+    if prefer_cml or os.environ.get("LAGEBILD_USE_CML_S3", "auto").lower() not in (
+        "0",
+        "false",
+        "no",
+    ):
         try:
             import cml.data_v1 as cmldata
 
-            conn = cmldata.get_connection(
-                os.environ.get("LAGEBILD_S3_CONNECTION_NAME", "S3 Object Store")
-            )
-            return conn.get_base_connection()
+            name = os.environ.get("LAGEBILD_S3_CONNECTION_NAME", "S3 Object Store")
+            return cmldata.get_connection(name).get_base_connection()
         except Exception:
-            if mode in ("1", "true", "yes"):
+            if os.environ.get("LAGEBILD_USE_CML_S3", "auto").lower() in ("1", "true", "yes"):
                 raise
 
-    raise RuntimeError(
-        "Set S3_WORKLOAD_USER + S3_WORKLOAD_PASSWORD for LAGEBILD_S3_UPLOAD"
+    import boto3
+    from botocore.config import Config
+
+    access_key = (os.environ.get("S3_ACCESS_KEY_ID") or os.environ.get("S3_WORKLOAD_USER") or "").strip()
+    secret_key = (
+        os.environ.get("S3_SECRET_ACCESS_KEY") or os.environ.get("S3_WORKLOAD_PASSWORD") or ""
+    ).strip()
+    if not access_key or not secret_key:
+        raise RuntimeError(
+            "LAGEBILD_S3: use CML data connection 'S3 Object Store' or set CDP workload access key + secret "
+            "(not Trino/LDAP password)"
+        )
+    return boto3.client(
+        "s3",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL") or None,
+        region_name=os.environ.get("AWS_DEFAULT_REGION", "eu-central-1"),
+        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
     )
 
 

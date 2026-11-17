@@ -83,6 +83,30 @@ Open **Application logs** and check:
 
 Paste the **last 30 lines** of Application logs for debugging.
 
+## S3 errors (LiDAR LAS / SITREP PDF)
+
+| Error | Typical cause |
+|-------|----------------|
+| `InvalidAccessKeyId` | **Not** a CDP object-store access key (often Trino/LDAP password pasted into `S3_WORKLOAD_PASSWORD`) |
+| `403` on `HeadObject` | Wrong key, no RAZ/IAM on bucket prefix, or explicit keys override a broken config |
+
+**Recommended (CML):**
+
+1. Project → **Data Connections** → add **S3 Object Store** (same as LiDAR classifier).
+2. Application env: **remove** `S3_WORKLOAD_USER` / `S3_WORKLOAD_PASSWORD` unless you have real workload keys.
+3. Optional: `S3_PREFER_CML_CONNECTION=1` (default on CML).
+4. If you **must** use keys: `S3_USE_EXPLICIT_KEYS=1` + `S3_ACCESS_KEY_ID` + `S3_SECRET_ACCESS_KEY` from CDP **Access Keys** (not LDAP).
+
+**Test** (Application URL):
+
+```text
+GET /api/s3/diagnose?prefix=s3a://your-bucket/your-prefix/
+```
+
+Expect `"ok": true`, `"mode": "cml"`.
+
+Prefixes must match where NiFi/Lagebild write (`SITREP_S3_PREFIX`, object keys for `hadoop_file_url`).
+
 ## Env vars (Application settings)
 
 `TRINO_USER`, `TRINO_PASSWORD`, `TRINO_CATALOG=iceberg`, `TRINO_SCHEMA=defense`
