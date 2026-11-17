@@ -14,36 +14,40 @@ npm run dev
 
 Open http://localhost:5173 (API on http://127.0.0.1:3001).
 
-### Cloudera AI Workbench (no `npm` in Python sessions)
+### Cloudera AI Workbench Application (official pattern)
 
-**Python/ML sessions** often have no Node. Do **not** run the UI inside a notebook session unless you install Node (e.g. `conda install -c conda-forge nodejs=20`).
+Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/applications/topics/ml-applications-c.html):
 
-Use a **Cloudera AI Application** (long-running web app) on the same project:
+1. Project → **Applications** → **New Application**
+2. **Script:** `triton-nato-ui/entry.py` (Python host; starts Node on **`CDSW_APP_PORT`**)
+3. **Kernel:** `python3` (or ML Runtime Python editor/kernel)
+4. **Subdomain:** e.g. `triton-nato-ui` → URL `https://<subdomain>.<domain>/`
+5. **Environment variables** (application overrides project):
 
-| Setting | Value |
-|---------|--------|
-| Subdirectory | `triton-nato-ui` (or repo root with `cd triton-nato-ui` in scripts) |
-| **Build** | `bash cdsw-build.sh` |
-| **Start** | `bash cdsw-app-start.sh` |
-| **Port** | `8090` (or `API_PORT`; map in Application settings) |
+   | Name | Example |
+   |------|---------|
+   | `TRINO_USER` | LDAP user |
+   | `TRINO_PASSWORD` | secret |
+   | `TRINO_CATALOG` | `iceberg` |
+   | `TRINO_SCHEMA` | `defense` |
+   | `TRITON_FORCE_SAMPLE_DATA` | `false` |
+   | Optional `IMPALA_*` | Lagebild tabs |
 
-**Application environment variables** (Project / Application secrets):
+6. **Create Application** → wait for **Running** → open URL → **NBA HITL** (`#nba`)
 
-- `TRINO_USER`, `TRINO_PASSWORD`, `TRINO_CATALOG=iceberg`, `TRINO_SCHEMA=defense`
-- Optional: `IMPALA_*` for other tabs
-- `TRITON_FORCE_SAMPLE_DATA=false`
+**`entry.py`** runs `cdsw-build.sh` once if `dist/` is missing (installs Node via nvm), then `exec`s `server/index.js` bound to `CDSW_APP_PORT`.
 
-Open the Application URL → **NBA HITL** (`#nba`).
-
-**One-off in a session (no conda):** `cdsw-build.sh` installs **nvm + Node 20** (or tarball) when `npm` is missing:
+**Session test** (before deploy): in a session with port forwarding, run:
 
 ```bash
 cd /home/cdsw/triton-nato-ui
-bash cdsw-build.sh
-bash cdsw-app-start.sh
+export CDSW_APP_PORT=8091
+python3 entry.py
 ```
 
-Ensure **`.env.local`** or Application env has `TRINO_USER` / `TRINO_PASSWORD`. Port-forward **8090** or open the Application URL → `#nba`.
+Do not set a fixed port in production — Cloudera injects `CDSW_APP_PORT`.
+
+**Manual dev (non-CML):** `npm run dev` as above.
 
 ## Environment
 

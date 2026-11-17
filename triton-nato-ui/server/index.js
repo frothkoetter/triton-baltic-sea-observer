@@ -32,7 +32,9 @@ dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const app = express();
-const PORT = Number(process.env.API_PORT || 3001);
+const PORT = Number(
+  process.env.CDSW_APP_PORT || process.env.API_PORT || 3001
+);
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -156,6 +158,6 @@ app.get("*", (req, res, next) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Triton API listening on http://127.0.0.1:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Triton API listening on http://0.0.0.0:${PORT}`);
 });
