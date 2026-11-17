@@ -14,6 +14,38 @@ npm run dev
 
 Open http://localhost:5173 (API on http://127.0.0.1:3001).
 
+### Cloudera AI Workbench (no `npm` in Python sessions)
+
+**Python/ML sessions** often have no Node. Do **not** run the UI inside a notebook session unless you install Node (e.g. `conda install -c conda-forge nodejs=20`).
+
+Use a **Cloudera AI Application** (long-running web app) on the same project:
+
+| Setting | Value |
+|---------|--------|
+| Subdirectory | `triton-nato-ui` (or repo root with `cd triton-nato-ui` in scripts) |
+| **Build** | `bash cdsw-build.sh` |
+| **Start** | `bash cdsw-app-start.sh` |
+| **Port** | `8090` (or `API_PORT`; map in Application settings) |
+
+**Application environment variables** (Project / Application secrets):
+
+- `TRINO_USER`, `TRINO_PASSWORD`, `TRINO_CATALOG=iceberg`, `TRINO_SCHEMA=defense`
+- Optional: `IMPALA_*` for other tabs
+- `TRITON_FORCE_SAMPLE_DATA=false`
+
+Open the Application URL → **NBA HITL** (`#nba`).
+
+**One-off in a session (if `conda` exists):**
+
+```bash
+cd /home/cdsw/triton-nato-ui
+conda install -y -c conda-forge nodejs=20
+bash cdsw-build.sh
+bash cdsw-app-start.sh
+```
+
+Then use **Session → Port forwarding** for `API_PORT` (default `8090`).
+
 ## Environment
 
 See `.env.example`. Credentials belong only in `.env.local`.
