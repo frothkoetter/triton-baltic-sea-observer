@@ -17,6 +17,8 @@ def resolve_job_root(*marker_files: str) -> Path:
             return root
 
     work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
+    if work in ("", "/"):
+        work = ""
     candidates: list[Path] = []
     if work:
         base = Path(work)
@@ -27,6 +29,15 @@ def resolve_job_root(*marker_files: str) -> Path:
                 base,
             ]
         )
+    home = Path.home()
+    candidates.extend(
+        [
+            home / "cai-workbench" / "next-best-action",
+            home,
+            Path("/home/cdsw") / "cai-workbench" / "next-best-action",
+            Path("/home/cdsw"),
+        ]
+    )
     here = Path.cwd()
     candidates.extend([here, here / "next-best-action"])
     seen: set[Path] = set()

@@ -17,6 +17,13 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 
 ## Quickstart
 
+CML: `CDSW_WORKING_DIRECTORY` may be empty — use script path or `/home/cdsw`:
+
+```bash
+cd /home/cdsw/cai-workbench/next-best-action
+bash run-from-session.sh --demo-greifswald --phase 1
+```
+
 ```bash
 cd cai-workbench/next-best-action
 ./cdsw-build.sh

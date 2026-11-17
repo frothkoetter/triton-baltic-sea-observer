@@ -4,6 +4,16 @@ Modular Cloudera AI Workbench project for **Baltic maritime situation pictures**
 
 ## Quickstart (notebook)
 
+On CML, `CDSW_WORKING_DIRECTORY` is often **unset** or `/` — do **not** use `cd "$CDSW_WORKING_DIRECTORY/..."` alone.
+
+```bash
+# From any session (recommended):
+bash "$(find ~ -maxdepth 5 -path '*/situation-awareness/run-from-session.sh' 2>/dev/null | head -1)" --use-sample --skip-llm
+# Or if repo is at /home/cdsw (typical):
+cd /home/cdsw/cai-workbench/situation-awareness
+bash run-from-session.sh --use-sample --skip-llm
+```
+
 ```bash
 cd cai-workbench/situation-awareness
 ./cdsw-build.sh
@@ -22,7 +32,7 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 | **Script** | `cai-workbench/situation-awareness/run_hourly.py` **or** `entry.py` |
 | **Kernel** | Python 3 / ML Runtime `python3` |
 | Build (optional) | `bash cai-workbench/situation-awareness/cdsw-build.sh` |
-| **Command** | `python3 run_hourly.py` (from this directory) |
+| **Command** | `bash run-from-session.sh` **or** `python3 run_hourly.py` (cwd = this directory) |
 | Schedule | `0 * * * *` |
 
 If the log shows `Cell In[8]` and `__file__ is not defined`, the job is running as a **notebook cell**, not as a script. Fix the job to execute `python3 run_hourly.py` or set **Script** to `entry.py`.
