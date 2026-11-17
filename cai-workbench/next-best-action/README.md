@@ -9,10 +9,10 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 | Field | Value |
 |-------|--------|
 | Type | **Scheduled Job** — **not** a notebook cell |
-| **Script** | `cai-workbench/next-best-action/run_nba.py` or `entry.py` |
-| **Command** | `bash run-from-session.sh --no-demo --exit-if-quiet --persist-trino --phase 2` |
-| **Alt. script** | `python3 entry.py` (same args via job env / argv if your CML passes them) |
-| Build | runs inside `run-from-session.sh` |
+| **Python script** | **`cml_job.py`** (nur `.py` im Wizard — kein `.sh`) |
+| **Kernel** | Python 3 |
+| **Build** | `bash cdsw-build.sh` |
+| **CLI** | nicht nötig — setze `NBA_EXIT_IF_QUIET=1`, `NBA_PERSIST_TRINO=1`, `NBA_PHASE=2`, `NBA_DEMO_GREIFSWALD=0` im Job-Env |
 
 **Wichtig:** Logs mit `Cell In[…]`, `ipykernel_launcher.py`, oder `-f …kernel….json` ⇒ Job startet den **Jupyter-Kernel**, nicht ein Batch-Skript. Preferred: **`bash run-from-session.sh`**. Wenn CML nur „Python file“ erlaubt: `python3 entry.py` — nicht Notebook-Zellen. (Ab `main`: Jupyter-`-f`-Args werden ignoriert.)
 

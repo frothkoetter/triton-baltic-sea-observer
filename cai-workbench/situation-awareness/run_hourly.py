@@ -103,16 +103,21 @@ def main() -> int:
     )
     args, _unknown = parser.parse_known_args(_filter_kernel_argv())
 
-    if args.use_sample:
-        import os
+    def _eb(name: str, default: bool = False) -> bool:
+        raw = os.environ.get(name)
+        if raw is None:
+            return default
+        return raw.strip().lower() in ("1", "true", "yes", "on")
 
+    if args.use_sample or _eb("LAGEBILD_USE_SAMPLE"):
         os.environ["LAGEBILD_USE_SAMPLE"] = "1"
+    skip_llm = args.skip_llm or _eb("LAGEBILD_SKIP_LLM")
 
     settings = Settings()
     settings.artifacts_dir = (_ROOT / settings.artifacts_dir).resolve()
 
     try:
-        result = run_pipeline(settings, skip_llm=args.skip_llm)
+        result = run_pipeline(settings, skip_llm=skip_llm)
     except Exception as exc:
         print(f"Lagebild job failed: {exc}", file=sys.stderr)
         return 1

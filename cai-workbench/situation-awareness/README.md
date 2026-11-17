@@ -27,13 +27,14 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 
 | Field | Value |
 |-------|--------|
-| Type | **Scheduled Job** (not “Run notebook” / not pasting into a cell) |
-| Project dir | Repo root **or** this folder |
-| **Script** | `cai-workbench/situation-awareness/run_hourly.py` **or** `entry.py` |
-| **Kernel** | Python 3 / ML Runtime `python3` |
-| Build (optional) | `bash cai-workbench/situation-awareness/cdsw-build.sh` |
-| **Command** | `bash run-from-session.sh` **or** `python3 run_hourly.py` (cwd = this directory) |
+| Type | **Scheduled Job** |
+| **Python script** (CML wählt nur `.py`) | **`cml_job.py`** in this folder (alternativ `entry.py`) |
+| **Kernel** | Python 3 / ML Runtime |
+| **Build** | `bash cdsw-build.sh` oder `pip install -r requirements.txt` |
+| **Argumente** | Keine — alles über **Job Environment** (siehe `.env.example`) |
 | Schedule | `0 * * * *` |
+
+Session ohne Job-Wizard: `bash run-from-session.sh` oder `python3 cml_job.py`
 
 If the log shows `Cell In[8]`, `cml_root`, or `__file__ is not defined`, the job runs as a **notebook cell**. Fix: job command `bash run-from-session.sh` (absolute: `bash /home/cdsw/cai-workbench/situation-awareness/run-from-session.sh`).
 
