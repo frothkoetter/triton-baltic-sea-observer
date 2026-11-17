@@ -2,9 +2,11 @@
 # Cloudera AI: install Node (if missing), npm deps, production build.
 set -euo pipefail
 cd "$(dirname "$0")"
+export NVM_DIR="${NVM_DIR:-$(pwd)/.nvm}"
+mkdir -p "$NVM_DIR"
 
 install_node_nvm() {
-  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  export NVM_DIR
   if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
     echo "Installing nvm …"
     curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
