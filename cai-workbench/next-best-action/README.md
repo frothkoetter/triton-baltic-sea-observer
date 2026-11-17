@@ -14,7 +14,7 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 | **Alt. script** | `python3 entry.py` (same args via job env / argv if your CML passes them) |
 | Build | runs inside `run-from-session.sh` |
 
-**Wichtig:** Logs mit `Cell In[8]` oder `No module named 'cml_root'` ⇒ Job läuft als **Notebook**, nicht als Shell/Python-Skript. Im Job-Editor **„Run command“** / **bash** wählen, **nicht** `run_nba.py` in einer Python-Session-Zelle ausführen.
+**Wichtig:** Logs mit `Cell In[…]`, `ipykernel_launcher.py`, oder `-f …kernel….json` ⇒ Job startet den **Jupyter-Kernel**, nicht ein Batch-Skript. Preferred: **`bash run-from-session.sh`**. Wenn CML nur „Python file“ erlaubt: `python3 entry.py` — nicht Notebook-Zellen. (Ab `main`: Jupyter-`-f`-Args werden ignoriert.)
 
 ## Quickstart
 

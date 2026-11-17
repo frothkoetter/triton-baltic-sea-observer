@@ -66,6 +66,25 @@ def _resolve_job_root() -> Path:
 
 _ROOT = _install_job_root(_resolve_job_root())
 
+
+def _filter_kernel_argv(argv: list[str] | None = None) -> list[str]:
+    """Strip Jupyter/CML ipykernel `-f kernel-….json` (not real job flags)."""
+    raw = list(argv if argv is not None else sys.argv[1:])
+    cleaned: list[str] = []
+    skip_next = False
+    for arg in raw:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-f", "--f"):
+            skip_next = True
+            continue
+        if "kernel-" in arg and arg.endswith(".json"):
+            continue
+        cleaned.append(arg)
+    return cleaned
+
+
 from src.alert_rules import NoAlertFound
 from src.config import Settings
 from src.pipeline import run_pipeline
@@ -110,7 +129,7 @@ def main() -> int:
         action="store_true",
         help="Phase 3: template narrative only (no model call)",
     )
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args(_filter_kernel_argv())
 
     if args.demo_greifswald:
         os.environ["NBA_DEMO_GREIFSWALD"] = "1"
