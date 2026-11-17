@@ -26,6 +26,7 @@ import {
   getNbaTrinoState,
   listNbaIncidents,
 } from "./nba.js";
+import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,6 +72,9 @@ app.get("/api/health", async (_req, res) => {
       trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),
       trinoLive: nbaTrino.live,
       lastError: nbaTrino.lastError,
+    },
+    lidar: {
+      s3Configured: s3Configured(),
     },
   });
 });
@@ -147,6 +151,18 @@ app.get("/api/observation-areas", async (_req, res) => {
 
 app.get("/api/lidar/scans", async (_req, res) => {
   res.json(await getLidarScans());
+});
+
+app.get("/api/lidar/points", async (req, res) => {
+  const uri = String(req.query.hadoop_file_url ?? req.query.uri ?? "").trim();
+  if (!uri) {
+    return res.status(400).json({ ok: false, error: "hadoop_file_url query param required" });
+  }
+  const result = await fetchLidarPointsFromS3(uri);
+  if (!result.ok) {
+    return res.status(result.error?.includes("not configured") ? 503 : 502).json(result);
+  }
+  res.json(result);
 });
 
 app.get("/api/proximity-alerts", async (_req, res) => {

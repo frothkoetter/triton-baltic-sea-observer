@@ -34,6 +34,10 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
    | `TRITON_FORCE_SAMPLE_DATA` | `false` |
    | `CDSW_APP_POLLING_ENDPOINT` | `/healthz` (so status leaves **Starting**; same idea as [Flask sample](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html)) |
    | `MAPBOX_ACCESS_TOKEN` | Mapbox `pk.…` (maps; **do not commit**) |
+   | `S3_WORKLOAD_USER` | CDP **workload access key** (S3 read for `hadoop_file_url`) |
+   | `S3_WORKLOAD_PASSWORD` | Workload **secret** |
+   | `S3_ENDPOINT_URL` | Optional S3 API endpoint |
+   | `S3_LIDAR_ALLOWED_PREFIX` | Optional allowlist, e.g. `s3a://goes-se-sandbox/...` |
    | Optional `IMPALA_*` | Lagebild tabs |
 
 6. **Create Application** → wait for **Running** → open URL → **NBA HITL** (`#nba`)

@@ -1,10 +1,13 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchJson } from "../api";
 import type { LidarScan } from "../lib/lidar";
 import { classificationLabel, pseudoLidarPoints } from "../lib/lidar";
 
 type Props = {
   scan: LidarScan | null;
 };
+
+type LasPoint = { x: number; y: number; cls: number };
 
 const CLS_COLOR: Record<number, string> = {
   0: "#ffd54f",
@@ -15,11 +18,49 @@ const CLS_COLOR: Record<number, string> = {
 };
 
 export function LidarPointPreview({ scan }: Props) {
-  const points = useMemo(() => {
+  const [livePoints, setLivePoints] = useState<LasPoint[] | null>(null);
+  const [lasSource, setLasSource] = useState<"s3" | "pseudo" | null>(null);
+  const [lasError, setLasError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const pseudo = useMemo(() => {
     if (!scan) return [];
     const vt = String(scan.vessel_type ?? "undefined");
     return pseudoLidarPoints(scan.filename, vt, 240);
   }, [scan]);
+
+  useEffect(() => {
+    setLivePoints(null);
+    setLasSource(null);
+    setLasError(null);
+    if (!scan?.hadoop_file_url) return;
+    const uri = encodeURIComponent(scan.hadoop_file_url);
+    setLoading(true);
+    void (async () => {
+      const res = await fetchJson<{
+        ok?: boolean;
+        points?: LasPoint[];
+        error?: string;
+        source?: string;
+      }>(`/api/lidar/points?hadoop_file_url=${uri}`);
+      setLoading(false);
+      if (res.ok && res.points?.length) {
+        setLivePoints(res.points);
+        setLasSource("s3");
+      } else {
+        setLasError(res.error ?? "Could not load LAS from object store");
+        setLasSource("pseudo");
+      }
+    })();
+  }, [scan?.hadoop_file_url, scan?.filename]);
+
+  const points = livePoints ?? pseudo;
+  const previewLabel =
+    lasSource === "s3"
+      ? `S3 LAS · ${scan?.filename ?? ""}`
+      : loading
+        ? "Loading LAS…"
+        : `Preview · ${scan?.filename ?? ""}`;
 
   if (!scan) {
     return (
@@ -32,6 +73,7 @@ export function LidarPointPreview({ scan }: Props) {
   const heading = Number(scan.heading_deg ?? 0) * (Math.PI / 180);
   const cos = Math.cos(heading);
   const sin = Math.sin(heading);
+  const scale = livePoints ? 0.35 : 2.2;
 
   return (
     <div className="lidar-preview">
@@ -42,20 +84,25 @@ export function LidarPointPreview({ scan }: Props) {
       <svg viewBox="0 0 320 200" className="lidar-preview-svg" role="img" aria-label="LiDAR point cloud preview">
         <rect width="320" height="200" fill="#0d1117" />
         <text x="8" y="16" fill="#8b949e" fontSize="9" fontFamily="monospace">
-          Pseudo preview · {scan.filename}
+          {previewLabel}
         </text>
         {points.map((p, i) => {
           const rx = p.x * cos - p.y * sin;
           const ry = p.x * sin + p.y * cos;
-          const cx = 160 + rx * 2.2;
-          const cy = 110 - ry * 2.2;
+          const cx = 160 + rx * scale;
+          const cy = 110 - ry * scale;
           const fill = CLS_COLOR[p.cls] ?? "#79c0ff";
-          return <circle key={i} cx={cx} cy={cy} r={1.1} fill={fill} opacity={0.9} />;
+          return <circle key={i} cx={cx} cy={cy} r={livePoints ? 1.4 : 1.1} fill={fill} opacity={0.9} />;
         })}
         <text x="8" y="192" fill="#6e7681" fontSize="8" fontFamily="sans-serif">
-          Full LAS: {scan.hadoop_file_url ? "object store" : "—"}
+          {scan.hadoop_file_url ?? "—"}
         </text>
       </svg>
+      {lasError && lasSource !== "s3" ? (
+        <p className="lidar-hint" style={{ color: "var(--status-unknown)" }}>
+          S3: {lasError} — showing stylized preview.
+        </p>
+      ) : null}
       <table className="lidar-meta-table">
         <tbody>
           <tr>
@@ -74,7 +121,10 @@ export function LidarPointPreview({ scan }: Props) {
           </tr>
           <tr>
             <th>Points</th>
-            <td>{scan.point_count?.toLocaleString() ?? "—"}</td>
+            <td>
+              {scan.point_count?.toLocaleString() ?? "—"}
+              {livePoints ? ` (showing ${livePoints.length} from S3)` : ""}
+            </td>
           </tr>
           <tr>
             <th>ML predict</th>
@@ -94,8 +144,8 @@ export function LidarPointPreview({ scan }: Props) {
         </tbody>
       </table>
       <p className="lidar-hint">
-        NiFi <em>LidarSimulator</em> → <code>iceberg.defense.lidar_simulation_metadata</code>. COA{" "}
-        <strong>C</strong> (NBA) uses ALB-LiDAR when depth ≤ 15 m and turbidity low.
+        Row from <code>iceberg.defense.lidar_simulation_metadata</code> → boto3{" "}
+        <code>get_object</code> on <code>hadoop_file_url</code>.
       </p>
     </div>
   );
