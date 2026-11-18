@@ -26,7 +26,7 @@ from .persistence import (
 )
 from .scoring import EnvironmentContext, rank_coas
 from .sim_adapter import apply_simulation_to_scores, simulate_passing_coas
-from .snapshot_bundle import SnapshotBundle, capture_bundle
+from .snapshot_bundle import SnapshotBundle, SnapshotCapture, capture_bundle
 
 
 @dataclass
@@ -53,6 +53,7 @@ def _write_artifacts(
     simulations: list | None,
     sensor_gates: dict | None,
     materialized: list | None = None,
+    mcp_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     audit: dict[str, Any] = {
@@ -74,6 +75,15 @@ def _write_artifacts(
         audit["simulations"] = [s.to_dict() for s in simulations]
     if materialized:
         audit["materialized_tables"] = materialized
+    if mcp_audit:
+        audit["snapshot_capture_source"] = mcp_audit.get("capture_source")
+        audit["iceberg_mcp"] = {
+            "capture_source": mcp_audit.get("capture_source"),
+            "captured_at": mcp_audit.get("captured_at"),
+        }
+        (out_dir / "mcp_audit.json").write_text(
+            json.dumps(mcp_audit, indent=2, default=str), encoding="utf-8"
+        )
     (out_dir / "audit.json").write_text(
         json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
     )
@@ -126,7 +136,9 @@ def run_pipeline(settings: Settings | None = None) -> PipelineResult:
 def _run_pipeline(settings: Settings) -> PipelineResult:
     settings.artifacts_dir = Path(settings.artifacts_dir)
     alert = next_alert(settings)
-    bundle = capture_bundle(alert.flow_uuid, settings)
+    snap_capture: SnapshotCapture = capture_bundle(alert.flow_uuid, settings)
+    bundle = snap_capture.bundle
+    mcp_audit = snap_capture.mcp_audit
     materialized_dicts: list[dict[str, Any]] = []
     mat_results = []
     if settings.materialize_facts:
@@ -157,6 +169,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         simulations=simulations,
         sensor_gates=gates.to_dict(),
         materialized=materialized_dicts or None,
+        mcp_audit=mcp_audit,
     )
     if materialized_dicts:
         (out_dir / "materialized_tables.json").write_text(

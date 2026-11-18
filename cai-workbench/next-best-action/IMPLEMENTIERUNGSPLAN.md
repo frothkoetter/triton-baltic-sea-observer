@@ -183,7 +183,7 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 | Ersetzt | manuelle `$snapshots`-SQL in `snapshot_bundle.py` durch MCP-Tools |
 | Bleibt | `FOR VERSION AS OF`, `nba_mat_*`; **keine** Iceberg-Branches |
 
-**Lieferobjekte 8a:** `mcp_snapshot_bundle.py` (`NBA_USE_ICEBERG_MCP=1`); MCP-Stempel in `audit.json`.
+**Lieferobjekte 8a:** `src/mcp_snapshot_bundle.py` (`NBA_USE_ICEBERG_MCP=1`); `mcp_audit.json` + `snapshot_capture_source` in `audit.json`; optional `requirements-mcp.txt`.
 
 #### 8.2 Semantica MCP (`semantica-mcp`)
 

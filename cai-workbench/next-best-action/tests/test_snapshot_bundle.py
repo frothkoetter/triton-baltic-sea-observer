@@ -15,5 +15,5 @@ class TestSnapshotBundle(unittest.TestCase):
     def test_capture_offline_when_configured(self):
         settings = Settings()
         settings.offline_snapshots = True
-        bundle = capture_bundle("flow-1", settings)
-        self.assertEqual(bundle.flow_uuid, "flow-1")
+        capture = capture_bundle("flow-1", settings)
+        self.assertEqual(capture.bundle.flow_uuid, "flow-1")

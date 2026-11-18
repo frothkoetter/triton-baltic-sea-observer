@@ -38,6 +38,12 @@ class SnapshotBundle:
         }
 
 
+@dataclass(frozen=True)
+class SnapshotCapture:
+    bundle: SnapshotBundle
+    mcp_audit: dict[str, Any] | None = None
+
+
 def _qualified(settings: Settings, table: str) -> str:
     return f"{settings.trino_catalog}.{settings.trino_schema}.{table}"
 
@@ -69,15 +75,23 @@ def offline_bundle(flow_uuid: str, settings: Settings) -> SnapshotBundle:
     return SnapshotBundle(flow_uuid=flow_uuid, captured_at=now, snapshots=refs)
 
 
-def capture_bundle(flow_uuid: str, settings: Settings) -> SnapshotBundle:
+def capture_bundle(flow_uuid: str, settings: Settings) -> SnapshotCapture:
     if settings.offline_snapshots or not trino_client.trino_configured():
-        return offline_bundle(flow_uuid, settings)
+        return SnapshotCapture(bundle=offline_bundle(flow_uuid, settings))
+
+    if settings.use_iceberg_mcp:
+        from .mcp_snapshot_bundle import capture_bundle_via_mcp
+
+        bundle, mcp_audit = capture_bundle_via_mcp(flow_uuid, settings)
+        return SnapshotCapture(bundle=bundle, mcp_audit=mcp_audit)
 
     now = datetime.now(timezone.utc)
     refs: list[SnapshotRef] = []
     for table in settings.snapshot_tables:
         refs.append(latest_snapshot_for_table(settings, table))
-    return SnapshotBundle(flow_uuid=flow_uuid, captured_at=now, snapshots=refs)
+    return SnapshotCapture(
+        bundle=SnapshotBundle(flow_uuid=flow_uuid, captured_at=now, snapshots=refs)
+    )
 
 
 def time_travel_count(settings: Settings, table: str, snapshot_id: int) -> int:

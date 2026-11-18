@@ -48,6 +48,9 @@ class Settings:
     offline_snapshots: bool = field(
         default_factory=lambda: _env_bool("NBA_OFFLINE", False)
     )
+    use_iceberg_mcp: bool = field(
+        default_factory=lambda: _env_bool("NBA_USE_ICEBERG_MCP", False)
+    )
 
     # Greifswald / Adlergrund reference
     demo_lat: float = field(default_factory=lambda: float(os.environ.get("NBA_DEMO_LAT", "54.55")))
