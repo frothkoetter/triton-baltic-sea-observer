@@ -53,4 +53,4 @@ python scripts/e2e_trino_ais.py --load-sample --load-pipeline-track --load-black
 
 Zusätzlich AOI: `observation_areas.polygon` als `POLYGON`, View `area_violation`.
 
-Voll-DDL Triton: [`../create_db_tables_trino.sql`](../create_db_tables_trino.sql) — enthält `ostsee_infrastruktur`, `ostsee_pipelines`, `ostsee_pipelines_segmented`, `ais_daten`. Das Spatial-Lab (`sql/04`+`05`) bleibt für EMODnet-Rebuilds.
+Voll-DDL Triton: [`../create_db_tables_trino.sql`](../create_db_tables_trino.sql) — enthält `ostsee_infrastruktur`, `ostsee_pipelines`, `ostsee_pipelines_segmented`, `ais_daten`. Seed-Geometrien stammen aus **EMODnet Human Activities** WFS ([Pipelines](https://emodnet.ec.europa.eu/en/human-activities), `emodnet:pipelines`, `emodnet:pcablesbshcontis`); gebündelt in [`data/emodnet_baltic_seed_assets.json`](data/emodnet_baltic_seed_assets.json), Regenerierung: `python3 scripts/build_emodnet_baltic_seed.py`. Das Spatial-Lab (`sql/04`+`05`) bleibt für Voll-Rebuilds.

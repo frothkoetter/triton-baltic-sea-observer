@@ -22,7 +22,8 @@ BALTIC_BBOX = "9.0,53.5,30.5,66.0,EPSG:4326"
 EMODNET_WFS_URL = "https://ows.emodnet-humanactivities.eu/wfs"
 LAYERS = {
     "pipelines": "emodnet:pipelines",
-    "cables": "emodnet:cables",
+    "cables_bsh": "emodnet:pcablesbshcontis",
+    "cables_nve": "emodnet:pcablesnve",
 }
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

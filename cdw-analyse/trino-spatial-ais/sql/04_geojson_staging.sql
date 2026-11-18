@@ -9,8 +9,8 @@ CREATE TABLE raw_ostsee_geojson (
 
 INSERT INTO raw_ostsee_geojson (json_payload, quelle) VALUES
 (
- '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Nord Stream 1 Mock GeoJSON","medium":"Gas","status":"In use","operator":"Mock","country":"DE-RU"},"geometry":{"type":"MultiLineString","coordinates":[[[13.6512,54.1523],[14.8045,54.8511],[16.2019,55.4088],[19.5,57.2]]]}}]}',
- 'lab_insert'
+ '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"NORD STREAM 1","medium":"Gas","status":"In use","operator":"EMODnet","country":"DE-RU"},"geometry":{"type":"MultiLineString","coordinates":[[[13.65426161,54.15419366],[15.70063987,55.53579754],[19.77499176,57.92896757],[23.99979769,59.65753773]]]}}]}',
+ 'emodnet_seed'
 );
 
 DROP TABLE IF EXISTS ostsee_pipelines;
@@ -42,7 +42,7 @@ SELECT
     json_extract_scalar(json_payload, '$.features[0].properties.medium'),
     COALESCE(json_extract_scalar(json_payload, '$.features[0].properties.status'), 'Unknown'),
     json_extract_scalar(json_payload, '$.features[0].geometry.type'),
-    'LINESTRING(13.6512 54.1523, 14.8045 54.8511, 16.2019 55.4088, 19.5 57.2)',
+    'LINESTRING(13.65426161 54.15419366, 15.70063987 55.53579754, 19.77499176 57.92896757, 23.99979769 59.65753773)',
     'GeoJSON'
 FROM raw_ostsee_geojson
-WHERE quelle = 'lab_insert';
+WHERE quelle = 'emodnet_seed';
