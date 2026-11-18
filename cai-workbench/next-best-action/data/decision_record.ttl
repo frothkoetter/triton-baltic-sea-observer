@@ -1,0 +1,68 @@
+@prefix nba: <https://triton.baltic/nba#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdfs: <http://www.w3.org/2001/rdf-schema#> .
+
+nba:IncidentDecision a rdfs:Class ;
+    rdfs:label "NBA operator decision card (HITL)" .
+
+nba:IncidentGrounding a rdfs:Class ;
+    rdfs:label "Ontology and rulebook grounding for an incident" .
+
+nba:RuleCitation a rdfs:Class ;
+    rdfs:label "Playbook rule citation attached to grounding" .
+
+nba:IncidentDecisionShape a sh:NodeShape ;
+    sh:targetClass nba:IncidentDecision ;
+    sh:property [
+        sh:path nba:flowUuid ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path nba:generatedAt ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path nba:bestCoaId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path nba:hasGrounding ;
+        sh:class nba:IncidentGrounding ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+nba:IncidentGroundingShape a sh:NodeShape ;
+    sh:targetClass nba:IncidentGrounding ;
+    sh:property [
+        sh:path nba:ontologyVersion ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path nba:incidentConcept ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path nba:hasRuleCitation ;
+        sh:class nba:RuleCitation ;
+        sh:minCount 1 ;
+    ] .
+
+nba:RuleCitationShape a sh:NodeShape ;
+    sh:targetClass nba:RuleCitation ;
+    sh:property [
+        sh:path nba:ruleId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .

@@ -78,8 +78,30 @@ def update_decision_artifacts(
     decision_record: dict,
     grounding: dict | None,
     settings: Settings,
+    shacl_report: dict | None = None,
 ) -> None:
     """Phase 5: persist full decision card + grounding on nba_incidents."""
+    from .shacl_gate import (
+        ShaclGateBlocked,
+        ShaclReport,
+        assert_shacl_conforms,
+        validate_decision_artifacts,
+    )
+
+    if settings.shacl_gate:
+        if shacl_report is not None:
+            report = ShaclReport(
+                conforms=bool(shacl_report.get("conforms")),
+                report_text=shacl_report.get("report_excerpt", ""),
+                violations=list(shacl_report.get("violations") or []),
+                engine=str(shacl_report.get("engine") or "artifact"),
+            )
+        else:
+            _, report = validate_decision_artifacts(decision_record, grounding)
+        try:
+            assert_shacl_conforms(report, gate_enabled=True)
+        except ShaclGateBlocked:
+            raise
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
     decision_json = _esc(json.dumps(decision_record, ensure_ascii=False))
     grounding_sql = "NULL"

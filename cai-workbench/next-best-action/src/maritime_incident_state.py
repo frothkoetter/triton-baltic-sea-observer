@@ -21,6 +21,7 @@ class MaritimeIncidentState(BaseModel):
     scenario_runs: list[dict[str, Any]] = Field(default_factory=list)
     agentic_gameplay: dict[str, Any] | None = None
     decision_record: dict[str, Any] | None = None
+    shacl_report: dict[str, Any] | None = None
     agent_narrative: str | None = None
     agent_steps: list[dict[str, str]] = Field(default_factory=list)
     lagebild_pin_note: str = (

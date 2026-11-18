@@ -14,6 +14,9 @@ from .red_blue_gameplay import run_red_blue_episode
 from .rules_engine import evaluate_playbook, playbook_recommended_coa
 from .scenario_matrix import run_scenario_matrix
 from .scoring import CoaScore, EnvironmentContext
+from .config import Settings
+from .decision_rdf import decision_record_to_ttl
+from .shacl_gate import validate_decision_artifacts
 from .snapshot_bundle import SnapshotBundle
 
 
@@ -30,7 +33,9 @@ def finalize_hitl_artifacts(
     agent_state: MaritimeIncidentState | None,
     ticks: int = 6,
     materialized: list[dict[str, Any]] | None = None,
+    settings: Settings | None = None,
 ) -> dict[str, Any]:
+    settings = settings or Settings()
     legal = evaluate_playbook(alert, ranked)
     playbook_best = playbook_recommended_coa(legal, ranked, best_coa_id)
     grounding = build_grounding(
@@ -90,19 +95,37 @@ def finalize_hitl_artifacts(
     (artifact_dir / "what_if_red_doctrines.json").write_text(
         json.dumps(what_if_replays, indent=2), encoding="utf-8"
     )
+    decision_dict = record.to_dict()
+    grounding_dict = grounding.to_dict()
     decision_path = artifact_dir / "decision_record.json"
     decision_path.write_text(
-        json.dumps(record.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+        json.dumps(decision_dict, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+
+    shacl_report_dict: dict[str, Any] | None = None
+    if settings.export_decision_ttl:
+        data_ttl, shacl_report = validate_decision_artifacts(
+            decision_dict, grounding_dict
+        )
+        (artifact_dir / "decision_record.ttl").write_text(data_ttl, encoding="utf-8")
+        shacl_report_dict = shacl_report.to_dict()
+        (artifact_dir / "shacl_report.json").write_text(
+            json.dumps(shacl_report_dict, indent=2), encoding="utf-8"
+        )
 
     if agent_state is not None:
         agent_state.grounding = grounding.to_dict()
         agent_state.scenario_runs = [r.to_dict() for r in scenario_runs]
         agent_state.agentic_gameplay = gameplay.to_dict()
-        agent_state.decision_record = record.to_dict()
+        agent_state.decision_record = decision_dict
+        if shacl_report_dict is not None:
+            agent_state.shacl_report = shacl_report_dict
         agent_state.playbook_best_coa_id = playbook_best
         from .state_persist import persist_state
 
         persist_state(agent_state, artifact_dir)
 
-    return record.to_dict()
+    out = dict(decision_dict)
+    if shacl_report_dict is not None:
+        out["shacl"] = shacl_report_dict
+    return out
