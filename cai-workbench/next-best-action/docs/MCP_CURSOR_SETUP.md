@@ -20,6 +20,13 @@ Align host/user with `cdw-analyse/.env.trino.local` (`TRINO_JDBC_URL` / `TRINO_U
 
 **NBA use:** with `NBA_USE_ICEBERG_MCP=1`, the pipeline calls the same Python tools as the MCP server (`list_snapshots`, optional `get_table_health`) via `src/mcp_snapshot_bundle.py`; on import failure it falls back to JDBC `$snapshots` SQL. Materialized tables (`nba_mat_*`) stay CTAS in the pipeline.
 
+| Runtime | Python | Install | Snapshots |
+|---------|--------|---------|-----------|
+| Cursor MCP (`uvx` server) | 3.13+ (tool env) | `requirements-mcp.txt` or uvx | MCP tools in IDE |
+| CML / CDSW session | usually 3.10 | `requirements.txt` only | JDBC fallback + `mcp_audit.json` |
+
+Always run the job from `cai-workbench/next-best-action` (or `cml_job` / `entry.py` from CML), not `$HOME`.
+
 ## Semantica MCP
 
 - Docs: [MCP Server](https://docs.getsemantica.ai/reference/mcp_server/), [SHACL validation](https://docs.getsemantica.ai/guides/shacl-validation/)

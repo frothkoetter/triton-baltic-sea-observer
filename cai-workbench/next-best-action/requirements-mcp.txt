@@ -1,3 +1,5 @@
-# Optional Phase 8a: same Python module as Cursor MCP (install only when NBA_USE_ICEBERG_MCP=1)
+# Optional Phase 8a: same Python module as Cursor MCP (Python 3.13+ only).
+# CML/CDSW (Python 3.10/3.11): skip this file — use requirements.txt + NBA_USE_ICEBERG_MCP=1
+# (pipeline JDBC-fallback + mcp_audit.json still works).
 -r requirements.txt
-iceberg-mcp-server-trino @ git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main
+iceberg-mcp-server-trino @ git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main ; python_version >= "3.13"

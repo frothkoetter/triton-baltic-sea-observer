@@ -91,7 +91,16 @@ Schreibt `governance_bundle.json` (Artifact-Manifest mit SHA-256, PROV-O JSON-LD
 
 MCP-Beispiel: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) · Anleitung [`docs/MCP_CURSOR_SETUP.md`](docs/MCP_CURSOR_SETUP.md) (Iceberg-Trino-MCP + Semantica; Schema **`defense`**, keine Passwörter im Git).
 
-**Phase 8a (CML / Pipeline):** `NBA_USE_ICEBERG_MCP=1` nutzt `iceberg_mcp_server_trino` (optional `pip install -r requirements-mcp.txt`); sonst JDBC wie bisher. Artefakte: `mcp_audit.json`, Stempel `snapshot_capture_source` in `audit.json`.
+**Phase 8a (CML / Pipeline):** `NBA_USE_ICEBERG_MCP=1` nutzt `iceberg_mcp_server_trino` wenn installiert (nur **Python ≥ 3.13**, z. B. Cursor/`requirements-mcp.txt`); auf **CML Python 3.10** ohne MCP-Paket → JDBC-Fallback, trotzdem `mcp_audit.json` + `snapshot_capture_source` in `audit.json`.
+
+```bash
+cd cai-workbench/next-best-action   # run_nba.py liegt hier, nicht im Home-Verzeichnis
+pip install -r requirements.txt
+# CML: kein requirements-mcp.txt (Py 3.13+ nötig)
+export NBA_USE_ICEBERG_MCP=1
+export NBA_TRINO_SCHEMA=defense
+python3 run_nba.py --demo-greifswald --phase 7 --skip-llm --offline
+```
 
 **Phase 8b (SHACL):** Pro Lauf `decision_record.ttl` + `shacl_report.json` (Shapes in `data/decision_record.ttl`). `NBA_SHACL_GATE=1` verhindert Trino-Persist bei `conforms=false`. Semantica MCP kann dieselben Shapes in Cursor nutzen.
 
