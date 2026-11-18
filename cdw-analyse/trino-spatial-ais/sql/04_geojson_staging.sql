@@ -1,4 +1,4 @@
--- GeoJSON Staging: Roh-JSON + ostsee_pipelines (nur WKT varchar — Iceberg ohne Geometry-Typ)
+-- GeoJSON staging table only; ostsee_pipelines is filled from ostsee_infrastruktur (EMODnet WKT).
 USE iceberg.defense;
 
 DROP TABLE IF EXISTS raw_ostsee_geojson;
@@ -35,14 +35,5 @@ SELECT
     geometrie_wkt,
     'WKT'
 FROM ostsee_infrastruktur;
-
-INSERT INTO ostsee_pipelines (pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle)
-SELECT
-    json_extract_scalar(json_payload, '$.features[0].properties.name'),
-    json_extract_scalar(json_payload, '$.features[0].properties.medium'),
-    COALESCE(json_extract_scalar(json_payload, '$.features[0].properties.status'), 'Unknown'),
-    json_extract_scalar(json_payload, '$.features[0].geometry.type'),
-    'LINESTRING(13.65426161 54.15419366, 15.70063987 55.53579754, 19.77499176 57.92896757, 23.99979769 59.65753773)',
-    'GeoJSON'
-FROM raw_ostsee_geojson
-WHERE quelle = 'emodnet_seed';
+-- Do not duplicate pipelines from raw_ostsee_geojson: staging JSON is legacy/simplified;
+-- ostsee_infrastruktur (EMODnet WKT) is the sole source for ostsee_pipelines.

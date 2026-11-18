@@ -94,7 +94,8 @@ def test_geojson_staging_has_raw_and_pipelines():
     sql = (ROOT / "sql" / "04_geojson_staging.sql").read_text(encoding="utf-8")
     assert "raw_ostsee_geojson" in sql
     assert "ostsee_pipelines" in sql
-    assert "json_extract" in sql or "ST_GeomFromGeoJSON" in sql
+    assert "FROM ostsee_infrastruktur" in sql
+    assert "quelle = 'GeoJSON'" not in sql
 
 
 def test_segmented_sql_has_bbox_columns():
