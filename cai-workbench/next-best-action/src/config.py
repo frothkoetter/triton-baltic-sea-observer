@@ -57,6 +57,12 @@ class Settings:
     export_decision_ttl: bool = field(
         default_factory=lambda: _env_bool("NBA_EXPORT_DECISION_TTL", True)
     )
+    crewai_persist: bool = field(
+        default_factory=lambda: _env_bool("NBA_CREWAI_PERSIST", False)
+    )
+    data_class: str = field(
+        default_factory=lambda: os.environ.get("NBA_DATA_CLASS", "defense")
+    )
 
     # Greifswald / Adlergrund reference
     demo_lat: float = field(default_factory=lambda: float(os.environ.get("NBA_DEMO_LAT", "54.55")))

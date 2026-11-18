@@ -28,6 +28,7 @@ class MaritimeIncidentState(BaseModel):
         "Lagebild view is live-only; fact tables pinned via snapshot bundle."
     )
     llm_used: bool = False
+    persist_backend: str = "nba_json"
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = {"extra": "ignore"}

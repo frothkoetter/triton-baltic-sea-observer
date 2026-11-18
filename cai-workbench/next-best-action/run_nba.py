@@ -139,6 +139,11 @@ def main() -> int:
         action="store_true",
         help="Phase 8a: snapshot capture via MCP module (JDBC fallback on CML)",
     )
+    parser.add_argument(
+        "--crewai-persist",
+        action="store_true",
+        help="Phase 8.4: use CrewAI persist bridge when package installed",
+    )
     args, _unknown = parser.parse_known_args(_filter_kernel_argv())
 
     if args.demo_greifswald:
@@ -157,6 +162,8 @@ def main() -> int:
         os.environ["NBA_SHACL_GATE"] = "1"
     if args.iceberg_mcp:
         os.environ["NBA_USE_ICEBERG_MCP"] = "1"
+    if args.crewai_persist:
+        os.environ["NBA_CREWAI_PERSIST"] = "1"
 
     settings = Settings()
     settings.artifacts_dir = (_ROOT / settings.artifacts_dir).resolve()
@@ -182,6 +189,7 @@ def main() -> int:
     print(f"best_coa_id={result.best_coa_id}")
     if result.agent_state:
         print(f"playbook_best_coa_id={result.agent_state.playbook_best_coa_id}")
+        print(f"persist_backend={result.agent_state.persist_backend}")
         print(f"incident_state={result.artifact_dir}/incident_state.json")
         if result.agent_state.llm_used:
             print("agent_llm=1")
