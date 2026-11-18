@@ -4,6 +4,16 @@ Modular Cloudera AI Workbench project for **Baltic maritime situation pictures**
 
 ## Quickstart (notebook)
 
+On CML, `CDSW_WORKING_DIRECTORY` is often **unset** or `/` — do **not** use `cd "$CDSW_WORKING_DIRECTORY/..."` alone.
+
+```bash
+# From any session (recommended):
+bash "$(find ~ -maxdepth 5 -path '*/situation-awareness/run-from-session.sh' 2>/dev/null | head -1)" --use-sample --skip-llm
+# Or if repo is at /home/cdsw (typical):
+cd /home/cdsw/cai-workbench/situation-awareness
+bash run-from-session.sh --use-sample --skip-llm
+```
+
 ```bash
 cd cai-workbench/situation-awareness
 ./cdsw-build.sh
@@ -15,10 +25,22 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 
 ## Hourly job (CML / CDSW)
 
-1. Create a **Scheduled Job** pointing at this directory.
-2. **Build command:** `bash cdsw-build.sh`
-3. **Job command:** `python run_hourly.py`
-4. Schedule: hourly (cron `0 * * * *`).
+| Field | Value |
+|-------|--------|
+| Type | **Scheduled Job** |
+| **Python script** (CML wählt nur `.py`) | **`cml_job.py`** in this folder (alternativ `entry.py`) |
+| **Kernel** | Python 3 / ML Runtime |
+| **Build** | `bash cdsw-build.sh` oder `pip install -r requirements.txt` |
+| **Argumente** | Keine — alles über **Job Environment** (siehe `.env.example`) |
+| Schedule | `0 * * * *` |
+
+Session: `python3 cml_job.py` aus diesem Ordner (nach `git pull`).
+
+**Job-Modus:** Wenn das Log `Cell In[…]` und `No module named 'run_hourly'` zeigt, führt CML **Notebook-Zellen** aus, nicht das ganze Skript. Im Job: **Script** = `cml_job.py`, **nicht** „Python 3“-Editor/Run-all-cells; Kernel = Python 3 **Scheduled** (kein interaktives Notebook).
+
+If the log shows `Cell In[8]`, `cml_root`, or `__file__ is not defined`, the job runs as a **notebook cell**. Fix: job command `bash run-from-session.sh` (absolute: `bash /home/cdsw/cai-workbench/situation-awareness/run-from-session.sh`).
+
+`SystemExit: 0` + **Engine exited with status 1** ⇒ Jupyter-Kernel; der Job war oft **erfolgreich**, wird aber als Failure gewertet. Use `bash run-from-session.sh` (newer code avoids raising exit 0 in-kernel).
 
 Optional flags: `python run_hourly.py --use-sample` (offline), `python run_hourly.py --skip-llm` (PDF shell without model).
 
@@ -39,9 +61,11 @@ Optional overrides: `LAGEBILD_CLASSIFICATION`, `LAGEBILD_THEATRE`, `LAGEBILD_PRE
 | Impala (legacy) | `defense.lagebild` | `defense.lagebild_all_events` |
 | Trino / Iceberg | `iceberg.defense.lagebild` | `iceberg.defense.lagebild_all_events` |
 
-**`defense.lagebild`** keeps the latest row per entity and harbour (24h window). **`defense.lagebild_all_events`** emits every qualifying row in that window (higher volume for AIS/Marine/RUS and all GPS jamming events). Compare counts with [`cdw-analyse/lagebild_volume_compare.sql`](../../cdw-analyse/lagebild_volume_compare.sql). Enable the stream in this pipeline with `LAGEBILD_ALL_EVENTS=1` or `LAGEBILD_VIEW=lagebild_all_events`.
+**`defense.lagebild`** keeps the latest row per entity and harbour (24h window). **`defense.lagebild_all_events`** emits every qualifying row in that window (higher volume for AIS/Marine/RUS and all GPS jamming events). **`AIS_Outlier`** rows come from `vessel_outliers` (see [`cai-workbench/trino-jobs`](../trino-jobs/README.md) for the hourly Trino job). Compare counts with [`cdw-analyse/lagebild_volume_compare.sql`](../../cdw-analyse/lagebild_volume_compare.sql). Enable the stream in this pipeline with `LAGEBILD_ALL_EVENTS=1` or `LAGEBILD_VIEW=lagebild_all_events`.
 
 Default SQL loads **all Baltic harbours** from `defense.baltic_sea_harbours` plus offshore rows (`harbour_name IS NULL`) and explicit feeds (`GPS_Jammer`, `REF` area violations, `RUS_Fleet`). Set `LAGEBILD_GERMAN_ONLY=1` to restore the former German-only harbour filter. Override entirely with `LAGEBILD_SQL`.
+
+**LLM geography:** **Baltiysk** is **Russia** (Kaliningrad), not a German port — prompts and `harbour_country` / `harbour_affiliation` columns ground the model. If the draft still mislabels ports, **`LAGEBILD_GEO_REWRITE=1`** (default) runs a **second LLM pass** plus regex fallback; logs: `INFO: geography rewrite …`.
 
 Offline sample: `cai-workbench/data/lagebild/sample_lagebild.csv`.
 

@@ -15,6 +15,8 @@ export const tables = [
   "baltic_sea_harbours",
   "buoy_data",
   "observation_areas",
+  "ostsee_infrastruktur",
+  "ostsee_pipelines",
   "area_violation",
   "maritime_surveillance_reports",
   "social_media_messages",
@@ -96,6 +98,180 @@ export const lidarScans = [
   },
 ];
 
+export const germanFleetPositions = [
+  {
+    mmsi: "MAR123411",
+    unit_name: "FGS Braunschweig",
+    unit_class: "Korvetten",
+    latitude: 54.32,
+    longitude: 10.12,
+    speed: 12.5,
+    course: 95,
+    status: "Underway",
+    operational_status: "Patrol",
+    event_timestamp: "2026-11-17T18:00:00Z",
+  },
+  {
+    mmsi: "MAR123404",
+    unit_name: "FGS Sachsen",
+    unit_class: "Fregatten",
+    latitude: 54.09,
+    longitude: 12.14,
+    speed: 8.0,
+    course: 210,
+    status: "Underway",
+    operational_status: "Exercise",
+    event_timestamp: "2026-11-17T17:30:00Z",
+  },
+];
+
+export const russianFleetPositions = [
+  {
+    mmsi: "RUS273842",
+    unit_name: "Neustrashimy",
+    unit_class: "Frigate",
+    home_base: "Baltiysk",
+    vessel_category: "Surface Combatant",
+    latitude: 54.64,
+    longitude: 19.82,
+    speed: 6.2,
+    course: 45,
+    status: "Underway",
+    event_timestamp: "2026-11-17T17:00:00Z",
+  },
+  {
+    mmsi: "RUS273901",
+    unit_name: "Ivan Gren",
+    unit_class: "Landing Ship",
+    home_base: "Kronstadt",
+    vessel_category: "Amphibious",
+    latitude: 59.99,
+    longitude: 29.77,
+    speed: 4.1,
+    course: 180,
+    status: "Moored",
+    event_timestamp: "2026-11-17T16:45:00Z",
+  },
+];
+
+export const vesselOutliers = [
+  {
+    mmsi: 211234567,
+    event_timestamp: "2026-11-17T18:12:00Z",
+    latitude: 54.71,
+    longitude: 13.08,
+    speed: 0.8,
+    course: 182,
+    status: "Under way",
+    outlier_type: "Rendezvous",
+    reason: "STS candidate: 320 m from MMSI 211234568, both SOG < 4 kn",
+    severity_level: 60,
+  },
+  {
+    mmsi: 273445566,
+    event_timestamp: "2026-11-17T17:40:00Z",
+    latitude: 55.38,
+    longitude: 18.79,
+    speed: 22.1,
+    course: 91,
+    status: "Under way",
+    outlier_type: "MMSI Teleportation",
+    reason: "Implied hop speed 89 kn over 1.2 nm in 3.0 min",
+    severity_level: 80,
+  },
+  {
+    mmsi: 636022401,
+    event_timestamp: "2026-11-17T16:05:00Z",
+    latitude: 55.97,
+    longitude: 17.78,
+    speed: 12.0,
+    course: 210,
+    status: "Moored",
+    outlier_type: "Misreported Status",
+    reason: 'Status "Moored" with SOG 12.0 kn',
+    severity_level: 55,
+  },
+];
+
+function demoTrackPoints(lat, lon, n = 8, dLat = 0.08, dLon = 0.12) {
+  const rows = [];
+  for (let i = 0; i < n; i += 1) {
+    rows.push({
+      latitude: lat + dLat * i * 0.35,
+      longitude: lon + dLon * Math.sin(i * 0.7) * 0.4 + dLon * i * 0.15,
+    });
+  }
+  return rows;
+}
+
+/** Multi-point histories for `/api/position-tracks` sample mode. */
+export function samplePositionTrackRows() {
+  const rows = [];
+  const pushSeries = (mmsi, meta, baseLat, baseLon, kind, tsBase) => {
+    demoTrackPoints(baseLat, baseLon).forEach((p, i) => {
+      rows.push({
+        mmsi,
+        ...meta,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        speed: 8 + i,
+        course: 90 + i * 10,
+        event_timestamp: new Date(Date.parse(tsBase) + i * 3600000).toISOString(),
+        track_kind: kind,
+      });
+    });
+  };
+  pushSeries(
+    123456007,
+    { ship_name: "Blue Horizon", vessel_type: "Container", flag: "Singapore" },
+    54.2,
+    17.8,
+    "ais",
+    "2026-11-17T10:00:00Z"
+  );
+  pushSeries(
+    636022401,
+    { ship_name: "HS ATLANTICA", vessel_type: "Crude Oil Tanker", flag: "Liberia" },
+    55.5,
+    17.2,
+    "ais",
+    "2026-11-17T11:00:00Z"
+  );
+  pushSeries(
+    "MAR123411",
+    { ship_name: "FGS Braunschweig", vessel_type: "Korvetten", flag: "Germany" },
+    54.0,
+    10.5,
+    "deu_fleet",
+    "2026-11-17T12:00:00Z"
+  );
+  pushSeries(
+    "MAR123404",
+    { ship_name: "FGS Sachsen", vessel_type: "Fregatten", flag: "Germany" },
+    54.2,
+    11.8,
+    "deu_fleet",
+    "2026-11-17T12:30:00Z"
+  );
+  pushSeries(
+    "RUS273842",
+    { ship_name: "Neustrashimy", vessel_type: "Frigate", flag: "Russia" },
+    54.5,
+    19.2,
+    "rus_fleet",
+    "2026-11-17T13:00:00Z"
+  );
+  pushSeries(
+    "RUS273901",
+    { ship_name: "Ivan Gren", vessel_type: "Landing Ship", flag: "Russia" },
+    59.5,
+    28.9,
+    "rus_fleet",
+    "2026-11-17T13:30:00Z"
+  );
+  return rows;
+}
+
 export const aisShips = [
   { mmsi: 123456007, ship_name: "Blue Horizon", vessel_type: "Container", flag: "Singapore", latitude: 54.52, longitude: 18.54, speed: 12.4, course: 285, event_timestamp: "2025-10-15T08:12:00Z", status: "Underway" },
   { mmsi: 123456014, ship_name: "Maritime Queen", vessel_type: "Naval", flag: "United States", latitude: 54.09, longitude: 12.14, speed: 8.1, course: 45, event_timestamp: "2025-10-15T08:10:00Z", status: "Underway" },
@@ -135,9 +311,67 @@ export const surveillance = [
 ];
 
 export const observationAreas = [
-  { area_id: "Bornholm Basin", center_latitude: 55.9679, center_longitude: 17.7773 },
-  { area_id: "Gdańsk Deep", center_latitude: 55.3815, center_longitude: 18.7914 },
-  { area_id: "Gotlandic Expanse", center_latitude: 56.6518, center_longitude: 19.7168 },
+  {
+    area_id: "Bornholm Basin",
+    center_latitude: 55.9679,
+    center_longitude: 17.7773,
+    polygon:
+      "POLYGON((17.237478356677286 56.03107993705109, 17.237478356677286 55.9047066587936, 18.31712997618766 55.9047066587936, 18.317129976129976 56.03107993705109, 17.237478356677286 56.03107993705109))",
+  },
+  {
+    area_id: "Gdańsk Deep",
+    center_latitude: 55.3815,
+    center_longitude: 18.7914,
+    polygon:
+      "POLYGON((18.29518008728172 55.53540464392404, 18.29518008728172 55.22756184778888, 19.28762566297803 55.22756184778888, 19.28762566297803 55.53540464392404, 18.29518008728172 55.53540464392404))",
+  },
+  {
+    area_id: "Gotlandic Expanse",
+    center_latitude: 56.6518,
+    center_longitude: 19.7168,
+    polygon:
+      "POLYGON((19.101293326297395 56.70066121963845, 19.101293326297395 56.60288332018746, 20.332383399655697 56.60288332018746, 20.332383399655697 56.70066121963845, 19.101293326297395 56.70066121963845))",
+  },
+];
+
+export const ostseeInfrastruktur = [
+  {
+    id: "NS1_MOCK",
+    name: "Ostsee Pipeline Route A (Beispiel)",
+    typ: "Gaspipeline",
+    geometrie_wkt:
+      "LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)",
+    status: "In use",
+    medium: "Gas",
+  },
+  {
+    id: "CABLE_MOCK",
+    name: "Baltic Sea Kabel B (Beispiel)",
+    typ: "Seekabel",
+    geometrie_wkt: "LINESTRING(14.7000 55.1000, 15.8000 55.6000, 17.9000 56.8000)",
+    status: "In use",
+    medium: "Telecom/Power",
+  },
+];
+
+export const ostseePipelines = [
+  {
+    pipeline_name: "Ostsee Pipeline Route A (Beispiel)",
+    medium: "Gas",
+    status: "In use",
+    geo_typ: "LineString",
+    geometrie_wkt:
+      "LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)",
+    quelle: "WKT",
+  },
+  {
+    pipeline_name: "Nord Stream 1 Mock GeoJSON",
+    medium: "Gas",
+    status: "In use",
+    geo_typ: "MultiLineString",
+    geometrie_wkt: "LINESTRING(13.6512 54.1523, 14.8045 54.8511, 16.2019 55.4088, 19.5 57.2)",
+    quelle: "GeoJSON",
+  },
 ];
 
 export const kpis = {
@@ -156,6 +390,11 @@ export const datasets = [
   { name: "AIS Positions", tables: ["ais_events_ice"], badge: "multipletables" },
   { name: "Buoy_near_harbours", tables: ["buoy_near_harbours"], badge: "singletable" },
   { name: "ObservationAreas", tables: ["observation_areas"], badge: "singletable" },
+  {
+    name: "OstseeInfrastructure",
+    tables: ["ostsee_infrastruktur", "ostsee_pipelines"],
+    badge: "multipletables",
+  },
   { name: "BalticSeaHarbours", tables: ["baltic_sea_harbours"], badge: "singletable" },
   { name: "PersonalReport", tables: ["german_navy_fleet"], badge: "multipletables" },
   { name: "Social Media", tables: ["social_media_messages"], badge: "singletable" },

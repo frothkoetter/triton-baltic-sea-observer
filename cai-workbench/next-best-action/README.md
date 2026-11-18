@@ -4,7 +4,26 @@ Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observ
 
 **Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · UC1: [`../situation-awareness/`](../situation-awareness/)
 
+## CML Scheduled Job (UC2)
+
+| Field | Value |
+|-------|--------|
+| Type | **Scheduled Job** — **not** a notebook cell |
+| **Python script** | **`cml_job.py`** (nur `.py` im Wizard — kein `.sh`) |
+| **Kernel** | Python 3 |
+| **Build** | `bash cdsw-build.sh` |
+| **CLI** | nicht nötig — setze `NBA_EXIT_IF_QUIET=1`, `NBA_PERSIST_TRINO=1`, `NBA_PHASE=2`, `NBA_DEMO_GREIFSWALD=0` im Job-Env |
+
+**Wichtig:** Logs mit `Cell In[…]`, `ipykernel_launcher.py`, oder `-f …kernel….json` ⇒ Job startet den **Jupyter-Kernel**, nicht ein Batch-Skript. Preferred: **`bash run-from-session.sh`**. Wenn CML nur „Python file“ erlaubt: `python3 entry.py` — nicht Notebook-Zellen. (Ab `main`: Jupyter-`-f`-Args werden ignoriert.)
+
 ## Quickstart
+
+CML: `CDSW_WORKING_DIRECTORY` may be empty — use script path or `/home/cdsw`:
+
+```bash
+cd /home/cdsw/cai-workbench/next-best-action
+bash run-from-session.sh --demo-greifswald --phase 1
+```
 
 ```bash
 cd cai-workbench/next-best-action

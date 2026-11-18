@@ -8,9 +8,82 @@ import os
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+
+def _install_job_root(root: Path) -> Path:
+    root = root.resolve()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    os.chdir(root)
+    return root
+
+
+def _resolve_job_root() -> Path:
+    markers = ("run_nba.py", "entry.py")
+    mod = globals().get("__file__")
+    if mod:
+        root = Path(mod).resolve().parent
+        if any((root / m).is_file() for m in markers):
+            return root
+    work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
+    if work in ("", "/"):
+        work = ""
+    candidates: list[Path] = []
+    if work:
+        base = Path(work)
+        candidates.extend(
+            [
+                base / "cai-workbench" / "next-best-action",
+                base / "next-best-action",
+                base,
+            ]
+        )
+    home = Path.home()
+    candidates.extend(
+        [
+            home / "cai-workbench" / "next-best-action",
+            home,
+            Path("/home/cdsw") / "cai-workbench" / "next-best-action",
+        ]
+    )
+    candidates.extend([Path.cwd(), Path.cwd() / "next-best-action"])
+    seen: set[Path] = set()
+    for c in candidates:
+        try:
+            cr = c.resolve()
+        except OSError:
+            continue
+        if cr in seen:
+            continue
+        seen.add(cr)
+        if any((cr / m).is_file() for m in markers):
+            return cr
+    raise RuntimeError(
+        "NBA job root not found. CML Scheduled Job command must be:\n"
+        "  bash /home/cdsw/cai-workbench/next-best-action/run-from-session.sh ...\n"
+        "Do not paste run_nba.py into a notebook cell (Cell In[...])."
+    )
+
+
+_ROOT = _install_job_root(_resolve_job_root())
+
+
+def _filter_kernel_argv(argv: list[str] | None = None) -> list[str]:
+    """Strip Jupyter/CML ipykernel `-f kernel-….json` (not real job flags)."""
+    raw = list(argv if argv is not None else sys.argv[1:])
+    cleaned: list[str] = []
+    skip_next = False
+    for arg in raw:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-f", "--f"):
+            skip_next = True
+            continue
+        if "kernel-" in arg and arg.endswith(".json"):
+            continue
+        cleaned.append(arg)
+    return cleaned
+
 
 from src.alert_rules import NoAlertFound
 from src.config import Settings
@@ -56,7 +129,7 @@ def main() -> int:
         action="store_true",
         help="Phase 3: template narrative only (no model call)",
     )
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args(_filter_kernel_argv())
 
     if args.demo_greifswald:
         os.environ["NBA_DEMO_GREIFSWALD"] = "1"
@@ -116,5 +189,16 @@ def main() -> int:
     return 0
 
 
+def _exit_job(rc: int) -> None:
+    in_kernel = (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+    if in_kernel and rc == 0:
+        return
+    raise SystemExit(rc)
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    _exit_job(main())

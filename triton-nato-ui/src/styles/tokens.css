@@ -66,6 +66,22 @@ a {
   background: var(--bg-panel);
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
 .app-title {
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -300,6 +316,55 @@ a {
 .map-wrap {
   height: 420px;
   border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.map-legend-infra {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 6px 10px;
+  font-size: 10px;
+  background: rgba(12, 16, 22, 0.88);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.map-legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.map-legend-swatch-area {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #f9a825;
+}
+
+.map-wrap-tracks {
+  height: 380px;
+}
+
+.filter-active-banner {
+  font-size: 12px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(61, 220, 132, 0.08);
+  color: var(--text-muted);
 }
 
 .proximity-map-wrap {

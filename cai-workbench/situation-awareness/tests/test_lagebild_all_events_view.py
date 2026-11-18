@@ -23,7 +23,7 @@ def _trino_all_events_section() -> str:
     sql_path = _REPO / "cdw-analyse" / "create_db_tables_trino.sql"
     text = sql_path.read_text(encoding="utf-8")
     start = text.index("CREATE OR REPLACE VIEW lagebild_all_events AS")
-    end = text.index('ORDER BY harbour_name, "timestamp" DESC;', start)
+    end = text.index("\nDROP TABLE IF EXISTS Situation_Awareness_Summary", start)
     return text[start:end]
 
 
@@ -43,11 +43,15 @@ class TestLagebildAllEventsDdl(unittest.TestCase):
         snapshot = text[snap_start:snap_end]
         self.assertIn("WHERE rn = 1", snapshot)
         self.assertIn("GpsJammerLatestPerTile", snapshot)
+        self.assertIn("FilteredVesselOutliers", snapshot)
+        self.assertIn("'AIS_Outlier'", snapshot)
 
     def test_all_events_drops_latest_dedupe(self) -> None:
         section = _trino_all_events_section()
         self.assertNotIn("GpsJammerLatestPerTile", section)
         self.assertIn("rn_nearest = 1", section)
+        self.assertIn("'AIS_Outlier'", section)
+        self.assertIn("FilteredVesselOutliers", section)
         for line in _sql_lines_without_comments(section):
             if "rn_nearest" in line:
                 continue

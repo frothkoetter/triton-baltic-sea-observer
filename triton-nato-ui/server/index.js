@@ -9,9 +9,13 @@ import {
   getConnectionState,
   getDatasets,
   getFleet,
+  getFleetPositions,
   getKpis,
   getLidarScans,
   getObservationAreas,
+  getOstseeInfrastructure,
+  getPositionTracks,
+  getVesselOutliers,
   getSanctions,
   getSurveillance,
   listTables,
@@ -165,6 +169,29 @@ app.get("/api/ais", async (_req, res) => {
   res.json(await getAis());
 });
 
+app.get("/api/vessel-outliers", async (_req, res) => {
+  res.json(await getVesselOutliers());
+});
+
+app.get("/api/fleet-positions", async (_req, res) => {
+  res.json(await getFleetPositions());
+});
+
+app.get("/api/position-tracks", async (req, res) => {
+  const q = req.query ?? {};
+  res.json(
+    await getPositionTracks({
+      hours: q.hours,
+      flag: q.flag,
+      vesselType: q.vessel_type,
+      shipName: q.ship_name,
+      ais: q.ais !== "0" && q.ais !== "false",
+      german: q.german !== "0" && q.german !== "false",
+      russian: q.russian !== "0" && q.russian !== "false",
+    })
+  );
+});
+
 app.get("/api/analyses/fleet", async (_req, res) => {
   res.json(await getFleet());
 });
@@ -183,6 +210,10 @@ app.get("/api/analyses/surveillance", async (_req, res) => {
 
 app.get("/api/observation-areas", async (_req, res) => {
   res.json(await getObservationAreas());
+});
+
+app.get("/api/ostsee-infrastructure", async (_req, res) => {
+  res.json(await getOstseeInfrastructure());
 });
 
 app.get("/api/lidar/scans", async (_req, res) => {

@@ -99,7 +99,16 @@ export default function App() {
     <div className="app-root">
       <div className="classification-banner">NATO UNCLASSIFIED // TRAINING — TRITON BALTIC SEA OBSERVER</div>
       <header className="app-header">
-        <div className="app-title">TRITON BALTIC SEA OBSERVER</div>
+        <div className="app-brand">
+          <img
+            className="app-logo"
+            src="/images/tritonLogo.jpg"
+            alt="Triton"
+            width={120}
+            height={40}
+          />
+          <div className="app-title">TRITON BALTIC SEA OBSERVER</div>
+        </div>
         <nav className="app-nav" aria-label="Main">
           {(
             [
@@ -138,7 +147,9 @@ export default function App() {
           onShipName={setShipName}
         />
         <main className="main-pane">
-          {zone === "lagebild" && <LagebildPage />}
+          {zone === "lagebild" && (
+            <LagebildPage flag={flag} vesselType={vesselType} shipName={shipName} />
+          )}
           {zone === "analysen" && <AnalysenPage />}
           {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}

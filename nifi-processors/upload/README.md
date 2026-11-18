@@ -9,7 +9,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
-| `STANAGSimulator.py` | STANAG messages |
+| `STANAGSimulator.py` | STANAG messages (**1.7.0** — POSITION = MarineShipSimulator) |
 | `MessengerSimulator.py` | Messenger sim |
 | `gpsjammer.py` | GPS jamming sim |
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
@@ -31,11 +31,23 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
 
+## STANAG / marine position alignment
+
+**StanagMessageGenerator** (`STANAGSimulator.py` **1.7.0**) uses the same coordinates as **MarineShipSimulator** for each `FROM/` unit:
+
+1. Preferred: connect **MarineShipSimulator → success → StanagMessageGenerator** (use marine NDJSON on the FlowFile).
+2. Fallback: read **`/tmp/marineship_state.json`** written on the same NiFi node (5 decimal places, same as `marine_vessel_status`).
+3. Property **Require Marine Ship Positions** = `true` (default) avoids random Baltic coordinates when marine data is missing.
+
+Disable the standalone **GenerateFlowFile** in *Surveillance Report Simulator* when marine output feeds STANAG.
+
 ## Russian Baltic Fleet route
 
 FlowFile attribute **`ship.simulation.route`** = **`rus_fleet_positions`**.
 
 State: **`/tmp/rus_fleet_state.json`** (separate from `/tmp/ship_state.json` and `/tmp/marineship_state.json`).
+
+Ships at **home_port** periodically roll new patrol missions (`RusFleetPositionSimulator` **1.0.1**+). After upgrading, reset state so stuck `home_port` rows are not reused.
 
 Use **BalticShipRouteStateReset** with **Reset RUS Fleet State** = true, or delete the file manually.
 

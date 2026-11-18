@@ -45,6 +45,143 @@ INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitu
 ('Słupsk Trough', 'POLYGON((18.631009957831964 56.33596162852314, 18.631009957831964 55.68428205974104, 18.81138185878598 55.68428205974104, 18.81138185878598 56.33596162852314, 18.631009957831964 56.33596162852314))', 56.0101, 18.7212),
 ('Baltic Shelf', 'POLYGON((17.20764611432847 56.797018539001215, 17.20764611432847 56.27911433081525, 17.4428839762831 56.27911433081525, 17.4428839762831 56.797018539001215, 17.20764611432847 56.797018539001215))', 56.5381, 17.3253);
 
+-- Subsea pipelines & cables (OGC WKT). See cdw-analyse/trino-spatial-ais/ for EMODnet sync.
+DROP TABLE IF EXISTS ostsee_pipelines_segmented;
+DROP TABLE IF EXISTS ostsee_pipelines;
+DROP TABLE IF EXISTS raw_ostsee_geojson;
+DROP TABLE IF EXISTS ostsee_infrastruktur;
+
+CREATE TABLE ostsee_infrastruktur (
+    id varchar COMMENT 'External asset id (e.g. EMODnet or mock).',
+    name varchar COMMENT 'Pipeline or cable display name.',
+    typ varchar COMMENT 'Gaspipeline or Seekabel.',
+    geometrie_wkt varchar COMMENT 'Route as OGC WKT LINESTRING/MULTILINESTRING (lon lat, WGS84).',
+    status varchar COMMENT 'Operational status.',
+    medium varchar COMMENT 'Gas, Telecom/Power, etc.'
+);
+
+INSERT INTO ostsee_infrastruktur (id, name, typ, geometrie_wkt, status, medium) VALUES
+('NS1_MOCK', 'Ostsee Pipeline Route A (Beispiel)', 'Gaspipeline',
+ 'LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)',
+ 'In use', 'Gas'),
+('CABLE_MOCK', 'Baltic Sea Kabel B (Beispiel)', 'Seekabel',
+ 'LINESTRING(14.7000 55.1000, 15.8000 55.6000, 17.9000 56.8000)',
+ 'In use', 'Telecom/Power');
+
+CREATE TABLE raw_ostsee_geojson (
+    json_payload varchar COMMENT 'Single-line GeoJSON FeatureCollection (staging).',
+    quelle varchar COMMENT 'Source label: lab_insert, emodnet, s3, …'
+);
+
+INSERT INTO raw_ostsee_geojson (json_payload, quelle) VALUES
+(
+ '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Nord Stream 1 Mock GeoJSON","medium":"Gas","status":"In use","operator":"Mock","country":"DE-RU"},"geometry":{"type":"MultiLineString","coordinates":[[[13.6512,54.1523],[14.8045,54.8511],[16.2019,55.4088],[19.5,57.2]]]}}]}',
+ 'lab_insert'
+);
+
+CREATE TABLE ostsee_pipelines (
+    pipeline_name varchar COMMENT 'Asset name.',
+    medium varchar COMMENT 'Gas, Telecom/Power, …',
+    status varchar COMMENT 'Operational status.',
+    geo_typ varchar COMMENT 'LineString or MultiLineString.',
+    geometrie_wkt varchar COMMENT 'Route WKT (lon lat).',
+    quelle varchar COMMENT 'WKT, GeoJSON, EMODnet, …'
+);
+
+INSERT INTO ostsee_pipelines (pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle)
+SELECT
+    name,
+    medium,
+    status,
+    CASE
+        WHEN geometrie_wkt LIKE 'MULTILINESTRING%' THEN 'MultiLineString'
+        ELSE 'LineString'
+    END,
+    geometrie_wkt,
+    'WKT'
+FROM ostsee_infrastruktur;
+
+INSERT INTO ostsee_pipelines (pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle)
+SELECT
+    json_extract_scalar(json_payload, '$.features[0].properties.name'),
+    json_extract_scalar(json_payload, '$.features[0].properties.medium'),
+    COALESCE(json_extract_scalar(json_payload, '$.features[0].properties.status'), 'Unknown'),
+    json_extract_scalar(json_payload, '$.features[0].geometry.type'),
+    'LINESTRING(13.6512 54.1523, 14.8045 54.8511, 16.2019 55.4088, 19.5 57.2)',
+    'GeoJSON'
+FROM raw_ostsee_geojson
+WHERE quelle = 'lab_insert';
+
+CREATE TABLE ostsee_pipelines_segmented AS
+WITH pipeline_geom AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_GeometryFromText(geometrie_wkt) AS geom
+    FROM ostsee_pipelines
+),
+single_lines AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_GeometryN(geom, CAST(idx AS integer)) AS line_geom
+    FROM pipeline_geom
+    CROSS JOIN UNNEST(sequence(1, GREATEST(ST_NumGeometries(geom), 1))) AS t(idx)
+    WHERE geom IS NOT NULL
+),
+line_segments AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_LineFromText(
+            'LINESTRING(' ||
+            CAST(ST_X(ST_PointN(line_geom, CAST(pt_idx AS integer))) AS varchar) || ' ' ||
+            CAST(ST_Y(ST_PointN(line_geom, CAST(pt_idx AS integer))) AS varchar) || ', ' ||
+            CAST(ST_X(ST_PointN(line_geom, CAST(pt_idx + 1 AS integer))) AS varchar) || ' ' ||
+            CAST(ST_Y(ST_PointN(line_geom, CAST(pt_idx + 1 AS integer))) AS varchar) || ')'
+        ) AS seg_geom
+    FROM single_lines
+    CROSS JOIN UNNEST(sequence(1, GREATEST(ST_NumPoints(line_geom) - 1, 0))) AS t(pt_idx)
+    WHERE ST_NumPoints(line_geom) >= 2
+)
+SELECT
+    pipeline_name,
+    medium,
+    status,
+    ST_AsText(seg_geom) AS seg_wkt,
+    ST_XMin(ST_Buffer(seg_geom, 0.005)) AS min_lon,
+    ST_XMax(ST_Buffer(seg_geom, 0.005)) AS max_lon,
+    ST_YMin(ST_Buffer(seg_geom, 0.005)) AS min_lat,
+    ST_YMax(ST_Buffer(seg_geom, 0.005)) AS max_lat
+FROM line_segments
+WHERE seg_geom IS NOT NULL;
+
+CREATE OR REPLACE VIEW ais_daten AS
+SELECT
+    mmsi,
+    COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+    ) AS zeitstempel,
+    longitude AS lon,
+    latitude AS lat,
+    speed AS sog,
+    course AS cog
+FROM ais_events_ice
+WHERE latitude IS NOT NULL
+  AND longitude IS NOT NULL
+  AND COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+      ) IS NOT NULL;
+
 DROP TABLE IF EXISTS sanctioned_vessels;
 CREATE TABLE sanctioned_vessels (
   Name varchar COMMENT 'The official registered name of the vessel.',
@@ -597,6 +734,26 @@ CREATE TABLE vessel_outliers (
   Severity_Level integer COMMENT 'A numeric rating indicating the critical nature or impact of the detected outlier.'
 );
 
+DROP TABLE IF EXISTS infrastructure_ais_suspicions;
+CREATE TABLE infrastructure_ais_suspicions (
+  MMSI bigint COMMENT 'Vessel MMSI.',
+  Pipeline_Name varchar COMMENT 'Pipeline or cable asset name (ostsee_pipelines_segmented).',
+  Medium varchar COMMENT 'Gas, Telecom/Power, etc.',
+  Suspicion_Kind varchar COMMENT 'blackout or korridor (spatial-lab query 08 / 07).',
+  Pattern varchar COMMENT 'verdachtsmuster or korridor summary label.',
+  Event_Start timestamp COMMENT 'Gap or corridor contact start (UTC).',
+  Event_End timestamp COMMENT 'Gap end or last corridor contact.',
+  Latitude double COMMENT 'Reference latitude (gap start or first corridor contact).',
+  Longitude double COMMENT 'Reference longitude.',
+  Speed double COMMENT 'SOG at reference point (kn).',
+  Course double COMMENT 'COG if known.',
+  Status varchar COMMENT 'Navigation status if joined from AIS.',
+  Destination varchar COMMENT 'Reported destination if joined.',
+  Detail varchar COMMENT 'Metrics: gap minutes, crossing counts, slow minutes, etc.',
+  Severity_Level integer COMMENT 'Priority for lagebild / NBA.',
+  Updated_At timestamp COMMENT 'Last outlier job refresh time.'
+);
+
 CREATE OR REPLACE VIEW latest_sanctioned_vessel_events AS
 WITH LatestAISData AS (
     -- 1. Identify the latest record for each MMSI in ais_events_ice
@@ -653,11 +810,17 @@ select
     message_from ,
     message_to,
     message_dtg ,
-    try_cast(message_dtg AS timestamp) AS message_timestamp,
+    coalesce(
+        try(date_parse(upper(trim(message_dtg)), '%d%H%iZ%b%y')),
+        try(from_iso8601_timestamp(message_dtg)),
+        try(from_iso8601_timestamp(replace(message_dtg, 'Z', '+00:00'))),
+        try_cast(replace(message_dtg, 'Z', '') AS timestamp),
+        try_cast(message_dtg AS timestamp)
+    ) AS message_timestamp,
     message_position,
     CAST(regexp_extract(message_position, 'LAT\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_latitude,
     CAST(regexp_extract(message_position, 'LON\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_longitude
-from maritime_surveillance_reports order by message_dtg desc;
+from maritime_surveillance_reports;
 
 CREATE OR REPLACE VIEW lagebild AS
 WITH Harbour_Ref AS (
@@ -919,6 +1082,53 @@ FilteredGpsJammerEvents AS (
     SELECT *
     FROM GpsJammerLatestPerTile
     WHERE rn_latest = 1
+),
+
+-- CTE: AIS anomaly outliers (vessel_outliers job output)
+LatestVesselOutliers AS (
+    SELECT
+        o.mmsi,
+        coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) AS outlier_time,
+        o.latitude AS outlier_lat,
+        o.longitude AS outlier_lon,
+        o.outlier_type,
+        o.reason,
+        o.recommendation,
+        o.severity_level,
+        o.speed,
+        o.course,
+        o.status,
+        o.destination,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(o.latitude, o.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY o.mmsi, o.outlier_type, h.harbour_name
+            ORDER BY coalesce(
+                try(from_iso8601_timestamp(o.event_timestamp)),
+                try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+                try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+            ) DESC
+        ) AS rn
+    FROM
+        defense.vessel_outliers o
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+),
+FilteredVesselOutliers AS (
+    SELECT *
+    FROM LatestVesselOutliers
+    WHERE rn = 1
+      AND distance_m <= 30000
 )
 
 -- FINAL SELECT: Consolidate all latest, relevant data points, grouped by HARBOUR NAME
@@ -1088,9 +1298,34 @@ SELECT
 FROM
     FilteredGpsJammerEvents j
 
-ORDER BY harbour_name, "timestamp" DESC;
+UNION ALL
+
+SELECT
+    'AIS_Outlier' AS Data_Source,
+    CAST(v.mmsi AS VARCHAR) AS ID,
+    v.outlier_time AS "timestamp",
+    v.outlier_lat AS latitude,
+    v.outlier_lon AS longitude,
+    v.harbour_name AS harbour_name,
+    v.distance_m AS dist_m_raw,
+    CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Type: ', COALESCE(v.outlier_type, 'unknown'),
+        ' | Sev: ', CAST(COALESCE(v.severity_level, 0) AS VARCHAR),
+        ' | Reason: ', COALESCE(v.reason, ''),
+        COALESCE(CONCAT(' | Rec: ', v.recommendation), ''),
+        COALESCE(CONCAT(' | SOG: ', CAST(ROUND(v.speed, 1) AS VARCHAR), ' kn'), ''),
+        COALESCE(CONCAT(' | COG: ', CAST(ROUND(v.course, 0) AS VARCHAR), '°'), ''),
+        COALESCE(CONCAT(' | Status: ', v.status), ''),
+        COALESCE(CONCAT(' | Dest: ', v.destination), '')
+    ) AS details
+FROM
+    FilteredVesselOutliers v
+;
 
 -- VIEW: defense.lagebild_all_events — every qualifying row in the 24h window.
+-- (Trino: no ORDER BY in view definitions — order in SELECT at query time.)
 -- Same feeds/thresholds as defense.lagebild but without ROW_NUMBER rn=1 latest-only dedupe.
 -- CROSS JOIN harbours may multiply rows when an event is within range of several ports.
 -- GPS jammer: all jamming rows in 24h; nearest harbour only (rn_nearest=1), not latest per geohash.
@@ -1336,6 +1571,43 @@ FilteredGpsJammerEvents AS (
     SELECT *
     FROM GpsJammerNearestHarbour
     WHERE rn_nearest = 1
+),
+
+LatestVesselOutliers AS (
+    SELECT
+        o.mmsi,
+        coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) AS outlier_time,
+        o.latitude AS outlier_lat,
+        o.longitude AS outlier_lon,
+        o.outlier_type,
+        o.reason,
+        o.recommendation,
+        o.severity_level,
+        o.speed,
+        o.course,
+        o.status,
+        o.destination,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(o.latitude, o.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
+    FROM
+        defense.vessel_outliers o
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE coalesce(
+            try(from_iso8601_timestamp(o.event_timestamp)),
+            try(from_iso8601_timestamp(replace(o.event_timestamp, 'Z', '+00:00'))),
+            try_cast(replace(o.event_timestamp, 'Z', '') AS timestamp)
+        ) >= current_timestamp - interval '24' hour
+),
+FilteredVesselOutliers AS (
+    SELECT *
+    FROM LatestVesselOutliers
+    WHERE distance_m <= 30000
 )
 
 -- FINAL SELECT: all qualifying events in the reporting window (volume, not snapshot)
@@ -1505,7 +1777,31 @@ SELECT
 FROM
     FilteredGpsJammerEvents j
 
-ORDER BY harbour_name, "timestamp" DESC;
+UNION ALL
+
+SELECT
+    'AIS_Outlier' AS Data_Source,
+    CAST(v.mmsi AS VARCHAR) AS ID,
+    v.outlier_time AS "timestamp",
+    v.outlier_lat AS latitude,
+    v.outlier_lon AS longitude,
+    v.harbour_name AS harbour_name,
+    v.distance_m AS dist_m_raw,
+    CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(v.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Type: ', COALESCE(v.outlier_type, 'unknown'),
+        ' | Sev: ', CAST(COALESCE(v.severity_level, 0) AS VARCHAR),
+        ' | Reason: ', COALESCE(v.reason, ''),
+        COALESCE(CONCAT(' | Rec: ', v.recommendation), ''),
+        COALESCE(CONCAT(' | SOG: ', CAST(ROUND(v.speed, 1) AS VARCHAR), ' kn'), ''),
+        COALESCE(CONCAT(' | COG: ', CAST(ROUND(v.course, 0) AS VARCHAR), '°'), ''),
+        COALESCE(CONCAT(' | Status: ', v.status), ''),
+        COALESCE(CONCAT(' | Dest: ', v.destination), '')
+    ) AS details
+FROM
+    FilteredVesselOutliers v
+;
 
 
 DROP TABLE IF EXISTS Situation_Awareness_Summary;

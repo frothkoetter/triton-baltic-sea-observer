@@ -101,7 +101,7 @@ RUS_BALTIC_FLEET: List[Dict[str, str]] = [
 NAME_BY_MMSI: Dict[str, str] = {u["mmsi"]: u["name"] for u in RUS_BALTIC_FLEET}
 UNIT_BY_MMSI: Dict[str, Dict[str, str]] = {u["mmsi"]: u for u in RUS_BALTIC_FLEET}
 
-MISSION_ELIGIBLE_FRACTION = 0.33
+MISSION_ELIGIBLE_FRACTION = 0.45
 BALTIYSK_HOME_FRACTION = 0.60
 
 
