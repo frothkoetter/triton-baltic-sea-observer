@@ -124,8 +124,11 @@ export const PREDEFINED = {
     LIMIT 200
   `,
   observationAreas: `
-    SELECT area_id, polygon, center_latitude, center_longitude
+    SELECT area_id, polygon, center_latitude, center_longitude,
+           country, area_type, tier, source
     FROM defense.observation_areas
+    WHERE coalesce(tier, 'A') = 'A'
+    ORDER BY country, area_id
   `,
   ostseeInfrastruktur: `
     SELECT id, name, typ, geometrie_wkt, status, medium

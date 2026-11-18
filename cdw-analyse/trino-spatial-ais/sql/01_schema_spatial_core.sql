@@ -1,19 +1,7 @@
 -- Minimal spatial lab: WKT AOIs + AIS + harbours (Trino / Iceberg)
--- Run after: CREATE SCHEMA iceberg.defense (see ../create_db_tables_trino.sql)
+-- observation_areas: apply sql/06_tier_a_observation_areas.sql first (EMODnet Tier A).
 
 USE iceberg.defense;
-
-DROP TABLE IF EXISTS observation_areas;
-CREATE TABLE observation_areas (
-  area_id varchar,
-  polygon varchar COMMENT 'OGC WKT POLYGON',
-  center_latitude double,
-  center_longitude double
-);
-
-INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitude) VALUES
-('Bornholm Basin', 'POLYGON((17.237478356677286 56.03107993705109, 17.237478356677286 55.9047066587936, 18.31712997618766 55.9047066587936, 18.317129976129976 56.03107993705109, 17.237478356677286 56.03107993705109))', 55.9679, 17.7773),
-('Gdańsk Deep', 'POLYGON((18.29518008728172 55.53540464392404, 18.29518008728172 55.22756184778888, 19.28762566297803 55.22756184778888, 19.28762566297803 55.53540464392404, 18.29518008728172 55.53540464392404))', 55.3815, 18.7914);
 
 DROP TABLE IF EXISTS ais_events_ice;
 CREATE TABLE ais_events_ice (

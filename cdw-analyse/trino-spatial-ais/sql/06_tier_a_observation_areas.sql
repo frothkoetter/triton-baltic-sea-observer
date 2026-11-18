@@ -1,0 +1,36 @@
+        -- Tier A military / restricted areas (EMODnet). Regenerate via scripts/build_emodnet_tier_a_restricted.py
+        USE iceberg.defense;
+
+        DROP TABLE IF EXISTS observation_areas;
+        CREATE TABLE observation_areas (
+          area_id varchar COMMENT 'Stable id for map + area_violation joins.',
+          polygon varchar COMMENT 'OGC WKT POLYGON (lon lat).',
+          center_latitude double,
+          center_longitude double,
+          country varchar COMMENT 'Reporting state from EMODnet.',
+          area_type varchar COMMENT 'Firing Area, National Defence Area, …',
+          tier varchar COMMENT 'A = tactically curated subset.',
+          source varchar COMMENT 'Provenance.'
+        );
+
+        INSERT INTO observation_areas (
+          area_id, polygon, center_latitude, center_longitude,
+          country, area_type, tier, source
+        ) VALUES
+        ('DK-Firing-Kattegat', 'POLYGON ((10.49869315 58.04946684, 10.2153316 58.3661459, 10.4986758 58.49948646, 10.88205235 58.04947026, 10.49869315 58.04946684))', 58.244337, 10.532022, 'Denmark', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('DK-Firing-Skagerrak', 'POLYGON ((9.61534508 57.18276287, 9.53201035 57.11609303, 9.34866823 57.11609119, 9.24032727 57.1827591, 9.24032532 57.24109556, 9.39866234 57.31609659, 9.49866744 57.31609758, 9.61534508 57.18276287))', 57.209163, 9.423227, 'Denmark', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('EE-Defence-West-Estonia-24.3', 'POLYGON ((24.1999995 59.62844144, 24.28833293 59.64999998, 24.44166705 59.64999996, 24.44253504 59.53333396, 24.20000014 59.53333299, 24.1999995 59.62844144))', 59.589846, 24.324246, 'Estonia', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('FI-Defence-Helsinki-Approaches-24.2', 'POLYGON ((24.32780578 59.93760706, 24.35052746 59.92761237, 24.39514207 59.93798387, 24.440017 59.81177521, 24.08314521 59.77020252, 24.10748484 59.90306585, 24.00088921 59.92852552, 24.35922662 60.04672389, 24.38739852 60.01675102, 24.32780578 59.93760706))', 59.894373, 24.244816, 'Finland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('FI-Defence-Helsinki-Approaches-24.8', 'POLYGON ((24.77655359 60.13488342, 24.79405615 60.13238383, 24.77156072 60.13072304, 24.77655359 60.13488342))', 60.132663, 24.780723, 'Finland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('FI-Defence-Helsinki-Approaches-24.9', 'POLYGON ((24.90433281 60.09739061, 24.91656962 60.10405741, 24.9235089 60.1026671, 24.91211412 60.09461359, 24.90433281 60.09739061))', 60.099488, 24.913915, 'Finland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('FI-Defence-Helsinki-Approaches-25.0', 'POLYGON ((25.08824168 60.15017469, 25.06078341 60.12412515, 24.9871583 60.1246151, 24.99405947 60.14367294, 25.04918214 60.15808036, 25.08824168 60.15017469))', 60.139179, 25.036743, 'Finland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('FI-Defence-Helsinki-Approaches-25.1', 'POLYGON ((24.99623325 59.97705018, 25.02841691 60.0780288, 25.00377424 60.1042976, 25.0105273 60.11099832, 25.07892312 60.11143437, 25.12811078 60.09125666, 25.13444965 59.97907647, 24.99623325 59.97705018))', 60.040248, 25.07008, 'Finland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('DE-Firing-Bay-Kiel', 'POLYGON ((13.6638317 55.08349735, 14.01154432 55.07507442, 14.10434318 54.91666771, 13.66319123 54.91660231, 13.6638317 55.08349735))', 54.994677, 13.859742, 'Germany', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('DE-Firing-Bornholm-Bight', 'POLYGON ((15.24968165 55.50025778, 15.8335062 55.50032123, 15.83319975 54.91690263, 15.24994627 54.91690263, 15.24968165 55.50025778))', 55.208644, 15.541589, 'Germany', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('DE-Firing-Ostsee-Central', 'POLYGON ((13.85830781 54.63054244, 13.95713398 54.66653683, 14.33556346 54.66679063, 14.28407192 54.33299984, 14.13368999 54.33347574, 14.1327382 54.44959343, 13.99948839 54.45054522, 13.85830781 54.63054244))', 54.534106, 14.137062, 'Germany', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('DE-Firing-Putlos-Todendorf', 'POLYGON ((10.69445155 54.30651862, 10.63040295 54.35148339, 10.54585243 54.37770264, 10.46612971 54.45316955, 10.45185295 54.49143128, 10.45927687 54.50799233, 10.59976024 54.54339871, 10.72425364 54.53540372, 10.82933064 54.485416, 10.87158987 54.44810605, 10.866293 54.35444186, 10.76969178 54.30722723, 10.69445155 54.30651862))', 54.432617, 10.678147, 'Germany', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('PL-Defence-Gdansk-Bight', 'POLYGON ((19.35733408 54.39849968, 19.23433904 54.39861978, 19.02503061 54.43545825, 19.21399981 54.68183331, 19.3854994 54.56516679, 19.38233379 54.4651664, 19.35733408 54.39849968))', 54.512213, 19.232221, 'Poland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('PL-Defence-Slupsk-Bank', 'POLYGON ((16.77266667 54.78383333, 16.84519072 54.58727085, 16.53554276 54.54221936, 16.42737037 54.48318987, 16.14616667 54.59, 16.2825 54.67916667, 16.77266667 54.78383333))', 54.631922, 16.525385, 'Poland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('PL-Defence-Swinoujscie', 'POLYGON ((14.88270499 54.0523473, 14.77733219 54.03293851, 14.73966667 54.09516667, 14.84466667 54.1185, 14.88270499 54.0523473))', 54.074925, 14.811528, 'Poland', 'National Defence Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('SE-Firing-Gotland-East', 'POLYGON ((18.12972122 57.48305447, 17.83805508 57.45805456, 17.84638824 57.59110961, 17.95472139 57.68277661, 18.1816665 57.70138754, 18.18166637 57.58999849, 18.20888836 57.57499848, 18.20194333 57.54944247, 18.12972122 57.48305447))', 57.576255, 18.021295, 'Sweden', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)'),
+('SE-Firing-Southern-Baltic', 'POLYGON ((15.72210924 56.05519209, 15.69637539 55.92843437, 15.41258279 55.92820641, 15.4116277 56.08809496, 15.45409633 56.08958014, 15.48827017 56.11925844, 15.51739508 56.11811134, 15.55028366 56.09743276, 15.60981683 56.11764533, 15.63629572 56.10752491, 15.65110423 56.09487156, 15.64514435 56.08715104, 15.72210924 56.05519209))', 56.015113, 15.557762, 'Sweden', 'Firing Area', 'A', 'EMODnet emodnet:militaryareaspoly (Tier A curated)');

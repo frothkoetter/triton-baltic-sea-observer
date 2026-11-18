@@ -9,7 +9,18 @@ export type ObservationArea = {
   center_latitude: number;
   center_longitude: number;
   polygon?: string | null;
+  country?: string;
+  area_type?: string;
+  tier?: string;
+  source?: string;
 };
+
+function areaStyle(area: ObservationArea): { color: string; fillColor: string } {
+  const firing = (area.area_type ?? "").toLowerCase().includes("firing");
+  return firing
+    ? { color: "#E65100", fillColor: "#FF6F00" }
+    : { color: "#1565C0", fillColor: "#42A5F5" };
+}
 
 export type OstseeInfraRow = {
   id: string;
@@ -148,23 +159,37 @@ export function TacticalMap({
         <BasemapTileLayer />
 
         {showAreas &&
-          areaPolygons.map((a) =>
-            a.rings.length > 0 ? (
+          areaPolygons.map((a) => {
+            const meta = areas.find((x) => x.area_id === a.id);
+            const style = meta ? areaStyle(meta) : { color: "#E65100", fillColor: "#FF6F00" };
+            return a.rings.length > 0 ? (
               <Fragment key={`poly-${a.id}`}>
                 <Polygon
                   positions={a.rings}
                   pathOptions={{
-                    color: "#F9A825",
-                    fillColor: "#FFD54F",
-                    fillOpacity: 0.12,
+                    color: style.color,
+                    fillColor: style.fillColor,
+                    fillOpacity: 0.14,
                     weight: 2,
                   }}
                 >
-                  <Tooltip sticky>{a.id} — restricted AOI</Tooltip>
+                  <Tooltip sticky>
+                    <span className="mono">
+                      <strong>{a.id}</strong>
+                      {meta?.area_type ? (
+                        <>
+                          <br />
+                          {meta.country ?? "—"} · {meta.area_type}
+                        </>
+                      ) : null}
+                      <br />
+                      EMODnet Tier A
+                    </span>
+                  </Tooltip>
                 </Polygon>
               </Fragment>
-            ) : null
-          )}
+            ) : null;
+          })}
 
         {showInfrastructure &&
           infraLines.map((item) =>
@@ -188,16 +213,24 @@ export function TacticalMap({
           )}
 
         {showAreas &&
-          areas.map((a) => (
-            <CircleMarker
-              key={a.area_id}
-              center={[a.center_latitude, a.center_longitude]}
-              radius={10}
-              pathOptions={{ color: "#F9A825", fillOpacity: 0.2, weight: 1, fillColor: "#FFD54F" }}
-            >
-              <Tooltip>{a.area_id}</Tooltip>
-            </CircleMarker>
-          ))}
+          areas.map((a) => {
+            const style = areaStyle(a);
+            return (
+              <CircleMarker
+                key={a.area_id}
+                center={[a.center_latitude, a.center_longitude]}
+                radius={7}
+                pathOptions={{
+                  color: style.color,
+                  fillOpacity: 0.25,
+                  weight: 1,
+                  fillColor: style.fillColor,
+                }}
+              >
+                <Tooltip>{a.area_id}</Tooltip>
+              </CircleMarker>
+            );
+          })}
 
         {germanFleet.map((u) => (
           <CircleMarker
@@ -314,7 +347,7 @@ export function TacticalMap({
               className="map-legend-swatch map-legend-swatch-area"
               style={{ background: "rgba(255, 213, 79, 0.45)" }}
             />{" "}
-            Restricted AOI
+            Tier A military / defence zones
           </span>
         </div>
       )}

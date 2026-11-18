@@ -100,6 +100,10 @@ function normalizeArea(row: Record<string, unknown>): ObservationArea | null {
     center_latitude: lat,
     center_longitude: lon,
     polygon: row.polygon != null ? String(row.polygon) : undefined,
+    country: row.country != null ? String(row.country) : undefined,
+    area_type: row.area_type != null ? String(row.area_type) : undefined,
+    tier: row.tier != null ? String(row.tier) : undefined,
+    source: row.source != null ? String(row.source) : undefined,
   };
 }
 
