@@ -197,6 +197,14 @@ a {
   color: var(--text-muted);
 }
 
+.panel-subtitle {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: -4px 0 10px;
+  opacity: 0.9;
+}
+
 .kpi-row {
   display: flex;
   gap: 8px;
