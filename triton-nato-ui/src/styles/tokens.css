@@ -302,6 +302,15 @@ a {
   min-height: 320px;
 }
 
+.nba-list .data-table {
+  font-size: 11px;
+}
+
+.nba-list .data-table th:first-child,
+.nba-list .data-table td:first-child {
+  min-width: 108px;
+}
+
 .nba-meta {
   display: grid;
   grid-template-columns: 120px 1fr;
