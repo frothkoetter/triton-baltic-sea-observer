@@ -810,11 +810,17 @@ select
     message_from ,
     message_to,
     message_dtg ,
-    try_cast(message_dtg AS timestamp) AS message_timestamp,
+    coalesce(
+        try(date_parse(upper(trim(message_dtg)), '%d%H%iZ%b%y')),
+        try(from_iso8601_timestamp(message_dtg)),
+        try(from_iso8601_timestamp(replace(message_dtg, 'Z', '+00:00'))),
+        try_cast(replace(message_dtg, 'Z', '') AS timestamp),
+        try_cast(message_dtg AS timestamp)
+    ) AS message_timestamp,
     message_position,
     CAST(regexp_extract(message_position, 'LAT\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_latitude,
     CAST(regexp_extract(message_position, 'LON\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_longitude
-from maritime_surveillance_reports order by message_dtg desc;
+from maritime_surveillance_reports;
 
 CREATE OR REPLACE VIEW lagebild AS
 WITH Harbour_Ref AS (
