@@ -11,6 +11,7 @@ import {
   buildGermanFleetTrackSql,
   buildRussianFleetTrackSql,
   buildSanctionedAnalyticsQueries,
+  buildRestrictedAnalyticsQueries,
 } from "./queries.js";
 import { shortenSanctionReason } from "./sanction-text.js";
 
@@ -562,6 +563,130 @@ export async function getSanctionedAnalytics() {
       ok: true,
       source: "sample",
       ...sampleSanctionedAnalytics(),
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
+}
+
+function sampleRestrictedAnalytics() {
+  const rows = sample.restrictedRouteTracks;
+  const vesselKey = (r) => `${r.mmsi}`;
+  const zoneSet = new Set(rows.map((r) => r.area_id));
+  const mmsiSet = new Set(rows.map((r) => r.mmsi));
+  const pairSet = new Set(rows.map((r) => `${r.mmsi}:${r.area_id}`));
+  const byZoneMap = new Map();
+  const byFlagMap = new Map();
+  const byTypeMap = new Map();
+  const vesselStats = new Map();
+  for (const r of rows) {
+    byZoneMap.set(r.area_id, new Set([...(byZoneMap.get(r.area_id) ?? []), r.mmsi]));
+    byFlagMap.set(r.flag, new Set([...(byFlagMap.get(r.flag) ?? []), r.mmsi]));
+    byTypeMap.set(r.vessel_type, new Set([...(byTypeMap.get(r.vessel_type) ?? []), r.mmsi]));
+    const vs = vesselStats.get(vesselKey(r)) ?? {
+      ship_name: r.ship_name,
+      mmsi: r.mmsi,
+      vessel_type: r.vessel_type,
+      flag: r.flag,
+      zones: new Set(),
+      reports: 0,
+    };
+    vs.zones.add(r.area_id);
+    vs.reports += 1;
+    vesselStats.set(vesselKey(r), vs);
+  }
+  const byZone = [...byZoneMap.entries()]
+    .map(([name, set]) => ({ name, value: set.size }))
+    .sort((a, b) => b.value - a.value);
+  const byFlag = [...byFlagMap.entries()]
+    .map(([name, set]) => ({ name, value: set.size }))
+    .sort((a, b) => b.value - a.value);
+  const topByType = [...byTypeMap.entries()]
+    .map(([name, set]) => ({ name, value: set.size }))
+    .sort((a, b) => b.value - a.value);
+  const topVessels = [...vesselStats.values()]
+    .map((v) => ({
+      ship_name: v.ship_name,
+      mmsi: v.mmsi,
+      vessel_type: v.vessel_type,
+      flag: v.flag,
+      zones_hit: v.zones.size,
+      reports_inside: v.reports,
+    }))
+    .sort((a, b) => b.zones_hit - a.zones_hit || b.reports_inside - a.reports_inside);
+  const provocateurs = topVessels.slice(0, 12);
+  return {
+    panels: {
+      kpi: {
+        columns: ["unique_vessels", "zones_with_traffic", "position_reports", "vessel_zone_visits"],
+        rows: [
+          {
+            unique_vessels: mmsiSet.size,
+            zones_with_traffic: zoneSet.size,
+            position_reports: rows.length,
+            vessel_zone_visits: pairSet.size,
+          },
+        ],
+      },
+      byZone: { columns: ["name", "value"], rows: byZone },
+      byFlag: { columns: ["name", "value"], rows: byFlag },
+      topByType: { columns: ["name", "value"], rows: topByType },
+      topVessels: {
+        columns: ["ship_name", "mmsi", "vessel_type", "flag", "zones_hit", "reports_inside"],
+        rows: topVessels,
+      },
+      provocateurs: {
+        columns: ["ship_name", "mmsi", "vessel_type", "flag", "zones_hit", "reports_inside"],
+        rows: provocateurs,
+      },
+      routeTracks: {
+        columns: [
+          "mmsi",
+          "ship_name",
+          "vessel_type",
+          "flag",
+          "area_id",
+          "latitude",
+          "longitude",
+          "event_timestamp",
+        ],
+        rows,
+      },
+    },
+  };
+}
+
+const RESTRICTED_ANALYTICS_PANELS = [
+  "kpi",
+  "byZone",
+  "byFlag",
+  "topByType",
+  "topVessels",
+  "provocateurs",
+  "routeTracks",
+];
+
+export async function getRestrictedAnalytics() {
+  const queries = buildRestrictedAnalyticsQueries();
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sampleRestrictedAnalytics() };
+  }
+  const results = await Promise.all(
+    RESTRICTED_ANALYTICS_PANELS.map((key) => queryWarehouse(queries[key]))
+  );
+  const panels = {};
+  for (let i = 0; i < RESTRICTED_ANALYTICS_PANELS.length; i++) {
+    const key = RESTRICTED_ANALYTICS_PANELS[i];
+    const res = results[i];
+    panels[key] = { columns: res.columns ?? [], rows: res.rows ?? [], ok: res.ok };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sampleRestrictedAnalytics(),
       fallbackReason: results.find((r) => !r.ok)?.error,
     };
   }

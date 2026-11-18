@@ -18,7 +18,10 @@ import { fetchJson, type QueryResult } from "../api";
 import { aisAnalyticsQuery, type AisAnalyticsPayload } from "../lib/ais-analytics-api";
 import type { LagebildFilters } from "../lib/lagebild-filters";
 import { BuoyAnalyticsMap } from "../components/BuoyAnalyticsMap";
+import { RestrictedZoneMap } from "../components/RestrictedZoneMap";
 import { DataTable } from "../components/DataTable";
+import { rowsToRestrictedTracks } from "../lib/restricted-tracks";
+import type { ObservationArea } from "../components/TacticalMap";
 import {
   buildClassificationScatter,
   confidenceColor,
@@ -79,6 +82,21 @@ type RusFleetAnalyticsPayload = {
   };
 };
 
+type RestrictedAnalyticsPayload = {
+  ok?: boolean;
+  source?: string;
+  fallbackReason?: string;
+  panels?: {
+    kpi?: AnalyticsPanel;
+    byZone?: AnalyticsPanel;
+    byFlag?: AnalyticsPanel;
+    topByType?: AnalyticsPanel;
+    topVessels?: AnalyticsPanel;
+    provocateurs?: AnalyticsPanel;
+    routeTracks?: AnalyticsPanel;
+  };
+};
+
 type SanctionedAnalyticsPayload = {
   ok?: boolean;
   source?: string;
@@ -116,6 +134,14 @@ function chartRows(rows: Record<string, unknown>[] | undefined) {
   }));
 }
 
+function provocateurBars(rows: Record<string, unknown>[] | undefined) {
+  if (!rows?.length) return [];
+  return rows.map((r) => ({
+    name: String(r.ship_name ?? r.mmsi ?? "—"),
+    value: Number(r.zones_hit ?? r.reports_inside ?? 0),
+  }));
+}
+
 type AnalysenPageProps = LagebildFilters;
 
 export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) {
@@ -124,7 +150,8 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
   const [ais, setAis] = useState<QueryResult | null>(null);
   const [aisAnalytics, setAisAnalytics] = useState<AisAnalyticsPayload | null>(null);
   const [sanctionedAnalytics, setSanctionedAnalytics] = useState<SanctionedAnalyticsPayload | null>(null);
-  const [violations, setViolations] = useState<QueryResult | null>(null);
+  const [restrictedAnalytics, setRestrictedAnalytics] = useState<RestrictedAnalyticsPayload | null>(null);
+  const [observationAreas, setObservationAreas] = useState<ObservationArea[]>([]);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
 
@@ -132,18 +159,20 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
 
   useEffect(() => {
     void (async () => {
-      const [fa, bu, ru, s, v] = await Promise.all([
+      const [fa, bu, ru, s, rz, areas] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
         fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
-        fetchJson<QueryResult>("/api/analyses/violations"),
+        fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
+        fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
       ]);
       setFleetAnalytics(fa);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
       setSanctionedAnalytics(s);
-      setViolations(v);
+      setRestrictedAnalytics(rz);
+      setObservationAreas((areas.rows ?? []) as ObservationArea[]);
     })();
   }, []);
 
@@ -502,15 +531,83 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
       )}
 
       {tab === "restricted" && (
-        <div className="analyses-grid">
-          <section className="panel">
-            <h2 className="panel-title">Area violations</h2>
-            <DataTable columns={violations?.columns ?? []} rows={violations?.rows ?? []} />
-          </section>
-          <section className="panel">
-            <h2 className="panel-title">Violations by area</h2>
-            <ChartBars data={aggregate(violations?.rows ?? [], "area_id")} />
-          </section>
+        <div className="analyses-ais">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            AIS innerhalb Tier-A <code>observation_areas</code> (ST_Within). Quelle:{" "}
+            {restrictedAnalytics?.source ?? "…"}
+            {restrictedAnalytics?.fallbackReason
+              ? ` — fallback (${restrictedAnalytics.fallbackReason})`
+              : ""}
+          </p>
+          {(() => {
+            const rp = restrictedAnalytics?.panels;
+            const rk = rp?.kpi?.rows?.[0];
+            const tracks = rowsToRestrictedTracks(rp?.routeTracks?.rows ?? []);
+            return (
+              <>
+                <div className="kpi-row">
+                  <div className="kpi">
+                    <div className="kpi-value">{Number(rk?.unique_vessels ?? 0)}</div>
+                    <div className="kpi-label">Schiffe (unique MMSI)</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-value">{Number(rk?.zones_with_traffic ?? 0)}</div>
+                    <div className="kpi-label">Sperrgebiete mit Traffic</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-value">{Number(rk?.position_reports ?? 0)}</div>
+                    <div className="kpi-label">AIS-Punkte in AOIs</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-value">{Number(rk?.vessel_zone_visits ?? 0)}</div>
+                    <div className="kpi-label">Schiff×Zone Paare</div>
+                  </div>
+                </div>
+                <div className="analyses-grid analyses-ais-grid">
+                  <section className="panel">
+                    <h2 className="panel-title">Schiffe pro Zone</h2>
+                    <p className="panel-subtitle">Unique MMSI je area_id</p>
+                    <ChartBars data={chartRows(rp?.byZone?.rows)} />
+                  </section>
+                  <section className="panel">
+                    <h2 className="panel-title">Flaggen in Sperrgebieten</h2>
+                    <ChartPie data={chartRows(rp?.byFlag?.rows)} />
+                  </section>
+                  <section className="panel">
+                    <h2 className="panel-title">Schiffstypen</h2>
+                    <ChartPie data={chartRows(rp?.topByType?.rows)} />
+                  </section>
+                  <section className="panel">
+                    <h2 className="panel-title">Provokateure</h2>
+                    <p className="panel-subtitle">Meiste Zonen + Berichte in AOIs</p>
+                    <ChartBars data={provocateurBars(rp?.provocateurs?.rows)} />
+                  </section>
+                </div>
+                <section className="panel restricted-map-panel" style={{ marginTop: 8 }}>
+                  <h2 className="panel-title">Routen in Sperrgebieten</h2>
+                  <p className="panel-subtitle">
+                    Top 8 MMSI nach Zonentreffer — Polylines innerhalb Tier-A AOIs
+                  </p>
+                  <RestrictedZoneMap areas={observationAreas} tracks={tracks} />
+                </section>
+                <section className="panel" style={{ marginTop: 8 }}>
+                  <h2 className="panel-title">Top-Schiffe (Name, Typ, Flagge)</h2>
+                  <DataTable
+                    columns={[
+                      "ship_name",
+                      "mmsi",
+                      "vessel_type",
+                      "flag",
+                      "zones_hit",
+                      "reports_inside",
+                    ]}
+                    rows={rp?.topVessels?.rows ?? []}
+                    hostileColumn="ship_name"
+                  />
+                </section>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
