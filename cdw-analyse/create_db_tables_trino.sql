@@ -661,8 +661,8 @@ select
         try_cast(message_dtg AS timestamp)
     ) AS message_timestamp,
     message_position,
-    CAST(regexp_extract(message_position, 'LAT\\s+([0-9]+\\.[0-9]+)', 1) AS double) AS message_latitude,
-    CAST(regexp_extract(message_position, 'LON\\s+([0-9]+\\.[0-9]+)', 1) AS double) AS message_longitude
+    CAST(regexp_extract(message_position, 'LAT\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_latitude,
+    CAST(regexp_extract(message_position, 'LON\s+([0-9]+\.[0-9]+)', 1) AS double) AS message_longitude
 from maritime_surveillance_reports;
 
 CREATE OR REPLACE VIEW lagebild AS
