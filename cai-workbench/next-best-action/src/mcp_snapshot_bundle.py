@@ -22,6 +22,12 @@ CAPTURE_SOURCE_JDBC_FALLBACK = "jdbc-fallback"
 
 
 def _mcp_import_error() -> str | None:
+    if sys.version_info < (3, 13):
+        return (
+            "iceberg-mcp-server-trino requires Python >= 3.13 "
+            f"(this interpreter is {sys.version_info.major}.{sys.version_info.minor}); "
+            "using JDBC fallback on CML/CDSW is expected"
+        )
     try:
         import iceberg_mcp_server_trino.tools.iceberg_semantics  # noqa: F401
         import iceberg_mcp_server_trino.tools.trino_tools  # noqa: F401

@@ -6,6 +6,7 @@ from src.config import Settings
 from src.mcp_snapshot_bundle import (
     CAPTURE_SOURCE_JDBC_FALLBACK,
     CAPTURE_SOURCE_MCP,
+    _mcp_import_error,
     build_mcp_audit,
     capture_bundle_via_mcp,
     list_latest_snapshot_via_mcp,
@@ -26,6 +27,12 @@ class TestMcpSnapshotBundle(unittest.TestCase):
         )
         self.assertEqual(audit["flow_uuid"], "f-1")
         self.assertEqual(audit["capture_source"], CAPTURE_SOURCE_MCP)
+
+    @patch("src.mcp_snapshot_bundle.sys.version_info", (3, 10, 20, "final", 0))
+    def test_python310_reports_version_skip(self, _ver):
+        err = _mcp_import_error()
+        self.assertIsNotNone(err)
+        self.assertIn("3.13", err or "")
 
     @patch("src.mcp_snapshot_bundle.latest_snapshot_for_table")
     @patch("src.mcp_snapshot_bundle._mcp_import_error", return_value="no package")
