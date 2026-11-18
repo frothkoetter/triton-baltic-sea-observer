@@ -2,19 +2,30 @@ import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   Pie,
   PieChart,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
+  ZAxis,
 } from "recharts";
 import { fetchJson, type QueryResult } from "../api";
+import { BuoyAnalyticsMap } from "../components/BuoyAnalyticsMap";
 import { DataTable } from "../components/DataTable";
+import {
+  buildClassificationScatter,
+  confidenceColor,
+  type ScatterPoint,
+} from "../lib/buoy-analytics";
 
 const TABS = [
   { id: "fleet", label: "Fleet" },
+  { id: "buoys", label: "Buoys" },
   { id: "ais", label: "AIS" },
   { id: "sanctions", label: "Sanctions" },
   { id: "restricted", label: "Restricted Areas" },
@@ -37,6 +48,18 @@ const CHART_TOOLTIP_PROPS = {
 type AnalyticsPanel = {
   columns?: string[];
   rows?: Record<string, unknown>[];
+};
+
+type BuoyAnalyticsPayload = {
+  ok?: boolean;
+  source?: string;
+  fallbackReason?: string;
+  panels?: {
+    recent?: AnalyticsPanel;
+    typeMix?: AnalyticsPanel;
+    classificationGrid?: AnalyticsPanel;
+    geoClusters?: AnalyticsPanel;
+  };
 };
 
 type FleetAnalyticsPayload = {
@@ -68,16 +91,19 @@ export function AnalysenPage() {
   const [ais, setAis] = useState<QueryResult | null>(null);
   const [sanctions, setSanctions] = useState<QueryResult | null>(null);
   const [violations, setViolations] = useState<QueryResult | null>(null);
+  const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const [fa, a, s, v] = await Promise.all([
+      const [fa, bu, a, s, v] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
+        fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<QueryResult>("/api/ais"),
         fetchJson<QueryResult>("/api/analyses/sanctions"),
         fetchJson<QueryResult>("/api/analyses/violations"),
       ]);
       setFleetAnalytics(fa);
+      setBuoyAnalytics(bu);
       setAis(a);
       setSanctions(s);
       setViolations(v);
@@ -85,6 +111,13 @@ export function AnalysenPage() {
   }, []);
 
   const p = fleetAnalytics?.panels;
+  const bp = buoyAnalytics?.panels;
+  const geoClusters = (bp?.geoClusters?.rows ?? []).map((r) => ({
+    geo_position_lat: Number(r.geo_position_lat),
+    geo_position_lon: Number(r.geo_position_lon),
+    record_count: Number(r.record_count ?? 0),
+    sum_altitude: Number(r.sum_altitude ?? 0),
+  }));
   const aisByFlag = aggregate(ais?.rows ?? [], "flag");
   const sanctionsByFlag = aggregate(sanctions?.rows ?? [], "Flag");
 
@@ -166,6 +199,38 @@ export function AnalysenPage() {
                 columns={p?.recentMessages?.columns ?? []}
                 rows={p?.recentMessages?.rows ?? []}
               />
+            </section>
+          </div>
+        </div>
+      )}
+
+      {tab === "buoys" && (
+        <div className="analyses-buoys">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            View <code>defense.buoy_near_harbours</code> (Buoy ⋈ Hafen ≤ 25 km). Quelle:{" "}
+            {buoyAnalytics?.source ?? "…"}
+            {buoyAnalytics?.fallbackReason ? ` — fallback (${buoyAnalytics.fallbackReason})` : ""}
+          </p>
+          <div className="analyses-grid analyses-buoys-grid">
+            <section className="panel buoy-table-panel">
+              <h2 className="panel-title">Buoys — letzte Detektionen</h2>
+              <p className="panel-subtitle">Aktuelle Zeilen aus buoy_near_harbours</p>
+              <DataTable columns={bp?.recent?.columns ?? []} rows={bp?.recent?.rows ?? []} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Objekt-Typen</h2>
+              <p className="panel-subtitle">payload_object_type — Record Count</p>
+              <ChartPie data={chartRows(bp?.typeMix?.rows)} />
+            </section>
+            <section className="panel buoy-map-panel">
+              <h2 className="panel-title">Detektionen — Karte</h2>
+              <p className="panel-subtitle">GROUP BY geo_position_lat, geo_position_lon — sum(altitude)</p>
+              <BuoyAnalyticsMap clusters={geoClusters} />
+            </section>
+            <section className="panel buoy-scatter-panel">
+              <h2 className="panel-title">Typ × Klassifikation</h2>
+              <p className="panel-subtitle">avg(payload_object_confidence) · Bubble = record_count</p>
+              <ChartClassificationGrid rows={bp?.classificationGrid?.rows ?? []} />
             </section>
           </div>
         </div>
@@ -255,6 +320,68 @@ function ChartPie({ data }: { data: { name: string; value: number }[] }) {
           </Pie>
           <Tooltip {...CHART_TOOLTIP_PROPS} />
         </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function ChartClassificationGrid({ rows }: { rows: Record<string, unknown>[] }) {
+  const { points, typeLabels, classLabels } = buildClassificationScatter(rows);
+  if (!points.length) {
+    return <p className="panel-subtitle">Keine Daten</p>;
+  }
+  return (
+    <div style={{ height: 320 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 8, right: 12, bottom: 48, left: 8 }}>
+          <CartesianGrid stroke="#2a3540" strokeDasharray="3 3" />
+          <XAxis
+            type="number"
+            dataKey="x"
+            name="Typ"
+            domain={[-0.5, typeLabels.length - 0.5]}
+            ticks={typeLabels.map((_, i) => i)}
+            tickFormatter={(i) => typeLabels[i] ?? ""}
+            tick={{ fill: "#8B9CAB", fontSize: 9 }}
+            interval={0}
+            angle={-30}
+            textAnchor="end"
+            height={72}
+          />
+          <YAxis
+            type="number"
+            dataKey="y"
+            name="Klassifikation"
+            domain={[-0.5, classLabels.length - 0.5]}
+            ticks={classLabels.map((_, i) => i)}
+            tickFormatter={(i) => {
+              const label = classLabels[i] ?? "";
+              return label.length > 18 ? `${label.slice(0, 16)}…` : label;
+            }}
+            tick={{ fill: "#8B9CAB", fontSize: 9 }}
+            width={120}
+          />
+          <ZAxis type="number" dataKey="z" range={[40, 520]} name="Records" />
+          <Tooltip
+            {...CHART_TOOLTIP_PROPS}
+            cursor={{ strokeDasharray: "3 3" }}
+            formatter={(value: number, name: string) => {
+              if (name === "avg_confidence") return [`${value.toFixed(1)}%`, "Ø confidence"];
+              if (name === "z") return [value, "Record count"];
+              return [value, name];
+            }}
+            labelFormatter={(_, payload) => {
+              const p = payload?.[0]?.payload as ScatterPoint | undefined;
+              if (!p) return "";
+              return `${p.payload_object_type} / ${p.payload_object_classification}`;
+            }}
+          />
+          <Scatter data={points}>
+            {points.map((pt, i) => (
+              <Cell key={i} fill={confidenceColor(pt.avg_confidence)} fillOpacity={0.85} />
+            ))}
+          </Scatter>
+        </ScatterChart>
       </ResponsiveContainer>
     </div>
   );

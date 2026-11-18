@@ -407,6 +407,50 @@ export const PREDEFINED = {
     ORDER BY ms.message_timestamp DESC
     LIMIT 40
   `,
+  /** Buoy detections near Baltic harbours (Analysen → Buoys). */
+  buoyAnalyticsRecent: `
+    SELECT
+      buoyid,
+      ts,
+      payload_object_type,
+      payload_object_classification,
+      harbor_name,
+      harbor_country,
+      distance_km,
+      geo_position_lat,
+      geo_position_lon
+    FROM defense.buoy_near_harbours
+    ORDER BY ts DESC
+    LIMIT 100
+  `,
+  buoyAnalyticsTypeMix: `
+    SELECT payload_object_type AS name, COUNT(*) AS value
+    FROM defense.buoy_near_harbours
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  buoyAnalyticsClassificationGrid: `
+    SELECT
+      payload_object_type,
+      payload_object_classification,
+      avg(payload_object_confidence) AS avg_confidence,
+      count(*) AS record_count
+    FROM defense.buoy_near_harbours
+    GROUP BY 1, 2
+    ORDER BY 4 DESC
+    LIMIT 5000
+  `,
+  buoyAnalyticsGeoClusters: `
+    SELECT
+      geo_position_lat,
+      geo_position_lon,
+      sum(altitude) AS sum_altitude,
+      count(*) AS record_count
+    FROM defense.buoy_near_harbours
+    GROUP BY 1, 2
+    ORDER BY 4 DESC
+    LIMIT 5000
+  `,
   alertsKpi: `
     SELECT COUNT(*) AS cnt
     FROM defense.vessel_outliers

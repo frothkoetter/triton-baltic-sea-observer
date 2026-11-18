@@ -578,6 +578,31 @@ a {
   flex-wrap: wrap;
 }
 
+.analyses-buoys-grid .buoy-map-panel {
+  min-height: 360px;
+}
+
+.buoy-map-wrap {
+  height: 320px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.buoy-table-panel .data-table-wrap {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.buoy-cluster-label.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #0b1118;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0;
+}
+
 .analyses-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
