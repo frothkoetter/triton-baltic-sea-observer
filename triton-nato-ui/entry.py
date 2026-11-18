@@ -80,7 +80,10 @@ def _import_missing(module: str) -> bool:
 
 
 def ensure_cml_python_deps() -> None:
+<<<<<<< HEAD
+=======
     """Install LAS/S3/Trino bridge deps (laspy is often missing when trino is preinstalled)."""
+>>>>>>> origin/main
     req = ROOT / "requirements-cml-app.txt"
     if not req.is_file():
         return
@@ -91,6 +94,15 @@ def ensure_cml_python_deps() -> None:
         f"Installing Python bridge deps ({', '.join(missing)}) from {req.name} …",
         flush=True,
     )
+<<<<<<< HEAD
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
+        check=False,
+    )
+
+
+ensure_cml_python_deps()
+=======
     rc = subprocess.run(
         [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
         check=False,
@@ -104,6 +116,7 @@ def ensure_cml_python_deps() -> None:
             f"(Session: {sys.executable} -m pip install -r {req})",
             flush=True,
         )
+>>>>>>> origin/main
 
 
 ensure_cml_python_deps()
