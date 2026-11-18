@@ -9,21 +9,60 @@ export type ViewerPoint = {
   intensity?: number;
 };
 
+export type LidarViewFrame = "enu" | "vessel";
+
 type Props = {
   points: ViewerPoint[];
+  /** World heading (deg); used only when viewFrame is `enu` (S3 LAS). */
   headingDeg?: number;
+  viewFrame?: LidarViewFrame;
   label: string;
   colorMode?: "class" | "height";
 };
 
-const ISO_X = 0.866;
-const ISO_Z = 0.5;
-const PITCH = 0.72;
+const WATER_SURFACE_CLS = 10;
+/** Port-quarter elevated view — starboard profile, bow to the right. */
+const BEAM_SKEW = 0.38;
+const ELEVATION_SKEW = 0.22;
+
+export function enuToVesselFrame(
+  x: number,
+  y: number,
+  headingDeg: number
+): { bow: number; stbd: number } {
+  const h = (headingDeg * Math.PI) / 180;
+  const ch = Math.cos(h);
+  const sh = Math.sin(h);
+  return {
+    bow: x * sh + y * ch,
+    stbd: x * ch - y * sh,
+  };
+}
+
+export function projectObliqueSideView(bow: number, stbd: number, up: number): { sx: number; sy: number; depth: number } {
+  const sx = bow + stbd * BEAM_SKEW;
+  const sy = -up - stbd * ELEVATION_SKEW;
+  const depth = bow - stbd * 0.15;
+  return { sx, sy, depth };
+}
+
+function toVesselAxes(
+  p: ViewerPoint,
+  headingDeg: number,
+  viewFrame: LidarViewFrame
+): { bow: number; stbd: number; up: number } {
+  if (viewFrame === "vessel") {
+    return { bow: p.x, stbd: p.y, up: p.z };
+  }
+  const { bow, stbd } = enuToVesselFrame(p.x, p.y, headingDeg);
+  return { bow, stbd, up: p.z };
+}
 
 function drawFrame(
   canvas: HTMLCanvasElement,
   points: ViewerPoint[],
   headingDeg: number,
+  viewFrame: LidarViewFrame,
   label: string,
   colorMode: "class" | "height"
 ) {
@@ -39,37 +78,29 @@ function drawFrame(
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const head = (headingDeg * Math.PI) / 180;
-  const ch = Math.cos(head);
-  const sh = Math.sin(head);
-  const cp = Math.cos(PITCH);
-  const sp = Math.sin(PITCH);
-
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
+  let minSx = Infinity;
+  let maxSx = -Infinity;
+  let minSy = Infinity;
+  let maxSy = -Infinity;
   let minZ = Infinity;
   let maxZ = -Infinity;
 
-  const projected: { sx: number; sy: number; z: number; cls: number; depth: number }[] = [];
+  type DrawPt = { sx: number; sy: number; z: number; cls: number; depth: number; hull: boolean };
+  const projected: DrawPt[] = [];
 
   for (const p of points) {
     if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.z)) continue;
-    const rx = p.x * ch - p.y * sh;
-    const ry = p.x * sh + p.y * ch;
-    const ryTilt = ry * cp - p.z * sp;
-    const rzLift = ry * sp + p.z * cp;
-    const sx = rx * ISO_X + rzLift * ISO_Z;
-    const sy = -ryTilt + rzLift * ISO_Z * 0.65;
-    const depth = sx + sy;
-    projected.push({ sx, sy, z: p.z, cls: p.cls, depth });
-    minX = Math.min(minX, sx);
-    maxX = Math.max(maxX, sx);
-    minY = Math.min(minY, sy);
-    maxY = Math.max(maxY, sy);
+    const { bow, stbd, up } = toVesselAxes(p, headingDeg, viewFrame);
+    const { sx, sy, depth } = projectObliqueSideView(bow, stbd, up);
+    const hull = p.cls !== WATER_SURFACE_CLS;
+    projected.push({ sx, sy, z: p.z, cls: p.cls, depth, hull });
     minZ = Math.min(minZ, p.z);
     maxZ = Math.max(maxZ, p.z);
+    if (!hull) continue;
+    minSx = Math.min(minSx, sx);
+    maxSx = Math.max(maxSx, sx);
+    minSy = Math.min(minSy, sy);
+    maxSy = Math.max(maxSy, sy);
   }
 
   if (!projected.length) {
@@ -81,14 +112,23 @@ function drawFrame(
     return;
   }
 
-  const pad = 18;
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
+  if (!Number.isFinite(minSx)) {
+    for (const pt of projected) {
+      minSx = Math.min(minSx, pt.sx);
+      maxSx = Math.max(maxSx, pt.sx);
+      minSy = Math.min(minSy, pt.sy);
+      maxSy = Math.max(maxSy, pt.sy);
+    }
+  }
+
+  const pad = 20;
+  const rangeX = maxSx - minSx || 1;
+  const rangeY = maxSy - minSy || 1;
   const scale = Math.min((w - pad * 2) / rangeX, (h - pad * 2 - 28) / rangeY);
-  const midX = (minX + maxX) / 2;
-  const midY = (minY + maxY) / 2;
+  const midSx = (minSx + maxSx) / 2;
+  const midSy = (minSy + maxSy) / 2;
   const ox = w / 2;
-  const oy = (h - 10) / 2 + 10;
+  const oy = h / 2;
 
   ctx.fillStyle = "#0a0e14";
   ctx.fillRect(0, 0, w, h);
@@ -98,12 +138,12 @@ function drawFrame(
   const radius = Math.max(0.75, points.length > 8000 ? 0.7 : points.length > 2500 ? 0.95 : 1.25);
 
   for (const pt of projected) {
-    const px = ox + (pt.sx - midX) * scale;
-    const py = oy + (pt.sy - midY) * scale;
+    const px = ox + (pt.sx - midSx) * scale;
+    const py = oy + (pt.sy - midSy) * scale;
     if (px < -4 || py < -4 || px > w + 4 || py > h + 4) continue;
     ctx.fillStyle =
       colorMode === "height" ? heightColor(pt.z, minZ, maxZ) : classificationColor(pt.cls);
-    ctx.globalAlpha = 0.94;
+    ctx.globalAlpha = pt.hull ? 0.94 : 0.35;
     ctx.beginPath();
     ctx.arc(px, py, radius, 0, Math.PI * 2);
     ctx.fill();
@@ -115,15 +155,25 @@ function drawFrame(
   ctx.fillText(label, 10, 16);
   ctx.fillStyle = "#6e7681";
   ctx.font = "10px IBM Plex Sans, sans-serif";
-  ctx.fillText(`${points.length.toLocaleString()} pts · isometric XYZ`, 10, h - 8);
+  ctx.fillText(
+    `${points.length.toLocaleString()} pts · oblique side (port ↑, bow →)`,
+    10,
+    h - 8
+  );
 }
 
-/** High-density canvas point cloud (isometric XYZ). */
-export function LidarPointCanvas({ points, headingDeg = 0, label, colorMode = "class" }: Props) {
+/** Canvas point cloud: fixed oblique side view (bow right, elevated port quarter). */
+export function LidarPointCanvas({
+  points,
+  headingDeg = 0,
+  viewFrame = "enu",
+  label,
+  colorMode = "class",
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef({ points, headingDeg, label, colorMode });
+  const stateRef = useRef({ points, headingDeg, viewFrame, label, colorMode });
 
-  stateRef.current = { points, headingDeg, label, colorMode };
+  stateRef.current = { points, headingDeg, viewFrame, label, colorMode };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -131,7 +181,14 @@ export function LidarPointCanvas({ points, headingDeg = 0, label, colorMode = "c
 
     const render = () => {
       const s = stateRef.current;
-      drawFrame(canvas, s.points, s.headingDeg ?? 0, s.label, s.colorMode ?? "class");
+      drawFrame(
+        canvas,
+        s.points,
+        s.headingDeg ?? 0,
+        s.viewFrame ?? "enu",
+        s.label,
+        s.colorMode ?? "class"
+      );
     };
 
     render();
@@ -139,14 +196,14 @@ export function LidarPointCanvas({ points, headingDeg = 0, label, colorMode = "c
     const ro = new ResizeObserver(() => render());
     ro.observe(canvas);
     return () => ro.disconnect();
-  }, [points, headingDeg, label, colorMode]);
+  }, [points, headingDeg, viewFrame, label, colorMode]);
 
   return (
     <canvas
       ref={canvasRef}
       className="lidar-point-canvas"
       role="img"
-      aria-label="LiDAR point cloud"
+      aria-label="LiDAR point cloud side view"
     />
   );
 }
