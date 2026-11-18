@@ -206,7 +206,16 @@ export function NbaHitlPage() {
                 </tbody>
               </table>
 
-              <NbaDecisionRecorder record={decision} recordSource={decisionSource} />
+              <NbaDecisionRecorder
+                record={decision}
+                recordSource={decisionSource}
+                hitl={{
+                  status: detail.status,
+                  approved_coa_id: detail.approved_coa_id,
+                  approved_at: detail.approved_at,
+                  approved_by: detail.approved_by,
+                }}
+              />
             </>
           )}
         </section>

@@ -61,6 +61,12 @@ DDL (einmalig auf bestehenden Tabellen): `cdw-analyse/sql/nba_schema_phase4_hitl
 
 Operator-Freigabe: [triton-nato-ui](../../triton-nato-ui/) → Tab **NBA HITL** → Approve schreibt `approved_coa_id`. Neue Incidents setzen `sitrep_link` für FLASH / SITREP-ESCALATED.
 
+## Phase 5 — Decision record → Trino
+
+DDL: `cdw-analyse/sql/nba_schema_phase5_decision.sql`
+
+Mit `python3 run_nba.py --phase 3 --persist-trino` landen `decision_record_json` und `grounding_json` auf `nba_incidents`. Die NATO UI lädt die Decision Card zuerst aus Trino, sonst aus `artifacts/nba/<uuid>/`.
+
 DDL einspielen:
 
 ```bash

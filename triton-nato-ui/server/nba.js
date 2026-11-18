@@ -32,7 +32,7 @@ export function getNbaTrinoState() {
 const INCIDENTS_SQL = `
 SELECT flow_uuid, status, alert_type, priority, theatre, latitude, longitude,
        best_coa_id, approved_coa_id, approved_at, approved_by, sitrep_link,
-       created_at, updated_at
+       decision_record_json, grounding_json, created_at, updated_at
 FROM ${FQ}.nba_incidents
 ORDER BY created_at DESC
 LIMIT 50
@@ -80,6 +80,37 @@ ORDER BY rank ASC, score_total DESC
     rows: nbaCoaRunsSample(id),
     fallbackReason: result.error,
   };
+}
+
+export async function getNbaDecisionRecordFromTrino(flowUuid) {
+  const id = escUuid(flowUuid);
+  const sql = `
+SELECT decision_record_json, grounding_json
+FROM ${FQ}.nba_incidents
+WHERE flow_uuid = '${id}'
+LIMIT 1
+`;
+  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+    return { ok: false, reason: "sample" };
+  }
+  const result = await runTrino(sql);
+  if (!result.ok || !result.rows?.length) {
+    return { ok: false, reason: result.error ?? "empty" };
+  }
+  const row = result.rows[0];
+  const raw = row.decision_record_json;
+  if (!raw) {
+    return { ok: false, reason: "no_json" };
+  }
+  try {
+    return {
+      ok: true,
+      source: "trino",
+      record: typeof raw === "string" ? JSON.parse(raw) : raw,
+    };
+  } catch {
+    return { ok: false, reason: "invalid_json" };
+  }
 }
 
 export async function approveNbaIncident(flowUuid, coaId, approvedBy) {

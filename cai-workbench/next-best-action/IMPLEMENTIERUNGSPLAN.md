@@ -139,7 +139,17 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 | Trino | `server/trino-bridge.py`, DDL `nba_schema_phase4_hitl.sql` |
 | Persist | `approved_coa_id`, `sitrep_link` (`hitl.py`, `persistence.py`) |
 
-### Phase 5 — Governance & MCP (optional, CDP)
+### Phase 5 — Decision record in warehouse + live HITL (umgesetzt)
+
+| Komponente | Ort |
+| :---- | :---- |
+| DDL | `cdw-analyse/sql/nba_schema_phase5_decision.sql` (`decision_record_json`, `grounding_json`) |
+| Persist | `persistence.update_decision_artifacts` nach `decision_record.json` |
+| UI | HITL §7 zeigt live `approved_*` aus `nba_incidents`; decision-record API: Trino → artifacts → sample |
+
+**CML empfohlen:** `NBA_PHASE=3`, `NBA_PERSIST_TRINO=1`, `NBA_SKIP_LLM=0` (optional LLM).
+
+### Phase 6 — Governance & MCP (optional, CDP)
 
 Nur wenn Workbench-MCP-Server produktiv:
 
@@ -202,7 +212,7 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 5):** Governance / MCP (optional).
+**Als Nächstes (Phase 6):** Governance / MCP, optional Materialisierung `nba_mat_*`, CrewAI `@persist`.
 
 Referenzen:
 

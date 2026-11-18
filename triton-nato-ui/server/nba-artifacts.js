@@ -29,7 +29,13 @@ export function loadPlaybook() {
   return { source: "bundled", playbook: playbookBundled };
 }
 
-export function loadDecisionRecord(flowUuid) {
+export async function loadDecisionRecord(flowUuid, trinoLoader) {
+  if (trinoLoader) {
+    const fromTrino = await trinoLoader(flowUuid);
+    if (fromTrino?.ok && fromTrino.record) {
+      return fromTrino;
+    }
+  }
   const file = path.join(artifactsRoot(), flowUuid, "decision_record.json");
   if (fs.existsSync(file)) {
     return {
