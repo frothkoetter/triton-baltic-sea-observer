@@ -2,5 +2,6 @@ trino>=0.328.0
 pyproj>=3.6.0
 pydantic>=2.0.0
 openai>=1.0.0
+pyparsing>=3.1.0,<4
 rdflib>=7.0.0
 pyshacl>=0.26.0

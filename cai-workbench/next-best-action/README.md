@@ -96,6 +96,7 @@ MCP-Beispiel: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) · An
 ```bash
 cd cai-workbench/next-best-action   # run_nba.py liegt hier, nicht im Home-Verzeichnis
 pip install -r requirements.txt
+# Falls rdflib/pyshacl scheitern (pyparsing DelimitedList): pip install 'pyparsing>=3.1.0'
 # CML: kein requirements-mcp.txt (Py 3.13+ nötig)
 export NBA_USE_ICEBERG_MCP=1
 export NBA_TRINO_SCHEMA=defense

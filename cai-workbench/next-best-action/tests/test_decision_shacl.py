@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -104,6 +105,30 @@ class TestDecisionShacl(unittest.TestCase):
         self.assertTrue(shacl_path.is_file())
         data = json.loads(shacl_path.read_text(encoding="utf-8"))
         self.assertIn("conforms", data)
+
+    def test_pyshacl_import_attribute_error_returns_dependency_error(self):
+        import builtins
+
+        import src.shacl_gate as mod
+
+        real_import = builtins.__import__
+
+        def guarded(name, *args, **kwargs):
+            if name == "pyshacl":
+                raise AttributeError(
+                    "module 'pyparsing' has no attribute 'DelimitedList'"
+                )
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch.object(builtins, "__import__", guarded):
+            for key in list(sys.modules):
+                if key == "pyshacl" or key.startswith("pyshacl."):
+                    del sys.modules[key]
+            report = mod.validate_decision_ttl(
+                "@prefix nba: <https://triton.baltic/nba#> .\n"
+            )
+        self.assertEqual(report.engine, "dependency-error")
+        self.assertIn("pyparsing", report.report_text)
 
     def test_assert_shacl_conforms_noop_when_disabled(self):
         from src.shacl_gate import ShaclReport
