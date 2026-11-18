@@ -268,8 +268,21 @@ export const PREDEFINED = {
     LIMIT 200
   `,
   fleetKpi: `SELECT COUNT(*) AS cnt FROM defense.german_navy_fleet`,
-  personnelKpi: `SELECT SUM(crew_size) AS cnt FROM defense.german_navy_fleet`,
+  personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM defense.german_navy_fleet`,
   surveillanceKpi: `SELECT COUNT(*) AS cnt FROM defense.maritime_surveillance_reports`,
+  alertsKpi: `
+    SELECT COUNT(*) AS cnt
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND severity_level >= 70
+      AND coalesce(
+        try(from_iso8601_timestamp(event_timestamp)),
+        try(from_iso8601_timestamp(replace(event_timestamp, 'Z', '+00:00'))),
+        try_cast(replace(event_timestamp, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '24' hour
+  `,
 };
 
 export const DATASET_STARTER_SQL = {
