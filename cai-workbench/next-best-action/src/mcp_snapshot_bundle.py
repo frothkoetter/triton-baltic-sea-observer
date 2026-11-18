@@ -22,7 +22,7 @@ CAPTURE_SOURCE_JDBC_FALLBACK = "jdbc-fallback"
 
 
 def _mcp_import_error() -> str | None:
-    if sys.version_info < (3, 13):
+    if (sys.version_info.major, sys.version_info.minor) < (3, 13):
         return (
             "iceberg-mcp-server-trino requires Python >= 3.13 "
             f"(this interpreter is {sys.version_info.major}.{sys.version_info.minor}); "

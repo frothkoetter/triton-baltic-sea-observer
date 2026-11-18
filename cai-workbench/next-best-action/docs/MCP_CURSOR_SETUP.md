@@ -47,4 +47,6 @@ Always run the job from `cai-workbench/next-best-action` (or `cml_job` / `entry.
 
 1. Settings → MCP → confirm both servers show **connected**.
 2. In NBA chat, ask the agent to list latest Iceberg snapshot ids for `ships` and `ais_events_ice` in `iceberg.defense`.
-3. After an incident run, ask Semantica to `record_decision` with the `flow_uuid` and `playbook_best_coa_id` from `incident_state.json`.
+3. After an incident run, open `artifacts/nba/<flow_uuid>/semantica_record.json` (or HITL **Phase 8 — Semantica MCP bridge**) and call `record_decision` with the summarized fields.
+
+CML operators: [`CML_PHASE8_RUNBOOK.md`](CML_PHASE8_RUNBOOK.md).

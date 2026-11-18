@@ -26,6 +26,7 @@ from .persistence import (
 )
 from .scoring import EnvironmentContext, rank_coas
 from .sim_adapter import apply_simulation_to_scores, simulate_passing_coas
+from .semantica_export import build_semantica_record, write_semantica_record
 from .snapshot_bundle import SnapshotBundle, SnapshotCapture, capture_bundle
 
 
@@ -238,6 +239,28 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         audit["governance_bundle"] = {
             "exported_at": gov["exported_at"],
             "artifact_count": len(gov["artifact_manifest"]),
+        }
+        (out_dir / "audit.json").write_text(
+            json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+    if decision and settings.phase >= 1:
+        grounding_dict: dict | None = None
+        grounding_path = out_dir / "grounding.json"
+        if grounding_path.is_file():
+            grounding_dict = json.loads(grounding_path.read_text(encoding="utf-8"))
+        semantica_payload = build_semantica_record(
+            flow_uuid=alert.flow_uuid,
+            decision=decision,
+            grounding=grounding_dict,
+            shacl=decision.get("shacl"),
+            snapshot_capture_source=audit.get("snapshot_capture_source"),
+            governance_exported=(out_dir / "governance_bundle.json").is_file(),
+        )
+        write_semantica_record(out_dir, semantica_payload)
+        audit["semantica_record"] = {
+            "schema": semantica_payload["schema"],
+            "exported_at": semantica_payload["exported_at"],
         }
         (out_dir / "audit.json").write_text(
             json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"

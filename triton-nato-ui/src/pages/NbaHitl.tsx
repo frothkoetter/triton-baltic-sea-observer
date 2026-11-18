@@ -43,6 +43,7 @@ export function NbaHitlPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [govUrl, setGovUrl] = useState<string | null>(null);
+  const [semUrl, setSemUrl] = useState<string | null>(null);
 
   const loadIncidents = useCallback(async () => {
     const res = await fetchNbaIncidents();
@@ -73,10 +74,15 @@ export function NbaHitlPage() {
         .then((r) => r.json())
         .then((g) => setGovUrl(g.ok ? "ready" : null))
         .catch(() => setGovUrl(null));
+      void fetch(`/api/nba/incidents/${encodeURIComponent(selected)}/semantica-record`)
+        .then((r) => r.json())
+        .then((s) => setSemUrl(s.ok ? "ready" : null))
+        .catch(() => setSemUrl(null));
     } else {
       setCoaRuns([]);
       setDecision(null);
       setGovUrl(null);
+      setSemUrl(null);
     }
   }, [selected, loadCoa, loadDecision]);
 
@@ -153,16 +159,29 @@ export function NbaHitlPage() {
           ) : (
             <>
               <h2>{detail.theatre}</h2>
-              {govUrl && selected && (
+              {(govUrl || semUrl) && selected && (
                 <p style={{ marginBottom: 12 }}>
-                  <a
-                    className="nba-rule-link"
-                    href={`/api/nba/incidents/${encodeURIComponent(selected)}/governance-bundle`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Phase 7 — governance / PROV bundle
-                  </a>
+                  {govUrl ? (
+                    <a
+                      className="nba-rule-link"
+                      href={`/api/nba/incidents/${encodeURIComponent(selected)}/governance-bundle`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Phase 7 — governance / PROV bundle
+                    </a>
+                  ) : null}
+                  {govUrl && semUrl ? " · " : null}
+                  {semUrl ? (
+                    <a
+                      className="nba-rule-link"
+                      href={`/api/nba/incidents/${encodeURIComponent(selected)}/semantica-record`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Phase 8 — Semantica MCP bridge
+                    </a>
+                  ) : null}
                 </p>
               )}
 
