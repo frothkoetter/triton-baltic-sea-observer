@@ -23,6 +23,7 @@ Tables written:
 |-------|------|
 | `ais_baseline_sketches` | T-Digest SOG + MMSI SetDigest per quadkey / type / course sector |
 | `vessel_outliers` | Detected anomalies (Iceberg; NiFi PutIceberg compatible) |
+| `infrastructure_ais_suspicions` | Pipeline/cable AIS blackout & korridor hits (spatial-lab 08/07) |
 
 ## Pipeline steps
 
@@ -33,8 +34,12 @@ Tables written:
 | 3 | Spoofing | `MMSI Teleportation` | Implied hop &gt; 75 kn, hop ≥ 0.25 nm, gap ≥ 2 min (LAG ordered by parsed timestamp) |
 | 4 | Dark vessel | `Dark Vessel` | MAD buoy echo with no AIS within 5 km (synthetic MMSI `-1`) |
 | 5 | STS | `Rendezvous` | Baltic 2h window: ≤500 m, both SOG &lt; 4 kn, latest AIS per MMSI/minute, pair dedupe |
+| 6 | Infrastructure | `Pipeline AIS Blackout` | 7d `ais_daten` gaps 30–1440 min vs `ostsee_pipelines_segmented` (lab query 08); ends in last 24h |
+| 7 | Infrastructure | `Pipeline Korridor Crossing`, `Pipeline Korridor Loitering` | Buffered corridor intersects + multi-cross or &gt;15 min &lt;3 kn (lab query 07) |
 
 Each job run **deletes** rows for the Trino rule types above, then recomputes (prevents million-row `Rendezvous` buildup). Legacy NiFi labels (e.g. `Route Deviation`) are untouched.
+
+**Infrastructure prerequisites:** `ais_daten` view and `ostsee_pipelines_segmented` (see `create_db_tables_trino.sql` Ostsee block). Detailed rows land in `infrastructure_ais_suspicions`; the same job copies them into `vessel_outliers` so `defense.lagebild` shows them as `AIS_Outlier`.
 
 Time windows are in-SQL (`interval '4' hour` etc.); tune in `outlier_detection_trino.sql` for your ingest rate.
 

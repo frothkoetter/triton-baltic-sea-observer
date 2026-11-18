@@ -6,7 +6,7 @@ Runs **CDW Trino SQL** from `cdw-analyse/` as CML Scheduled Jobs (`.py` only in 
 
 | CML job file | `TRINO_JOB` | What runs |
 |--------------|-------------|-----------|
-| `cai-workbench/trino-jobs/cml_job.py` | `outliers` (default) | `cdw-analyse/outlier_detection_trino.sql` → `vessel_outliers` |
+| `cai-workbench/trino-jobs/cml_job.py` | `outliers` (default) | `cdw-analyse/outlier_detection_trino.sql` → `vessel_outliers`, `infrastructure_ais_suspicions`, baselines |
 | same | `lagebild_views` | `defense.lagebild` + `defense.lagebild_all_events` (includes **AIS_Outlier** union) |
 
 ## Environment
