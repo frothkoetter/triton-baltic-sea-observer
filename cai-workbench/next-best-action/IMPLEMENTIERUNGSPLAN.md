@@ -168,17 +168,49 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 | CLI | `run_nba.py --phase 7` |
 | UI | HITL link to `GET …/governance-bundle` when artifacts exist |
 
-### Phase 8 — MCP & Semantica (optional, CDP)
+### Phase 8 — MCP (Trino Iceberg + Semantica) & Agent hooks (geplant)
 
-Nur wenn Workbench-MCP-Server produktiv:
+**Ziel:** Snapshot-Bündel, Ontologie und Decision Records über **Cursor MCP** statt nur JDBC-SQL; SHACL-Gate vor Persist.
+
+**Einrichtung:** [`docs/MCP_CURSOR_SETUP.md`](docs/MCP_CURSOR_SETUP.md), [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) (Secrets **nicht** committen; für Triton `TRINO_SCHEMA=defense`).
+
+#### 8.1 `iceberg-mcp-server-trino`
+
+| Aspekt | Inhalt |
+| :---- | :---- |
+| Paket | [dipankarmazumdar/iceberg-mcp-server-trino](https://github.com/dipankarmazumdar/iceberg-mcp-server-trino) — `uvx --from git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main run-server` |
+| Env | `TRINO_HOST`, `TRINO_PORT`, `TRINO_USER`, `TRINO_PASSWORD`, `TRINO_CATALOG=iceberg`, **`TRINO_SCHEMA=defense`** |
+| Ersetzt | manuelle `$snapshots`-SQL in `snapshot_bundle.py` durch MCP-Tools |
+| Bleibt | `FOR VERSION AS OF`, `nba_mat_*`; **keine** Iceberg-Branches |
+
+**Lieferobjekte 8a:** `mcp_snapshot_bundle.py` (`NBA_USE_ICEBERG_MCP=1`); MCP-Stempel in `audit.json`.
+
+#### 8.2 Semantica MCP (`semantica-mcp`)
+
+| Tool (MCP) | NBA-Nutzen |
+| :---- | :---- |
+| `record_decision` / `query_decisions` | Parallele Entscheidungskette zu HITL |
+| `add_entity` / `extract_entities` | `baltic_ontology.json` → KG |
+| `export_graph` | Neben `governance_bundle.json` |
+
+**SHACL:** `run_shacl_validation` auf `decision_record`/`grounding` (Turtle) → blockiert `update_decision_artifacts` wenn `conforms=false`.
+
+**Lieferobjekte 8b:** `decision_record.ttl`, `tests/test_decision_shacl.py`.
+
+#### 8.3 Cursor / CML
+
+- **Cursor:** MCP für Snapshot-Debug, Ontologie, `find_precedents`.
+- **CML:** `run_nba.py` unverändert; SHACL optional als Post-Step ohne MCP.
+
+#### 8.4 Später (CDP)
 
 | MCP | NBA-Nutzen |
 | :---- | :---- |
-| `iceberg-mcp-server-hive` | `$snapshots` / Bündel-Helper (kein Branch) |
 | `ranger-mcp-server` | Rollentrennung OSINT / national |
-| `data-marketplace-mcp-server` | Glossary / request_data_access |
+| `data-marketplace-mcp-server` | Glossary |
+| CrewAI `@persist` | Ersetzt schrittweise `agent_orchestrator.py` |
 
-**Semantica:** `run_shacl_validation`, PROV-O-Export; `semantica[crewai]` mit isoliertem CrewAI/Chroma-Pinning.
+**Status:** Plan + Beispiel-MCP in Repo; Code-Adapter = nächste PRs.
 
 ## 5. Konfiguration Fact-Tables für Snapshot-Bündel
 
@@ -231,10 +263,11 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 8):** MCP-Server, `run_shacl_validation`, CrewAI `@persist`.
+**Als Nächstes (Phase 8):** `iceberg-mcp-server-trino` + `semantica-mcp` in Cursor verdrahten; Adapter `mcp_snapshot_bundle.py`; SHACL-Gate auf `decision_record`; optional CrewAI `@persist` (8.4).
 
 Referenzen:
 
+- MCP Phase 8: [`docs/MCP_CURSOR_SETUP.md`](docs/MCP_CURSOR_SETUP.md) · [Semantica MCP](https://docs.getsemantica.ai/reference/mcp_server/)
 - Iceberg-Matrix: [`cdw-analyse/README_iceberg_snapshots_trino.md`](../../cdw-analyse/README_iceberg_snapshots_trino.md)
 - Lagebild-UC1: [`../situation-awareness/README.md`](../situation-awareness/README.md)
 - Probe: [`../../cdw-analyse/probe_iceberg_snapshots.py`](../../cdw-analyse/probe_iceberg_snapshots.py)

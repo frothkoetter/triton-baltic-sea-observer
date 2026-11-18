@@ -107,8 +107,8 @@ def export_governance_bundle(
         "artifact_manifest": artifact_manifest(artifact_dir),
         "classification": "NATO UNCLASSIFIED // TRAINING",
         "mcp_ready": {
-            "iceberg_snapshots": "defer to iceberg-mcp-server-hive",
-            "semantica_shacl": "defer to run_shacl_validation",
+            "iceberg_trino_mcp": "iceberg-mcp-server-trino (see .cursor/mcp.json.example)",
+            "semantica_mcp": "semantica-mcp — record_decision, SHACL gate (Phase 8)",
         },
     }
     path = artifact_dir / "governance_bundle.json"

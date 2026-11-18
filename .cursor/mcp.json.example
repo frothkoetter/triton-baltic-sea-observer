@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "iceberg-mcp-server-trino": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main",
+        "run-server"
+      ],
+      "env": {
+        "TRINO_HOST": "coordinator-default-trino.example.com",
+        "TRINO_PORT": "443",
+        "TRINO_USER": "YOUR_TRINO_USER",
+        "TRINO_PASSWORD": "YOUR_TRINO_PASSWORD",
+        "TRINO_CATALOG": "iceberg",
+        "TRINO_SCHEMA": "defense"
+      }
+    },
+    "semantica": {
+      "command": "semantica-mcp",
+      "env": {
+        "SEMANTICA_KG_PATH": "cai-workbench/next-best-action/data/baltic_ontology.json"
+      }
+    }
+  }
+}
