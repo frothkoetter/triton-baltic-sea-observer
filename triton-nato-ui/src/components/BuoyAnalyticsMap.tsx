@@ -1,5 +1,6 @@
 import { CircleMarker, MapContainer, Tooltip } from "react-leaflet";
 import { BasemapTileLayer } from "./BasemapTileLayer";
+import { MapInvalidateSize } from "./MapInvalidateSize";
 
 export type BuoyGeoCluster = {
   geo_position_lat: number;
@@ -28,6 +29,7 @@ export function BuoyAnalyticsMap({ clusters }: Props) {
   return (
     <div className="map-wrap buoy-map-wrap">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
+        <MapInvalidateSize />
         <BasemapTileLayer />
         {clusters.map((c, i) => {
           const lat = Number(c.geo_position_lat);
