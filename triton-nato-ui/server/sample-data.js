@@ -296,8 +296,8 @@ export const fleet = [
 
 export const sanctions = [
   { Name: "HS ATLANTICA", MMSI: 636022401, Type: "Crude Oil Tanker", Flag: "Liberia", Sanction_Reason: "Blocked under E.O. 14024", Linked_To: "Hennesea Holdings Limited" },
-  { Name: "Andromeda Star", IMO: 9402471, Type: "Crude Oil Tanker", Flag: "Russia", Sanction_Reason: "EU Annex XIII / irregular shipping practices", Linked_To: "EU" },
-  { Name: "Lady R", IMO: 9161003, Type: "Crude Oil Tanker", Flag: "Russia", Sanction_Reason: "Defense sector goods transport", Linked_To: "EU" },
+  { Name: "Andromeda Star", MMSI: 273800007, IMO: 9402471, Type: "Crude Oil Tanker", Flag: "Russia", Sanction_Reason: "EU Annex XIII / irregular shipping practices", Linked_To: "EU" },
+  { Name: "Lady R", MMSI: 273800012, IMO: 9161003, Type: "Crude Oil Tanker", Flag: "Russia", Sanction_Reason: "Defense sector goods transport", Linked_To: "EU" },
   { Name: "ARISTO", MMSI: 123456011, Type: "Chemical/Products Tanker", Flag: "Liberia", Sanction_Reason: "Blocked under E.O. 14024", Linked_To: "Hennesea Holdings Limited" },
 ];
 
