@@ -407,6 +407,219 @@ export const PREDEFINED = {
     ORDER BY ms.message_timestamp DESC
     LIMIT 40
   `,
+  /** Russian Baltic Fleet — latest position ⋈ rus_fleet; movement & port vs transit (24h). */
+  rusAnalyticsUnitDisposition: `
+    WITH harbours AS (
+      SELECT name, latitude, longitude FROM defense.baltic_sea_harbours
+    ),
+    latest AS (
+      SELECT
+        p.mmsi,
+        p.latitude,
+        p.longitude,
+        p.speed,
+        p.status,
+        rf.name AS unit_name,
+        rf.class AS unit_class,
+        rf.home_base,
+        rf.vessel_category,
+        row_number() OVER (
+          PARTITION BY p.mmsi
+          ORDER BY ${tsParse("p.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.rus_naval_fleet_positions p
+      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+    ),
+    movement AS (
+      SELECT
+        mmsi,
+        COUNT(*) AS pts_24h,
+        MAX(speed) AS max_sog_24h,
+        AVG(speed) AS avg_sog_24h
+      FROM defense.rus_naval_fleet_positions
+      WHERE ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+      GROUP BY 1
+    ),
+    joined AS (
+      SELECT
+        l.mmsi,
+        l.unit_name,
+        l.unit_class,
+        l.home_base,
+        l.vessel_category,
+        l.status,
+        l.latitude,
+        l.longitude,
+        ROUND(
+          6371 * 2 * ASIN(
+            SQRT(
+              POWER(SIN(RADIANS(l.latitude - h.latitude) / 2), 2) +
+              COS(RADIANS(l.latitude)) * COS(RADIANS(h.latitude)) *
+              POWER(SIN(RADIANS(l.longitude - h.longitude) / 2), 2)
+            )
+          ),
+          1
+        ) AS dist_home_km,
+        m.pts_24h,
+        ROUND(m.max_sog_24h, 2) AS max_sog_24h,
+        ROUND(m.avg_sog_24h, 2) AS avg_sog_24h
+      FROM latest l
+      LEFT JOIN harbours h ON l.home_base = h.name
+      LEFT JOIN movement m ON l.mmsi = m.mmsi
+      WHERE l.rn = 1
+    )
+    SELECT
+      mmsi,
+      unit_name,
+      unit_class,
+      home_base,
+      vessel_category,
+      status,
+      dist_home_km,
+      max_sog_24h,
+      avg_sog_24h,
+      pts_24h,
+      CASE
+        WHEN dist_home_km IS NOT NULL AND dist_home_km < 12 THEN 'At home port'
+        WHEN max_sog_24h IS NOT NULL AND max_sog_24h < 0.5 THEN 'In port / anchor (away)'
+        WHEN max_sog_24h IS NOT NULL AND max_sog_24h < 4 THEN 'Patrol / slow'
+        ELSE 'Transit'
+      END AS activity,
+      CASE
+        WHEN dist_home_km IS NOT NULL AND dist_home_km < 12 THEN true
+        ELSE false
+      END AS at_home_port
+    FROM joined
+    ORDER BY unit_name
+    LIMIT 80
+  `,
+  rusAnalyticsActivityMix: `
+    WITH harbours AS (
+      SELECT name, latitude, longitude FROM defense.baltic_sea_harbours
+    ),
+    latest AS (
+      SELECT
+        p.mmsi,
+        p.latitude,
+        p.longitude,
+        rf.home_base,
+        row_number() OVER (
+          PARTITION BY p.mmsi
+          ORDER BY ${tsParse("p.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.rus_naval_fleet_positions p
+      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+    ),
+    movement AS (
+      SELECT mmsi, MAX(speed) AS max_sog_24h
+      FROM defense.rus_naval_fleet_positions
+      WHERE ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+      GROUP BY 1
+    ),
+    joined AS (
+      SELECT
+        l.mmsi,
+        (6371 * 2 * ASIN(
+          SQRT(
+            POWER(SIN(RADIANS(l.latitude - h.latitude) / 2), 2) +
+            COS(RADIANS(l.latitude)) * COS(RADIANS(h.latitude)) *
+            POWER(SIN(RADIANS(l.longitude - h.longitude) / 2), 2)
+          )
+        )) AS dist_home_km,
+        m.max_sog_24h
+      FROM latest l
+      LEFT JOIN harbours h ON l.home_base = h.name
+      LEFT JOIN movement m ON l.mmsi = m.mmsi
+      WHERE l.rn = 1
+    )
+    SELECT
+      CASE
+        WHEN dist_home_km IS NOT NULL AND dist_home_km < 12 THEN 'At home port'
+        WHEN max_sog_24h IS NOT NULL AND max_sog_24h < 0.5 THEN 'In port / anchor (away)'
+        WHEN max_sog_24h IS NOT NULL AND max_sog_24h < 4 THEN 'Patrol / slow'
+        ELSE 'Transit'
+      END AS name,
+      COUNT(*) AS value
+    FROM joined
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  rusAnalyticsCategoryMix: `
+    SELECT COALESCE(vessel_category, 'unknown') AS name, COUNT(*) AS value
+    FROM defense.rus_fleet
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  rusAnalyticsHomeBaseMix: `
+    SELECT COALESCE(home_base, 'unknown') AS name, COUNT(*) AS value
+    FROM defense.rus_fleet
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  rusAnalyticsRestrictedUnits: `
+    WITH observation_polygons AS (
+      SELECT area_id, ST_GeometryFromText(polygon) AS geom
+      FROM defense.observation_areas
+    ),
+    latest AS (
+      SELECT
+        p.mmsi,
+        p.latitude,
+        p.longitude,
+        p.speed,
+        p.status,
+        rf.name AS unit_name,
+        rf.vessel_category,
+        row_number() OVER (
+          PARTITION BY p.mmsi
+          ORDER BY ${tsParse("p.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.rus_naval_fleet_positions p
+      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+    )
+    SELECT
+      l.mmsi,
+      l.unit_name,
+      l.vessel_category,
+      l.status,
+      o.area_id,
+      l.latitude,
+      l.longitude
+    FROM latest l
+    INNER JOIN observation_polygons o
+      ON ST_Within(ST_Point(l.longitude, l.latitude), o.geom)
+    WHERE l.rn = 1
+    ORDER BY o.area_id, l.unit_name
+    LIMIT 100
+  `,
+  rusAnalyticsRestrictedByArea: `
+    WITH observation_polygons AS (
+      SELECT area_id, ST_GeometryFromText(polygon) AS geom
+      FROM defense.observation_areas
+    ),
+    latest AS (
+      SELECT
+        p.mmsi,
+        p.latitude,
+        p.longitude,
+        row_number() OVER (
+          PARTITION BY p.mmsi
+          ORDER BY ${tsParse("p.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.rus_naval_fleet_positions p
+      WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+    )
+    SELECT o.area_id AS name, COUNT(*) AS value
+    FROM latest l
+    INNER JOIN observation_polygons o
+      ON ST_Within(ST_Point(l.longitude, l.latitude), o.geom)
+    WHERE l.rn = 1
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 20
+  `,
   alertsKpi: `
     SELECT COUNT(*) AS cnt
     FROM defense.vessel_outliers

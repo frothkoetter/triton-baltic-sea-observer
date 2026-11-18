@@ -212,6 +212,45 @@ export async function getFleet() {
   return runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
 }
 
+const RUS_FLEET_ANALYTICS_KEYS = [
+  ["unitDisposition", "rusAnalyticsUnitDisposition"],
+  ["activityMix", "rusAnalyticsActivityMix"],
+  ["categoryMix", "rusAnalyticsCategoryMix"],
+  ["homeBaseMix", "rusAnalyticsHomeBaseMix"],
+  ["restrictedUnits", "rusAnalyticsRestrictedUnits"],
+  ["restrictedByArea", "rusAnalyticsRestrictedByArea"],
+];
+
+export async function getRusFleetAnalytics() {
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sample.rusFleetAnalytics };
+  }
+  const results = await Promise.all(
+    RUS_FLEET_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
+  );
+  const panels = {};
+  for (let i = 0; i < RUS_FLEET_ANALYTICS_KEYS.length; i++) {
+    const [panelKey] = RUS_FLEET_ANALYTICS_KEYS[i];
+    const res = results[i];
+    panels[panelKey] = {
+      columns: res.columns ?? [],
+      rows: res.rows ?? [],
+      ok: res.ok,
+    };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sample.rusFleetAnalytics,
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
+}
+
 const FLEET_ANALYTICS_KEYS = [
   ["messagesFrom", "fleetAnalyticsMessagesFrom"],
   ["messagesTo", "fleetAnalyticsMessagesTo"],

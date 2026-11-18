@@ -10,6 +10,7 @@ import {
   getDatasets,
   getFleet,
   getFleetAnalytics,
+  getRusFleetAnalytics,
   getFleetPositions,
   getKpis,
   getLidarScans,
@@ -199,6 +200,10 @@ app.get("/api/analyses/fleet", async (_req, res) => {
 
 app.get("/api/analyses/fleet-analytics", async (_req, res) => {
   res.json(await getFleetAnalytics());
+});
+
+app.get("/api/analyses/rus-fleet-analytics", async (_req, res) => {
+  res.json(await getRusFleetAnalytics());
 });
 
 app.get("/api/analyses/sanctions", async (_req, res) => {

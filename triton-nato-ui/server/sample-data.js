@@ -1,5 +1,7 @@
 /** Sample payloads when Impala is unreachable (Baltic Sea demo). */
 
+import rusFleetAnalyticsPanels from "./data/rus-fleet-analytics-sample.json" with { type: "json" };
+
 export const meta = {
   source: "sample",
   schema: "defense",
@@ -590,6 +592,11 @@ export const kpis = {
   personnel: 1280,
   surveillanceReports: 847,
   alerts: 2,
+};
+
+/** Offline fallback for /api/analyses/rus-fleet-analytics */
+export const rusFleetAnalytics = {
+  panels: rusFleetAnalyticsPanels.panels,
 };
 
 /** Offline fallback for /api/analyses/fleet-analytics */
