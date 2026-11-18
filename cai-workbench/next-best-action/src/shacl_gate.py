@@ -58,12 +58,16 @@ def validate_decision_ttl(
     shapes_ttl = shapes_path.read_text(encoding="utf-8")
     try:
         from pyshacl import validate
-    except ImportError as exc:
+    except (ImportError, AttributeError) as exc:
+        hint = (
+            "pyshacl/rdflib unavailable — on CML try: "
+            "pip install 'pyparsing>=3.1.0' -r requirements.txt"
+        )
         return ShaclReport(
             conforms=False,
-            report_text=str(exc),
-            violations=["pyshacl not installed (pip install pyshacl rdflib)"],
-            engine="unavailable",
+            report_text=f"{exc}\n{hint}",
+            violations=[str(exc), hint],
+            engine="dependency-error",
         )
 
     try:
