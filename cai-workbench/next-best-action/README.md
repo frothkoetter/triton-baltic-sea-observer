@@ -67,6 +67,18 @@ DDL: `cdw-analyse/sql/nba_schema_phase5_decision.sql`
 
 Mit `python3 run_nba.py --phase 3 --persist-trino` landen `decision_record_json` und `grounding_json` auf `nba_incidents`. Die NATO UI lädt die Decision Card zuerst aus Trino, sonst aus `artifacts/nba/<uuid>/`.
 
+## Phase 6 — Materialized facts
+
+DDL: `cdw-analyse/sql/nba_schema_phase6_materialize.sql`
+
+```bash
+export NBA_MATERIALIZE=1
+export NBA_MAT_ROW_LIMIT=25000
+python3 run_nba.py --phase 3 --persist-trino
+```
+
+Erzeugt `nba_mat_<flow>_<table>` Iceberg-Kopien und Einträge in `nba_materialized_tables`. Decision record §2 listet Mat-Tabellen; §9 enthält Red-doctrine What-if-Vergleiche.
+
 DDL einspielen:
 
 ```bash

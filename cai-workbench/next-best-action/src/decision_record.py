@@ -40,6 +40,8 @@ def build_decision_record(
     agent_state: MaritimeIncidentState | None,
     scenario_runs: list[ScenarioRun] | None,
     gameplay: RedBlueReplay | None,
+    materialized: list[dict[str, Any]] | None = None,
+    what_if_replays: list[dict[str, Any]] | None = None,
 ) -> DecisionRecord:
     now = datetime.now(timezone.utc).isoformat()
     legal = {}
@@ -64,6 +66,7 @@ def build_decision_record(
         "2_data_pin": {
             "flow_uuid": alert.flow_uuid,
             "snapshots": bundle.to_dict()["snapshots"] if bundle else [],
+            "materialized_tables": materialized or [],
             "lagebild_note": "Lagebild live-only; facts pinned via snapshot bundle.",
         },
         "3_ranked_coas": {
@@ -92,6 +95,7 @@ def build_decision_record(
         },
         "9_agentic_gameplay": {
             "replay": gameplay.to_dict() if gameplay else None,
+            "what_if_red_doctrines": what_if_replays or [],
         },
     }
 

@@ -36,6 +36,12 @@ class Settings:
     persist_trino: bool = field(
         default_factory=lambda: _env_bool("NBA_PERSIST_TRINO", False)
     )
+    materialize_facts: bool = field(
+        default_factory=lambda: _env_bool("NBA_MATERIALIZE", False)
+    )
+    mat_row_limit: int = field(
+        default_factory=lambda: int(os.environ.get("NBA_MAT_ROW_LIMIT", "25000"))
+    )
     demo_mode: bool = field(
         default_factory=lambda: _env_bool("NBA_DEMO_GREIFSWALD", False)
     )
