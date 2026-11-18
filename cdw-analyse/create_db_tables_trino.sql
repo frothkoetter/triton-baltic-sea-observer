@@ -734,6 +734,26 @@ CREATE TABLE vessel_outliers (
   Severity_Level integer COMMENT 'A numeric rating indicating the critical nature or impact of the detected outlier.'
 );
 
+DROP TABLE IF EXISTS infrastructure_ais_suspicions;
+CREATE TABLE infrastructure_ais_suspicions (
+  MMSI bigint COMMENT 'Vessel MMSI.',
+  Pipeline_Name varchar COMMENT 'Pipeline or cable asset name (ostsee_pipelines_segmented).',
+  Medium varchar COMMENT 'Gas, Telecom/Power, etc.',
+  Suspicion_Kind varchar COMMENT 'blackout or korridor (spatial-lab query 08 / 07).',
+  Pattern varchar COMMENT 'verdachtsmuster or korridor summary label.',
+  Event_Start timestamp COMMENT 'Gap or corridor contact start (UTC).',
+  Event_End timestamp COMMENT 'Gap end or last corridor contact.',
+  Latitude double COMMENT 'Reference latitude (gap start or first corridor contact).',
+  Longitude double COMMENT 'Reference longitude.',
+  Speed double COMMENT 'SOG at reference point (kn).',
+  Course double COMMENT 'COG if known.',
+  Status varchar COMMENT 'Navigation status if joined from AIS.',
+  Destination varchar COMMENT 'Reported destination if joined.',
+  Detail varchar COMMENT 'Metrics: gap minutes, crossing counts, slow minutes, etc.',
+  Severity_Level integer COMMENT 'Priority for lagebild / NBA.',
+  Updated_At timestamp COMMENT 'Last outlier job refresh time.'
+);
+
 CREATE OR REPLACE VIEW latest_sanctioned_vessel_events AS
 WITH LatestAISData AS (
     -- 1. Identify the latest record for each MMSI in ais_events_ice

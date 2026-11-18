@@ -2,7 +2,7 @@
 -- TRINO SQL PIPELINE: MARITIME ANOMALY DETECTION (AIS & MAD SENSORS)
 -- =========================================================================================
 -- Catalog/schema: iceberg.defense
--- Targets: ais_baseline_sketches, vessel_outliers (see create_db_tables_trino.sql)
+-- Targets: ais_baseline_sketches, vessel_outliers, infrastructure_ais_suspicions
 --
 -- Pipeline steps:
 --   1. Baseline training (T-Digest speed + SetDigest MMSI per tile/type/sector)
@@ -10,6 +10,7 @@
 --   3. Case 2a: MMSI teleportation / implausible hop speed
 --   4. Case 2b: Dark vessel (MAD buoy echo, no AIS within radius)
 --   5. Case 3: Ship-to-ship rendezvous (STS)
+--   6. Case 4: Pipeline/cable AIS blackout & corridor (spatial-lab 08 + 07)
 --
 -- Run: cd cdw-analyse && ./run_outlier_detection_trino.sh
 -- Doc:  cdw-analyse/README_outlier_detection_trino.md
@@ -106,8 +107,32 @@ WHERE Outlier_Type IN (
     'Loitering',
     'MMSI Teleportation',
     'Dark Vessel',
-    'Rendezvous'
+    'Rendezvous',
+    'Pipeline AIS Blackout',
+    'Pipeline Korridor Loitering',
+    'Pipeline Korridor Crossing'
 );
+
+CREATE TABLE IF NOT EXISTS infrastructure_ais_suspicions (
+    MMSI bigint,
+    Pipeline_Name varchar,
+    Medium varchar,
+    Suspicion_Kind varchar,
+    Pattern varchar,
+    Event_Start timestamp,
+    Event_End timestamp,
+    Latitude double,
+    Longitude double,
+    Speed double,
+    Course double,
+    Status varchar,
+    Destination varchar,
+    Detail varchar,
+    Severity_Level integer,
+    Updated_At timestamp
+);
+
+DELETE FROM infrastructure_ais_suspicions;
 
 -- =========================================================================================
 -- STEP 2: CASE 1 — KINEMATICS, MISREPORTED STATUS, LOITERING
@@ -433,3 +458,379 @@ SELECT
     60 AS severity_level
 FROM pair_once p
 WHERE rn = 1;
+
+-- =========================================================================================
+-- STEP 6: CASE 4a — PIPELINE/CABLE AIS BLACKOUT (spatial-lab query 08)
+-- Requires: ais_daten, ostsee_pipelines_segmented (see create_db_tables_trino.sql)
+-- Window: 7d AIS positions; gaps 30–1440 min vs pipeline segments
+-- =========================================================================================
+
+INSERT INTO infrastructure_ais_suspicions (
+    MMSI, Pipeline_Name, Medium, Suspicion_Kind, Pattern,
+    Event_Start, Event_End, Latitude, Longitude, Speed, Course, Status, Destination,
+    Detail, Severity_Level, Updated_At
+)
+WITH ais_recent AS (
+    SELECT *
+    FROM ais_daten
+    WHERE zeitstempel >= current_timestamp - interval '7' day
+),
+ais_gaps AS (
+    SELECT
+        mmsi,
+        zeitstempel AS blackout_start,
+        LEAD(zeitstempel) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS blackout_ende,
+        lon AS start_lon,
+        lat AS start_lat,
+        LEAD(lon) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_lon,
+        LEAD(lat) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_lat,
+        sog AS start_sog,
+        LEAD(sog) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_sog,
+        cog AS start_cog,
+        LEAD(cog) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_cog
+    FROM ais_recent
+),
+verdaechtige_luecken AS (
+    SELECT
+        mmsi,
+        blackout_start,
+        blackout_ende,
+        date_diff('minute', blackout_start, blackout_ende) AS luecke_minuten,
+        start_lon,
+        start_lat,
+        end_lon,
+        end_lat,
+        start_sog,
+        end_sog,
+        start_cog,
+        ST_Distance(
+            to_spherical_geography(ST_Point(start_lon, start_lat)),
+            to_spherical_geography(ST_Point(end_lon, end_lat))
+        ) / 1852.0 AS distanz_sm,
+        (COALESCE(start_sog, 0) * (date_diff('minute', blackout_start, blackout_ende) / 60.0)) AS erwartete_distanz_sm,
+        ST_Point(start_lon, start_lat) AS start_geom,
+        ST_Point(end_lon, end_lat) AS end_geom,
+        ST_LineFromText(
+            'LINESTRING(' || CAST(start_lon AS varchar) || ' ' || CAST(start_lat AS varchar) || ', ' ||
+            CAST(end_lon AS varchar) || ' ' || CAST(end_lat AS varchar) || ')'
+        ) AS luecken_linie,
+        LEAST(start_lon, end_lon) - 0.02 AS box_min_lon,
+        GREATEST(start_lon, end_lon) + 0.02 AS box_max_lon,
+        LEAST(start_lat, end_lat) - 0.02 AS box_min_lat,
+        GREATEST(start_lat, end_lat) + 0.02 AS box_max_lat
+    FROM ais_gaps
+    WHERE end_lon IS NOT NULL
+      AND date_diff('minute', blackout_start, blackout_ende) BETWEEN 30 AND 1440
+      AND NOT (COALESCE(start_sog, 0) < 0.5 AND COALESCE(end_sog, 0) < 0.5)
+      AND blackout_ende >= current_timestamp - interval '24' hour
+),
+pipeline_treffer AS (
+    SELECT
+        v.mmsi,
+        p.pipeline_name,
+        p.medium,
+        v.blackout_start,
+        v.blackout_ende,
+        v.luecke_minuten,
+        v.start_lon,
+        v.start_lat,
+        v.end_lon,
+        v.end_lat,
+        v.start_sog,
+        v.end_sog,
+        v.start_cog,
+        v.distanz_sm,
+        v.erwartete_distanz_sm,
+        MAX(CASE
+            WHEN LEAST(
+                ST_Distance(
+                    to_spherical_geography(v.start_geom),
+                    to_spherical_geography(ST_StartPoint(ST_GeometryFromText(p.seg_wkt)))
+                ),
+                ST_Distance(
+                    to_spherical_geography(v.start_geom),
+                    to_spherical_geography(ST_EndPoint(ST_GeometryFromText(p.seg_wkt)))
+                )
+            ) <= 2000 THEN 1 ELSE 0
+        END) AS start_nah_an_pipeline,
+        MAX(CASE
+            WHEN LEAST(
+                ST_Distance(
+                    to_spherical_geography(v.end_geom),
+                    to_spherical_geography(ST_StartPoint(ST_GeometryFromText(p.seg_wkt)))
+                ),
+                ST_Distance(
+                    to_spherical_geography(v.end_geom),
+                    to_spherical_geography(ST_EndPoint(ST_GeometryFromText(p.seg_wkt)))
+                )
+            ) <= 2000 THEN 1 ELSE 0
+        END) AS ende_nah_an_pipeline,
+        MAX(CASE
+            WHEN ST_Intersects(v.luecken_linie, ST_GeometryFromText(p.seg_wkt)) THEN 1 ELSE 0
+        END) AS kreuzt_waehrend_blackout
+    FROM verdaechtige_luecken v
+    JOIN ostsee_pipelines_segmented p
+      ON v.box_max_lon >= p.min_lon
+     AND v.box_min_lon <= p.max_lon
+     AND v.box_max_lat >= p.min_lat
+     AND v.box_min_lat <= p.max_lat
+     AND (
+         ST_Intersects(v.luecken_linie, ST_GeometryFromText(p.seg_wkt))
+         OR LEAST(
+             ST_Distance(
+                 to_spherical_geography(v.start_geom),
+                 to_spherical_geography(ST_StartPoint(ST_GeometryFromText(p.seg_wkt)))
+             ),
+             ST_Distance(
+                 to_spherical_geography(v.start_geom),
+                 to_spherical_geography(ST_EndPoint(ST_GeometryFromText(p.seg_wkt)))
+             )
+         ) <= 2000
+         OR LEAST(
+             ST_Distance(
+                 to_spherical_geography(v.end_geom),
+                 to_spherical_geography(ST_StartPoint(ST_GeometryFromText(p.seg_wkt)))
+             ),
+             ST_Distance(
+                 to_spherical_geography(v.end_geom),
+                 to_spherical_geography(ST_EndPoint(ST_GeometryFromText(p.seg_wkt)))
+             )
+         ) <= 2000
+     )
+    WHERE p.status = 'In use'
+    GROUP BY
+        v.mmsi, p.pipeline_name, p.medium, v.blackout_start, v.blackout_ende,
+        v.luecke_minuten, v.start_lon, v.start_lat, v.end_lon, v.end_lat,
+        v.start_sog, v.end_sog, v.start_cog, v.distanz_sm, v.erwartete_distanz_sm
+),
+blackout_labeled AS (
+    SELECT
+        mmsi,
+        pipeline_name,
+        medium,
+        blackout_start,
+        blackout_ende,
+        luecke_minuten,
+        start_lon,
+        start_lat,
+        end_lon,
+        end_lat,
+        start_sog,
+        end_sog,
+        start_cog,
+        distanz_sm,
+        erwartete_distanz_sm,
+        CASE
+            WHEN start_nah_an_pipeline = 1 AND ende_nah_an_pipeline = 1 THEN 'Stationärer Blackout direkt über Pipeline'
+            WHEN start_nah_an_pipeline = 1 THEN 'AIS-Abschaltung direkt an Pipeline'
+            WHEN ende_nah_an_pipeline = 1 THEN 'AIS-Reaktivierung direkt an Pipeline'
+            WHEN kreuzt_waehrend_blackout = 1 THEN 'Pipeline-Überquerung im Dark-Modus'
+            ELSE 'Sonstiger Korridor-Kontakt'
+        END AS verdachtsmuster,
+        CASE
+            WHEN start_nah_an_pipeline = 1 AND ende_nah_an_pipeline = 1 THEN 90
+            WHEN kreuzt_waehrend_blackout = 1 THEN 85
+            WHEN start_nah_an_pipeline = 1 OR ende_nah_an_pipeline = 1 THEN 75
+            ELSE 55
+        END AS severity_level
+    FROM pipeline_treffer
+)
+SELECT
+    mmsi,
+    pipeline_name,
+    medium,
+    'blackout',
+    verdachtsmuster,
+    blackout_start,
+    blackout_ende,
+    start_lat,
+    start_lon,
+    start_sog,
+    start_cog,
+    CAST(NULL AS varchar),
+    CAST(NULL AS varchar),
+    format(
+        'gap=%s min; sog before/after=%.1f/%.1f kn; nm actual/expected=%.2f/%.2f; ratio=%.2f',
+        luecke_minuten,
+        COALESCE(start_sog, 0),
+        COALESCE(end_sog, 0),
+        distanz_sm,
+        erwartete_distanz_sm,
+        distanz_sm / NULLIF(erwartete_distanz_sm, 0)
+    ),
+    severity_level,
+    current_timestamp
+FROM blackout_labeled;
+
+-- =========================================================================================
+-- STEP 7: CASE 4b — PIPELINE CORRIDOR (spatial-lab query 07: crossings + slow transit)
+-- =========================================================================================
+
+INSERT INTO infrastructure_ais_suspicions (
+    MMSI, Pipeline_Name, Medium, Suspicion_Kind, Pattern,
+    Event_Start, Event_End, Latitude, Longitude, Speed, Course, Status, Destination,
+    Detail, Severity_Level, Updated_At
+)
+WITH ais_recent AS (
+    SELECT *
+    FROM ais_daten
+    WHERE zeitstempel >= current_timestamp - interval '7' day
+),
+schiffs_segmente AS (
+    SELECT
+        mmsi,
+        zeitstempel AS start_zeit,
+        LEAD(zeitstempel) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_zeit,
+        lon AS start_lon,
+        lat AS start_lat,
+        LEAD(lon) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_lon,
+        LEAD(lat) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_lat,
+        sog AS start_sog,
+        LEAD(sog) OVER (PARTITION BY mmsi ORDER BY zeitstempel) AS end_sog,
+        cog AS start_cog
+    FROM ais_recent
+),
+fahrt_linien AS (
+    SELECT
+        mmsi,
+        start_zeit,
+        end_zeit,
+        start_lon,
+        start_lat,
+        start_sog,
+        start_cog,
+        date_diff('second', start_zeit, end_zeit) / 60.0 AS dauer_minuten,
+        (start_sog + COALESCE(end_sog, start_sog)) / 2.0 AS avg_sog,
+        LEAST(start_lon, end_lon) AS ship_min_lon,
+        GREATEST(start_lon, end_lon) AS ship_max_lon,
+        LEAST(start_lat, end_lat) AS ship_min_lat,
+        GREATEST(start_lat, end_lat) AS ship_max_lat,
+        ST_LineFromText(
+            'LINESTRING(' || CAST(start_lon AS varchar) || ' ' || CAST(start_lat AS varchar) || ', ' ||
+            CAST(end_lon AS varchar) || ' ' || CAST(end_lat AS varchar) || ')'
+        ) AS segment_geom
+    FROM schiffs_segmente
+    WHERE end_lon IS NOT NULL
+      AND date_diff('minute', start_zeit, end_zeit) <= 120
+      AND end_zeit >= current_timestamp - interval '24' hour
+),
+korridor_ereignisse AS (
+    SELECT
+        f.mmsi,
+        p.pipeline_name,
+        p.medium,
+        f.start_zeit,
+        f.end_zeit,
+        f.start_lon,
+        f.start_lat,
+        f.start_sog,
+        f.start_cog,
+        f.dauer_minuten,
+        f.avg_sog,
+        MAX(CASE WHEN ST_Intersects(f.segment_geom, ST_GeometryFromText(p.seg_wkt)) THEN 1 ELSE 0 END) AS ist_ueberquerung,
+        MAX(CASE WHEN f.avg_sog < 3.0 THEN 1 ELSE 0 END) AS ist_langsamfahrt
+    FROM fahrt_linien f
+    JOIN ostsee_pipelines_segmented p
+      ON f.ship_max_lon >= p.min_lon
+     AND f.ship_min_lon <= p.max_lon
+     AND f.ship_max_lat >= p.min_lat
+     AND f.ship_min_lat <= p.max_lat
+     AND ST_Intersects(f.segment_geom, ST_Buffer(ST_GeometryFromText(p.seg_wkt), 0.005))
+    WHERE p.status = 'In use'
+    GROUP BY
+        f.mmsi, p.pipeline_name, p.medium, f.start_zeit, f.end_zeit,
+        f.start_lon, f.start_lat, f.start_sog, f.start_cog, f.dauer_minuten, f.avg_sog
+),
+korridor_agg AS (
+    SELECT
+        mmsi,
+        pipeline_name,
+        medium,
+        SUM(ist_ueberquerung) AS anzahl_exakte_ueberquerungen,
+        SUM(CASE WHEN ist_langsamfahrt = 1 THEN dauer_minuten ELSE 0 END) AS minuten_langsam_im_korridor,
+        MIN(avg_sog) AS min_geschwindigkeit_kn,
+        MIN(start_zeit) AS erster_kontakt,
+        MAX(end_zeit) AS letzter_kontakt,
+        MIN_BY(start_lon, start_zeit) AS ref_lon,
+        MIN_BY(start_lat, start_zeit) AS ref_lat,
+        MIN_BY(start_sog, start_zeit) AS ref_sog,
+        MIN_BY(start_cog, start_zeit) AS ref_cog
+    FROM korridor_ereignisse
+    GROUP BY mmsi, pipeline_name, medium
+    HAVING SUM(ist_ueberquerung) > 1
+        OR SUM(CASE WHEN ist_langsamfahrt = 1 THEN dauer_minuten ELSE 0 END) > 15
+),
+korridor_rows AS (
+    SELECT
+        mmsi,
+        pipeline_name,
+        medium,
+        CASE
+            WHEN anzahl_exakte_ueberquerungen > 1 THEN 'Pipeline Korridor Crossing'
+            ELSE 'Pipeline Korridor Loitering'
+        END AS outlier_type,
+        CASE
+            WHEN anzahl_exakte_ueberquerungen > 1 THEN 'Mehrfach-Überquerung Pipeline-Korridor'
+            ELSE 'Langsamfahrt im Pipeline-Korridor'
+        END AS pattern,
+        erster_kontakt,
+        letzter_kontakt,
+        ref_lat,
+        ref_lon,
+        ref_sog,
+        ref_cog,
+        CASE
+            WHEN anzahl_exakte_ueberquerungen > 1 AND minuten_langsam_im_korridor > 15 THEN 70
+            WHEN anzahl_exakte_ueberquerungen > 1 THEN 65
+            ELSE 60
+        END AS severity_level,
+        format(
+            'crossings=%s; slow_min=%.1f; min_sog=%.2f kn',
+            anzahl_exakte_ueberquerungen,
+            minuten_langsam_im_korridor,
+            min_geschwindigkeit_kn
+        ) AS detail
+    FROM korridor_agg
+)
+SELECT
+    mmsi,
+    pipeline_name,
+    medium,
+    'korridor',
+    pattern,
+    erster_kontakt,
+    letzter_kontakt,
+    ref_lat,
+    ref_lon,
+    ref_sog,
+    ref_cog,
+    CAST(NULL AS varchar),
+    CAST(NULL AS varchar),
+    detail,
+    severity_level,
+    current_timestamp
+FROM korridor_rows;
+
+-- Promote infrastructure hits into vessel_outliers for lagebild (AIS_Outlier)
+INSERT INTO vessel_outliers (
+    MMSI, Event_Timestamp, Latitude, Longitude, Speed, Course, Status, Destination,
+    Outlier_Type, Reason, Recommendation, Severity_Level
+)
+SELECT
+    MMSI,
+    CAST(Event_Start AS varchar),
+    Latitude,
+    Longitude,
+    Speed,
+    Course,
+    Status,
+    Destination,
+    CASE
+        WHEN Suspicion_Kind = 'blackout' THEN 'Pipeline AIS Blackout'
+        WHEN Pattern LIKE '%Überquerung%' OR Pattern LIKE '%Crossing%' THEN 'Pipeline Korridor Crossing'
+        ELSE 'Pipeline Korridor Loitering'
+    END,
+    format('%s | asset=%s (%s) | %s', Pattern, Pipeline_Name, Medium, Detail),
+    'Verify against cable/pipeline protection zone; correlate EO/MAD if available',
+    Severity_Level
+FROM infrastructure_ais_suspicions;
