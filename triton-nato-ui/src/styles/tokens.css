@@ -225,6 +225,21 @@ a {
   margin-top: 4px;
 }
 
+.kpi-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  margin-top: 6px;
+  opacity: 0.9;
+}
+
+.kpi-source-line {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  opacity: 0.75;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

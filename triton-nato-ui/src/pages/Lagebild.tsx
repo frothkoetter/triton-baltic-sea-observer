@@ -17,6 +17,7 @@ import {
   fleetLayersAllowed,
   type LagebildFilters,
 } from "../lib/lagebild-filters";
+import { LAGEBILD_KPI_DEFS } from "../lib/lagebild-kpis";
 import { buildTracksQueryString, rowsToTracks, type PositionTrack } from "../lib/position-tracks";
 
 export type AisRow = {
@@ -275,24 +276,24 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         </div>
       )}
 
-      <div className="kpi-row">
-        <div className="kpi">
-          <div className="kpi-value">{kpis?.fleetUnits ?? "—"}</div>
-          <div className="kpi-label">Flotte (105)</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-value">{kpis?.personnel ?? "—"}</div>
-          <div className="kpi-label">Personal (95)</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-value">{kpis?.surveillanceReports ?? "—"}</div>
-          <div className="kpi-label">Surveillance (119)</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-value status-alert">{kpis?.alerts ?? 0}</div>
-          <div className="kpi-label">Alerts</div>
-        </div>
+      <div className="kpi-row" role="group" aria-label="Lagebild Kennzahlen">
+        {LAGEBILD_KPI_DEFS.map((def) => {
+          const raw = kpis?.[def.key];
+          const display = raw == null ? "—" : Number(raw).toLocaleString("de-DE");
+          return (
+            <div key={def.key} className="kpi" title={def.detail}>
+              <div className={`kpi-value${def.alert ? " status-alert" : ""}`}>{display}</div>
+              <div className="kpi-label">{def.title}</div>
+              <div className="kpi-hint">{def.hint}</div>
+            </div>
+          );
+        })}
       </div>
+      {kpis?.source ? (
+        <p className="kpi-source-line mono" title="Datenquelle der KPI-Abfragen">
+          KPI-Daten: {kpis.source}
+        </p>
+      ) : null}
 
       <div className="layer-toggles">
         {(

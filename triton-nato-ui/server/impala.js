@@ -285,10 +285,11 @@ export async function getKpis() {
   if (forceSample()) {
     return { ok: true, source: "sample", ...sample.kpis };
   }
-  const [fleet, personnel, surv] = await Promise.all([
+  const [fleet, personnel, surv, alerts] = await Promise.all([
     queryWarehouse(PREDEFINED.fleetKpi),
     queryWarehouse(PREDEFINED.personnelKpi),
     queryWarehouse(PREDEFINED.surveillanceKpi),
+    queryWarehouse(PREDEFINED.alertsKpi),
   ]);
   const engine = fleet.source ?? connectionState.engine ?? "live";
   if (fleet.ok && personnel.ok && surv.ok) {
@@ -298,7 +299,7 @@ export async function getKpis() {
       fleetUnits: Number(fleet.rows?.[0]?.cnt ?? 0),
       personnel: Number(personnel.rows?.[0]?.cnt ?? 0),
       surveillanceReports: Number(surv.rows?.[0]?.cnt ?? 0),
-      alerts: 2,
+      alerts: alerts.ok ? Number(alerts.rows?.[0]?.cnt ?? 0) : 2,
     };
   }
   return { ok: true, source: "sample", ...sample.kpis, fallbackReason: fleet.error };
