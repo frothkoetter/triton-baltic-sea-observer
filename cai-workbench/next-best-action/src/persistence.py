@@ -69,3 +69,26 @@ def insert_coa_scores(flow_uuid: str, ranked: list[CoaScore], settings: Settings
             f"{score.score_kosten}, TRUE, '{detail}', TIMESTAMP '{now}')"
         )
         trino_client.execute_sql(sql)
+
+
+def update_decision_artifacts(
+    flow_uuid: str,
+    *,
+    decision_record: dict,
+    grounding: dict | None,
+    settings: Settings,
+) -> None:
+    """Phase 5: persist full decision card + grounding on nba_incidents."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    decision_json = _esc(json.dumps(decision_record, ensure_ascii=False))
+    grounding_sql = "NULL"
+    if grounding:
+        grounding_sql = f"'{_esc(json.dumps(grounding, ensure_ascii=False))}'"
+    sql = (
+        f"UPDATE {settings.trino_catalog}.{settings.trino_schema}.nba_incidents "
+        f"SET decision_record_json = '{decision_json}', "
+        f"grounding_json = {grounding_sql}, "
+        f"updated_at = TIMESTAMP '{now}' "
+        f"WHERE flow_uuid = '{_esc(flow_uuid)}'"
+    )
+    trino_client.execute_sql(sql)

@@ -1,12 +1,20 @@
 import type { NbaDecisionRecord, NbaRuleCitation } from "../lib/nba-decision";
 import { NbaRuleCitationButton } from "./NbaRuleCitation";
 
+type HitlState = {
+  status?: string;
+  approved_coa_id?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
+};
+
 type Props = {
   record: NbaDecisionRecord | null;
   recordSource?: string;
+  hitl?: HitlState | null;
 };
 
-export function NbaDecisionRecorder({ record, recordSource }: Props) {
+export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
   if (!record?.sections) {
     return <p className="text-muted">Decision record not loaded.</p>;
   }
@@ -103,9 +111,24 @@ export function NbaDecisionRecorder({ record, recordSource }: Props) {
 
       <section className="nba-decision-section">
         <h4>7 · HITL approval</h4>
-        <p className="text-muted" style={{ fontSize: 12 }}>
-          {String(s["7_hitl_approval"]?.status_hint ?? "Operator approval recorded in nba_incidents.")}
-        </p>
+        {hitl?.approved_coa_id ? (
+          <dl className="nba-meta" style={{ marginBottom: 0 }}>
+            <dt>COA</dt>
+            <dd>
+              <strong>{hitl.approved_coa_id}</strong>
+            </dd>
+            <dt>By</dt>
+            <dd>{hitl.approved_by ?? "—"}</dd>
+            <dt>At</dt>
+            <dd className="mono">{hitl.approved_at ?? "—"}</dd>
+            <dt>Status</dt>
+            <dd>{hitl.status ?? "APPROVED"}</dd>
+          </dl>
+        ) : (
+          <p className="text-muted" style={{ fontSize: 12 }}>
+            {String(s["7_hitl_approval"]?.status_hint ?? "Awaiting operator approval in nba_incidents.")}
+          </p>
+        )}
       </section>
 
       <section className="nba-decision-section">

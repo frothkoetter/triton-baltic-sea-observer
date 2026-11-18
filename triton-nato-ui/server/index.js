@@ -33,6 +33,7 @@ import { fetchProximityAlertsLive } from "./proximity-alerts.js";
 import {
   approveNbaIncident,
   getNbaCoaRuns,
+  getNbaDecisionRecordFromTrino,
   getNbaTrinoState,
   listNbaIncidents,
 } from "./nba.js";
@@ -144,9 +145,12 @@ app.get("/api/nba/rules-playbook", (_req, res) => {
   res.json({ ok: true, source, playbook });
 });
 
-app.get("/api/nba/incidents/:flowUuid/decision-record", (req, res) => {
+app.get("/api/nba/incidents/:flowUuid/decision-record", async (req, res) => {
   try {
-    const data = loadDecisionRecord(req.params.flowUuid);
+    const data = await loadDecisionRecord(
+      req.params.flowUuid,
+      getNbaDecisionRecordFromTrino
+    );
     res.json(data);
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err.message || err) });
