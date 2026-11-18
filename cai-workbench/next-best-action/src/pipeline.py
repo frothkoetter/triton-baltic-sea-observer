@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from .agent_flow import run_agent_flow
-from .agent_orchestrator import run_orchestrator_closure
+from .cdp_access_context import write_access_context
+from .crewai_persist import run_orchestrator_with_persist
 from .governance_export import export_governance_bundle
 from .hitl_artifacts import finalize_hitl_artifacts
 from .alert_rules import next_alert
@@ -225,12 +226,20 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
 
     if settings.phase >= 7 and decision and agent_state is not None:
         sim_dicts = [s.to_dict() for s in simulations] if simulations else None
-        agent_state = run_orchestrator_closure(
+        agent_state = run_orchestrator_with_persist(
             agent_state,
             out_dir,
+            crewai_persist=settings.crewai_persist,
             simulations=sim_dicts,
             decision_record=decision,
         )
+        write_access_context(
+            out_dir, flow_uuid=alert.flow_uuid, data_class=settings.data_class
+        )
+        audit["crewai_persist"] = {
+            "backend": agent_state.persist_backend,
+        }
+        audit["cdp_access_context"] = "access_context.json"
         gov = export_governance_bundle(
             out_dir,
             flow_uuid=alert.flow_uuid,

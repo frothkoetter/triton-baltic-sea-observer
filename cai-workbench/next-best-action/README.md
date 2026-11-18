@@ -107,6 +107,8 @@ python3 run_nba.py --demo-greifswald --phase 7 --skip-llm --offline
 
 **Phase 8.3 (CML):** [`docs/CML_PHASE8_RUNBOOK.md`](docs/CML_PHASE8_RUNBOOK.md) · Artefakt `semantica_record.json` · CLI `--shacl-gate` / `--iceberg-mcp`.
 
+**Phase 8.4 (CDP):** [`docs/CDP_PHASE84.md`](docs/CDP_PHASE84.md) · `crewai_persist_manifest.json` · optional `requirements-crewai.txt` + `--crewai-persist`.
+
 DDL einspielen:
 
 ```bash

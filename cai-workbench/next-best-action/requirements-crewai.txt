@@ -1,0 +1,3 @@
+# Optional Phase 8.4 — not for default CML schedule (heavy deps)
+-r requirements.txt
+crewai>=0.86.0

@@ -204,15 +204,15 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 
 **Lieferobjekte 8.3:** `semantica_record.json`, `src/semantica_export.py`, CML runbook, HITL `GET …/semantica-record`.
 
-#### 8.4 Später (CDP)
+#### 8.4 CDP (CrewAI + Ranger / Marketplace)
 
 | MCP | NBA-Nutzen |
 | :---- | :---- |
 | `ranger-mcp-server` | Rollentrennung OSINT / national |
 | `data-marketplace-mcp-server` | Glossary |
-| CrewAI `@persist` | Ersetzt schrittweise `agent_orchestrator.py` |
+| CrewAI `@persist` | Bridge neben `agent_orchestrator.py` |
 
-**Status:** Plan + Beispiel-MCP in Repo; Code-Adapter = nächste PRs.
+**Lieferobjekte 8.4:** `crewai_persist.py`, `cdp_access_context.py`, `crewai_persist_manifest.json`, `access_context.json`, [`docs/CDP_PHASE84.md`](docs/CDP_PHASE84.md), [`.cursor/mcp-cdp.json.example`](../../.cursor/mcp-cdp.json.example), `NBA_CREWAI_PERSIST` / `--crewai-persist`.
 
 ## 5. Konfiguration Fact-Tables für Snapshot-Bündel
 

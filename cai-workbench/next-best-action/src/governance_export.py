@@ -28,6 +28,8 @@ def artifact_manifest(artifact_dir: Path) -> list[dict[str, Any]]:
         "shacl_report.json",
         "semantica_record.json",
         "mcp_audit.json",
+        "crewai_persist_manifest.json",
+        "access_context.json",
         "grounding.json",
         "scenario_matrix.json",
         "red_blue_replay.json",

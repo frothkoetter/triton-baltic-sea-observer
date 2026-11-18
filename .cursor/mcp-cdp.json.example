@@ -1,0 +1,21 @@
+{
+  "_comment": "Merge into .cursor/mcp.json when CDP Ranger / Marketplace endpoints are available.",
+  "mcpServers": {
+    "ranger-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@cloudera/ranger-mcp-server"],
+      "env": {
+        "RANGER_REST_URL": "https://ranger.example.com",
+        "RANGER_USER": "YOUR_RANGER_USER",
+        "RANGER_PASSWORD": "YOUR_RANGER_PASSWORD"
+      }
+    },
+    "data-marketplace-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@cloudera/data-marketplace-mcp-server"],
+      "env": {
+        "MARKETPLACE_API_URL": "https://marketplace.example.com/api"
+      }
+    }
+  }
+}
