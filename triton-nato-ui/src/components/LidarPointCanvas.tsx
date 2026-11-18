@@ -24,6 +24,8 @@ const WATER_SURFACE_CLS = 10;
 /** Port-quarter elevated view — starboard profile, bow to the right. */
 const BEAM_SKEW = 0.38;
 const ELEVATION_SKEW = 0.22;
+/** Expand fit box so the cloud sits slightly smaller (camera farther back). */
+const VIEW_BBOX_EXPAND = 1.28;
 
 export function enuToVesselFrame(
   x: number,
@@ -121,9 +123,9 @@ function drawFrame(
     }
   }
 
-  const pad = 20;
-  const rangeX = maxSx - minSx || 1;
-  const rangeY = maxSy - minSy || 1;
+  const pad = 28;
+  const rangeX = (maxSx - minSx || 1) * VIEW_BBOX_EXPAND;
+  const rangeY = (maxSy - minSy || 1) * VIEW_BBOX_EXPAND;
   const scale = Math.min((w - pad * 2) / rangeX, (h - pad * 2 - 28) / rangeY);
   const midSx = (minSx + maxSx) / 2;
   const midSy = (minSy + maxSy) / 2;
