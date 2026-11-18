@@ -28,6 +28,8 @@ export type ProximityAlertsResponse = {
   source?: "live" | "sample";
   events?: ProximityEventRaw[];
   fallbackReason?: string;
+  registrySource?: "live" | "sample" | "none";
+  registryFallbackReason?: string;
   error?: string;
 };
 

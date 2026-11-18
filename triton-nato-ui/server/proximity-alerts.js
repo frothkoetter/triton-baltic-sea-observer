@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { enrichProximityEvent, lookupShipsByMmsi } from "./ship-lookup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -130,25 +131,39 @@ function buildUpstreamUrl() {
   return { ok: true, url: url.toString() };
 }
 
+async function attachShipLabels(events, extras = {}) {
+  const mmsis = events.flatMap((e) => [e.ship_a, e.ship_b]);
+  const lookup = await lookupShipsByMmsi(mmsis);
+  const enriched = events.map((e) => enrichProximityEvent(e, lookup.map));
+  return {
+    events: enriched,
+    registrySource: lookup.source,
+    registryFallbackReason: lookup.fallbackReason,
+    ...extras,
+  };
+}
+
 export async function fetchProximityAlertsLive() {
   if (forceSample()) {
     const events = await loadStaticSample();
+    const labeled = await attachShipLabels(events, {
+      fallbackReason: "TRITON_FORCE_SAMPLE_DATA=true",
+    });
     return {
       ok: true,
       source: "sample",
-      events,
-      fallbackReason: "TRITON_FORCE_SAMPLE_DATA=true",
+      ...labeled,
     };
   }
 
   const built = buildUpstreamUrl();
   if (!built.ok) {
     const events = await loadStaticSample();
+    const labeled = await attachShipLabels(events, { fallbackReason: built.error });
     return {
       ok: true,
       source: "sample",
-      events,
-      fallbackReason: built.error,
+      ...labeled,
     };
   }
 
@@ -170,15 +185,16 @@ export async function fetchProximityAlertsLive() {
     if (!events.length) {
       throw new Error("Upstream returned no mappable proximity rows");
     }
-    return { ok: true, source: "live", events };
+    const labeled = await attachShipLabels(events);
+    return { ok: true, source: "live", ...labeled };
   } catch (err) {
     const events = await loadStaticSample();
     const message = err instanceof Error ? err.message : String(err);
+    const labeled = await attachShipLabels(events, { fallbackReason: message });
     return {
       ok: true,
       source: "sample",
-      events,
-      fallbackReason: message,
+      ...labeled,
     };
   } finally {
     clearTimeout(timer);

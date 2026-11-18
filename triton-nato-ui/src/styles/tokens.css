@@ -458,6 +458,12 @@ a {
   color: var(--accent-amber);
 }
 
+.subtle-badge {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .proximity-toolbar {
   display: flex;
   align-items: center;
@@ -527,6 +533,7 @@ a {
   line-height: 1.45;
 }
 
+.proximity-ship-label.leaflet-tooltip,
 .proximity-mmsi-label.leaflet-tooltip {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
