@@ -104,7 +104,7 @@ export const PREDEFINED = {
     LIMIT 300
   `,
   fleet: `
-    SELECT class, name, hull_number, year_commissioned, crew_size
+    SELECT class, name, mmsi, jahr_in_dienst, besatzung
     FROM defense.german_navy_fleet
     ORDER BY class, name
     LIMIT 200
@@ -270,6 +270,143 @@ export const PREDEFINED = {
   fleetKpi: `SELECT COUNT(*) AS cnt FROM defense.german_navy_fleet`,
   personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM defense.german_navy_fleet`,
   surveillanceKpi: `SELECT COUNT(*) AS cnt FROM defense.maritime_surveillance_reports`,
+  /** Fleet analytics: german_navy_fleet ⋈ marine_messages ⋈ marine_vessel_status (via MMSI / unit name). */
+  fleetAnalyticsMessagesFrom: `
+    SELECT ms.message_from AS name, COUNT(*) AS value
+    FROM defense.german_navy_fleet fl
+    INNER JOIN defense.marine_messages ms ON ms.message_from = fl.name
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 12
+  `,
+  fleetAnalyticsMessagesTo: `
+    SELECT ms.message_to AS name, COUNT(*) AS value
+    FROM defense.marine_messages ms
+    INNER JOIN defense.german_navy_fleet fl ON ms.message_from = fl.name
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 8
+  `,
+  fleetAnalyticsOperational: `
+    WITH latest AS (
+      SELECT
+        m.operational_status AS name,
+        row_number() OVER (
+          PARTITION BY m.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(m.event_timestamp)),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s'))
+          ) DESC
+        ) AS rn
+      FROM defense.marine_vessel_status m
+      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+    )
+    SELECT COALESCE(name, 'Unknown') AS name, COUNT(*) AS value
+    FROM latest
+    WHERE rn = 1
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  fleetAnalyticsSystem: `
+    WITH latest AS (
+      SELECT
+        m.system_status AS name,
+        row_number() OVER (
+          PARTITION BY m.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(m.event_timestamp)),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s'))
+          ) DESC
+        ) AS rn
+      FROM defense.marine_vessel_status m
+      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+    )
+    SELECT COALESCE(name, 'Unknown') AS name, COUNT(*) AS value
+    FROM latest
+    WHERE rn = 1
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `,
+  fleetAnalyticsDestinations: `
+    WITH latest AS (
+      SELECT
+        COALESCE(NULLIF(trim(m.destination), ''), 'Unknown') AS name,
+        row_number() OVER (
+          PARTITION BY m.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(m.event_timestamp)),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s'))
+          ) DESC
+        ) AS rn
+      FROM defense.marine_vessel_status m
+      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+    )
+    SELECT name, COUNT(*) AS value
+    FROM latest
+    WHERE rn = 1
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 10
+  `,
+  fleetAnalyticsUnitStatus: `
+    WITH latest AS (
+      SELECT
+        m.mmsi,
+        m.status AS nav_status,
+        m.operational_status,
+        m.system_status,
+        m.destination,
+        g.name AS unit_name,
+        g.class AS unit_class,
+        row_number() OVER (
+          PARTITION BY m.mmsi
+          ORDER BY coalesce(
+            try(from_iso8601_timestamp(m.event_timestamp)),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+            try(date_parse(m.event_timestamp, '%Y-%m-%d %H:%i:%s'))
+          ) DESC
+        ) AS rn
+      FROM defense.marine_vessel_status m
+      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+    ),
+    msg_cnt AS (
+      SELECT fl.name, COUNT(*) AS messages_out
+      FROM defense.german_navy_fleet fl
+      INNER JOIN defense.marine_messages ms ON ms.message_from = fl.name
+      GROUP BY 1
+    )
+    SELECT
+      l.unit_name,
+      l.unit_class,
+      l.nav_status,
+      l.operational_status,
+      l.system_status,
+      l.destination,
+      COALESCE(m.messages_out, 0) AS messages_out,
+      CAST('NAVAL COMMAND' AS varchar) AS message_to
+    FROM latest l
+    LEFT JOIN msg_cnt m ON m.name = l.unit_name
+    WHERE l.rn = 1
+    ORDER BY messages_out DESC, l.unit_name
+    LIMIT 80
+  `,
+  fleetAnalyticsRecentMessages: `
+    SELECT
+      fl.name AS unit_name,
+      fl.class AS unit_class,
+      ms.message_id,
+      ms.message_from,
+      ms.message_to,
+      ms.message_dtg,
+      ms.message_subject
+    FROM defense.marine_messages ms
+    INNER JOIN defense.german_navy_fleet fl ON ms.message_from = fl.name
+    ORDER BY ms.message_timestamp DESC
+    LIMIT 40
+  `,
   alertsKpi: `
     SELECT COUNT(*) AS cnt
     FROM defense.vessel_outliers

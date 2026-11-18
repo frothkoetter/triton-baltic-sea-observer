@@ -592,6 +592,84 @@ export const kpis = {
   alerts: 2,
 };
 
+/** Offline fallback for /api/analyses/fleet-analytics */
+export const fleetAnalytics = {
+  panels: {
+    messagesFrom: {
+      columns: ["name", "value"],
+      rows: [
+        { name: "FGS Sachsen", value: 24 },
+        { name: "FGS Braunschweig", value: 22 },
+        { name: "U-32", value: 18 },
+      ],
+    },
+    messagesTo: {
+      columns: ["name", "value"],
+      rows: [{ name: "NAVAL COMMAND", value: 120 }],
+    },
+    operationalStatus: {
+      columns: ["name", "value"],
+      rows: [
+        { name: "Fully Operational", value: 2 },
+        { name: "Limited Operational", value: 2 },
+        { name: "Non-Operational", value: 1 },
+      ],
+    },
+    systemStatus: {
+      columns: ["name", "value"],
+      rows: [
+        { name: "All Systems Green", value: 2 },
+        { name: "Minor Sensor Issues", value: 2 },
+      ],
+    },
+    destinations: {
+      columns: ["name", "value"],
+      rows: [
+        { name: "Kiel", value: 3 },
+        { name: "Warnemünde", value: 1 },
+      ],
+    },
+    unitStatus: {
+      columns: [
+        "unit_name",
+        "unit_class",
+        "nav_status",
+        "operational_status",
+        "system_status",
+        "destination",
+        "messages_out",
+        "message_to",
+      ],
+      rows: [
+        {
+          unit_name: "FGS Sachsen",
+          unit_class: "Fregatten",
+          nav_status: "Underway using engine",
+          operational_status: "Fully Operational",
+          system_status: "All Systems Green",
+          destination: "Kiel",
+          messages_out: 24,
+          message_to: "NAVAL COMMAND",
+        },
+      ],
+    },
+    recentMessages: {
+      columns: ["unit_name", "unit_class", "message_id", "message_from", "message_to", "message_dtg", "message_subject"],
+      rows: [
+        {
+          unit_name: "FGS Sachsen",
+          unit_class: "Fregatten",
+          message_id: "SR-DEMO-1",
+          message_from: "FGS Sachsen",
+          message_to: "NAVAL COMMAND",
+          message_dtg: "151200ZNOV25",
+          message_subject: "SITREP",
+        },
+      ],
+    },
+  },
+};
+
 export const datasets = [
   { name: "ShipsAIS", tables: ["ais_events_ice", "ships"], badge: "multipletables" },
   { name: "FlottenStatus", tables: ["german_navy_fleet", "marine_vessel_status"], badge: "multipletables" },

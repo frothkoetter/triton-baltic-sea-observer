@@ -212,6 +212,46 @@ export async function getFleet() {
   return runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
 }
 
+const FLEET_ANALYTICS_KEYS = [
+  ["messagesFrom", "fleetAnalyticsMessagesFrom"],
+  ["messagesTo", "fleetAnalyticsMessagesTo"],
+  ["operationalStatus", "fleetAnalyticsOperational"],
+  ["systemStatus", "fleetAnalyticsSystem"],
+  ["destinations", "fleetAnalyticsDestinations"],
+  ["unitStatus", "fleetAnalyticsUnitStatus"],
+  ["recentMessages", "fleetAnalyticsRecentMessages"],
+];
+
+export async function getFleetAnalytics() {
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sample.fleetAnalytics };
+  }
+  const results = await Promise.all(
+    FLEET_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
+  );
+  const panels = {};
+  for (let i = 0; i < FLEET_ANALYTICS_KEYS.length; i++) {
+    const [panelKey] = FLEET_ANALYTICS_KEYS[i];
+    const res = results[i];
+    panels[panelKey] = {
+      columns: res.columns ?? [],
+      rows: res.rows ?? [],
+      ok: res.ok,
+    };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sample.fleetAnalytics,
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
+}
+
 export async function getSanctions() {
   return runQueryOrSample(PREDEFINED.sanctions, () => sample.sanctions);
 }
