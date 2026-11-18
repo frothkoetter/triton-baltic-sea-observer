@@ -12,6 +12,20 @@ import { NbaRuleCitationButton } from "../components/NbaRuleCitation";
 import type { NbaDecisionRecord } from "../lib/nba-decision";
 import { parseCoaDetail } from "../lib/nba-decision";
 
+function formatIncidentTime(raw: string | undefined | null): string {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return String(raw);
+  return d.toLocaleString("de-DE", {
+    timeZone: "Europe/Berlin",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 const COA_LABELS: Record<string, string> = {
   A: "Multidomänen-Verbund (SAR + P-8A + K130)",
   B: "Nordsee-Fregatten + optische EO",
@@ -102,6 +116,7 @@ export function NbaHitlPage() {
           <table className="data-table compact">
             <thead>
               <tr>
+                <th>Created (CET)</th>
                 <th>Theatre</th>
                 <th>Type</th>
                 <th>Best</th>
@@ -116,10 +131,15 @@ export function NbaHitlPage() {
                   className={selected === row.flow_uuid ? "row-selected" : ""}
                   onClick={() => setSelected(row.flow_uuid)}
                 >
+                  <td className="mono" title={row.created_at ?? ""} style={{ whiteSpace: "nowrap" }}>
+                    {formatIncidentTime(row.created_at)}
+                  </td>
                   <td>{row.theatre}</td>
                   <td className="mono">{row.alert_type}</td>
                   <td>{row.best_coa_id ?? "—"}</td>
-                  <td>{row.approved_coa_id ?? "—"}</td>
+                  <td title={row.approved_at ? formatIncidentTime(row.approved_at) : undefined}>
+                    {row.approved_coa_id ?? "—"}
+                  </td>
                   <td>{row.status}</td>
                 </tr>
               ))}
@@ -149,6 +169,10 @@ export function NbaHitlPage() {
               <dl className="nba-meta">
                 <dt>flow_uuid</dt>
                 <dd className="mono">{detail.flow_uuid}</dd>
+                <dt>Created</dt>
+                <dd className="mono">{formatIncidentTime(detail.created_at)}</dd>
+                <dt>Updated</dt>
+                <dd className="mono">{formatIncidentTime(detail.updated_at)}</dd>
                 <dt>Priority</dt>
                 <dd>{detail.priority}</dd>
                 <dt>SITREP link</dt>
