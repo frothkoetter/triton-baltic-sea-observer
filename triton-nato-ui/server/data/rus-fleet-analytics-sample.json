@@ -1,0 +1,620 @@
+{
+  "panels": {
+    "unitDisposition": {
+      "columns": [
+        "mmsi",
+        "unit_name",
+        "unit_class",
+        "home_base",
+        "vessel_category",
+        "status",
+        "dist_home_km",
+        "max_sog_24h",
+        "avg_sog_24h",
+        "pts_24h",
+        "activity",
+        "at_home_port"
+      ],
+      "rows": [
+        {
+          "mmsi": "RUS273024",
+          "unit_name": "BT-215",
+          "unit_class": "Project 1265 Sonya",
+          "home_base": "Kronstadt",
+          "vessel_category": "patrol",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 24.4,
+          "avg_sog_24h": 13.46,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273004",
+          "unit_name": "Boikiy",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 12.6,
+          "avg_sog_24h": 5.27,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273013",
+          "unit_name": "Dmitrov",
+          "unit_class": "Project 877 Kilo",
+          "home_base": "Kronstadt",
+          "vessel_category": "submarine",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 13.8,
+          "avg_sog_24h": 7.96,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273022",
+          "unit_name": "Elbrus",
+          "unit_class": "Project 20180 Altay",
+          "home_base": "Baltiysk",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 16.4,
+          "max_sog_24h": 10.1,
+          "avg_sog_24h": 5.05,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273007",
+          "unit_name": "Grad Sviyazhsk",
+          "unit_class": "Project 21631 Buyan-M",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 19.7,
+          "max_sog_24h": 16.5,
+          "avg_sog_24h": 8.96,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273006",
+          "unit_name": "Gremyashchiy",
+          "unit_class": "Project 20385 Gremyashchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 11.5,
+          "avg_sog_24h": 4.55,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273019",
+          "unit_name": "Kalinin",
+          "unit_class": "Project 1171 Alligator",
+          "home_base": "Baltiysk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 10.2,
+          "avg_sog_24h": 5.42,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273016",
+          "unit_name": "Kaliningrad",
+          "unit_class": "Project 775 Ropucha",
+          "home_base": "Baltiysk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 19.3,
+          "max_sog_24h": 8.9,
+          "avg_sog_24h": 4.52,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273021",
+          "unit_name": "Khariton Laptev",
+          "unit_class": "Project 861M Moma",
+          "home_base": "Kronstadt",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 14.7,
+          "avg_sog_24h": 7.52,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273020",
+          "unit_name": "Kildin",
+          "unit_class": "Project 860 Vishnya",
+          "home_base": "Kronstadt",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 1169.6,
+          "max_sog_24h": 13,
+          "avg_sog_24h": 5.63,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273015",
+          "unit_name": "Kolpino",
+          "unit_class": "Project 636.3 Improved Kilo",
+          "home_base": "Kronstadt",
+          "vessel_category": "submarine",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 13.6,
+          "avg_sog_24h": 6.22,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273017",
+          "unit_name": "Korolev",
+          "unit_class": "Project 775 Ropucha",
+          "home_base": "Baltiysk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 13.9,
+          "avg_sog_24h": 9.13,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273018",
+          "unit_name": "Minsk",
+          "unit_class": "Project 1171 Alligator",
+          "home_base": "Baltiysk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 16.4,
+          "max_sog_24h": 12.4,
+          "avg_sog_24h": 4.96,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273010",
+          "unit_name": "Mytishchi",
+          "unit_class": "Project 22800 Karakurt",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 15.8,
+          "max_sog_24h": 13.2,
+          "avg_sog_24h": 5.25,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273012",
+          "unit_name": "Odintsovo",
+          "unit_class": "Project 22800 Karakurt",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 13,
+          "avg_sog_24h": 4.29,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273025",
+          "unit_name": "PK-123",
+          "unit_class": "Project 1331M Mukha",
+          "home_base": "Vistula Lagoon Baltiysk",
+          "vessel_category": "patrol",
+          "status": "Underway using engine",
+          "dist_home_km": null,
+          "max_sog_24h": 13.1,
+          "avg_sog_24h": 4.13,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273023",
+          "unit_name": "Pavel Khokhryakov",
+          "unit_class": "Project 141 Kashtan",
+          "home_base": "Primorsk",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 24.1,
+          "max_sog_24h": 18.6,
+          "avg_sog_24h": 7.94,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273034",
+          "unit_name": "RFS Sim AGI Iota",
+          "unit_class": "Project 860 Vishnya",
+          "home_base": "Primorsk",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 24.1,
+          "max_sog_24h": 13.8,
+          "avg_sog_24h": 4.59,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273031",
+          "unit_name": "RFS Sim Alligator Zeta",
+          "unit_class": "Project 1171 Alligator",
+          "home_base": "Primorsk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 24.1,
+          "max_sog_24h": 11.4,
+          "avg_sog_24h": 4.93,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273026",
+          "unit_name": "RFS Sim Corvette Alpha",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 13.1,
+          "avg_sog_24h": 10.72,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273027",
+          "unit_name": "RFS Sim Corvette Beta",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 15.8,
+          "avg_sog_24h": 7.65,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273028",
+          "unit_name": "RFS Sim Karakurt Gamma",
+          "unit_class": "Project 22800 Karakurt",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 19.6,
+          "avg_sog_24h": 10.18,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273029",
+          "unit_name": "RFS Sim Kilo Delta",
+          "unit_class": "Project 877 Kilo",
+          "home_base": "Kronstadt",
+          "vessel_category": "submarine",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 11.5,
+          "avg_sog_24h": 3.72,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273032",
+          "unit_name": "RFS Sim Minesweeper Eta",
+          "unit_class": "Project 1265 Sonya",
+          "home_base": "Kronstadt",
+          "vessel_category": "patrol",
+          "status": "Underway using engine",
+          "dist_home_km": 19.2,
+          "max_sog_24h": 14.5,
+          "avg_sog_24h": 7.06,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273033",
+          "unit_name": "RFS Sim Patrol Theta",
+          "unit_class": "Project 1331M Mukha",
+          "home_base": "Vistula Lagoon Baltiysk",
+          "vessel_category": "patrol",
+          "status": "Underway using engine",
+          "dist_home_km": null,
+          "max_sog_24h": 14.4,
+          "avg_sog_24h": 5.18,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273030",
+          "unit_name": "RFS Sim Ropucha Epsilon",
+          "unit_class": "Project 775 Ropucha",
+          "home_base": "Baltiysk",
+          "vessel_category": "landing ship",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 15,
+          "avg_sog_24h": 11.32,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273035",
+          "unit_name": "RFS Sim Tug Kappa",
+          "unit_class": "Project 20180 Altay",
+          "home_base": "Baltiysk",
+          "vessel_category": "support",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 24.8,
+          "avg_sog_24h": 12.3,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273009",
+          "unit_name": "Serpukhov",
+          "unit_class": "Project 21631 Buyan-M",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 15.7,
+          "avg_sog_24h": 11.93,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273003",
+          "unit_name": "Soobrazitelny",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 19.5,
+          "max_sog_24h": 13.9,
+          "avg_sog_24h": 7.3,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273011",
+          "unit_name": "Sovetsk",
+          "unit_class": "Project 22800 Karakurt",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 15.4,
+          "avg_sog_24h": 12.03,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273002",
+          "unit_name": "Steregushchy",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 15.7,
+          "avg_sog_24h": 11.83,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273005",
+          "unit_name": "Stoikiy",
+          "unit_class": "Project 20380 Steregushchiy",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 18.8,
+          "avg_sog_24h": 13.08,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273008",
+          "unit_name": "Velikiy Ustyug",
+          "unit_class": "Project 21631 Buyan-M",
+          "home_base": "Baltiysk",
+          "vessel_category": "corvette",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 18.3,
+          "avg_sog_24h": 10.17,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273014",
+          "unit_name": "Vladikavkaz",
+          "unit_class": "Project 877 Kilo",
+          "home_base": "Kronstadt",
+          "vessel_category": "submarine",
+          "status": "Underway using engine",
+          "dist_home_km": 17.3,
+          "max_sog_24h": 15.5,
+          "avg_sog_24h": 7.64,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        },
+        {
+          "mmsi": "RUS273001",
+          "unit_name": "Yaroslav Mudry",
+          "unit_class": "Project 11540 Neustrashimy",
+          "home_base": "Baltiysk",
+          "vessel_category": "frigate",
+          "status": "Underway using engine",
+          "dist_home_km": 17.5,
+          "max_sog_24h": 14.8,
+          "avg_sog_24h": 10.83,
+          "pts_24h": 1399,
+          "activity": "Transit",
+          "at_home_port": false
+        }
+      ],
+      "ok": true
+    },
+    "activityMix": {
+      "columns": [
+        "name",
+        "value"
+      ],
+      "rows": [
+        {
+          "name": "Transit",
+          "value": 35
+        }
+      ],
+      "ok": true
+    },
+    "categoryMix": {
+      "columns": [
+        "name",
+        "value"
+      ],
+      "rows": [
+        {
+          "name": "corvette",
+          "value": 14
+        },
+        {
+          "name": "landing ship",
+          "value": 6
+        },
+        {
+          "name": "support",
+          "value": 6
+        },
+        {
+          "name": "submarine",
+          "value": 4
+        },
+        {
+          "name": "patrol",
+          "value": 4
+        },
+        {
+          "name": "frigate",
+          "value": 1
+        }
+      ],
+      "ok": true
+    },
+    "homeBaseMix": {
+      "columns": [
+        "name",
+        "value"
+      ],
+      "rows": [
+        {
+          "name": "Baltiysk",
+          "value": 22
+        },
+        {
+          "name": "Kronstadt",
+          "value": 8
+        },
+        {
+          "name": "Primorsk",
+          "value": 3
+        },
+        {
+          "name": "Vistula Lagoon Baltiysk",
+          "value": 2
+        }
+      ],
+      "ok": true
+    },
+    "restrictedUnits": {
+      "columns": [
+        "mmsi",
+        "unit_name",
+        "vessel_category",
+        "status",
+        "area_id",
+        "latitude",
+        "longitude"
+      ],
+      "rows": [
+        {
+          "mmsi": "RUS273033",
+          "unit_name": "RFS Sim Patrol Theta",
+          "vessel_category": "patrol",
+          "status": "Underway using engine",
+          "area_id": "PL-Defence-Gdansk-Bight",
+          "latitude": 54.48185,
+          "longitude": 19.28827
+        }
+      ],
+      "ok": true
+    },
+    "restrictedByArea": {
+      "columns": [
+        "name",
+        "value"
+      ],
+      "rows": [
+        {
+          "name": "PL-Defence-Gdansk-Bight",
+          "value": 1
+        }
+      ],
+      "ok": true
+    }
+  }
+}

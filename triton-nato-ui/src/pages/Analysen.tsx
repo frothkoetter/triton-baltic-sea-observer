@@ -26,6 +26,7 @@ import {
 const TABS = [
   { id: "fleet", label: "Fleet" },
   { id: "buoys", label: "Buoys" },
+  { id: "rus", label: "RUS Fleet" },
   { id: "ais", label: "AIS" },
   { id: "sanctions", label: "Sanctions" },
   { id: "restricted", label: "Restricted Areas" },
@@ -62,6 +63,20 @@ type BuoyAnalyticsPayload = {
   };
 };
 
+type RusFleetAnalyticsPayload = {
+  ok?: boolean;
+  source?: string;
+  fallbackReason?: string;
+  panels?: {
+    unitDisposition?: AnalyticsPanel;
+    activityMix?: AnalyticsPanel;
+    categoryMix?: AnalyticsPanel;
+    homeBaseMix?: AnalyticsPanel;
+    restrictedUnits?: AnalyticsPanel;
+    restrictedByArea?: AnalyticsPanel;
+  };
+};
+
 type FleetAnalyticsPayload = {
   ok?: boolean;
   source?: string;
@@ -92,18 +107,21 @@ export function AnalysenPage() {
   const [sanctions, setSanctions] = useState<QueryResult | null>(null);
   const [violations, setViolations] = useState<QueryResult | null>(null);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
+  const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const [fa, bu, a, s, v] = await Promise.all([
+      const [fa, bu, ru, a, s, v] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
+        fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
         fetchJson<QueryResult>("/api/ais"),
         fetchJson<QueryResult>("/api/analyses/sanctions"),
         fetchJson<QueryResult>("/api/analyses/violations"),
       ]);
       setFleetAnalytics(fa);
       setBuoyAnalytics(bu);
+      setRusFleetAnalytics(ru);
       setAis(a);
       setSanctions(s);
       setViolations(v);
@@ -118,6 +136,14 @@ export function AnalysenPage() {
     record_count: Number(r.record_count ?? 0),
     sum_altitude: Number(r.sum_altitude ?? 0),
   }));
+  const rp = rusFleetAnalytics?.panels;
+  const rusUnits = rp?.unitDisposition?.rows ?? [];
+  const rusKpis = {
+    registered: rusUnits.length,
+    atHome: rusUnits.filter((u) => u.at_home_port === true || u.at_home_port === "true").length,
+    inRestricted: rp?.restrictedUnits?.rows?.length ?? 0,
+    transit: rusUnits.filter((u) => String(u.activity) === "Transit").length,
+  };
   const aisByFlag = aggregate(ais?.rows ?? [], "flag");
   const sanctionsByFlag = aggregate(sanctions?.rows ?? [], "Flag");
 
@@ -231,6 +257,70 @@ export function AnalysenPage() {
               <h2 className="panel-title">Typ × Klassifikation</h2>
               <p className="panel-subtitle">avg(payload_object_confidence) · Bubble = record_count</p>
               <ChartClassificationGrid rows={bp?.classificationGrid?.rows ?? []} />
+            </section>
+          </div>
+        </div>
+      )}
+
+      {tab === "rus" && (
+        <div className="analyses-rus">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            <code>rus_fleet</code> ⋈ <code>rus_naval_fleet_positions</code> — letzte Lage, 24h-Bewegung (
+            max SOG), Heimathafen-Distanz, <code>observation_areas</code> (ST_Within). Quelle:{" "}
+            {rusFleetAnalytics?.source ?? "…"}
+            {rusFleetAnalytics?.fallbackReason ? ` — fallback (${rusFleetAnalytics.fallbackReason})` : ""}
+          </p>
+          <div className="kpi-row">
+            <div className="kpi">
+              <div className="kpi-value">{rusKpis.registered}</div>
+              <div className="kpi-label">Einheiten (live)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value status-ok mono">{rusKpis.atHome}</div>
+              <div className="kpi-label">Am Heimathafen (&lt;12 km)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value mono">{rusKpis.transit}</div>
+              <div className="kpi-label">Transit (24h max SOG ≥4 kn)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value status-alert mono">{rusKpis.inRestricted}</div>
+              <div className="kpi-label">In Sperrgebiet (jetzt)</div>
+            </div>
+          </div>
+          <div className="analyses-grid">
+            <section className="panel">
+              <h2 className="panel-title">Aktivität (24h)</h2>
+              <p className="panel-subtitle">Heimathafen / Anker / Patrouille / Transit</p>
+              <ChartPie data={chartRows(rp?.activityMix?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Schiffstypen (Stammdaten)</h2>
+              <p className="panel-subtitle">vessel_category in rus_fleet</p>
+              <ChartBars data={chartRows(rp?.categoryMix?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Heimatbasen</h2>
+              <p className="panel-subtitle">home_base — Registry</p>
+              <ChartBars data={chartRows(rp?.homeBaseMix?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">In Sperrgebieten</h2>
+              <p className="panel-subtitle">Tier-A observation_areas — Einheiten pro AOI</p>
+              <ChartBars data={chartRows(rp?.restrictedByArea?.rows)} />
+            </section>
+          </div>
+          <div className="analyses-grid">
+            <section className="panel" style={{ gridColumn: "1 / -1" }}>
+              <h2 className="panel-title">Einheitenlage — Bewegung & Hafen</h2>
+              <p className="panel-subtitle">
+                Letzte Position, Distanz Heimathafen, max/Ø SOG (24h), Activity-Klasse
+              </p>
+              <DataTable columns={rp?.unitDisposition?.columns ?? []} rows={rusUnits} />
+            </section>
+            <section className="panel" style={{ gridColumn: "1 / -1" }}>
+              <h2 className="panel-title">Aktuell in Restricted Areas</h2>
+              <DataTable columns={rp?.restrictedUnits?.columns ?? []} rows={rp?.restrictedUnits?.rows ?? []} />
             </section>
           </div>
         </div>
