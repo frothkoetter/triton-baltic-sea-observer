@@ -10,7 +10,9 @@ import {
   buildAisTrackSql,
   buildGermanFleetTrackSql,
   buildRussianFleetTrackSql,
+  buildSanctionedAnalyticsQueries,
 } from "./queries.js";
+import { shortenSanctionReason } from "./sanction-text.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
@@ -444,6 +446,126 @@ export async function getFleetAnalytics() {
 
 export async function getSanctions() {
   return runQueryOrSample(PREDEFINED.sanctions, () => sample.sanctions);
+}
+
+function sampleSanctionedRouteLegs(historyRows) {
+  const byMmsi = new Map();
+  for (const r of historyRows) {
+    const list = byMmsi.get(r.mmsi) ?? [];
+    list.push(r.destination);
+    byMmsi.set(r.mmsi, list);
+  }
+  const routeMap = new Map();
+  for (const dests of byMmsi.values()) {
+    for (let i = 1; i < dests.length; i++) {
+      const prev = dests[i - 1];
+      const cur = dests[i];
+      if (prev && cur && prev !== cur) {
+        const route = `${prev} → ${cur}`;
+        routeMap.set(route, (routeMap.get(route) ?? 0) + 1);
+      }
+    }
+  }
+  return [...routeMap.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+function sampleSanctionedAnalytics() {
+  const aisByMmsi = new Map(sample.aisShips.map((r) => [r.mmsi, r]));
+  const registry = sample.sanctions.map((sv) => {
+    const ais = sv.MMSI != null ? aisByMmsi.get(sv.MMSI) : undefined;
+    const reason = sv.Sanction_Reason;
+    return {
+      name: sv.Name,
+      mmsi: sv.MMSI ?? null,
+      imo: sv.IMO ?? null,
+      vessel_type: sv.Type,
+      flag: sv.Flag,
+      sanction_reason_short: shortenSanctionReason(reason),
+      sanction_reason: reason,
+      linked_to: sv.Linked_To,
+      destination: ais?.destination ?? "—",
+      latest_ais_time: ais?.event_timestamp ?? null,
+      latest_latitude: ais?.latitude ?? null,
+      latest_longitude: ais?.longitude ?? null,
+    };
+  });
+  const withMmsi = registry.filter((r) => r.mmsi != null).length;
+  const withAis = registry.filter((r) => r.latest_ais_time).length;
+  const withDest = registry.filter((r) => r.destination && r.destination !== "—").length;
+  const destHistory = aggregateNameValue(
+    sample.sanctionedAisDestHistory.map((r) => ({ dest: r.destination })),
+    "dest"
+  );
+  const topRoutes = sampleSanctionedRouteLegs(sample.sanctionedAisDestHistory);
+  const byReason = aggregateNameValue(
+    registry.map((r) => ({ reason_short: r.sanction_reason_short })),
+    "reason_short"
+  );
+  const byFlag = aggregateNameValue(registry, "flag");
+  return {
+    panels: {
+      kpi: {
+        columns: ["total_listed", "with_mmsi", "with_ais", "with_destination"],
+        rows: [{ total_listed: registry.length, with_mmsi: withMmsi, with_ais: withAis, with_destination: withDest }],
+      },
+      registry: {
+        columns: [
+          "name",
+          "mmsi",
+          "flag",
+          "vessel_type",
+          "destination",
+          "sanction_reason_short",
+          "sanction_reason",
+          "linked_to",
+          "latest_ais_time",
+        ],
+        rows: registry,
+      },
+      destinationHistory: { columns: ["name", "value"], rows: destHistory },
+      topRoutes: { columns: ["name", "value"], rows: topRoutes },
+      byReason: { columns: ["name", "value"], rows: byReason },
+      byFlag: { columns: ["name", "value"], rows: byFlag },
+    },
+  };
+}
+
+const SANCTIONED_ANALYTICS_PANELS = [
+  "kpi",
+  "registry",
+  "destinationHistory",
+  "topRoutes",
+  "byReason",
+  "byFlag",
+];
+
+export async function getSanctionedAnalytics() {
+  const queries = buildSanctionedAnalyticsQueries();
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sampleSanctionedAnalytics() };
+  }
+  const results = await Promise.all(
+    SANCTIONED_ANALYTICS_PANELS.map((key) => queryWarehouse(queries[key]))
+  );
+  const panels = {};
+  for (let i = 0; i < SANCTIONED_ANALYTICS_PANELS.length; i++) {
+    const key = SANCTIONED_ANALYTICS_PANELS[i];
+    const res = results[i];
+    panels[key] = { columns: res.columns ?? [], rows: res.rows ?? [], ok: res.ok };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sampleSanctionedAnalytics(),
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
 }
 
 export async function getAreaViolations() {

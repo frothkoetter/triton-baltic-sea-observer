@@ -79,6 +79,20 @@ type RusFleetAnalyticsPayload = {
   };
 };
 
+type SanctionedAnalyticsPayload = {
+  ok?: boolean;
+  source?: string;
+  fallbackReason?: string;
+  panels?: {
+    kpi?: AnalyticsPanel;
+    registry?: AnalyticsPanel;
+    destinationHistory?: AnalyticsPanel;
+    topRoutes?: AnalyticsPanel;
+    byReason?: AnalyticsPanel;
+    byFlag?: AnalyticsPanel;
+  };
+};
+
 type FleetAnalyticsPayload = {
   ok?: boolean;
   source?: string;
@@ -109,7 +123,7 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
   const [aisAnalytics, setAisAnalytics] = useState<AisAnalyticsPayload | null>(null);
-  const [sanctions, setSanctions] = useState<QueryResult | null>(null);
+  const [sanctionedAnalytics, setSanctionedAnalytics] = useState<SanctionedAnalyticsPayload | null>(null);
   const [violations, setViolations] = useState<QueryResult | null>(null);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
@@ -122,13 +136,13 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
-        fetchJson<QueryResult>("/api/analyses/sanctions"),
+        fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
         fetchJson<QueryResult>("/api/analyses/violations"),
       ]);
       setFleetAnalytics(fa);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
-      setSanctions(s);
+      setSanctionedAnalytics(s);
       setViolations(v);
     })();
   }, []);
@@ -165,7 +179,19 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
   const filterSummary = [flag && `Flag: ${flag}`, vesselType && `Typ: ${vesselType}`, shipName && `Schiff: ${shipName}`]
     .filter(Boolean)
     .join(" · ");
-  const sanctionsByFlag = aggregate(sanctions?.rows ?? [], "Flag");
+  const sp = sanctionedAnalytics?.panels;
+  const sanctionKpi = sp?.kpi?.rows?.[0];
+  const registryRows = sp?.registry?.rows ?? [];
+  const registryCols = [
+    "name",
+    "mmsi",
+    "flag",
+    "vessel_type",
+    "destination",
+    "sanction_reason_short",
+    "linked_to",
+    "latest_ais_time",
+  ];
 
   return (
     <div>
@@ -413,14 +439,64 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
       )}
 
       {tab === "sanctions" && (
-        <div className="analyses-grid">
-          <section className="panel">
-            <h2 className="panel-title">Sanctioned vessels</h2>
-            <DataTable columns={sanctions?.columns ?? []} rows={sanctions?.rows ?? []} hostileColumn="Name" />
-          </section>
-          <section className="panel">
-            <h2 className="panel-title">By flag</h2>
-            <ChartPie data={sanctionsByFlag} />
+        <div className="analyses-ais">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            EU / OFAC list ⋈ letzte AIS-Position pro MMSI, plus AIS-Zielhafen-Historie. Quelle:{" "}
+            {sanctionedAnalytics?.source ?? "…"}
+            {sanctionedAnalytics?.fallbackReason
+              ? ` — fallback (${sanctionedAnalytics.fallbackReason})`
+              : ""}
+          </p>
+          <div className="kpi-row">
+            <div className="kpi">
+              <div className="kpi-value">{Number(sanctionKpi?.total_listed ?? 0)}</div>
+              <div className="kpi-label">Gelistet</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value">{Number(sanctionKpi?.with_mmsi ?? 0)}</div>
+              <div className="kpi-label">Mit MMSI</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value">{Number(sanctionKpi?.with_ais ?? 0)}</div>
+              <div className="kpi-label">Mit AIS</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value">{Number(sanctionKpi?.with_destination ?? 0)}</div>
+              <div className="kpi-label">Mit Zielhafen</div>
+            </div>
+          </div>
+          <div className="analyses-grid analyses-ais-grid">
+            <section className="panel">
+              <h2 className="panel-title">Zielhäfen (Historie)</h2>
+              <p className="panel-subtitle">AIS-Destination-Meldungen aller sanktionierten MMSI</p>
+              <ChartBars data={chartRows(sp?.destinationHistory?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Top-Routen</h2>
+              <p className="panel-subtitle">Folge von Zielhäfen je MMSI (prev → next)</p>
+              <ChartBars data={chartRows(sp?.topRoutes?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Sanktionsgrund (kurz)</h2>
+              <p className="panel-subtitle">Volltext im Tooltip der Tabelle unten</p>
+              <ChartPie data={chartRows(sp?.byReason?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Nach Flagge</h2>
+              <ChartPie data={chartRows(sp?.byFlag?.rows)} />
+            </section>
+          </div>
+          <section className="panel" style={{ marginTop: 8 }}>
+            <h2 className="panel-title">Sanktionierte Schiffe</h2>
+            <p className="panel-subtitle">
+              Spalte Reason gekürzt — Mausover zeigt den vollständigen Sanktionstext
+            </p>
+            <DataTable
+              columns={registryCols}
+              rows={registryRows}
+              hostileColumn="name"
+              titleFromColumn={{ sanction_reason_short: "sanction_reason" }}
+            />
           </section>
         </div>
       )}

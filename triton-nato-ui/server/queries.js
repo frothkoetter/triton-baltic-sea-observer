@@ -121,6 +121,145 @@ export function buildAisAnalyticsQueries(filters = {}) {
   };
 }
 
+const sanctionReasonShortExpr = (alias) => `
+  CASE
+    WHEN lower(coalesce(${alias}.sanction_reason, '')) LIKE '%833/2014%'
+      OR lower(coalesce(${alias}.sanction_reason, '')) LIKE '%annex xiii%'
+      THEN 'EU Annex XIII (833/2014)'
+    WHEN lower(coalesce(${alias}.sanction_reason, '')) LIKE '%e.o.%'
+      OR lower(coalesce(${alias}.sanction_reason, '')) LIKE '%executive order%'
+      THEN coalesce(regexp_extract(${alias}.sanction_reason, '(?i)E\\.?O\\.?\\s*(\\d+)', 1), 'E.O. sanction')
+    WHEN lower(coalesce(${alias}.sanction_reason, '')) LIKE '%irregular shipping%'
+      THEN 'Irregular shipping (EU)'
+    WHEN lower(coalesce(${alias}.sanction_reason, '')) LIKE '%defense sector%'
+      THEN 'Defense sector goods (EU)'
+    WHEN length(coalesce(${alias}.sanction_reason, '')) > 72
+      THEN concat(substring(${alias}.sanction_reason, 1, 69), '…')
+    ELSE coalesce(${alias}.sanction_reason, 'Unknown')
+  END`;
+
+function buildSanctionedAisCte() {
+  return `
+    WITH sanctioned_list AS (
+      SELECT
+        name,
+        mmsi,
+        imo,
+        type AS vessel_type,
+        flag,
+        sanction_reason,
+        linked_to
+      FROM defense.sanctioned_vessels
+    ),
+    sanctioned_ais AS (
+      SELECT
+        a.mmsi,
+        a.destination,
+        a.latitude,
+        a.longitude,
+        a.speed,
+        a.status,
+        a.event_timestamp,
+        row_number() OVER (
+          PARTITION BY a.mmsi
+          ORDER BY ${tsParse("a.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.ais_events_ice a
+      WHERE a.mmsi IN (SELECT mmsi FROM sanctioned_list WHERE mmsi IS NOT NULL)
+    ),
+    latest_sanctioned_ais AS (
+      SELECT * FROM sanctioned_ais WHERE rn = 1
+    )`;
+}
+
+/** Sanctioned fleet: registry, destination history, inferred routes (AIS). */
+export function buildSanctionedAnalyticsQueries() {
+  const base = buildSanctionedAisCte();
+  return {
+    kpi: `${base}
+      SELECT
+        COUNT(*) AS total_listed,
+        COUNT(CASE WHEN sl.mmsi IS NOT NULL THEN 1 END) AS with_mmsi,
+        COUNT(la.mmsi) AS with_ais,
+        COUNT(
+          CASE WHEN NULLIF(trim(la.destination), '') IS NOT NULL THEN 1 END
+        ) AS with_destination
+      FROM sanctioned_list sl
+      LEFT JOIN latest_sanctioned_ais la ON sl.mmsi = la.mmsi`,
+    registry: `${base}
+      SELECT
+        sl.name,
+        sl.mmsi,
+        sl.imo,
+        sl.vessel_type,
+        sl.flag,
+        ${sanctionReasonShortExpr("sl")} AS sanction_reason_short,
+        sl.sanction_reason,
+        sl.linked_to,
+        COALESCE(NULLIF(trim(la.destination), ''), '—') AS destination,
+        la.event_timestamp AS latest_ais_time,
+        la.latitude AS latest_latitude,
+        la.longitude AS latest_longitude
+      FROM sanctioned_list sl
+      LEFT JOIN latest_sanctioned_ais la ON sl.mmsi = la.mmsi
+      ORDER BY sl.name`,
+    destinationHistory: `${base},
+    dest_events AS (
+      SELECT
+        COALESCE(NULLIF(trim(a.destination), ''), 'Unknown') AS dest
+      FROM defense.ais_events_ice a
+      WHERE a.mmsi IN (SELECT mmsi FROM sanctioned_list WHERE mmsi IS NOT NULL)
+        AND NULLIF(trim(a.destination), '') IS NOT NULL
+    )
+    SELECT dest AS name, COUNT(*) AS value
+    FROM dest_events
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 16`,
+    topRoutes: `${base},
+    ordered_dest AS (
+      SELECT
+        a.mmsi,
+        NULLIF(trim(a.destination), '') AS dest,
+        ${tsParse("a.event_timestamp")} AS ts
+      FROM defense.ais_events_ice a
+      WHERE a.mmsi IN (SELECT mmsi FROM sanctioned_list WHERE mmsi IS NOT NULL)
+        AND NULLIF(trim(a.destination), '') IS NOT NULL
+    ),
+    with_prev AS (
+      SELECT
+        mmsi,
+        dest,
+        lag(dest) OVER (PARTITION BY mmsi ORDER BY ts) AS prev_dest
+      FROM ordered_dest
+    ),
+    route_legs AS (
+      SELECT concat(prev_dest, ' → ', dest) AS route
+      FROM with_prev
+      WHERE prev_dest IS NOT NULL
+        AND dest IS NOT NULL
+        AND prev_dest <> dest
+    )
+    SELECT route AS name, COUNT(*) AS value
+    FROM route_legs
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 12`,
+    byReason: `${base}
+      SELECT ${sanctionReasonShortExpr("sl")} AS name, COUNT(*) AS value
+      FROM sanctioned_list sl
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 12`,
+    byFlag: `${base}
+      SELECT COALESCE(NULLIF(trim(sl.flag), ''), 'Unknown') AS name, COUNT(*) AS value
+      FROM sanctioned_list sl
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 12`,
+  };
+}
+
 /** AIS position history for route map (optional Filter Rail predicates on ships). */
 export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipName = "" } = {}) {
   const predicates = [
