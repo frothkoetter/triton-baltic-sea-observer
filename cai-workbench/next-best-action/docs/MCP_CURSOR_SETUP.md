@@ -18,7 +18,7 @@ Align host/user with `cdw-analyse/.env.trino.local` (`TRINO_JDBC_URL` / `TRINO_U
 - Upstream: [dipankarmazumdar/iceberg-mcp-server-trino](https://github.com/dipankarmazumdar/iceberg-mcp-server-trino)
 - Launcher: `uvx --from git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main run-server`
 
-**NBA use:** replace ad-hoc `$snapshots` SQL in `snapshot_bundle.py` with MCP tools (list snapshots, describe table, run read-only query for bundle pin). Materialized tables (`nba_mat_*`) stay CTAS in the pipeline or become MCP-assisted validation queries.
+**NBA use:** with `NBA_USE_ICEBERG_MCP=1`, the pipeline calls the same Python tools as the MCP server (`list_snapshots`, optional `get_table_health`) via `src/mcp_snapshot_bundle.py`; on import failure it falls back to JDBC `$snapshots` SQL. Materialized tables (`nba_mat_*`) stay CTAS in the pipeline.
 
 ## Semantica MCP
 

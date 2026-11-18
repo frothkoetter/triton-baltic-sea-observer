@@ -91,6 +91,8 @@ Schreibt `governance_bundle.json` (Artifact-Manifest mit SHA-256, PROV-O JSON-LD
 
 MCP-Beispiel: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) · Anleitung [`docs/MCP_CURSOR_SETUP.md`](docs/MCP_CURSOR_SETUP.md) (Iceberg-Trino-MCP + Semantica; Schema **`defense`**, keine Passwörter im Git).
 
+**Phase 8a (CML / Pipeline):** `NBA_USE_ICEBERG_MCP=1` nutzt `iceberg_mcp_server_trino` (optional `pip install -r requirements-mcp.txt`); sonst JDBC wie bisher. Artefakte: `mcp_audit.json`, Stempel `snapshot_capture_source` in `audit.json`.
+
 DDL einspielen:
 
 ```bash

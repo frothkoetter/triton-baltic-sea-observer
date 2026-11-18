@@ -1,0 +1,3 @@
+# Optional Phase 8a: same Python module as Cursor MCP (install only when NBA_USE_ICEBERG_MCP=1)
+-r requirements.txt
+iceberg-mcp-server-trino @ git+https://github.com/dipankarmazumdar/iceberg-mcp-server-trino@main
