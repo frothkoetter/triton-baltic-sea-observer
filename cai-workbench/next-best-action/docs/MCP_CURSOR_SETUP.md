@@ -31,7 +31,7 @@ Align host/user with `cdw-analyse/.env.trino.local` (`TRINO_JDBC_URL` / `TRINO_U
 |---------------------|--------------|
 | `record_decision` / `query_decisions` | Mirror HITL approve + `decision_record.json` into KG |
 | `extract_entities` / `add_entity` | Enrich `baltic_ontology.json` from incident payloads |
-| SHACL (`run_shacl_validation` in Python job) | Gate `governance_bundle.json` before Trino persist |
+| SHACL (`run_shacl_validation` in Python job) | Same shapes as `data/decision_record.ttl`; CML uses `pyshacl` via `NBA_SHACL_GATE=1` before Trino persist |
 | `export_graph` | Publish Baltic maritime ontology alongside PROV bundle |
 
 `SEMANTICA_KG_PATH` can point at the repo ontology JSON until a full KG is exported to RDF.

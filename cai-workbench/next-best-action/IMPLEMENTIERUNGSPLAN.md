@@ -195,7 +195,7 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 
 **SHACL:** `run_shacl_validation` auf `decision_record`/`grounding` (Turtle) → blockiert `update_decision_artifacts` wenn `conforms=false`.
 
-**Lieferobjekte 8b:** `decision_record.ttl`, `tests/test_decision_shacl.py`.
+**Lieferobjekte 8b:** `data/decision_record.ttl` (SHACL shapes), Artifact `decision_record.ttl` + `shacl_report.json`; `NBA_SHACL_GATE=1` blockiert `update_decision_artifacts`; `tests/test_decision_shacl.py`.
 
 #### 8.3 Cursor / CML
 

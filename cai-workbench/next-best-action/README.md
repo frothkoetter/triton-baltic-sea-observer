@@ -93,6 +93,8 @@ MCP-Beispiel: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) · An
 
 **Phase 8a (CML / Pipeline):** `NBA_USE_ICEBERG_MCP=1` nutzt `iceberg_mcp_server_trino` (optional `pip install -r requirements-mcp.txt`); sonst JDBC wie bisher. Artefakte: `mcp_audit.json`, Stempel `snapshot_capture_source` in `audit.json`.
 
+**Phase 8b (SHACL):** Pro Lauf `decision_record.ttl` + `shacl_report.json` (Shapes in `data/decision_record.ttl`). `NBA_SHACL_GATE=1` verhindert Trino-Persist bei `conforms=false`. Semantica MCP kann dieselben Shapes in Cursor nutzen.
+
 DDL einspielen:
 
 ```bash

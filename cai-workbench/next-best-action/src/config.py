@@ -51,6 +51,12 @@ class Settings:
     use_iceberg_mcp: bool = field(
         default_factory=lambda: _env_bool("NBA_USE_ICEBERG_MCP", False)
     )
+    shacl_gate: bool = field(
+        default_factory=lambda: _env_bool("NBA_SHACL_GATE", False)
+    )
+    export_decision_ttl: bool = field(
+        default_factory=lambda: _env_bool("NBA_EXPORT_DECISION_TTL", True)
+    )
 
     # Greifswald / Adlergrund reference
     demo_lat: float = field(default_factory=lambda: float(os.environ.get("NBA_DEMO_LAT", "54.55")))

@@ -207,11 +207,17 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
             agent_state=agent_state,
             ticks=settings.sim_ticks,
             materialized=materialized_dicts or None,
+            settings=settings,
         )
         audit["decision_record"] = {
             "generated_at": decision["generated_at"],
             "sections_present": list(decision.get("sections", {}).keys()),
         }
+        if decision.get("shacl"):
+            audit["shacl"] = {
+                "conforms": decision["shacl"].get("conforms"),
+                "engine": decision["shacl"].get("engine"),
+            }
         (out_dir / "audit.json").write_text(
             json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
         )
@@ -245,17 +251,21 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         insert_coa_scores(alert.flow_uuid, ranked, settings)
         if settings.phase >= 1:
             grounding_dict = None
-            decision_path = out_dir / "grounding.json"
-            if decision_path.is_file():
-                grounding_dict = json.loads(decision_path.read_text(encoding="utf-8"))
+            grounding_path = out_dir / "grounding.json"
+            if grounding_path.is_file():
+                grounding_dict = json.loads(
+                    grounding_path.read_text(encoding="utf-8")
+                )
             dec_path = out_dir / "decision_record.json"
             if dec_path.is_file():
                 decision_dict = json.loads(dec_path.read_text(encoding="utf-8"))
+                shacl_meta = decision.get("shacl") if decision else None
                 update_decision_artifacts(
                     alert.flow_uuid,
                     decision_record=decision_dict,
                     grounding=grounding_dict,
                     settings=settings,
+                    shacl_report=shacl_meta,
                 )
 
     return PipelineResult(
