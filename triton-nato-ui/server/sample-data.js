@@ -301,6 +301,18 @@ export const sanctions = [
   { Name: "ARISTO", MMSI: 123456011, Type: "Chemical/Products Tanker", Flag: "Liberia", Sanction_Reason: "Blocked under E.O. 14024", Linked_To: "Hennesea Holdings Limited" },
 ];
 
+/** Synthetic AIS destination reports for sanctioned MMSI (offline analytics). */
+export const sanctionedAisDestHistory = [
+  { mmsi: 636022401, destination: "Primorsk" },
+  { mmsi: 636022401, destination: "Primorsk" },
+  { mmsi: 636022401, destination: "Gdańsk" },
+  { mmsi: 636022401, destination: "Gdańsk" },
+  { mmsi: 636022401, destination: "Klaipėda" },
+  { mmsi: 123456011, destination: "Rotterdam" },
+  { mmsi: 123456011, destination: "Gdańsk" },
+  { mmsi: 123456011, destination: "Gdańsk" },
+];
+
 export const areaViolations = [
   { mmsi: 636022401, area_id: "DE-Firing-Bornholm-Bight", flag: "Liberia", violation_time: "2025-10-14T22:15:00Z", ship_name: "HS ATLANTICA" },
   { mmsi: 123456029, area_id: "PL-Defence-Gdansk-Bight", flag: "Russia", violation_time: "2025-10-14T19:40:00Z", ship_name: "Crystal River" },

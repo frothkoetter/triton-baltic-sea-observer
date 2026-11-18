@@ -2,10 +2,12 @@ type Props = {
   columns: string[];
   rows: Record<string, unknown>[];
   hostileColumn?: string;
+  /** Per displayed column: row field name to use as HTML title (full text tooltip). */
+  titleFromColumn?: Record<string, string>;
   onRowClick?: (row: Record<string, unknown>) => void;
 };
 
-export function DataTable({ columns, rows, hostileColumn, onRowClick }: Props) {
+export function DataTable({ columns, rows, hostileColumn, titleFromColumn, onRowClick }: Props) {
   if (!rows.length) {
     return <p className="mono" style={{ color: "var(--text-muted)" }}>No rows</p>;
   }
@@ -30,11 +32,15 @@ export function DataTable({ columns, rows, hostileColumn, onRowClick }: Props) {
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               style={onRowClick ? { cursor: "pointer" } : undefined}
             >
-              {cols.map((c) => (
-                <td key={c} className="mono">
-                  {formatCell(row[c])}
-                </td>
-              ))}
+              {cols.map((c) => {
+                const titleKey = titleFromColumn?.[c];
+                const title = titleKey ? formatCell(row[titleKey]) : undefined;
+                return (
+                  <td key={c} className="mono" title={title !== "—" ? title : undefined}>
+                    {formatCell(row[c])}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

@@ -21,6 +21,7 @@ import {
   getPositionTracks,
   getVesselOutliers,
   getSanctions,
+  getSanctionedAnalytics,
   getSurveillance,
   listTables,
   queryWarehouse,
@@ -232,6 +233,10 @@ app.get("/api/analyses/buoy-analytics", async (_req, res) => {
 
 app.get("/api/analyses/sanctions", async (_req, res) => {
   res.json(await getSanctions());
+});
+
+app.get("/api/analyses/sanctioned-analytics", async (_req, res) => {
+  res.json(await getSanctionedAnalytics());
 });
 
 app.get("/api/analyses/violations", async (_req, res) => {
