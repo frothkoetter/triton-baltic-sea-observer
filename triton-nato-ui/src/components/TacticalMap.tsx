@@ -1,8 +1,33 @@
-import { CircleMarker, MapContainer, Tooltip } from "react-leaflet";
+import { Fragment, useMemo } from "react";
+import { CircleMarker, MapContainer, Polygon, Polyline, Tooltip } from "react-leaflet";
 import type { AisRow } from "../pages/Lagebild";
+import { wktToLineStrings, wktToPolygonRings, type LatLng } from "../lib/wkt-geo";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 
-type Area = { area_id: string; center_latitude: number; center_longitude: number };
+export type ObservationArea = {
+  area_id: string;
+  center_latitude: number;
+  center_longitude: number;
+  polygon?: string | null;
+};
+
+export type OstseeInfraRow = {
+  id: string;
+  name: string;
+  typ: string;
+  geometrie_wkt: string;
+  status?: string;
+  medium?: string;
+};
+
+export type OstseePipelineRow = {
+  pipeline_name: string;
+  medium?: string;
+  status?: string;
+  geo_typ?: string;
+  geometrie_wkt: string;
+  quelle?: string;
+};
 
 export type FleetPosition = {
   mmsi: string;
@@ -33,36 +58,147 @@ export type OutlierRow = {
 
 type Props = {
   ships: AisRow[];
-  areas: Area[];
+  areas: ObservationArea[];
+  infrastruktur: OstseeInfraRow[];
+  pipelines: OstseePipelineRow[];
   outliers: OutlierRow[];
   germanFleet: FleetPosition[];
   russianFleet: FleetPosition[];
   showSanctions: boolean;
+  showAreas: boolean;
+  showInfrastructure: boolean;
 };
+
+function infraLineStyle(row: OstseeInfraRow | OstseePipelineRow) {
+  const medium = String(
+    "medium" in row ? row.medium : (row as OstseeInfraRow).typ ?? ""
+  ).toLowerCase();
+  const isCable =
+    medium.includes("telecom") ||
+    medium.includes("power") ||
+    medium.includes("kabel") ||
+    String((row as OstseeInfraRow).typ ?? "").toLowerCase().includes("seekabel");
+  if (isCable) {
+    return { color: "#26C6DA", weight: 3, dashArray: "6 4", opacity: 0.88 };
+  }
+  return { color: "#FF6F00", weight: 4, dashArray: "10 6", opacity: 0.9 };
+}
 
 export function TacticalMap({
   ships,
   areas,
+  infrastruktur,
+  pipelines,
   outliers,
   germanFleet,
   russianFleet,
   showSanctions,
+  showAreas,
+  showInfrastructure,
 }: Props) {
   const center: [number, number] = [55.5, 17.5];
+
+  const areaPolygons = useMemo(() => {
+    return areas.map((a) => ({
+      id: a.area_id,
+      center: [a.center_latitude, a.center_longitude] as LatLng,
+      rings: a.polygon ? wktToPolygonRings(a.polygon) : [],
+    }));
+  }, [areas]);
+
+  const infraLines = useMemo(() => {
+    if (!showInfrastructure) return [];
+    const out: {
+      key: string;
+      lines: LatLng[][];
+      label: string;
+      meta: string;
+      style: ReturnType<typeof infraLineStyle>;
+    }[] = [];
+    for (const row of infrastruktur) {
+      const lines = wktToLineStrings(row.geometrie_wkt);
+      if (lines.length === 0) continue;
+      out.push({
+        key: `infra-${row.id}`,
+        lines,
+        label: row.name,
+        meta: `${row.typ} · ${row.medium ?? "—"} · ${row.status ?? "—"}`,
+        style: infraLineStyle(row),
+      });
+    }
+    const seenWkt = new Set(infrastruktur.map((r) => r.geometrie_wkt.trim()));
+    for (const row of pipelines) {
+      if (seenWkt.has(row.geometrie_wkt.trim())) continue;
+      const lines = wktToLineStrings(row.geometrie_wkt);
+      if (lines.length === 0) continue;
+      out.push({
+        key: `pipe-${row.pipeline_name}-${row.quelle ?? "wkt"}`,
+        lines,
+        label: row.pipeline_name,
+        meta: `${row.medium ?? "—"} · ${row.status ?? "—"} · ${row.quelle ?? ""}`,
+        style: infraLineStyle(row),
+      });
+    }
+    return out;
+  }, [infrastruktur, pipelines, showInfrastructure]);
+
   return (
     <div className="map-wrap">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
         <BasemapTileLayer />
-        {areas.map((a) => (
-          <CircleMarker
-            key={a.area_id}
-            center={[a.center_latitude, a.center_longitude]}
-            radius={14}
-            pathOptions={{ color: "#FFD54F", fillOpacity: 0.15, weight: 1 }}
-          >
-            <Tooltip>{a.area_id}</Tooltip>
-          </CircleMarker>
-        ))}
+
+        {showAreas &&
+          areaPolygons.map((a) =>
+            a.rings.length > 0 ? (
+              <Fragment key={`poly-${a.id}`}>
+                <Polygon
+                  positions={a.rings}
+                  pathOptions={{
+                    color: "#F9A825",
+                    fillColor: "#FFD54F",
+                    fillOpacity: 0.12,
+                    weight: 2,
+                  }}
+                >
+                  <Tooltip sticky>{a.id} — restricted AOI</Tooltip>
+                </Polygon>
+              </Fragment>
+            ) : null
+          )}
+
+        {showInfrastructure &&
+          infraLines.map((item) =>
+            item.lines.map((positions, idx) => (
+              <Polyline
+                key={`${item.key}-${idx}`}
+                positions={positions}
+                pathOptions={item.style}
+              >
+                {idx === 0 && (
+                  <Tooltip sticky>
+                    <span className="mono">
+                      <strong>{item.label}</strong>
+                      <br />
+                      {item.meta}
+                    </span>
+                  </Tooltip>
+                )}
+              </Polyline>
+            ))
+          )}
+
+        {showAreas &&
+          areas.map((a) => (
+            <CircleMarker
+              key={a.area_id}
+              center={[a.center_latitude, a.center_longitude]}
+              radius={10}
+              pathOptions={{ color: "#F9A825", fillOpacity: 0.2, weight: 1, fillColor: "#FFD54F" }}
+            >
+              <Tooltip>{a.area_id}</Tooltip>
+            </CircleMarker>
+          ))}
+
         {germanFleet.map((u) => (
           <CircleMarker
             key={`de-${u.mmsi}-${u.event_timestamp}`}
@@ -165,6 +301,23 @@ export function TacticalMap({
           );
         })}
       </MapContainer>
+      {(showInfrastructure || showAreas) && (
+        <div className="map-legend map-legend-infra" aria-hidden>
+          <span className="map-legend-item">
+            <i className="map-legend-swatch" style={{ background: "#FF6F00" }} /> Pipeline / Gas
+          </span>
+          <span className="map-legend-item">
+            <i className="map-legend-swatch" style={{ background: "#26C6DA" }} /> Seekabel
+          </span>
+          <span className="map-legend-item">
+            <i
+              className="map-legend-swatch map-legend-swatch-area"
+              style={{ background: "rgba(255, 213, 79, 0.45)" }}
+            />{" "}
+            Restricted AOI
+          </span>
+        </div>
+      )}
     </div>
   );
 }

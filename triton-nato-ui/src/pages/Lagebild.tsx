@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
 import { RouteTrackMap } from "../components/RouteTrackMap";
-import { TacticalMap, type FleetPosition, type OutlierRow } from "../components/TacticalMap";
+import {
+  TacticalMap,
+  type FleetPosition,
+  type ObservationArea,
+  type OstseeInfraRow,
+  type OstseePipelineRow,
+  type OutlierRow,
+} from "../components/TacticalMap";
 import {
   filterAisRows,
   filterFleetBySelection,
@@ -58,6 +65,44 @@ function normalizeFleet(row: Record<string, unknown>): FleetPosition | null {
   };
 }
 
+function normalizeOstseeInfra(row: Record<string, unknown>): OstseeInfraRow | null {
+  const wkt = String(row.geometrie_wkt ?? row.Geometrie_Wkt ?? "").trim();
+  if (!wkt) return null;
+  return {
+    id: String(row.id ?? row.Id ?? ""),
+    name: String(row.name ?? row.Name ?? ""),
+    typ: String(row.typ ?? row.Typ ?? ""),
+    geometrie_wkt: wkt,
+    status: row.status != null ? String(row.status) : undefined,
+    medium: row.medium != null ? String(row.medium) : undefined,
+  };
+}
+
+function normalizeOstseePipeline(row: Record<string, unknown>): OstseePipelineRow | null {
+  const wkt = String(row.geometrie_wkt ?? row.Geometrie_Wkt ?? "").trim();
+  if (!wkt) return null;
+  return {
+    pipeline_name: String(row.pipeline_name ?? row.Pipeline_Name ?? ""),
+    medium: row.medium != null ? String(row.medium) : undefined,
+    status: row.status != null ? String(row.status) : undefined,
+    geo_typ: row.geo_typ != null ? String(row.geo_typ) : undefined,
+    geometrie_wkt: wkt,
+    quelle: row.quelle != null ? String(row.quelle) : undefined,
+  };
+}
+
+function normalizeArea(row: Record<string, unknown>): ObservationArea | null {
+  const lat = Number(row.center_latitude ?? row.Center_Latitude);
+  const lon = Number(row.center_longitude ?? row.Center_Longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return {
+    area_id: String(row.area_id ?? row.Area_Id ?? ""),
+    center_latitude: lat,
+    center_longitude: lon,
+    polygon: row.polygon != null ? String(row.polygon) : undefined,
+  };
+}
+
 function normalizeOutlier(row: Record<string, unknown>): OutlierRow | null {
   const lat = Number(row.latitude ?? row.Latitude);
   const lon = Number(row.longitude ?? row.Longitude);
@@ -84,7 +129,9 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
   );
 
   const [ais, setAis] = useState<AisRow[]>([]);
-  const [areas, setAreas] = useState<{ area_id: string; center_latitude: number; center_longitude: number }[]>([]);
+  const [areas, setAreas] = useState<ObservationArea[]>([]);
+  const [ostseeInfra, setOstseeInfra] = useState<OstseeInfraRow[]>([]);
+  const [ostseePipelines, setOstseePipelines] = useState<OstseePipelineRow[]>([]);
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [source, setSource] = useState("…");
   const [trackSource, setTrackSource] = useState("…");
@@ -96,6 +143,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
   const [layers, setLayers] = useState({
     ais: true,
     areas: true,
+    infrastructure: true,
     sanctions: true,
     outliers: true,
     germanFleet: true,
@@ -105,9 +153,14 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
 
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, outlierRes, fleetRes, kpiRes] = await Promise.all([
+      const [aisRes, areaRes, infraRes, outlierRes, fleetRes, kpiRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
-        fetchJson<{ rows?: typeof areas; source?: string }>("/api/observation-areas"),
+        fetchJson<{ rows?: ObservationArea[]; source?: string }>("/api/observation-areas"),
+        fetchJson<{
+          infrastruktur?: OstseeInfraRow[];
+          pipelines?: OstseePipelineRow[];
+          source?: string;
+        }>("/api/ostsee-infrastructure"),
         fetchJson<{ rows?: OutlierRow[]; source?: string }>("/api/vessel-outliers"),
         fetchJson<{
           german?: Record<string, unknown>[];
@@ -117,7 +170,19 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         fetchJson<Kpis & { ok: boolean }>("/api/kpis"),
       ]);
       setAis(aisRes.rows ?? []);
-      setAreas(areaRes.rows ?? []);
+      setAreas(
+        (areaRes.rows ?? [])
+          .map((r) => normalizeArea(r as Record<string, unknown>))
+          .filter((r): r is ObservationArea => r != null)
+      );
+      setOstseeInfra(
+        (infraRes.infrastruktur ?? []).map((r) => normalizeOstseeInfra(r as Record<string, unknown>)).filter(Boolean) as OstseeInfraRow[]
+      );
+      setOstseePipelines(
+        (infraRes.pipelines ?? [])
+          .map((r) => normalizeOstseePipeline(r as Record<string, unknown>))
+          .filter(Boolean) as OstseePipelineRow[]
+      );
       setOutliers(
         (outlierRes.rows ?? [])
           .map((r) => normalizeOutlier(r as Record<string, unknown>))
@@ -234,6 +299,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
             "outliers",
             "routeTracks",
             "areas",
+            "infrastructure",
             "sanctions",
           ] as const
         ).map((key) => (
@@ -254,8 +320,10 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
                     : key === "routeTracks"
                       ? `Route tracks 24h (${trackLegend.total})`
                       : key === "areas"
-                        ? "Restricted Areas"
-                        : "Sanctions overlay"}
+                        ? `Restricted Areas (${areas.length})`
+                        : key === "infrastructure"
+                          ? `Pipelines & Cables (${ostseeInfra.length + ostseePipelines.length})`
+                          : "Sanctions overlay"}
           </button>
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
@@ -267,11 +335,15 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         <h2 className="panel-title">Lagebild — AIS &amp; Anomalies (visual 123)</h2>
         <TacticalMap
           ships={layers.ais ? filteredAis : []}
-          areas={layers.areas ? areas : []}
+          areas={areas}
+          infrastruktur={ostseeInfra}
+          pipelines={ostseePipelines}
           outliers={layers.outliers ? filteredOutliers : []}
           germanFleet={layers.germanFleet ? filteredGerman : []}
           russianFleet={layers.russianFleet ? filteredRussian : []}
           showSanctions={layers.sanctions}
+          showAreas={layers.areas}
+          showInfrastructure={layers.infrastructure}
         />
       </section>
 
