@@ -37,7 +37,12 @@ import {
   getNbaTrinoState,
   listNbaIncidents,
 } from "./nba.js";
-import { loadDecisionRecord, loadGovernanceBundle, loadPlaybook } from "./nba-artifacts.js";
+import {
+  loadDecisionRecord,
+  loadGovernanceBundle,
+  loadPlaybook,
+  loadSemanticaRecord,
+} from "./nba-artifacts.js";
 import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
 import {
   fetchSitrepPdfBase64,
@@ -143,6 +148,14 @@ app.get("/api/nba/incidents/:flowUuid/coa-runs", async (req, res) => {
 app.get("/api/nba/incidents/:flowUuid/governance-bundle", (req, res) => {
   try {
     res.json(loadGovernanceBundle(req.params.flowUuid));
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+});
+
+app.get("/api/nba/incidents/:flowUuid/semantica-record", (req, res) => {
+  try {
+    res.json(loadSemanticaRecord(req.params.flowUuid));
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err.message || err) });
   }

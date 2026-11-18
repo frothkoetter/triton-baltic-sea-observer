@@ -59,3 +59,21 @@ export function loadGovernanceBundle(flowUuid) {
   }
   return { ok: false, source: "missing" };
 }
+
+export function loadSemanticaRecord(flowUuid) {
+  const file = path.join(artifactsRoot(), flowUuid, "semantica_record.json");
+  if (fs.existsSync(file)) {
+    return {
+      ok: true,
+      source: "artifacts",
+      record: JSON.parse(fs.readFileSync(file, "utf8")),
+    };
+  }
+  return { ok: false, source: "missing" };
+}
+
+export function hasSemanticaRecord(flowUuid) {
+  return fs.existsSync(
+    path.join(artifactsRoot(), flowUuid, "semantica_record.json"),
+  );
+}

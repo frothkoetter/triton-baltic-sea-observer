@@ -129,6 +129,16 @@ def main() -> int:
         action="store_true",
         help="Phase 3: template narrative only (no model call)",
     )
+    parser.add_argument(
+        "--shacl-gate",
+        action="store_true",
+        help="Phase 8b: block Trino persist when SHACL fails",
+    )
+    parser.add_argument(
+        "--iceberg-mcp",
+        action="store_true",
+        help="Phase 8a: snapshot capture via MCP module (JDBC fallback on CML)",
+    )
     args, _unknown = parser.parse_known_args(_filter_kernel_argv())
 
     if args.demo_greifswald:
@@ -143,6 +153,10 @@ def main() -> int:
         os.environ["NBA_PERSIST_TRINO"] = "1"
     if args.skip_llm:
         os.environ["NBA_SKIP_LLM"] = "1"
+    if args.shacl_gate:
+        os.environ["NBA_SHACL_GATE"] = "1"
+    if args.iceberg_mcp:
+        os.environ["NBA_USE_ICEBERG_MCP"] = "1"
 
     settings = Settings()
     settings.artifacts_dir = (_ROOT / settings.artifacts_dir).resolve()
@@ -172,6 +186,21 @@ def main() -> int:
         if result.agent_state.llm_used:
             print("agent_llm=1")
     print(f"artifacts={result.artifact_dir}")
+    sem_path = result.artifact_dir / "semantica_record.json"
+    if sem_path.is_file():
+        print(f"semantica_record={sem_path}")
+    shacl_path = result.artifact_dir / "shacl_report.json"
+    if shacl_path.is_file():
+        import json as _json
+
+        sh = _json.loads(shacl_path.read_text(encoding="utf-8"))
+        print(f"shacl_conforms={sh.get('conforms')} engine={sh.get('engine')}")
+    mcp_path = result.artifact_dir / "mcp_audit.json"
+    if mcp_path.is_file():
+        import json as _json
+
+        m = _json.loads(mcp_path.read_text(encoding="utf-8"))
+        print(f"snapshot_capture_source={m.get('capture_source')}")
     if result.sensor_gates:
         print(f"sensor_gates={result.sensor_gates}")
     if result.simulations:

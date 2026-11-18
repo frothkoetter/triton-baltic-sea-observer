@@ -199,8 +199,10 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 
 #### 8.3 Cursor / CML
 
-- **Cursor:** MCP für Snapshot-Debug, Ontologie, `find_precedents`.
-- **CML:** `run_nba.py` unverändert; SHACL optional als Post-Step ohne MCP.
+- **Cursor:** MCP für Snapshot-Debug, Ontologie, `find_precedents`; Felder aus `semantica_record.json`.
+- **CML:** [`docs/CML_PHASE8_RUNBOOK.md`](docs/CML_PHASE8_RUNBOOK.md); CLI `--shacl-gate`, `--iceberg-mcp`.
+
+**Lieferobjekte 8.3:** `semantica_record.json`, `src/semantica_export.py`, CML runbook, HITL `GET …/semantica-record`.
 
 #### 8.4 Später (CDP)
 

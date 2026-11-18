@@ -26,6 +26,8 @@ def artifact_manifest(artifact_dir: Path) -> list[dict[str, Any]]:
         "decision_record.json",
         "decision_record.ttl",
         "shacl_report.json",
+        "semantica_record.json",
+        "mcp_audit.json",
         "grounding.json",
         "scenario_matrix.json",
         "red_blue_replay.json",

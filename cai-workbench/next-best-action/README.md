@@ -105,6 +105,8 @@ python3 run_nba.py --demo-greifswald --phase 7 --skip-llm --offline
 
 **Phase 8b (SHACL):** Pro Lauf `decision_record.ttl` + `shacl_report.json` (Shapes in `data/decision_record.ttl`). `NBA_SHACL_GATE=1` verhindert Trino-Persist bei `conforms=false`. Semantica MCP kann dieselben Shapes in Cursor nutzen.
 
+**Phase 8.3 (CML):** [`docs/CML_PHASE8_RUNBOOK.md`](docs/CML_PHASE8_RUNBOOK.md) · Artefakt `semantica_record.json` · CLI `--shacl-gate` / `--iceberg-mcp`.
+
 DDL einspielen:
 
 ```bash
