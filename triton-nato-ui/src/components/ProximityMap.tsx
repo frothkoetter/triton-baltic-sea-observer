@@ -66,10 +66,14 @@ export function ProximityMap({ events, selectedId }: Props) {
               pathOptions={{ color: lineColor, weight, opacity }}
             >
               <Popup>
-                <div className="mono proximity-popup">
+                <div className="proximity-popup">
                   <strong>Schiff A:</strong> {ev.ship_a}
                   <br />
+                  <span className="mono text-muted">MMSI {ev.ship_a_mmsi}</span>
+                  <br />
                   <strong>Schiff B:</strong> {ev.ship_b}
+                  <br />
+                  <span className="mono text-muted">MMSI {ev.ship_b_mmsi}</span>
                   <br />
                   <strong>Abstand:</strong> {ev.distance_km.toFixed(3)} km
                   <br />
@@ -96,8 +100,8 @@ export function ProximityMap({ events, selectedId }: Props) {
                 weight: selected ? 2 : 1,
               }}
             >
-              <Tooltip permanent direction="top" offset={[0, -6]} className="proximity-mmsi-label">
-                {ev.ship_a}
+              <Tooltip permanent direction="top" offset={[0, -6]} className="proximity-ship-label">
+                {ev.ship_a_name ?? ev.ship_a}
               </Tooltip>
             </CircleMarker>,
             <CircleMarker
@@ -111,8 +115,8 @@ export function ProximityMap({ events, selectedId }: Props) {
                 weight: selected ? 2 : 1,
               }}
             >
-              <Tooltip permanent direction="top" offset={[0, -6]} className="proximity-mmsi-label">
-                {ev.ship_b}
+              <Tooltip permanent direction="top" offset={[0, -6]} className="proximity-ship-label">
+                {ev.ship_b_name ?? ev.ship_b}
               </Tooltip>
             </CircleMarker>,
           ];

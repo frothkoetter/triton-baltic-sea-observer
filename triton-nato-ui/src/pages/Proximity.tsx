@@ -19,6 +19,7 @@ export function ProximityPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<"live" | "sample" | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [registrySource, setRegistrySource] = useState<"live" | "sample" | "none" | null>(null);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -29,12 +30,14 @@ export function ProximityPage() {
         setRawEvents(fallbackEvents as ProximityEventRaw[]);
         setDataSource("sample");
         setFallbackReason(res.error ?? res.fallbackReason ?? "Empty API response");
-        setLoadError(res.error ?? "Using embedded sample data");
+        setLoadError(res.error ?? "Leere API-Antwort");
+        setRegistrySource(res.registrySource ?? null);
         return;
       }
       setRawEvents(res.events);
       setDataSource(res.source ?? "sample");
       setFallbackReason(res.fallbackReason ?? null);
+      setRegistrySource(res.registrySource ?? null);
     } catch (err) {
       setRawEvents(fallbackEvents as ProximityEventRaw[]);
       setDataSource("sample");
@@ -87,17 +90,36 @@ export function ProximityPage() {
     return sortAsc ? " ▲" : " ▼";
   }
 
+  function proximityStatusHint(reason: string | null): string {
+    if (!reason) return "Eingebettete Nähe-Beispieldaten.";
+    if (reason.includes("PROXIMITY_ALERT_API_KEY")) {
+      return "Live-API: PROXIMITY_ALERT_API_KEY fehlt in den App-Secrets — Proximity-SSB wird nicht abgerufen.";
+    }
+    if (reason.includes("TRITON_FORCE_SAMPLE_DATA")) {
+      return "TRITON_FORCE_SAMPLE_DATA=true — erzwungener Demo-Modus.";
+    }
+    return reason;
+  }
+
   const feedBadge =
     dataSource === "live" ? (
-      <span className="status-ok">LIVE PROXIMITY API</span>
+      <span className="status-ok">LIVE — Proximity API</span>
     ) : dataSource === "sample" ? (
       <span className="status-warn">SAMPLE / FALLBACK</span>
+    ) : null;
+
+  const registryBadge =
+    registrySource === "live" ? (
+      <span className="status-ok subtle-badge">Schiffe: Trino defense.ships</span>
+    ) : registrySource === "sample" ? (
+      <span className="status-warn subtle-badge">Schiffe: eingebettetes MMSI-Register</span>
     ) : null;
 
   return (
     <div>
       <div className="proximity-toolbar">
         {feedBadge}
+        {registryBadge}
         <button type="button" className="btn-secondary" disabled={loading} onClick={() => void loadEvents()}>
           {loading ? "Lädt…" : "Aktualisieren"}
         </button>
@@ -105,9 +127,9 @@ export function ProximityPage() {
       {loading && events.length === 0 ? (
         <p className="proximity-status-msg">Proximity-Daten werden geladen…</p>
       ) : null}
-      {!loading && loadError && dataSource === "sample" ? (
+      {!loading && dataSource === "sample" ? (
         <p className="proximity-status-msg proximity-status-warn" title={fallbackReason ?? undefined}>
-          API nicht erreichbar — eingebettete Beispieldaten ({events.length} Ereignisse).
+          Kein Live-Feed — {proximityStatusHint(fallbackReason)} ({events.length} Ereignisse).
         </p>
       ) : null}
 
@@ -224,8 +246,8 @@ function ProximityRow({
       tabIndex={0}
       role="button"
     >
-      <td className="mono">{ev.ship_a}</td>
-      <td className="mono">{ev.ship_b}</td>
+      <td title={`MMSI ${ev.ship_a_mmsi}`}>{ev.ship_a}</td>
+      <td title={`MMSI ${ev.ship_b_mmsi}`}>{ev.ship_b}</td>
       <td className="mono" style={{ color: distColor }}>
         {ev.distance_km.toFixed(3)}
       </td>
