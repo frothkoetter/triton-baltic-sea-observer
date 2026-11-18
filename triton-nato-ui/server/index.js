@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   getAis,
+  getAisAnalytics,
   getAreaViolations,
   getConnectionState,
   getDatasets,
@@ -168,8 +169,26 @@ app.get("/api/kpis", async (_req, res) => {
   res.json(await getKpis());
 });
 
-app.get("/api/ais", async (_req, res) => {
-  res.json(await getAis());
+app.get("/api/ais", async (req, res) => {
+  const q = req.query ?? {};
+  res.json(
+    await getAis({
+      flag: String(q.flag ?? "").trim(),
+      vesselType: String(q.vessel_type ?? q.vesselType ?? "").trim(),
+      shipName: String(q.ship_name ?? q.shipName ?? "").trim(),
+    })
+  );
+});
+
+app.get("/api/analyses/ais-analytics", async (req, res) => {
+  const q = req.query ?? {};
+  res.json(
+    await getAisAnalytics({
+      flag: String(q.flag ?? "").trim(),
+      vesselType: String(q.vessel_type ?? q.vesselType ?? "").trim(),
+      shipName: String(q.ship_name ?? q.shipName ?? "").trim(),
+    })
+  );
 });
 
 app.get("/api/vessel-outliers", async (_req, res) => {

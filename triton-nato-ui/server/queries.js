@@ -10,6 +10,117 @@ const tsParse = (alias) => `coalesce(
   try_cast(replace(${alias}, 'Z', '') AS timestamp)
 )`;
 
+/** Latest AIS row per MMSI (Filter Rail predicates on `ships`). */
+export function buildAisLatestSnapshotCte({ flag = "", vesselType = "", shipName = "" } = {}) {
+  const predicates = ["a.latitude IS NOT NULL", "a.longitude IS NOT NULL"];
+  if (flag) predicates.push(`s.flag = ${sqlLiteral(flag)}`);
+  if (vesselType) predicates.push(`s.vessel_type = ${sqlLiteral(vesselType)}`);
+  if (shipName) predicates.push(`s.ship_name = ${sqlLiteral(shipName)}`);
+  return `
+    WITH latest AS (
+      SELECT
+        a.mmsi,
+        s.ship_name,
+        s.vessel_type,
+        s.flag,
+        a.status,
+        a.Destination AS destination,
+        a.speed,
+        a.latitude,
+        a.longitude,
+        a.course,
+        a.event_timestamp,
+        row_number() OVER (
+          PARTITION BY a.mmsi
+          ORDER BY ${tsParse("a.event_timestamp")} DESC
+        ) AS rn
+      FROM defense.ais_events_ice a
+      LEFT JOIN defense.ships s ON a.mmsi = s.mmsi
+      WHERE ${predicates.join("\n        AND ")}
+    ),
+    ais_snapshot AS (
+      SELECT * FROM latest WHERE rn = 1
+    )`;
+}
+
+export function buildAisLatestSql(filters = {}) {
+  return `
+    ${buildAisLatestSnapshotCte(filters)}
+    SELECT
+      mmsi,
+      ship_name,
+      vessel_type,
+      flag,
+      latitude,
+      longitude,
+      speed,
+      course,
+      event_timestamp,
+      status,
+      destination
+    FROM ais_snapshot
+    ORDER BY ${tsParse("event_timestamp")} DESC
+    LIMIT 500
+  `;
+}
+
+export function buildAisAnalyticsQueries(filters = {}) {
+  const cte = buildAisLatestSnapshotCte(filters);
+  return {
+    kpi: `${cte}
+      SELECT
+        COUNT(*) AS total_ships,
+        ROUND(AVG(speed), 2) AS avg_sog,
+        SUM(CASE WHEN COALESCE(speed, 0) >= 0.5 THEN 1 ELSE 0 END) AS underway_count
+      FROM ais_snapshot`,
+    byFlag: `${cte}
+      SELECT COALESCE(flag, 'Unknown') AS name, COUNT(*) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 20`,
+    byType: `${cte}
+      SELECT COALESCE(vessel_type, 'Unknown') AS name, COUNT(*) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 16`,
+    topDestinations: `${cte}
+      SELECT
+        COALESCE(NULLIF(trim(destination), ''), 'Unknown') AS name,
+        COUNT(*) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 12`,
+    byStatus: `${cte}
+      SELECT COALESCE(NULLIF(trim(status), ''), 'Unknown') AS name, COUNT(*) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 12`,
+    bySpeedBand: `${cte}
+      SELECT
+        CASE
+          WHEN speed IS NULL OR speed < 0.5 THEN 'At anchor / moored'
+          WHEN speed < 4 THEN 'Slow (<4 kn)'
+          WHEN speed < 12 THEN 'Coastal (4–12 kn)'
+          ELSE 'Open sea (>12 kn)'
+        END AS name,
+        COUNT(*) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      ORDER BY 2 DESC`,
+    avgSogByFlag: `${cte}
+      SELECT COALESCE(flag, 'Unknown') AS name, ROUND(AVG(speed), 2) AS value
+      FROM ais_snapshot
+      GROUP BY 1
+      HAVING COUNT(*) >= 1
+      ORDER BY 2 DESC
+      LIMIT 16`,
+  };
+}
+
 /** AIS position history for route map (optional Filter Rail predicates on ships). */
 export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipName = "" } = {}) {
   const predicates = [

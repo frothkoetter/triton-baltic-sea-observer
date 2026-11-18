@@ -15,6 +15,8 @@ import {
   ZAxis,
 } from "recharts";
 import { fetchJson, type QueryResult } from "../api";
+import { aisAnalyticsQuery, type AisAnalyticsPayload } from "../lib/ais-analytics-api";
+import type { LagebildFilters } from "../lib/lagebild-filters";
 import { BuoyAnalyticsMap } from "../components/BuoyAnalyticsMap";
 import { DataTable } from "../components/DataTable";
 import {
@@ -100,33 +102,47 @@ function chartRows(rows: Record<string, unknown>[] | undefined) {
   }));
 }
 
-export function AnalysenPage() {
+type AnalysenPageProps = LagebildFilters;
+
+export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) {
   const [tab, setTab] = useState<TabId>("fleet");
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
+  const [aisAnalytics, setAisAnalytics] = useState<AisAnalyticsPayload | null>(null);
   const [sanctions, setSanctions] = useState<QueryResult | null>(null);
   const [violations, setViolations] = useState<QueryResult | null>(null);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
 
+  const filterQs = aisAnalyticsQuery({ flag, vesselType, shipName });
+
   useEffect(() => {
     void (async () => {
-      const [fa, bu, ru, a, s, v] = await Promise.all([
+      const [fa, bu, ru, s, v] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
-        fetchJson<QueryResult>("/api/ais"),
         fetchJson<QueryResult>("/api/analyses/sanctions"),
         fetchJson<QueryResult>("/api/analyses/violations"),
       ]);
       setFleetAnalytics(fa);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
-      setAis(a);
       setSanctions(s);
       setViolations(v);
     })();
   }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const [aa, a] = await Promise.all([
+        fetchJson<AisAnalyticsPayload>(`/api/analyses/ais-analytics${filterQs}`),
+        fetchJson<QueryResult>(`/api/ais${filterQs}`),
+      ]);
+      setAisAnalytics(aa);
+      setAis(a);
+    })();
+  }, [filterQs]);
 
   const p = fleetAnalytics?.panels;
   const bp = buoyAnalytics?.panels;
@@ -144,7 +160,11 @@ export function AnalysenPage() {
     inRestricted: rp?.restrictedUnits?.rows?.length ?? 0,
     transit: rusUnits.filter((u) => String(u.activity) === "Transit").length,
   };
-  const aisByFlag = aggregate(ais?.rows ?? [], "flag");
+  const ap = aisAnalytics?.panels;
+  const aisKpi = ap?.kpi?.rows?.[0];
+  const filterSummary = [flag && `Flag: ${flag}`, vesselType && `Typ: ${vesselType}`, shipName && `Schiff: ${shipName}`]
+    .filter(Boolean)
+    .join(" · ");
   const sanctionsByFlag = aggregate(sanctions?.rows ?? [], "Flag");
 
   return (
@@ -327,14 +347,67 @@ export function AnalysenPage() {
       )}
 
       {tab === "ais" && (
-        <div className="analyses-grid">
-          <section className="panel">
-            <h2 className="panel-title">Ships by flag</h2>
-            <ChartBars data={aisByFlag} />
-          </section>
-          <section className="panel">
-            <h2 className="panel-title">AIS positions (sample)</h2>
-            <DataTable columns={ais?.columns ?? []} rows={(ais?.rows ?? []).slice(0, 80)} />
+        <div className="analyses-ais">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            Letzte AIS-Position pro MMSI (<code>ais_events_ice</code> ⋈ <code>ships</code>). Quelle:{" "}
+            {aisAnalytics?.source ?? "…"}
+            {filterSummary ? ` · Filter: ${filterSummary}` : " · Kein Filter aktiv"}
+            {aisAnalytics?.fallbackReason ? ` — fallback (${aisAnalytics.fallbackReason})` : ""}
+          </p>
+          <div className="kpi-row">
+            <div className="kpi">
+              <div className="kpi-value">{Number(aisKpi?.total_ships ?? 0)}</div>
+              <div className="kpi-label">Schiffe (unique MMSI)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value mono" style={{ fontSize: 22 }}>
+                {Number(aisKpi?.avg_sog ?? 0).toFixed(1)}
+              </div>
+              <div className="kpi-label">Ø SOG (kn)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value mono" style={{ fontSize: 22 }}>
+                {Number(aisKpi?.underway_count ?? 0)}
+              </div>
+              <div className="kpi-label">Underway (SOG ≥ 0,5)</div>
+            </div>
+          </div>
+          <div className="analyses-grid analyses-ais-grid">
+            <section className="panel">
+              <h2 className="panel-title">Schiffe nach Flagge</h2>
+              <p className="panel-subtitle">Anzahl Einheiten pro Flaggenstaat</p>
+              <ChartBars data={chartRows(ap?.byFlag?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Schiffe nach Typ</h2>
+              <p className="panel-subtitle">vessel_type aus ships</p>
+              <ChartPie data={chartRows(ap?.byType?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Top Zielhäfen</h2>
+              <p className="panel-subtitle">AIS Destination (letzte Meldung)</p>
+              <ChartBars data={chartRows(ap?.topDestinations?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Navigationsstatus</h2>
+              <p className="panel-subtitle">AIS status</p>
+              <ChartPie data={chartRows(ap?.byStatus?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Geschwindigkeit</h2>
+              <p className="panel-subtitle">SOG-Bänder (letzte Position)</p>
+              <ChartBars data={chartRows(ap?.bySpeedBand?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Ø SOG nach Flagge</h2>
+              <p className="panel-subtitle">Durchschnittliche SOG pro Flaggenstaat</p>
+              <ChartBars data={chartRows(ap?.avgSogByFlag?.rows)} />
+            </section>
+          </div>
+          <section className="panel" style={{ marginTop: 8 }}>
+            <h2 className="panel-title">AIS Snapshot (gefiltert)</h2>
+            <p className="panel-subtitle">Entspricht Filter Rail — max. 500 Zeilen</p>
+            <DataTable columns={ais?.columns ?? []} rows={(ais?.rows ?? []).slice(0, 120)} />
           </section>
         </div>
       )}
