@@ -205,6 +205,17 @@ a {
   opacity: 0.9;
 }
 
+/* Recharts tooltips on dark panels */
+.recharts-default-tooltip {
+  color: var(--text-primary) !important;
+}
+
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value,
+.recharts-tooltip-label {
+  color: var(--text-primary) !important;
+}
+
 .kpi-row {
   display: flex;
   gap: 8px;

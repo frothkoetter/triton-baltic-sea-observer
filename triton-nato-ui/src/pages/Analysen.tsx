@@ -24,6 +24,16 @@ type TabId = (typeof TABS)[number]["id"];
 
 const CHART_COLORS = ["#4DA3FF", "#8B9CAB", "#3DDC84", "#FFB020", "#E53935", "#FFD54F"];
 
+const CHART_TOOLTIP_PROPS = {
+  contentStyle: {
+    background: "#1C2630",
+    border: "1px solid #2A3540",
+    color: "#E6EDF3",
+  },
+  labelStyle: { color: "#E6EDF3" },
+  itemStyle: { color: "#8B9CAB" },
+};
+
 type AnalyticsPanel = {
   columns?: string[];
   rows?: Record<string, unknown>[];
@@ -222,7 +232,7 @@ function ChartBars({ data }: { data: { name: string; value: number }[] }) {
         <BarChart data={data}>
           <XAxis dataKey="name" tick={{ fill: "#8B9CAB", fontSize: 11 }} interval={0} angle={-25} textAnchor="end" height={60} />
           <YAxis tick={{ fill: "#8B9CAB", fontSize: 11 }} />
-          <Tooltip contentStyle={{ background: "#1C2630", border: "1px solid #2A3540" }} />
+          <Tooltip {...CHART_TOOLTIP_PROPS} />
           <Bar dataKey="value" fill="#4DA3FF" />
         </BarChart>
       </ResponsiveContainer>
@@ -243,7 +253,7 @@ function ChartPie({ data }: { data: { name: string; value: number }[] }) {
               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip contentStyle={{ background: "#1C2630", border: "1px solid #2A3540" }} />
+          <Tooltip {...CHART_TOOLTIP_PROPS} />
         </PieChart>
       </ResponsiveContainer>
     </div>
