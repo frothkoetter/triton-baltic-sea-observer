@@ -260,6 +260,124 @@ export function buildSanctionedAnalyticsQueries() {
   };
 }
 
+function buildRestrictedPositionsCte() {
+  return `
+    WITH observation_polygons AS (
+      SELECT
+        area_id,
+        ST_GeometryFromText(polygon) AS geom
+      FROM defense.observation_areas
+      WHERE coalesce(tier, 'A') = 'A'
+    ),
+    positions_inside AS (
+      SELECT
+        e.mmsi,
+        s.ship_name,
+        s.vessel_type,
+        s.flag,
+        o.area_id,
+        e.latitude,
+        e.longitude,
+        e.event_timestamp
+      FROM defense.ais_events_ice e
+      INNER JOIN observation_polygons o
+        ON ST_Within(ST_Point(e.longitude, e.latitude), o.geom)
+      LEFT JOIN defense.ships s ON e.mmsi = s.mmsi
+      WHERE e.latitude IS NOT NULL
+        AND e.longitude IS NOT NULL
+    )`;
+}
+
+/** Tier-A restricted zones: vessels inside AOIs, provocateurs, route tracks for map. */
+export function buildRestrictedAnalyticsQueries() {
+  const cte = buildRestrictedPositionsCte();
+  return {
+    kpi: `${cte}
+      SELECT
+        COUNT(DISTINCT mmsi) AS unique_vessels,
+        COUNT(DISTINCT area_id) AS zones_with_traffic,
+        COUNT(*) AS position_reports,
+        COUNT(DISTINCT CONCAT(CAST(mmsi AS varchar), ':', area_id)) AS vessel_zone_visits
+      FROM positions_inside`,
+    byZone: `${cte}
+      SELECT area_id AS name, COUNT(DISTINCT mmsi) AS value
+      FROM positions_inside
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 20`,
+    byFlag: `${cte}
+      SELECT COALESCE(NULLIF(trim(flag), ''), 'Unknown') AS name, COUNT(DISTINCT mmsi) AS value
+      FROM positions_inside
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 16`,
+    topByType: `${cte}
+      SELECT COALESCE(NULLIF(trim(vessel_type), ''), 'Unknown') AS name, COUNT(DISTINCT mmsi) AS value
+      FROM positions_inside
+      GROUP BY 1
+      ORDER BY 2 DESC
+      LIMIT 12`,
+    topVessels: `${cte}
+      SELECT
+        COALESCE(ship_name, CAST(mmsi AS varchar)) AS ship_name,
+        mmsi,
+        COALESCE(vessel_type, 'Unknown') AS vessel_type,
+        COALESCE(flag, 'Unknown') AS flag,
+        COUNT(DISTINCT area_id) AS zones_hit,
+        COUNT(*) AS reports_inside
+      FROM positions_inside
+      GROUP BY 1, 2, 3, 4
+      ORDER BY zones_hit DESC, reports_inside DESC
+      LIMIT 20`,
+    provocateurs: `${cte},
+    ranked AS (
+      SELECT
+        COALESCE(ship_name, CAST(mmsi AS varchar)) AS ship_name,
+        mmsi,
+        COALESCE(vessel_type, 'Unknown') AS vessel_type,
+        COALESCE(flag, 'Unknown') AS flag,
+        COUNT(DISTINCT area_id) AS zones_hit,
+        COUNT(*) AS reports_inside,
+        ROW_NUMBER() OVER (
+          ORDER BY COUNT(DISTINCT area_id) DESC, COUNT(*) DESC
+        ) AS rn
+      FROM positions_inside
+      GROUP BY 1, 2, 3, 4
+    )
+    SELECT ship_name, mmsi, vessel_type, flag, zones_hit, reports_inside
+    FROM ranked
+    WHERE rn <= 12
+    ORDER BY zones_hit DESC, reports_inside DESC`,
+    routeTracks: `${cte},
+    top_mmsi AS (
+      SELECT mmsi
+      FROM (
+        SELECT
+          mmsi,
+          COUNT(DISTINCT area_id) AS zones_hit,
+          COUNT(*) AS reports_inside
+        FROM positions_inside
+        GROUP BY 1
+        ORDER BY 2 DESC, 3 DESC
+        LIMIT 8
+      )
+    )
+    SELECT
+      p.mmsi,
+      p.ship_name,
+      p.vessel_type,
+      p.flag,
+      p.area_id,
+      p.latitude,
+      p.longitude,
+      p.event_timestamp
+    FROM positions_inside p
+    WHERE p.mmsi IN (SELECT mmsi FROM top_mmsi)
+    ORDER BY p.mmsi, p.area_id, ${tsParse("p.event_timestamp")} ASC
+    LIMIT 3500`,
+  };
+}
+
 /** AIS position history for route map (optional Filter Rail predicates on ships). */
 export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipName = "" } = {}) {
   const predicates = [

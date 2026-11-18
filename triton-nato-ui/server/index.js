@@ -22,6 +22,7 @@ import {
   getVesselOutliers,
   getSanctions,
   getSanctionedAnalytics,
+  getRestrictedAnalytics,
   getSurveillance,
   listTables,
   queryWarehouse,
@@ -241,6 +242,10 @@ app.get("/api/analyses/sanctioned-analytics", async (_req, res) => {
 
 app.get("/api/analyses/violations", async (_req, res) => {
   res.json(await getAreaViolations());
+});
+
+app.get("/api/analyses/restricted-analytics", async (_req, res) => {
+  res.json(await getRestrictedAnalytics());
 });
 
 app.get("/api/analyses/surveillance", async (_req, res) => {

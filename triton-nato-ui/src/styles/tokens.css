@@ -582,6 +582,16 @@ a {
   min-height: 300px;
 }
 
+.restricted-map-panel {
+  min-height: 420px;
+}
+
+.restricted-map-wrap {
+  height: 380px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .analyses-buoys-grid .buoy-map-panel {
   min-height: 360px;
 }
