@@ -47,3 +47,15 @@ export async function loadDecisionRecord(flowUuid, trinoLoader) {
   const sample = { ...decisionSample, flow_uuid: flowUuid };
   return { ok: true, source: "sample", record: sample };
 }
+
+export function loadGovernanceBundle(flowUuid) {
+  const file = path.join(artifactsRoot(), flowUuid, "governance_bundle.json");
+  if (fs.existsSync(file)) {
+    return {
+      ok: true,
+      source: "artifacts",
+      bundle: JSON.parse(fs.readFileSync(file, "utf8")),
+    };
+  }
+  return { ok: false, source: "missing" };
+}
