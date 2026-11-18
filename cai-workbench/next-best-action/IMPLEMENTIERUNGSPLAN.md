@@ -159,7 +159,16 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 | What-if | `what_if_red_doctrines.json` — evasive / aggressive / cooperative replays in decision §9 |
 | UI | HITL decision recorder shows mat tables + doctrine comparison |
 
-### Phase 7 — Governance & MCP (optional, CDP)
+### Phase 7 — Governance export + agent orchestration (umgesetzt)
+
+| Komponente | Ort |
+| :---- | :---- |
+| Agents | `agent_orchestrator.py` — SimAnalyst + GovSeal steps (CrewAI hook) |
+| PROV | `governance_export.py` → `governance_bundle.json`, `decision_record.prov.jsonld` |
+| CLI | `run_nba.py --phase 7` |
+| UI | HITL link to `GET …/governance-bundle` when artifacts exist |
+
+### Phase 8 — MCP & Semantica (optional, CDP)
 
 Nur wenn Workbench-MCP-Server produktiv:
 
@@ -222,7 +231,7 @@ FOR VERSION AS OF 7500014872264610121;
 
 **Umgesetzt (Phase 1):** `sim_adapter.py` (Transit-ETAs, Red-vs.-Blue-Ticks, K130-Replay), `env_gates.py`, `simulation_trace.json`, Score-Blending nach Simulation.
 
-**Als Nächstes (Phase 7):** Governance / MCP, CrewAI `@persist`.
+**Als Nächstes (Phase 8):** MCP-Server, `run_shacl_validation`, CrewAI `@persist`.
 
 Referenzen:
 

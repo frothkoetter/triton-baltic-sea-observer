@@ -79,6 +79,14 @@ python3 run_nba.py --phase 3 --persist-trino
 
 Erzeugt `nba_mat_<flow>_<table>` Iceberg-Kopien und Einträge in `nba_materialized_tables`. Decision record §2 listet Mat-Tabellen; §9 enthält Red-doctrine What-if-Vergleiche.
 
+## Phase 7 — Governance / PROV
+
+```bash
+python3 run_nba.py --demo-greifswald --phase 7 --skip-llm
+```
+
+Schreibt `governance_bundle.json` (Artifact-Manifest mit SHA-256, PROV-O JSON-LD) und erweitert `agent_steps` um SimAnalyst + GovSeal.
+
 DDL einspielen:
 
 ```bash

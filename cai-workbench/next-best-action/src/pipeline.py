@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from .agent_flow import run_agent_flow
+from .agent_orchestrator import run_orchestrator_closure
+from .governance_export import export_governance_bundle
 from .hitl_artifacts import finalize_hitl_artifacts
 from .alert_rules import next_alert
 from .alert_types import NbaAlert
@@ -104,8 +106,16 @@ def run_phase3(settings: Settings | None = None) -> PipelineResult:
     return _run_pipeline(settings)
 
 
+def run_phase7(settings: Settings | None = None) -> PipelineResult:
+    settings = settings or Settings()
+    settings.phase = 7
+    return _run_pipeline(settings)
+
+
 def run_pipeline(settings: Settings | None = None) -> PipelineResult:
     settings = settings or Settings()
+    if settings.phase >= 7:
+        return run_phase7(settings)
     if settings.phase >= 3:
         return run_phase3(settings)
     if settings.phase >= 1:
@@ -154,6 +164,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         )
 
     agent_state = None
+    decision: dict[str, Any] | None = None
     if settings.phase >= 3:
         agent_state = run_agent_flow(
             settings=settings,
@@ -187,6 +198,27 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         audit["decision_record"] = {
             "generated_at": decision["generated_at"],
             "sections_present": list(decision.get("sections", {}).keys()),
+        }
+        (out_dir / "audit.json").write_text(
+            json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+    if settings.phase >= 7 and decision and agent_state is not None:
+        sim_dicts = [s.to_dict() for s in simulations] if simulations else None
+        agent_state = run_orchestrator_closure(
+            agent_state,
+            out_dir,
+            simulations=sim_dicts,
+            decision_record=decision,
+        )
+        gov = export_governance_bundle(
+            out_dir,
+            flow_uuid=alert.flow_uuid,
+            decision_record=decision,
+        )
+        audit["governance_bundle"] = {
+            "exported_at": gov["exported_at"],
+            "artifact_count": len(gov["artifact_manifest"]),
         }
         (out_dir / "audit.json").write_text(
             json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"

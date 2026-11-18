@@ -120,9 +120,9 @@ def main() -> int:
     parser.add_argument(
         "--phase",
         type=int,
-        choices=(0, 1, 3),
+        choices=(0, 1, 3, 7),
         default=None,
-        help="Pipeline phase: 0=COA only, 1=+sim, 3=+playbook/LLM (default NBA_PHASE)",
+        help="Pipeline phase: 0=COA, 1=+sim, 3=+playbook/LLM, 7=+governance/PROV (default NBA_PHASE)",
     )
     parser.add_argument(
         "--skip-llm",
