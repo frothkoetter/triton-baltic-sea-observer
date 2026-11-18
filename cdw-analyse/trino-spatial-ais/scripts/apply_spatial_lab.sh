@@ -22,6 +22,7 @@ run_file() {
   "$PYTHON" "$CDW/run_trino_ddl.py" "$f"
 }
 
+run_file "$ROOT/sql/06_tier_a_observation_areas.sql"
 run_file "$ROOT/sql/01_schema_spatial_core.sql"
 run_file "$ROOT/sql/02_view_area_violation.sql"
 run_file "$ROOT/sql/03_ostsee_infrastruktur.sql"

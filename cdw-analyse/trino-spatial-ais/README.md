@@ -12,12 +12,14 @@ Schema: **`iceberg.defense`** (Triton). Koordinaten immer **`longitude latitude`
 
 | Pfad | Inhalt |
 |------|--------|
-| `sql/01–05_*.sql` | AOI, Infrastruktur, **GeoJSON staging**, **segmentierte Pipelines** |
+| `sql/01–06_*.sql` | AOI (**Tier A** military areas), Infrastruktur, **GeoJSON staging**, **segmentierte Pipelines** |
 | `sql/queries/05_*.sql` | Mehrfach-Pipeline-Überquerungen (LEAD + WKT) |
 | `sql/queries/06–08_*.sql` | Korridor, **segmentiert+BBox**, **AIS-Blackouts** |
 | `scripts/rebuild_pipelines.sh` | Nur `04`+`05` neu aufbauen |
 | `data/sample_ais_pipeline_track.csv` | MMSI entlang Mock-Pipeline |
 | `scripts/sync_emodnet_baltic.py` | EMODnet WFS → **WKT**-Parquet/GeoJSON |
+| `scripts/build_emodnet_tier_a_restricted.py` | EMODnet military → Tier-A `observation_areas` JSON/SQL |
+| `scripts/apply_tier_a_observation_areas.py` | Tier-A DDL auf live Trino anwenden |
 | `scripts/download_emodnet.sh` | curl WFS oder Python-Sync |
 | `scripts/apply_spatial_lab.sh` | DDL auf Trino |
 | `scripts/e2e_trino_ais.py` | E2E inkl. Pipeline-Queries |
@@ -51,6 +53,6 @@ python scripts/e2e_trino_ais.py --load-sample --load-pipeline-track --load-black
 | Korridor | `ST_Buffer(geom, 0.005)` |
 | Geodätisch | `to_spherical_geography(ST_Point(...))` |
 
-Zusätzlich AOI: `observation_areas.polygon` als `POLYGON`, View `area_violation`.
+Zusätzlich AOI: `observation_areas` = **17 kuratierte Tier-A-Sperrgebiete** (EMODnet `militaryareaspoly`, kein Mock-Bathymetrie), View `area_violation`. Regenerieren: `python3 scripts/build_emodnet_tier_a_restricted.py`.
 
 Voll-DDL Triton: [`../create_db_tables_trino.sql`](../create_db_tables_trino.sql) — enthält `ostsee_infrastruktur`, `ostsee_pipelines`, `ostsee_pipelines_segmented`, `ais_daten`. Seed-Geometrien stammen aus **EMODnet Human Activities** WFS ([Pipelines](https://emodnet.ec.europa.eu/en/human-activities), `emodnet:pipelines`, `emodnet:pcablesbshcontis`); gebündelt in [`data/emodnet_baltic_seed_assets.json`](data/emodnet_baltic_seed_assets.json), Regenerierung: `python3 scripts/build_emodnet_baltic_seed.py`. Das Spatial-Lab (`sql/04`+`05`) bleibt für Voll-Rebuilds.
