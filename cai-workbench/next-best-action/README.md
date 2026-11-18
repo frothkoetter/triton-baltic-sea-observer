@@ -87,6 +87,10 @@ python3 run_nba.py --demo-greifswald --phase 7 --skip-llm
 
 Schreibt `governance_bundle.json` (Artifact-Manifest mit SHA-256, PROV-O JSON-LD) und erweitert `agent_steps` um SimAnalyst + GovSeal.
 
+## Phase 8 — MCP (Cursor)
+
+MCP-Beispiel: [`.cursor/mcp.json.example`](../../.cursor/mcp.json.example) · Anleitung [`docs/MCP_CURSOR_SETUP.md`](docs/MCP_CURSOR_SETUP.md) (Iceberg-Trino-MCP + Semantica; Schema **`defense`**, keine Passwörter im Git).
+
 DDL einspielen:
 
 ```bash
