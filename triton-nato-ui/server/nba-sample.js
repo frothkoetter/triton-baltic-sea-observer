@@ -35,31 +35,69 @@ export const nbaIncidentsSample = [
   },
 ];
 
+const DETAIL = {
+  A: {
+    coa_id: "A",
+    title: "Gestaffelter Multidomänen-Verbund (ICEYE SAR + P-8A + K130)",
+    gates_passed: true,
+    gate_fail_reasons: [],
+    score_latenz: 1,
+    score_entdeckung: 0.92,
+    score_eskalation: 0.75,
+    score_kosten: 0.45,
+    score_total: 0.866,
+  },
+  D: {
+    coa_id: "D",
+    title: "Passive UAV/Partner-Beobachtung",
+    gates_passed: true,
+    gate_fail_reasons: [],
+    score_latenz: 0.85,
+    score_entdeckung: 0.28,
+    score_eskalation: 0.8,
+    score_kosten: 0.85,
+    score_total: 0.713,
+  },
+  B: {
+    coa_id: "B",
+    title: "Nordsee-Fregatten + optische EO",
+    gates_passed: false,
+    gate_fail_reasons: ["EO blocked: night or cloud cover > 15%"],
+    score_latenz: 0.5,
+    score_entdeckung: 0.35,
+    score_eskalation: 0.7,
+    score_kosten: 0.3,
+    score_total: 0,
+  },
+  C: {
+    coa_id: "C",
+    title: "K130-Einzelfahrt + ALB-LiDAR",
+    gates_passed: false,
+    gate_fail_reasons: ["ALB blocked: turbidity or depth > 15m"],
+    score_latenz: 0.85,
+    score_entdeckung: 0.4,
+    score_eskalation: 0.65,
+    score_kosten: 0.65,
+    score_total: 0,
+  },
+};
+
 export function nbaCoaRunsSample(flowUuid) {
-  return [
-    {
+  return ["A", "D", "B", "C"].map((coa_id, idx) => {
+    const d = DETAIL[coa_id];
+    const gates_passed = d.gates_passed;
+    const rank = gates_passed ? (coa_id === "A" ? 1 : coa_id === "D" ? 2 : idx + 1) : 0;
+    return {
       flow_uuid: flowUuid,
-      coa_id: "A",
-      rank: 1,
-      score_total: 0.866,
-      gates_passed: true,
-      detail_json: '{"title":"Multidomänen-Verbund"}',
-    },
-    {
-      flow_uuid: flowUuid,
-      coa_id: "D",
-      rank: 2,
-      score_total: 0.713,
-      gates_passed: true,
-      detail_json: '{"title":"Passive UAV"}',
-    },
-    {
-      flow_uuid: flowUuid,
-      coa_id: "B",
-      rank: 0,
-      score_total: 0,
-      gates_passed: false,
-      detail_json: "{}",
-    },
-  ];
+      coa_id,
+      rank,
+      score_total: d.score_total,
+      score_latenz: d.score_latenz,
+      score_entdeckung: d.score_entdeckung,
+      score_eskalation: d.score_eskalation,
+      score_kosten: d.score_kosten,
+      gates_passed,
+      detail_json: JSON.stringify(d),
+    };
+  });
 }

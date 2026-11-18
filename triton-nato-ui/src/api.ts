@@ -59,6 +59,10 @@ export type NbaCoaRun = {
   coa_id: string;
   rank?: number | null;
   score_total?: number | null;
+  score_latenz?: number | null;
+  score_entdeckung?: number | null;
+  score_eskalation?: number | null;
+  score_kosten?: number | null;
   gates_passed?: boolean;
   detail_json?: string;
 };
@@ -78,6 +82,14 @@ export async function fetchNbaCoaRuns(flowUuid: string): Promise<{
   source?: string;
 }> {
   return fetchJson(`/api/nba/incidents/${encodeURIComponent(flowUuid)}/coa-runs`);
+}
+
+export async function fetchNbaDecisionRecord(flowUuid: string): Promise<{
+  ok?: boolean;
+  record?: import("./lib/nba-decision").NbaDecisionRecord;
+  source?: string;
+}> {
+  return fetchJson(`/api/nba/incidents/${encodeURIComponent(flowUuid)}/decision-record`);
 }
 
 export async function approveNbaCoa(

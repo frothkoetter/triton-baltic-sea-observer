@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { approveNbaCoa, fetchNbaCoaRuns, fetchNbaIncidents, type NbaIncident, type NbaCoaRun } from "../api";
+import {
+  approveNbaCoa,
+  fetchNbaCoaRuns,
+  fetchNbaDecisionRecord,
+  fetchNbaIncidents,
+  type NbaIncident,
+  type NbaCoaRun,
+} from "../api";
+import { NbaDecisionRecorder } from "../components/NbaDecisionRecorder";
+import { NbaRuleCitationButton } from "../components/NbaRuleCitation";
+import type { NbaDecisionRecord } from "../lib/nba-decision";
+import { parseCoaDetail } from "../lib/nba-decision";
 
 const COA_LABELS: Record<string, string> = {
   A: "Multidomänen-Verbund (SAR + P-8A + K130)",
@@ -13,6 +24,8 @@ export function NbaHitlPage() {
   const [source, setSource] = useState("…");
   const [selected, setSelected] = useState<string | null>(null);
   const [coaRuns, setCoaRuns] = useState<NbaCoaRun[]>([]);
+  const [decision, setDecision] = useState<NbaDecisionRecord | null>(null);
+  const [decisionSource, setDecisionSource] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -27,6 +40,12 @@ export function NbaHitlPage() {
     setCoaRuns(res.rows ?? []);
   }, []);
 
+  const loadDecision = useCallback(async (flowUuid: string) => {
+    const res = await fetchNbaDecisionRecord(flowUuid);
+    setDecision(res.record ?? null);
+    setDecisionSource(res.source ?? "");
+  }, []);
+
   useEffect(() => {
     void loadIncidents();
   }, [loadIncidents]);
@@ -34,10 +53,12 @@ export function NbaHitlPage() {
   useEffect(() => {
     if (selected) {
       void loadCoa(selected);
+      void loadDecision(selected);
     } else {
       setCoaRuns([]);
+      setDecision(null);
     }
-  }, [selected, loadCoa]);
+  }, [selected, loadCoa, loadDecision]);
 
   async function onApprove(coaId: string) {
     if (!selected) return;
@@ -49,19 +70,21 @@ export function NbaHitlPage() {
       setMsg(res.error ?? "Approval failed");
       return;
     }
-    setMsg(`Approved COA ${coaId.toUpperCase()}`);
+    setMsg(`Approved COA ${coaId.toUpperCase()} (§7 HITL)`);
     await loadIncidents();
     await loadCoa(selected);
   }
 
   const detail = incidents.find((i) => i.flow_uuid === selected);
+  const ruleCitations = decision?.sections?.["4_rules_and_ontology"]?.grounding?.rule_citations ?? [];
 
   return (
     <div className="nba-hitl">
       <header className="panel-head">
         <h1>NBA — Course of Action (HITL)</h1>
         <p className="text-muted">
-          Data: <strong>{source}</strong> · Trino <code>nba_incidents</code> / <code>nba_coa_runs</code>
+          Data: <strong>{source}</strong> · Trino <code>nba_incidents</code> / <code>nba_coa_runs</code> ·
+          artifacts <code>decision_record.json</code>
         </p>
       </header>
 
@@ -117,47 +140,81 @@ export function NbaHitlPage() {
                 </dd>
               </dl>
 
-              <h3>COA matrix</h3>
-              <table className="data-table compact">
+              {ruleCitations.length > 0 && (
+                <div className="nba-grounding-bar">
+                  <span className="text-muted">Rules:&nbsp;</span>
+                  {ruleCitations.map((c) => (
+                    <NbaRuleCitationButton key={c.rule_id} ruleId={c.rule_id} fallback={c} />
+                  ))}
+                </div>
+              )}
+
+              <h3>COA matrix (scores · gates · rank)</h3>
+              <table className="data-table compact nba-coa-matrix">
                 <thead>
                   <tr>
                     <th>COA</th>
-                    <th>Score</th>
+                    <th>Total</th>
+                    <th>Latenz</th>
+                    <th>Entdeck.</th>
+                    <th>Esk.</th>
+                    <th>Kosten</th>
                     <th>Gates</th>
                     <th>Rank</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {coaRuns.map((run) => (
-                    <tr key={run.coa_id}>
-                      <td>
-                        <strong>{run.coa_id}</strong>
-                        <div className="text-muted" style={{ fontSize: 11 }}>
-                          {COA_LABELS[run.coa_id] ?? run.coa_id}
-                        </div>
-                      </td>
-                      <td>{run.score_total?.toFixed(3) ?? "—"}</td>
-                      <td>{run.gates_passed ? "PASS" : "FAIL"}</td>
-                      <td>{run.rank ?? "—"}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-approve"
-                          disabled={busy || !run.gates_passed}
-                          onClick={() => void onApprove(run.coa_id)}
-                        >
-                          Approve
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {coaRuns.map((run) => {
+                    const parsed = parseCoaDetail(run.detail_json);
+                    const failReasons = parsed?.gate_fail_reasons ?? [];
+                    return (
+                      <tr key={run.coa_id} className={!run.gates_passed ? "nba-coa-fail" : ""}>
+                        <td>
+                          <strong>{run.coa_id}</strong>
+                          <div className="text-muted" style={{ fontSize: 11 }}>
+                            {COA_LABELS[run.coa_id] ?? parsed?.title ?? run.coa_id}
+                          </div>
+                        </td>
+                        <td>{run.score_total?.toFixed(3) ?? parsed?.score_total?.toFixed(3) ?? "—"}</td>
+                        <td>{fmt(run.score_latenz ?? parsed?.score_latenz)}</td>
+                        <td>{fmt(run.score_entdeckung ?? parsed?.score_entdeckung)}</td>
+                        <td>{fmt(run.score_eskalation ?? parsed?.score_eskalation)}</td>
+                        <td>{fmt(run.score_kosten ?? parsed?.score_kosten)}</td>
+                        <td title={failReasons.join("; ")}>
+                          {run.gates_passed ? "PASS" : "FAIL"}
+                          {!run.gates_passed && failReasons[0] && (
+                            <div className="text-muted" style={{ fontSize: 10 }}>
+                              {failReasons[0]}
+                            </div>
+                          )}
+                        </td>
+                        <td>{run.rank ?? "—"}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn-approve"
+                            disabled={busy || !run.gates_passed}
+                            onClick={() => void onApprove(run.coa_id)}
+                          >
+                            Approve §7
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+
+              <NbaDecisionRecorder record={decision} recordSource={decisionSource} />
             </>
           )}
         </section>
       </div>
     </div>
   );
+}
+
+function fmt(v: number | null | undefined): string {
+  return v == null ? "—" : v.toFixed(3);
 }

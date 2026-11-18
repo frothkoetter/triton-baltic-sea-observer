@@ -143,6 +143,7 @@ def build_nba_messages(context: dict) -> list[dict[str, str]]:
     system = (
         "You are a NATO maritime ops advisor. Write 2 short paragraphs in German: "
         "(1) situation tied to the alert, (2) recommended COA with legal/OPSEC caveats. "
+        "Cite playbook rule ids in brackets, e.g. [JAMMER_PASSIVE_BIAS], only from legal.applicable_rule_ids. "
         "Do not invent asset positions. Use only provided facts."
     )
     user = json.dumps(context, ensure_ascii=False, indent=2)

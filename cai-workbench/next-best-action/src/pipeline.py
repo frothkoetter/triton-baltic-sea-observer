@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .agent_flow import run_agent_flow
+from .hitl_artifacts import finalize_hitl_artifacts
 from .alert_rules import next_alert
 from .alert_types import NbaAlert
 from .config import Settings
@@ -145,6 +146,27 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         )
         audit["playbook_best_coa_id"] = agent_state.playbook_best_coa_id
         audit["agent_narrative_preview"] = (agent_state.agent_narrative or "")[:400]
+        (out_dir / "audit.json").write_text(
+            json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+    if settings.phase >= 1:
+        decision = finalize_hitl_artifacts(
+            artifact_dir=out_dir,
+            alert=alert,
+            bundle=bundle,
+            env=env,
+            ranked=ranked,
+            best_coa_id=best,
+            sensor_gates=gates.to_dict(),
+            simulations=simulations,
+            agent_state=agent_state,
+            ticks=settings.sim_ticks,
+        )
+        audit["decision_record"] = {
+            "generated_at": decision["generated_at"],
+            "sections_present": list(decision.get("sections", {}).keys()),
+        }
         (out_dir / "audit.json").write_text(
             json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
         )

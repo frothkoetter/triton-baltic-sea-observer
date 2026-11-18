@@ -1,0 +1,49 @@
+{
+  "version": "2026-11",
+  "namespace": "https://triton.baltic/defense#",
+  "alert_types": {
+    "gps_jammer": {
+      "iri": "triton:GPSJammingEvent",
+      "label": "GPS jamming / PNT degradation",
+      "emodnet_hint": "HumanActivities:ElectronicWarfare"
+    },
+    "lagebild_flash": {
+      "iri": "triton:LagebildFlashPriority",
+      "label": "Lagebild FLASH escalation"
+    },
+    "ais_pipeline_blackout": {
+      "iri": "triton:AISBlackoutNearCriticalInfrastructure",
+      "label": "AIS blackout near pipeline CUI segment"
+    },
+    "rus_fleet_proximity": {
+      "iri": "triton:AdversaryFleetProximity",
+      "label": "Russian Federation naval unit proximity"
+    },
+    "sitrep_escalation": {
+      "iri": "triton:SitrepEscalation",
+      "label": "SITREP ESCALATED theme"
+    },
+    "demo_greifswald": {
+      "iri": "triton:TrainingScenarioGreifswald",
+      "label": "Training scenario — Greifswald / Adlergrund"
+    }
+  },
+  "rulebook_refs": {
+    "NATO:MC362-2§collective-opsec": {
+      "label": "MC 362/2 Collective OPSEC",
+      "summary": "Limit disclosure of friendly positions and intent during cueing."
+    },
+    "UNCLOS:Art19-innocent-passage": {
+      "label": "UNCLOS Art. 19 (indicative)",
+      "summary": "Innocent passage — activities not prejudicial to peace."
+    },
+    "UNCLOS:Art25-coastal-rights": {
+      "label": "UNCLOS Art. 25 (indicative)",
+      "summary": "Coastal state jurisdiction in territorial sea."
+    },
+    "BALTIC:CUI-pipeline-corridor": {
+      "label": "Baltic CUI pipeline corridor",
+      "summary": "National coordination for critical underwater infrastructure segments."
+    }
+  }
+}

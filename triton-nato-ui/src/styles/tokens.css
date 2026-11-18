@@ -338,6 +338,92 @@ a {
   font-size: 13px;
 }
 
+.nba-detail {
+  max-height: calc(100vh - 160px);
+  overflow: auto;
+}
+
+.nba-grounding-bar,
+.nba-rule-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.nba-rule-link {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-amber);
+  color: var(--accent-amber);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.nba-rule-link:hover {
+  background: rgba(255, 176, 32, 0.12);
+}
+
+.nba-rule-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.nba-rule-modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  max-width: 520px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.nba-rule-modal-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.nba-rule-modal-body {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+
+.nba-decision-recorder {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+
+.nba-decision-section {
+  margin-bottom: 14px;
+}
+
+.nba-decision-section h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.nba-coa-fail td {
+  opacity: 0.72;
+}
+
+.nba-pin-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .data-table.compact td,
 .data-table.compact th {
   padding: 4px 6px;

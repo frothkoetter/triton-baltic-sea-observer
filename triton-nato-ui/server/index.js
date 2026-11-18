@@ -36,6 +36,7 @@ import {
   getNbaTrinoState,
   listNbaIncidents,
 } from "./nba.js";
+import { loadDecisionRecord, loadPlaybook } from "./nba-artifacts.js";
 import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
 import {
   fetchSitrepPdfBase64,
@@ -135,6 +136,20 @@ app.get("/api/nba/incidents/:flowUuid/coa-runs", async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(400).json({ ok: false, error: String(err.message || err) });
+  }
+});
+
+app.get("/api/nba/rules-playbook", (_req, res) => {
+  const { source, playbook } = loadPlaybook();
+  res.json({ ok: true, source, playbook });
+});
+
+app.get("/api/nba/incidents/:flowUuid/decision-record", (req, res) => {
+  try {
+    const data = loadDecisionRecord(req.params.flowUuid);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message || err) });
   }
 });
 
