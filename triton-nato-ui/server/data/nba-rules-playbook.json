@@ -1,0 +1,44 @@
+{
+  "version": "2026-11",
+  "references": [
+    "MC 362/2 Collective OPSEC",
+    "UNCLOS Art. 19/25 innocent passage (indicative)"
+  ],
+  "alert_rules": [
+    {
+      "id": "JAMMER_PASSIVE_BIAS",
+      "alert_types": ["gps_jammer", "lagebild_flash"],
+      "message": "GPS jamming: prefer passive/multidomain (SAR/ELINT) before heavy surface approach.",
+      "full_text": "When GPS jamming or PNT degradation is assessed, cue passive and multidomain ISR (SAR, ELINT) before committing heavy surface units that advertise intent. FLASH priority may override heavy-surface blocks when C2 directs immediate action.",
+      "ontology_term": "triton:GPSJammingEvent",
+      "rulebook_ref": "NATO:MC362-2§collective-opsec",
+      "disallow_coa_flags": ["requires_heavy_surface"],
+      "unless_priority": "FLASH"
+    },
+    {
+      "id": "PIPELINE_SOVEREIGN_SENSITIVE",
+      "alert_types": ["ais_pipeline_blackout"],
+      "message": "Pipeline corridor: coordinate national C2; avoid public-domain disclosure of exact segment.",
+      "full_text": "AIS blackout adjacent to a critical underwater infrastructure segment requires bilateral/national C2 coordination. Do not publish exact pipeline segment identifiers in UNCLASSIFIED products; tasking follows national pipeline sovereignty procedures.",
+      "ontology_term": "triton:AISBlackoutNearCriticalInfrastructure",
+      "rulebook_ref": "BALTIC:CUI-pipeline-corridor",
+      "required_notes": ["pipeline_sovereignty"]
+    },
+    {
+      "id": "RUS_FLEET_DEESCALATION",
+      "alert_types": ["rus_fleet_proximity"],
+      "message": "Russian fleet proximity: passive ISR first; surface escalation requires explicit ROE gate.",
+      "full_text": "Adversary fleet proximity in the Baltic theatre defaults to passive ISR and MC 362/2–compatible first response. Heavy surface escalation requires explicit ROE and discovery threshold review unless contact remains undetected below policy limits.",
+      "ontology_term": "triton:AdversaryFleetProximity",
+      "rulebook_ref": "UNCLOS:Art19-innocent-passage",
+      "disallow_coa_flags": ["requires_heavy_surface"],
+      "unless_best_discovery_below": 0.5
+    }
+  ],
+  "coa_legal_notes": {
+    "A": "Multidomain cueing; share metadata under existing bilateral arrangements.",
+    "B": "Heavy surface + EO — confirm territorial sea / EEZ tasking.",
+    "C": "K130 + ALB — shallow-water only; depth and turbidity gates apply.",
+    "D": "Passive/partner — default MC 362–compatible first response."
+  }
+}

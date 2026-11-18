@@ -1,0 +1,730 @@
+{
+  "flow_uuid": "49d1d9d5-2ef1-458b-9ca9-d5284bae2b1a",
+  "generated_at": "2026-11-18T17:25:29.154465+00:00",
+  "sections": {
+    "1_what_happened": {
+      "theatre": "Greifswald / Adlergrund",
+      "alert_type": "demo_greifswald",
+      "priority": "FLASH",
+      "position": {
+        "lat": 54.55,
+        "lon": 14.1
+      },
+      "triggers": [
+        "ais_dropout",
+        "acoustic_transient"
+      ],
+      "payload_excerpt": {
+        "triggers": [
+          "ais_dropout",
+          "acoustic_transient"
+        ],
+        "cloud_cover_pct": 82,
+        "seastate": 4,
+        "night": true,
+        "water_depth_m": 18,
+        "turbidity_high": true
+      }
+    },
+    "2_data_pin": {
+      "flow_uuid": "49d1d9d5-2ef1-458b-9ca9-d5284bae2b1a",
+      "snapshots": [
+        {
+          "table_name": "ships",
+          "snapshot_id": 1,
+          "committed_at": "2026-11-18 17:25:27.864724+00:00"
+        },
+        {
+          "table_name": "ais_events_ice",
+          "snapshot_id": 1,
+          "committed_at": "2026-11-18 17:25:27.864724+00:00"
+        }
+      ],
+      "lagebild_note": "Lagebild live-only; facts pinned via snapshot bundle."
+    },
+    "3_ranked_coas": {
+      "best_coa_id": "A",
+      "playbook_best_coa_id": null,
+      "coa_scores": [
+        {
+          "coa_id": "A",
+          "title": "Gestaffelter Multidomänen-Verbund (ICEYE SAR + P-8A + K130)",
+          "gates_passed": true,
+          "gate_fail_reasons": [],
+          "score_latenz": 1.0,
+          "score_entdeckung": 0.932,
+          "score_eskalation": 0.75,
+          "score_kosten": 0.45,
+          "score_total": 0.9062
+        },
+        {
+          "coa_id": "B",
+          "title": "Nordsee-Fregatten + optische EO",
+          "gates_passed": false,
+          "gate_fail_reasons": [
+            "EO blocked: night or cloud cover > 15%"
+          ],
+          "score_latenz": 0.5,
+          "score_entdeckung": 0.35,
+          "score_eskalation": 0.7,
+          "score_kosten": 0.3,
+          "score_total": 0.0
+        },
+        {
+          "coa_id": "C",
+          "title": "K130-Einzelfahrt + ALB-LiDAR",
+          "gates_passed": false,
+          "gate_fail_reasons": [
+            "ALB blocked: turbidity or depth > 15m"
+          ],
+          "score_latenz": 0.85,
+          "score_entdeckung": 0.4,
+          "score_eskalation": 0.65,
+          "score_kosten": 0.65,
+          "score_total": 0.0
+        },
+        {
+          "coa_id": "D",
+          "title": "Passive UAV/Partner-Beobachtung",
+          "gates_passed": false,
+          "gate_fail_reasons": [
+            "Passive track hold weak at seastate >= 4"
+          ],
+          "score_latenz": 0.85,
+          "score_entdeckung": 0.28,
+          "score_eskalation": 0.8,
+          "score_kosten": 0.85,
+          "score_total": 0.0
+        }
+      ]
+    },
+    "4_rules_and_ontology": {
+      "grounding": {
+        "ontology_version": "2026-11",
+        "incident_concept": "triton:TrainingScenarioGreifswald",
+        "incident_concept_label": "Training scenario — Greifswald / Adlergrund",
+        "alert_type_iri": "triton:TrainingScenarioGreifswald",
+        "rulebook_refs": [
+          {
+            "ref": "MC 362/2 Collective OPSEC",
+            "label": "MC 362/2 Collective OPSEC",
+            "summary": ""
+          },
+          {
+            "ref": "UNCLOS Art. 19/25 innocent passage (indicative)",
+            "label": "UNCLOS Art. 19/25 innocent passage (indicative)",
+            "summary": ""
+          }
+        ],
+        "rule_citations": [],
+        "coa_justifications": [
+          {
+            "coa_id": "A",
+            "rank": 1,
+            "gates_passed": true,
+            "gate_fail_reasons": [],
+            "rules": [],
+            "legal_note": "Multidomain cueing; share metadata under existing bilateral arrangements.",
+            "recommended": true
+          },
+          {
+            "coa_id": "B",
+            "rank": null,
+            "gates_passed": false,
+            "gate_fail_reasons": [
+              "EO blocked: night or cloud cover > 15%"
+            ],
+            "rules": [],
+            "legal_note": "Heavy surface + EO — confirm territorial sea / EEZ tasking.",
+            "recommended": false
+          },
+          {
+            "coa_id": "C",
+            "rank": null,
+            "gates_passed": false,
+            "gate_fail_reasons": [
+              "ALB blocked: turbidity or depth > 15m"
+            ],
+            "rules": [],
+            "legal_note": "K130 + ALB — shallow-water only; depth and turbidity gates apply.",
+            "recommended": false
+          },
+          {
+            "coa_id": "D",
+            "rank": null,
+            "gates_passed": false,
+            "gate_fail_reasons": [
+              "Passive track hold weak at seastate >= 4"
+            ],
+            "rules": [],
+            "legal_note": "Passive/partner — default MC 362–compatible first response.",
+            "recommended": false
+          }
+        ],
+        "llm_grounding_mode": "narrative-only"
+      },
+      "legal_assessment": {}
+    },
+    "5_sim_outcomes": {
+      "simulations": [
+        {
+          "coa_id": "A",
+          "ticks": 6,
+          "final_discovery": 0.944,
+          "asset_etas": [
+            {
+              "asset_class": "P-8A",
+              "name": "P-8A Poseidon",
+              "base": "Nordholz",
+              "distance_nm": 197.62,
+              "speed_kn": 450.0,
+              "eta_hours": 0.44
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 24.0,
+              "eta_hours": 3.55
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 22.0,
+              "eta_hours": 3.87
+            },
+            {
+              "asset_class": "Minenabwehreinheiten",
+              "name": "Nearest Minenabwehreinheiten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 15.0,
+              "eta_hours": 5.68
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 24.0,
+              "eta_hours": 7.0
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 24.0,
+              "eta_hours": 7.33
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 22.0,
+              "eta_hours": 7.64
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 22.0,
+              "eta_hours": 8.0
+            }
+          ],
+          "tick_traces": [
+            {
+              "tick": 1,
+              "red_phase": "surface",
+              "discovery_probability": 0.267,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 2,
+              "red_phase": "surface",
+              "discovery_probability": 0.454,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 3,
+              "red_phase": "surface",
+              "discovery_probability": 0.539,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 4,
+              "red_phase": "surface",
+              "discovery_probability": 0.674,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 5,
+              "red_phase": "surface",
+              "discovery_probability": 0.809,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 6,
+              "red_phase": "surface",
+              "discovery_probability": 0.944,
+              "notes": "Seegang 4 limits bojen"
+            }
+          ],
+          "replay_summary": {
+            "ship": "FGS Braunschweig",
+            "start_nm_to_incident": 74.07,
+            "end_nm_to_incident": 62.69,
+            "ticks": 3,
+            "sim_hours": 3.0
+          }
+        },
+        {
+          "coa_id": "B",
+          "ticks": 6,
+          "final_discovery": 0.23,
+          "asset_etas": [
+            {
+              "asset_class": "P-8A",
+              "name": "P-8A Poseidon",
+              "base": "Nordholz",
+              "distance_nm": 197.62,
+              "speed_kn": 450.0,
+              "eta_hours": 0.44
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 24.0,
+              "eta_hours": 3.55
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 22.0,
+              "eta_hours": 3.87
+            },
+            {
+              "asset_class": "Minenabwehreinheiten",
+              "name": "Nearest Minenabwehreinheiten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 15.0,
+              "eta_hours": 5.68
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 24.0,
+              "eta_hours": 7.0
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 24.0,
+              "eta_hours": 7.33
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 22.0,
+              "eta_hours": 7.64
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 22.0,
+              "eta_hours": 8.0
+            }
+          ],
+          "tick_traces": [
+            {
+              "tick": 1,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 2,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 3,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 4,
+              "red_phase": "surface",
+              "discovery_probability": 0.13,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 5,
+              "red_phase": "surface",
+              "discovery_probability": 0.18,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 6,
+              "red_phase": "surface",
+              "discovery_probability": 0.23,
+              "notes": "Seegang 4 limits bojen"
+            }
+          ],
+          "replay_summary": {}
+        },
+        {
+          "coa_id": "C",
+          "ticks": 6,
+          "final_discovery": 0.23,
+          "asset_etas": [
+            {
+              "asset_class": "P-8A",
+              "name": "P-8A Poseidon",
+              "base": "Nordholz",
+              "distance_nm": 197.62,
+              "speed_kn": 450.0,
+              "eta_hours": 0.44
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 24.0,
+              "eta_hours": 3.55
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 22.0,
+              "eta_hours": 3.87
+            },
+            {
+              "asset_class": "Minenabwehreinheiten",
+              "name": "Nearest Minenabwehreinheiten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 15.0,
+              "eta_hours": 5.68
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 24.0,
+              "eta_hours": 7.0
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 24.0,
+              "eta_hours": 7.33
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 22.0,
+              "eta_hours": 7.64
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 22.0,
+              "eta_hours": 8.0
+            }
+          ],
+          "tick_traces": [
+            {
+              "tick": 1,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 2,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 3,
+              "red_phase": "surface",
+              "discovery_probability": 0.08,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 4,
+              "red_phase": "surface",
+              "discovery_probability": 0.13,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 5,
+              "red_phase": "surface",
+              "discovery_probability": 0.18,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 6,
+              "red_phase": "surface",
+              "discovery_probability": 0.23,
+              "notes": "Seegang 4 limits bojen"
+            }
+          ],
+          "replay_summary": {}
+        },
+        {
+          "coa_id": "D",
+          "ticks": 6,
+          "final_discovery": 0.59,
+          "asset_etas": [
+            {
+              "asset_class": "P-8A",
+              "name": "P-8A Poseidon",
+              "base": "Nordholz",
+              "distance_nm": 197.62,
+              "speed_kn": 450.0,
+              "eta_hours": 0.44
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 24.0,
+              "eta_hours": 3.55
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 22.0,
+              "eta_hours": 3.87
+            },
+            {
+              "asset_class": "Minenabwehreinheiten",
+              "name": "Nearest Minenabwehreinheiten via Warnemünde",
+              "base": "Warnemünde",
+              "distance_nm": 85.19,
+              "speed_kn": 15.0,
+              "eta_hours": 5.68
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 24.0,
+              "eta_hours": 7.0
+            },
+            {
+              "asset_class": "Korvetten",
+              "name": "Nearest Korvetten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 24.0,
+              "eta_hours": 7.33
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Kiel",
+              "base": "Kiel",
+              "distance_nm": 167.99,
+              "speed_kn": 22.0,
+              "eta_hours": 7.64
+            },
+            {
+              "asset_class": "Fregatten",
+              "name": "Nearest Fregatten via Eckernförde",
+              "base": "Eckernförde",
+              "distance_nm": 175.94,
+              "speed_kn": 22.0,
+              "eta_hours": 8.0
+            }
+          ],
+          "tick_traces": [
+            {
+              "tick": 1,
+              "red_phase": "surface",
+              "discovery_probability": 0.165,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 2,
+              "red_phase": "surface",
+              "discovery_probability": 0.25,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 3,
+              "red_phase": "surface",
+              "discovery_probability": 0.335,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 4,
+              "red_phase": "surface",
+              "discovery_probability": 0.42,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 5,
+              "red_phase": "surface",
+              "discovery_probability": 0.505,
+              "notes": "Seegang 4 limits bojen"
+            },
+            {
+              "tick": 6,
+              "red_phase": "surface",
+              "discovery_probability": 0.59,
+              "notes": "Seegang 4 limits bojen"
+            }
+          ],
+          "replay_summary": {}
+        }
+      ],
+      "sensor_gates": {
+        "passive_buoy_ok": true,
+        "alb_ok": false,
+        "optical_eo_ok": false,
+        "messages": [
+          "ALB blocked (turbidity or depth > 15m)",
+          "Optical EO blocked (night or clouds > 15%)"
+        ]
+      }
+    },
+    "6_narrative": {
+      "text": null,
+      "llm_used": false,
+      "citation_rule_ids": []
+    },
+    "7_hitl_approval": {
+      "status_hint": "Operator approves via UI; writes approved_coa_id to Trino."
+    },
+    "8_scenario_matrix": {
+      "runs": [
+        {
+          "scenario_id": "baseline",
+          "label": "Baseline (current env)",
+          "coa_id": "A",
+          "final_discovery": 0.944,
+          "ticks": 6,
+          "notes": "red=evasive; weather=as_observed; delay=0.0h; partner_isr=True"
+        },
+        {
+          "scenario_id": "aggressive_red",
+          "label": "Aggressive Red (fast go-dark)",
+          "coa_id": "A",
+          "final_discovery": 0.8307,
+          "ticks": 6,
+          "notes": "red=aggressive; weather=as_observed; delay=0.0h; partner_isr=True"
+        },
+        {
+          "scenario_id": "weather_stress",
+          "label": "High seastate",
+          "coa_id": "A",
+          "final_discovery": 0.8685,
+          "ticks": 6,
+          "notes": "red=evasive; weather=high_seastate; delay=0.0h; partner_isr=False"
+        },
+        {
+          "scenario_id": "c2_delay",
+          "label": "Blue C2 delay +2h",
+          "coa_id": "A",
+          "final_discovery": 0.9176,
+          "ticks": 6,
+          "notes": "red=cooperative; weather=as_observed; delay=2.0h; partner_isr=True"
+        }
+      ]
+    },
+    "9_agentic_gameplay": {
+      "replay": {
+        "coa_id": "A",
+        "red_doctrine": "evasive",
+        "ticks": [
+          {
+            "tick": 1,
+            "blue_action": "cue_sar_pass",
+            "red_action": "go_dark_ais",
+            "red_phase": "surface",
+            "discovery_probability": 0.267,
+            "notes": "Blue:cue_sar_pass; Red:go_dark_ais; Seegang 4 limits bojen"
+          },
+          {
+            "tick": 2,
+            "blue_action": "deploy_passive_buoy_line",
+            "red_action": "halocline_dip",
+            "red_phase": "submerged",
+            "discovery_probability": 0.339,
+            "notes": "Blue:deploy_passive_buoy_line; Red:halocline_dip; Halocline/turbidity attenuation; Seegang 4 limits bojen"
+          },
+          {
+            "tick": 3,
+            "blue_action": "dispatch_k130_approach",
+            "red_action": "surface_transit",
+            "red_phase": "submerged",
+            "discovery_probability": 0.3717,
+            "notes": "Blue:dispatch_k130_approach; Red:surface_transit; Halocline/turbidity attenuation; Seegang 4 limits bojen"
+          },
+          {
+            "tick": 4,
+            "blue_action": "dispatch_k130_approach",
+            "red_action": "go_dark_ais",
+            "red_phase": "submerged",
+            "discovery_probability": 0.4544,
+            "notes": "Blue:dispatch_k130_approach; Red:go_dark_ais; Halocline/turbidity attenuation; Seegang 4 limits bojen"
+          },
+          {
+            "tick": 5,
+            "blue_action": "dispatch_k130_approach",
+            "red_action": "halocline_dip",
+            "red_phase": "submerged",
+            "discovery_probability": 0.5372,
+            "notes": "Blue:dispatch_k130_approach; Red:halocline_dip; Halocline/turbidity attenuation; Seegang 4 limits bojen"
+          },
+          {
+            "tick": 6,
+            "blue_action": "dispatch_k130_approach",
+            "red_action": "surface_transit",
+            "red_phase": "submerged",
+            "discovery_probability": 0.6199,
+            "notes": "Blue:dispatch_k130_approach; Red:surface_transit; Halocline/turbidity attenuation; Seegang 4 limits bojen"
+          }
+        ],
+        "blue_reward": 0.6339,
+        "red_reward": 0.4041
+      }
+    }
+  }
+}
