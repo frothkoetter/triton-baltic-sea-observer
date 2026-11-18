@@ -124,7 +124,18 @@ export const PREDEFINED = {
     LIMIT 200
   `,
   observationAreas: `
-    SELECT area_id, center_latitude, center_longitude FROM defense.observation_areas
+    SELECT area_id, polygon, center_latitude, center_longitude
+    FROM defense.observation_areas
+  `,
+  ostseeInfrastruktur: `
+    SELECT id, name, typ, geometrie_wkt, status, medium
+    FROM defense.ostsee_infrastruktur
+    WHERE geometrie_wkt IS NOT NULL
+  `,
+  ostseePipelines: `
+    SELECT pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle
+    FROM defense.ostsee_pipelines
+    WHERE geometrie_wkt IS NOT NULL
   `,
   /** Latest maritime anomalies for Lagebild map (Trino pipeline + legacy NiFi rows). */
   vesselOutliersMap: `

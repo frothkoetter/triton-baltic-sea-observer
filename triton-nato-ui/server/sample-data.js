@@ -15,6 +15,8 @@ export const tables = [
   "baltic_sea_harbours",
   "buoy_data",
   "observation_areas",
+  "ostsee_infrastruktur",
+  "ostsee_pipelines",
   "area_violation",
   "maritime_surveillance_reports",
   "social_media_messages",
@@ -309,9 +311,67 @@ export const surveillance = [
 ];
 
 export const observationAreas = [
-  { area_id: "Bornholm Basin", center_latitude: 55.9679, center_longitude: 17.7773 },
-  { area_id: "Gdańsk Deep", center_latitude: 55.3815, center_longitude: 18.7914 },
-  { area_id: "Gotlandic Expanse", center_latitude: 56.6518, center_longitude: 19.7168 },
+  {
+    area_id: "Bornholm Basin",
+    center_latitude: 55.9679,
+    center_longitude: 17.7773,
+    polygon:
+      "POLYGON((17.237478356677286 56.03107993705109, 17.237478356677286 55.9047066587936, 18.31712997618766 55.9047066587936, 18.317129976129976 56.03107993705109, 17.237478356677286 56.03107993705109))",
+  },
+  {
+    area_id: "Gdańsk Deep",
+    center_latitude: 55.3815,
+    center_longitude: 18.7914,
+    polygon:
+      "POLYGON((18.29518008728172 55.53540464392404, 18.29518008728172 55.22756184778888, 19.28762566297803 55.22756184778888, 19.28762566297803 55.53540464392404, 18.29518008728172 55.53540464392404))",
+  },
+  {
+    area_id: "Gotlandic Expanse",
+    center_latitude: 56.6518,
+    center_longitude: 19.7168,
+    polygon:
+      "POLYGON((19.101293326297395 56.70066121963845, 19.101293326297395 56.60288332018746, 20.332383399655697 56.60288332018746, 20.332383399655697 56.70066121963845, 19.101293326297395 56.70066121963845))",
+  },
+];
+
+export const ostseeInfrastruktur = [
+  {
+    id: "NS1_MOCK",
+    name: "Ostsee Pipeline Route A (Beispiel)",
+    typ: "Gaspipeline",
+    geometrie_wkt:
+      "LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)",
+    status: "In use",
+    medium: "Gas",
+  },
+  {
+    id: "CABLE_MOCK",
+    name: "Baltic Sea Kabel B (Beispiel)",
+    typ: "Seekabel",
+    geometrie_wkt: "LINESTRING(14.7000 55.1000, 15.8000 55.6000, 17.9000 56.8000)",
+    status: "In use",
+    medium: "Telecom/Power",
+  },
+];
+
+export const ostseePipelines = [
+  {
+    pipeline_name: "Ostsee Pipeline Route A (Beispiel)",
+    medium: "Gas",
+    status: "In use",
+    geo_typ: "LineString",
+    geometrie_wkt:
+      "LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)",
+    quelle: "WKT",
+  },
+  {
+    pipeline_name: "Nord Stream 1 Mock GeoJSON",
+    medium: "Gas",
+    status: "In use",
+    geo_typ: "MultiLineString",
+    geometrie_wkt: "LINESTRING(13.6512 54.1523, 14.8045 54.8511, 16.2019 55.4088, 19.5 57.2)",
+    quelle: "GeoJSON",
+  },
 ];
 
 export const kpis = {
@@ -330,6 +390,11 @@ export const datasets = [
   { name: "AIS Positions", tables: ["ais_events_ice"], badge: "multipletables" },
   { name: "Buoy_near_harbours", tables: ["buoy_near_harbours"], badge: "singletable" },
   { name: "ObservationAreas", tables: ["observation_areas"], badge: "singletable" },
+  {
+    name: "OstseeInfrastructure",
+    tables: ["ostsee_infrastruktur", "ostsee_pipelines"],
+    badge: "multipletables",
+  },
   { name: "BalticSeaHarbours", tables: ["baltic_sea_harbours"], badge: "singletable" },
   { name: "PersonalReport", tables: ["german_navy_fleet"], badge: "multipletables" },
   { name: "Social Media", tables: ["social_media_messages"], badge: "singletable" },

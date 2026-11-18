@@ -228,6 +228,24 @@ export async function getObservationAreas() {
   return runQueryOrSample(PREDEFINED.observationAreas, () => sample.observationAreas);
 }
 
+export async function getOstseeInfrastructure() {
+  const [infra, pipelines] = await Promise.all([
+    runQueryOrSample(PREDEFINED.ostseeInfrastruktur, () => sample.ostseeInfrastruktur),
+    runQueryOrSample(PREDEFINED.ostseePipelines, () => sample.ostseePipelines),
+  ]);
+  const source =
+    infra.source === "sample" && pipelines.source === "sample"
+      ? "sample"
+      : infra.source ?? pipelines.source ?? "unknown";
+  return {
+    ok: infra.ok || pipelines.ok,
+    source,
+    infrastruktur: infra.rows ?? [],
+    pipelines: pipelines.rows ?? [],
+    fallbackReason: infra.fallbackReason ?? pipelines.fallbackReason,
+  };
+}
+
 /** vessel_outliers for map; falls back to sample when warehouse unavailable. */
 export async function getFleetPositions() {
   const [german, russian] = await Promise.all([
