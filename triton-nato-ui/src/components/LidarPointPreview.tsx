@@ -99,6 +99,7 @@ export function LidarPointPreview({ scan }: Props) {
       <LidarPointCanvas
         points={points}
         headingDeg={Number(scan.heading_deg ?? 0)}
+        viewFrame={lasSource === "s3" ? "enu" : "vessel"}
         label={previewLabel}
         colorMode={colorMode}
       />
