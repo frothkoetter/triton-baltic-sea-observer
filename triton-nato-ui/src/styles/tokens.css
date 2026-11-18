@@ -205,6 +205,17 @@ a {
   opacity: 0.9;
 }
 
+/* Recharts tooltips on dark panels */
+.recharts-default-tooltip {
+  color: var(--text-primary) !important;
+}
+
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value,
+.recharts-tooltip-label {
+  color: var(--text-primary) !important;
+}
+
 .kpi-row {
   display: flex;
   gap: 8px;
@@ -447,6 +458,12 @@ a {
   color: var(--accent-amber);
 }
 
+.subtle-badge {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .proximity-toolbar {
   display: flex;
   align-items: center;
@@ -516,6 +533,7 @@ a {
   line-height: 1.45;
 }
 
+.proximity-ship-label.leaflet-tooltip,
 .proximity-mmsi-label.leaflet-tooltip {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
@@ -558,6 +576,31 @@ a {
   gap: 4px;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.analyses-buoys-grid .buoy-map-panel {
+  min-height: 360px;
+}
+
+.buoy-map-wrap {
+  height: 320px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.buoy-table-panel .data-table-wrap {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.buoy-cluster-label.leaflet-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #0b1118;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0;
 }
 
 .analyses-grid {

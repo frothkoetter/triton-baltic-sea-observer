@@ -1,5 +1,6 @@
 /** Sample payloads when Impala is unreachable (Baltic Sea demo). */
 
+import buoyAnalyticsPanels from "./data/buoy-analytics-sample.json" with { type: "json" };
 import rusFleetAnalyticsPanels from "./data/rus-fleet-analytics-sample.json" with { type: "json" };
 
 export const meta = {
@@ -592,6 +593,11 @@ export const kpis = {
   personnel: 1280,
   surveillanceReports: 847,
   alerts: 2,
+};
+
+/** Offline fallback for /api/analyses/buoy-analytics */
+export const buoyAnalytics = {
+  panels: buoyAnalyticsPanels.panels,
 };
 
 /** Offline fallback for /api/analyses/rus-fleet-analytics */

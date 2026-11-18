@@ -261,6 +261,43 @@ const FLEET_ANALYTICS_KEYS = [
   ["recentMessages", "fleetAnalyticsRecentMessages"],
 ];
 
+const BUOY_ANALYTICS_KEYS = [
+  ["recent", "buoyAnalyticsRecent"],
+  ["typeMix", "buoyAnalyticsTypeMix"],
+  ["classificationGrid", "buoyAnalyticsClassificationGrid"],
+  ["geoClusters", "buoyAnalyticsGeoClusters"],
+];
+
+export async function getBuoyAnalytics() {
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sample.buoyAnalytics };
+  }
+  const results = await Promise.all(
+    BUOY_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
+  );
+  const panels = {};
+  for (let i = 0; i < BUOY_ANALYTICS_KEYS.length; i++) {
+    const [panelKey] = BUOY_ANALYTICS_KEYS[i];
+    const res = results[i];
+    panels[panelKey] = {
+      columns: res.columns ?? [],
+      rows: res.rows ?? [],
+      ok: res.ok,
+    };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sample.buoyAnalytics,
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
+}
+
 export async function getFleetAnalytics() {
   if (forceSample()) {
     return { ok: true, source: "sample", ...sample.fleetAnalytics };

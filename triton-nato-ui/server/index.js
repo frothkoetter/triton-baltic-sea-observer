@@ -11,6 +11,7 @@ import {
   getFleet,
   getFleetAnalytics,
   getRusFleetAnalytics,
+  getBuoyAnalytics,
   getFleetPositions,
   getKpis,
   getLidarScans,
@@ -204,6 +205,10 @@ app.get("/api/analyses/fleet-analytics", async (_req, res) => {
 
 app.get("/api/analyses/rus-fleet-analytics", async (_req, res) => {
   res.json(await getRusFleetAnalytics());
+});
+
+app.get("/api/analyses/buoy-analytics", async (_req, res) => {
+  res.json(await getBuoyAnalytics());
 });
 
 app.get("/api/analyses/sanctions", async (_req, res) => {

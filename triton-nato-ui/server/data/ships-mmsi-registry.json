@@ -1,0 +1,282 @@
+{
+  "123456000": {
+    "ship_name": "Poseidon Pride",
+    "vessel_type": "Cargo"
+  },
+  "123456001": {
+    "ship_name": "Balazs",
+    "vessel_type": "Tanker"
+  },
+  "123456002": {
+    "ship_name": "Ocean Wanderer",
+    "vessel_type": "Passenger"
+  },
+  "123456003": {
+    "ship_name": "North Star",
+    "vessel_type": "Fishing"
+  },
+  "123456004": {
+    "ship_name": "Iron Duke",
+    "vessel_type": "Bulk Carrier"
+  },
+  "123456005": {
+    "ship_name": "Swift Explorer",
+    "vessel_type": "Research"
+  },
+  "123456006": {
+    "ship_name": "Coastal Runner",
+    "vessel_type": "Tug"
+  },
+  "123456007": {
+    "ship_name": "Blue Horizon",
+    "vessel_type": "Container"
+  },
+  "123456008": {
+    "ship_name": "Windward",
+    "vessel_type": "Sailboat"
+  },
+  "123456009": {
+    "ship_name": "Great Voyager",
+    "vessel_type": "Cruise Ship"
+  },
+  "123456010": {
+    "ship_name": "Arctic Driller",
+    "vessel_type": "Drilling Ship"
+  },
+  "123456011": {
+    "ship_name": "Golden Ray",
+    "vessel_type": "Livestock"
+  },
+  "123456012": {
+    "ship_name": "Storm Breaker",
+    "vessel_type": "Salvage"
+  },
+  "123456013": {
+    "ship_name": "Silver Arrow",
+    "vessel_type": "Ro-Ro"
+  },
+  "123456014": {
+    "ship_name": "Maritime Queen",
+    "vessel_type": "Naval"
+  },
+  "123456015": {
+    "ship_name": "Sun Catcher",
+    "vessel_type": "Pleasure Craft"
+  },
+  "123456016": {
+    "ship_name": "Ironclad",
+    "vessel_type": "Dredger"
+  },
+  "123456017": {
+    "ship_name": "White Swan",
+    "vessel_type": "Chemical Tanker"
+  },
+  "123456018": {
+    "ship_name": "Titan",
+    "vessel_type": "LNG Carrier"
+  },
+  "123456019": {
+    "ship_name": "Horizons Edge",
+    "vessel_type": "Hospital Ship"
+  },
+  "123456020": {
+    "ship_name": "Voyages Glory",
+    "vessel_type": "Bulk Carrier"
+  },
+  "123456021": {
+    "ship_name": "Neptune Echo",
+    "vessel_type": "Research"
+  },
+  "123456022": {
+    "ship_name": "Lighthouse",
+    "vessel_type": "Container"
+  },
+  "123456023": {
+    "ship_name": "Phoenix Rising",
+    "vessel_type": "Ro-Ro"
+  },
+  "123456024": {
+    "ship_name": "Golden Compass",
+    "vessel_type": "Offshore Supply"
+  },
+  "123456025": {
+    "ship_name": "Tritons Trident",
+    "vessel_type": "Fishing"
+  },
+  "123456026": {
+    "ship_name": "Morning Mist",
+    "vessel_type": "Chemical Tanker"
+  },
+  "123456027": {
+    "ship_name": "Azure Dragon",
+    "vessel_type": "Tug"
+  },
+  "123456028": {
+    "ship_name": "Polaris",
+    "vessel_type": "Passenger"
+  },
+  "123456029": {
+    "ship_name": "Crystal River",
+    "vessel_type": "LNG Carrier"
+  },
+  "123456030": {
+    "ship_name": "Seafarer",
+    "vessel_type": "Bulk Carrier"
+  },
+  "123456031": {
+    "ship_name": "Island Hopper",
+    "vessel_type": "Ferry"
+  },
+  "123456032": {
+    "ship_name": "Star Chaser",
+    "vessel_type": "Research"
+  },
+  "123456033": {
+    "ship_name": "Mighty Ocean",
+    "vessel_type": "Container"
+  },
+  "123456034": {
+    "ship_name": "Delta Queen",
+    "vessel_type": "Ro-Ro"
+  },
+  "123456035": {
+    "ship_name": "Pacific Dawn",
+    "vessel_type": "Cargo"
+  },
+  "123456036": {
+    "ship_name": "Atlantic Gale",
+    "vessel_type": "Bulk Carrier"
+  },
+  "123456037": {
+    "ship_name": "Horizon Express",
+    "vessel_type": "Passenger"
+  },
+  "123456038": {
+    "ship_name": "Arctic Fox",
+    "vessel_type": "Fishing"
+  },
+  "123456039": {
+    "ship_name": "Neptunes Grace",
+    "vessel_type": "Chemical Tanker"
+  },
+  "123456040": {
+    "ship_name": "Sea Eagle",
+    "vessel_type": "Tug"
+  },
+  "123456041": {
+    "ship_name": "Ocean Dream",
+    "vessel_type": "Container"
+  },
+  "123456042": {
+    "ship_name": "Swift Wind",
+    "vessel_type": "Sailboat"
+  },
+  "123456043": {
+    "ship_name": "Crystal Voyager",
+    "vessel_type": "Cruise Ship"
+  },
+  "123456044": {
+    "ship_name": "Polar Explorer",
+    "vessel_type": "Research"
+  },
+  "123456045": {
+    "ship_name": "Marine Express",
+    "vessel_type": "Ferry"
+  },
+  "123456046": {
+    "ship_name": "Sunfish",
+    "vessel_type": "Fishing"
+  },
+  "123456047": {
+    "ship_name": "Starry Night",
+    "vessel_type": "Chemical Tanker"
+  },
+  "123456048": {
+    "ship_name": "Valiant",
+    "vessel_type": "Tug"
+  },
+  "123456049": {
+    "ship_name": "Oceans Gate",
+    "vessel_type": "Bulk Carrier"
+  },
+  "211871001": {
+    "ship_name": "FV Ostseekrabbe",
+    "vessel_type": "Fishing"
+  },
+  "211871002": {
+    "ship_name": "FV Warnem\u00fcnder Dorsch",
+    "vessel_type": "Fishing"
+  },
+  "211871003": {
+    "ship_name": "FV Mecklenburger Scholle",
+    "vessel_type": "Fishing"
+  },
+  "211871004": {
+    "ship_name": "FV Travem\u00fcnder Hummer",
+    "vessel_type": "Fishing"
+  },
+  "211871005": {
+    "ship_name": "FV L\u00fcbecker B\u00fcsum",
+    "vessel_type": "Fishing"
+  },
+  "211871006": {
+    "ship_name": "FV Kieler Sprotte",
+    "vessel_type": "Fishing"
+  },
+  "211871007": {
+    "ship_name": "FV Holsteiner Hecht",
+    "vessel_type": "Fishing"
+  },
+  "211871008": {
+    "ship_name": "FV Kieler Bucht",
+    "vessel_type": "Fishing"
+  },
+  "211871009": {
+    "ship_name": "FV Wismarer Hering",
+    "vessel_type": "Fishing"
+  },
+  "211871010": {
+    "ship_name": "FV Poeler Garn",
+    "vessel_type": "Fishing"
+  },
+  "211871011": {
+    "ship_name": "FV R\u00fcgenfischer",
+    "vessel_type": "Fishing"
+  },
+  "211871012": {
+    "ship_name": "FV Strelasunder Hake",
+    "vessel_type": "Fishing"
+  },
+  "211871013": {
+    "ship_name": "FV Sassnitzer Lachs",
+    "vessel_type": "Fishing"
+  },
+  "211871014": {
+    "ship_name": "FV Jasmunder Flunder",
+    "vessel_type": "Fishing"
+  },
+  "211871015": {
+    "ship_name": "FV Greifswalder Makrele",
+    "vessel_type": "Fishing"
+  },
+  "211871016": {
+    "ship_name": "FV Peenestrom",
+    "vessel_type": "Fishing"
+  },
+  "211871017": {
+    "ship_name": "FV Vorpommern",
+    "vessel_type": "Fishing"
+  },
+  "211871018": {
+    "ship_name": "FV K\u00fcstenfischer Nord",
+    "vessel_type": "Fishing"
+  },
+  "211871019": {
+    "ship_name": "FV Fehmarnbelt",
+    "vessel_type": "Fishing"
+  },
+  "211871020": {
+    "ship_name": "FV Arkonasee",
+    "vessel_type": "Fishing"
+  }
+}
