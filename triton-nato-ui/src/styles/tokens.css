@@ -735,10 +735,21 @@ a {
   }
 }
 
+.lidar-map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.lidar-map-panel .panel-title {
+  flex: 0 0 auto;
+}
+
 .lidar-map-panel .map-wrap,
-.lidar-map-wrap {
-  min-height: 380px;
-  height: 380px;
+.lidar-map-panel .lidar-map-wrap {
+  flex: 1 1 auto;
+  min-height: 420px;
+  height: auto;
 }
 
 .lidar-preview {
