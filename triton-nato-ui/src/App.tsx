@@ -150,7 +150,9 @@ export default function App() {
           {zone === "lagebild" && (
             <LagebildPage flag={flag} vesselType={vesselType} shipName={shipName} />
           )}
-          {zone === "analysen" && <AnalysenPage />}
+          {zone === "analysen" && (
+            <AnalysenPage flag={flag} vesselType={vesselType} shipName={shipName} />
+          )}
           {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}
           {zone === "sitrep" && <SitrepPage />}

@@ -5,6 +5,8 @@ import { lagebildEnginePreference, queryTrinoDefense } from "./data-engine.js";
 import * as sample from "./sample-data.js";
 import {
   PREDEFINED,
+  buildAisAnalyticsQueries,
+  buildAisLatestSql,
   buildAisTrackSql,
   buildGermanFleetTrackSql,
   buildRussianFleetTrackSql,
@@ -138,8 +140,120 @@ export async function listTables() {
   return { ...res, rows };
 }
 
-export async function getAis() {
-  return runQueryOrSample(PREDEFINED.aisLatest, () => sample.aisShips);
+function filterSampleAisRows(rows, { flag = "", vesselType = "", shipName = "" } = {}) {
+  return rows.filter((r) => {
+    if (flag && r.flag !== flag) return false;
+    if (vesselType && r.vessel_type !== vesselType) return false;
+    if (shipName && r.ship_name !== shipName) return false;
+    return true;
+  });
+}
+
+function aggregateNameValue(rows, key) {
+  const map = new Map();
+  for (const r of rows) {
+    const k = String(r[key] ?? "Unknown").trim() || "Unknown";
+    map.set(k, (map.get(k) ?? 0) + 1);
+  }
+  return [...map.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+function speedBand(speed) {
+  const s = Number(speed);
+  if (!Number.isFinite(s) || s < 0.5) return "At anchor / moored";
+  if (s < 4) return "Slow (<4 kn)";
+  if (s < 12) return "Coastal (4–12 kn)";
+  return "Open sea (>12 kn)";
+}
+
+function sampleAisAnalytics(filters = {}) {
+  const rows = filterSampleAisRows(sample.aisShips, filters);
+  const byFlag = aggregateNameValue(rows, "flag");
+  const byType = aggregateNameValue(rows, "vessel_type");
+  const topDestinations = aggregateNameValue(
+    rows.map((r) => ({ ...r, destination: r.destination ?? "Unknown" })),
+    "destination"
+  );
+  const byStatus = aggregateNameValue(rows, "status");
+  const bySpeedBandMap = new Map();
+  for (const r of rows) {
+    const b = speedBand(r.speed);
+    bySpeedBandMap.set(b, (bySpeedBandMap.get(b) ?? 0) + 1);
+  }
+  const bySpeedBand = [...bySpeedBandMap.entries()].map(([name, value]) => ({ name, value }));
+  const avgByFlagMap = new Map();
+  const flagCounts = new Map();
+  for (const r of rows) {
+    const f = r.flag ?? "Unknown";
+    avgByFlagMap.set(f, (avgByFlagMap.get(f) ?? 0) + Number(r.speed ?? 0));
+    flagCounts.set(f, (flagCounts.get(f) ?? 0) + 1);
+  }
+  const avgSogByFlag = [...avgByFlagMap.entries()].map(([name, sum]) => ({
+    name,
+    value: Math.round((sum / (flagCounts.get(name) ?? 1)) * 100) / 100,
+  }));
+  const underway = rows.filter((r) => Number(r.speed ?? 0) >= 0.5).length;
+  const avgSog =
+    rows.length > 0 ? rows.reduce((a, r) => a + Number(r.speed ?? 0), 0) / rows.length : 0;
+  return {
+    panels: {
+      kpi: {
+        columns: ["total_ships", "avg_sog", "underway_count"],
+        rows: [{ total_ships: rows.length, avg_sog: Math.round(avgSog * 10) / 10, underway_count: underway }],
+      },
+      byFlag: { columns: ["name", "value"], rows: byFlag },
+      byType: { columns: ["name", "value"], rows: byType },
+      topDestinations: { columns: ["name", "value"], rows: topDestinations },
+      byStatus: { columns: ["name", "value"], rows: byStatus },
+      bySpeedBand: { columns: ["name", "value"], rows: bySpeedBand },
+      avgSogByFlag: { columns: ["name", "value"], rows: avgSogByFlag },
+    },
+  };
+}
+
+const AIS_ANALYTICS_PANELS = [
+  "kpi",
+  "byFlag",
+  "byType",
+  "topDestinations",
+  "byStatus",
+  "bySpeedBand",
+  "avgSogByFlag",
+];
+
+export async function getAisAnalytics(filters = {}) {
+  const queries = buildAisAnalyticsQueries(filters);
+  if (forceSample()) {
+    return { ok: true, source: "sample", filters, ...sampleAisAnalytics(filters) };
+  }
+  const results = await Promise.all(
+    AIS_ANALYTICS_PANELS.map((key) => queryWarehouse(queries[key]))
+  );
+  const panels = {};
+  for (let i = 0; i < AIS_ANALYTICS_PANELS.length; i++) {
+    const key = AIS_ANALYTICS_PANELS[i];
+    const res = results[i];
+    panels[key] = { columns: res.columns ?? [], rows: res.rows ?? [], ok: res.ok };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      filters,
+      ...sampleAisAnalytics(filters),
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, filters, panels };
+}
+
+export async function getAis(filters = {}) {
+  const sql = buildAisLatestSql(filters);
+  return runQueryOrSample(sql, () => filterSampleAisRows(sample.aisShips, filters));
 }
 
 function filterSampleTrackRows(rows, { flag, vesselType, shipName } = {}) {
