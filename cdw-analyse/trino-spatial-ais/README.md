@@ -53,4 +53,4 @@ python scripts/e2e_trino_ais.py --load-sample --load-pipeline-track --load-black
 
 Zusätzlich AOI: `observation_areas.polygon` als `POLYGON`, View `area_violation`.
 
-Voll-DDL Triton: [`../create_db_tables_trino.sql`](../create_db_tables_trino.sql)
+Voll-DDL Triton: [`../create_db_tables_trino.sql`](../create_db_tables_trino.sql) — enthält `ostsee_infrastruktur`, `ostsee_pipelines`, `ostsee_pipelines_segmented`, `ais_daten`. Das Spatial-Lab (`sql/04`+`05`) bleibt für EMODnet-Rebuilds.

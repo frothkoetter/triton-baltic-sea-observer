@@ -45,6 +45,143 @@ INSERT INTO observation_areas (area_id, polygon, center_latitude, center_longitu
 ('Słupsk Trough', 'POLYGON((18.631009957831964 56.33596162852314, 18.631009957831964 55.68428205974104, 18.81138185878598 55.68428205974104, 18.81138185878598 56.33596162852314, 18.631009957831964 56.33596162852314))', 56.0101, 18.7212),
 ('Baltic Shelf', 'POLYGON((17.20764611432847 56.797018539001215, 17.20764611432847 56.27911433081525, 17.4428839762831 56.27911433081525, 17.4428839762831 56.797018539001215, 17.20764611432847 56.797018539001215))', 56.5381, 17.3253);
 
+-- Subsea pipelines & cables (OGC WKT). See cdw-analyse/trino-spatial-ais/ for EMODnet sync.
+DROP TABLE IF EXISTS ostsee_pipelines_segmented;
+DROP TABLE IF EXISTS ostsee_pipelines;
+DROP TABLE IF EXISTS raw_ostsee_geojson;
+DROP TABLE IF EXISTS ostsee_infrastruktur;
+
+CREATE TABLE ostsee_infrastruktur (
+    id varchar COMMENT 'External asset id (e.g. EMODnet or mock).',
+    name varchar COMMENT 'Pipeline or cable display name.',
+    typ varchar COMMENT 'Gaspipeline or Seekabel.',
+    geometrie_wkt varchar COMMENT 'Route as OGC WKT LINESTRING/MULTILINESTRING (lon lat, WGS84).',
+    status varchar COMMENT 'Operational status.',
+    medium varchar COMMENT 'Gas, Telecom/Power, etc.'
+);
+
+INSERT INTO ostsee_infrastruktur (id, name, typ, geometrie_wkt, status, medium) VALUES
+('NS1_MOCK', 'Ostsee Pipeline Route A (Beispiel)', 'Gaspipeline',
+ 'LINESTRING(13.6500 54.1500, 14.8000 54.8500, 16.2000 55.4000, 19.5000 57.2000, 28.0500 59.5000)',
+ 'In use', 'Gas'),
+('CABLE_MOCK', 'Baltic Sea Kabel B (Beispiel)', 'Seekabel',
+ 'LINESTRING(14.7000 55.1000, 15.8000 55.6000, 17.9000 56.8000)',
+ 'In use', 'Telecom/Power');
+
+CREATE TABLE raw_ostsee_geojson (
+    json_payload varchar COMMENT 'Single-line GeoJSON FeatureCollection (staging).',
+    quelle varchar COMMENT 'Source label: lab_insert, emodnet, s3, …'
+);
+
+INSERT INTO raw_ostsee_geojson (json_payload, quelle) VALUES
+(
+ '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Nord Stream 1 Mock GeoJSON","medium":"Gas","status":"In use","operator":"Mock","country":"DE-RU"},"geometry":{"type":"MultiLineString","coordinates":[[[13.6512,54.1523],[14.8045,54.8511],[16.2019,55.4088],[19.5,57.2]]]}}]}',
+ 'lab_insert'
+);
+
+CREATE TABLE ostsee_pipelines (
+    pipeline_name varchar COMMENT 'Asset name.',
+    medium varchar COMMENT 'Gas, Telecom/Power, …',
+    status varchar COMMENT 'Operational status.',
+    geo_typ varchar COMMENT 'LineString or MultiLineString.',
+    geometrie_wkt varchar COMMENT 'Route WKT (lon lat).',
+    quelle varchar COMMENT 'WKT, GeoJSON, EMODnet, …'
+);
+
+INSERT INTO ostsee_pipelines (pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle)
+SELECT
+    name,
+    medium,
+    status,
+    CASE
+        WHEN geometrie_wkt LIKE 'MULTILINESTRING%' THEN 'MultiLineString'
+        ELSE 'LineString'
+    END,
+    geometrie_wkt,
+    'WKT'
+FROM ostsee_infrastruktur;
+
+INSERT INTO ostsee_pipelines (pipeline_name, medium, status, geo_typ, geometrie_wkt, quelle)
+SELECT
+    json_extract_scalar(json_payload, '$.features[0].properties.name'),
+    json_extract_scalar(json_payload, '$.features[0].properties.medium'),
+    COALESCE(json_extract_scalar(json_payload, '$.features[0].properties.status'), 'Unknown'),
+    json_extract_scalar(json_payload, '$.features[0].geometry.type'),
+    'LINESTRING(13.6512 54.1523, 14.8045 54.8511, 16.2019 55.4088, 19.5 57.2)',
+    'GeoJSON'
+FROM raw_ostsee_geojson
+WHERE quelle = 'lab_insert';
+
+CREATE TABLE ostsee_pipelines_segmented AS
+WITH pipeline_geom AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_GeometryFromText(geometrie_wkt) AS geom
+    FROM ostsee_pipelines
+),
+single_lines AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_GeometryN(geom, CAST(idx AS integer)) AS line_geom
+    FROM pipeline_geom
+    CROSS JOIN UNNEST(sequence(1, GREATEST(ST_NumGeometries(geom), 1))) AS t(idx)
+    WHERE geom IS NOT NULL
+),
+line_segments AS (
+    SELECT
+        pipeline_name,
+        medium,
+        status,
+        ST_LineFromText(
+            'LINESTRING(' ||
+            CAST(ST_X(ST_PointN(line_geom, CAST(pt_idx AS integer))) AS varchar) || ' ' ||
+            CAST(ST_Y(ST_PointN(line_geom, CAST(pt_idx AS integer))) AS varchar) || ', ' ||
+            CAST(ST_X(ST_PointN(line_geom, CAST(pt_idx + 1 AS integer))) AS varchar) || ' ' ||
+            CAST(ST_Y(ST_PointN(line_geom, CAST(pt_idx + 1 AS integer))) AS varchar) || ')'
+        ) AS seg_geom
+    FROM single_lines
+    CROSS JOIN UNNEST(sequence(1, GREATEST(ST_NumPoints(line_geom) - 1, 0))) AS t(pt_idx)
+    WHERE ST_NumPoints(line_geom) >= 2
+)
+SELECT
+    pipeline_name,
+    medium,
+    status,
+    ST_AsText(seg_geom) AS seg_wkt,
+    ST_XMin(ST_Buffer(seg_geom, 0.005)) AS min_lon,
+    ST_XMax(ST_Buffer(seg_geom, 0.005)) AS max_lon,
+    ST_YMin(ST_Buffer(seg_geom, 0.005)) AS min_lat,
+    ST_YMax(ST_Buffer(seg_geom, 0.005)) AS max_lat
+FROM line_segments
+WHERE seg_geom IS NOT NULL;
+
+CREATE OR REPLACE VIEW ais_daten AS
+SELECT
+    mmsi,
+    COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+    ) AS zeitstempel,
+    longitude AS lon,
+    latitude AS lat,
+    speed AS sog,
+    course AS cog
+FROM ais_events_ice
+WHERE latitude IS NOT NULL
+  AND longitude IS NOT NULL
+  AND COALESCE(
+        TRY(from_iso8601_timestamp(event_timestamp)),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s.%f')),
+        TRY(date_parse(event_timestamp, '%Y-%m-%d %H:%i:%s')),
+        TRY(from_iso8601_timestamp(replace(event_timestamp, ' ', 'T')))
+      ) IS NOT NULL;
+
 DROP TABLE IF EXISTS sanctioned_vessels;
 CREATE TABLE sanctioned_vessels (
   Name varchar COMMENT 'The official registered name of the vessel.',
