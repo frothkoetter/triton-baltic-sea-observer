@@ -57,6 +57,28 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
             )
           )}
         </ul>
+        {(s["2_data_pin"]?.materialized_tables as { mat_table?: string; row_limit?: number }[] | undefined)
+          ?.length ? (
+          <>
+            <p className="text-muted" style={{ fontSize: 11, margin: "8px 0 4px" }}>
+              Materialized (Phase 6):
+            </p>
+            <ul className="nba-pin-list mono" style={{ fontSize: 11 }}>
+              {(
+                s["2_data_pin"]?.materialized_tables as {
+                  mat_table?: string;
+                  source_table?: string;
+                  row_limit?: number;
+                }[]
+              ).map((m) => (
+                <li key={m.mat_table}>
+                  <code>{m.mat_table}</code>
+                  {m.row_limit != null ? ` (limit ${m.row_limit})` : ""}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
       </section>
 
       <section className="nba-decision-section">
@@ -185,6 +207,32 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
         ) : (
           <p className="text-muted">No gameplay replay.</p>
         )}
+        {(s["9_agentic_gameplay"]?.what_if_red_doctrines as
+          | { red_doctrine?: string; blue_reward?: number; red_reward?: number }[]
+          | undefined)?.length ? (
+          <table className="data-table compact" style={{ marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th>Red doctrine</th>
+                <th>Blue reward</th>
+                <th>Red reward</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(s["9_agentic_gameplay"]?.what_if_red_doctrines as {
+                red_doctrine?: string;
+                blue_reward?: number;
+                red_reward?: number;
+              }[]).map((w) => (
+                <tr key={w.red_doctrine}>
+                  <td>{w.red_doctrine}</td>
+                  <td>{w.blue_reward?.toFixed(3) ?? "—"}</td>
+                  <td>{w.red_reward?.toFixed(3) ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
       </section>
     </div>
   );

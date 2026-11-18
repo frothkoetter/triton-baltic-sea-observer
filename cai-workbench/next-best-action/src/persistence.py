@@ -9,6 +9,7 @@ from .alert_types import NbaAlert
 from .config import Settings
 from .hitl import sitrep_link_for_alert
 from .scoring import CoaScore
+from .materialize import MaterializeResult
 from .snapshot_bundle import SnapshotBundle
 from . import trino_client
 
@@ -92,3 +93,23 @@ def update_decision_artifacts(
         f"WHERE flow_uuid = '{_esc(flow_uuid)}'"
     )
     trino_client.execute_sql(sql)
+
+
+def insert_materialized_tables(
+    flow_uuid: str,
+    results: list[MaterializeResult],
+    settings: Settings,
+) -> None:
+    if not results:
+        return
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    fq = f"{settings.trino_catalog}.{settings.trino_schema}"
+    for r in results:
+        sql = (
+            f"INSERT INTO {fq}.nba_materialized_tables "
+            f"(flow_uuid, source_table, mat_table, snapshot_id, row_limit, created_at) "
+            f"VALUES ("
+            f"'{_esc(flow_uuid)}', '{_esc(r.source_table)}', '{_esc(r.mat_table)}', "
+            f"{r.snapshot_id}, {r.row_limit}, TIMESTAMP '{now}')"
+        )
+        trino_client.execute_sql(sql)

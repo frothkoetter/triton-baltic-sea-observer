@@ -14,9 +14,11 @@ from .alert_types import NbaAlert
 from .config import Settings
 from .maritime_incident_state import MaritimeIncidentState
 from .env_gates import evaluate_sensor_gates
+from .materialize import materialize_bundle
 from .persistence import (
     insert_coa_scores,
     insert_incident,
+    insert_materialized_tables,
     insert_snapshots,
     update_decision_artifacts,
 )
@@ -48,6 +50,7 @@ def _write_artifacts(
     best: str | None,
     simulations: list | None,
     sensor_gates: dict | None,
+    materialized: list | None = None,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     audit: dict[str, Any] = {
@@ -67,6 +70,8 @@ def _write_artifacts(
     }
     if simulations:
         audit["simulations"] = [s.to_dict() for s in simulations]
+    if materialized:
+        audit["materialized_tables"] = materialized
     (out_dir / "audit.json").write_text(
         json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8"
     )
@@ -112,6 +117,11 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
     settings.artifacts_dir = Path(settings.artifacts_dir)
     alert = next_alert(settings)
     bundle = capture_bundle(alert.flow_uuid, settings)
+    materialized_dicts: list[dict[str, Any]] = []
+    mat_results = []
+    if settings.materialize_facts:
+        mat_results = materialize_bundle(bundle, settings)
+        materialized_dicts = [m.to_dict() for m in mat_results]
     env = EnvironmentContext.from_alert_payload(alert.payload)
     gates = evaluate_sensor_gates(env)
     ranked = rank_coas(env)
@@ -136,7 +146,12 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         best=best,
         simulations=simulations,
         sensor_gates=gates.to_dict(),
+        materialized=materialized_dicts or None,
     )
+    if materialized_dicts:
+        (out_dir / "materialized_tables.json").write_text(
+            json.dumps(materialized_dicts, indent=2), encoding="utf-8"
+        )
 
     agent_state = None
     if settings.phase >= 3:
@@ -167,6 +182,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
             simulations=simulations,
             agent_state=agent_state,
             ticks=settings.sim_ticks,
+            materialized=materialized_dicts or None,
         )
         audit["decision_record"] = {
             "generated_at": decision["generated_at"],
@@ -179,6 +195,8 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
     if settings.persist_trino and best is not None:
         insert_incident(alert, "SCORED", best, settings)
         insert_snapshots(bundle, settings)
+        if mat_results:
+            insert_materialized_tables(alert.flow_uuid, mat_results, settings)
         insert_coa_scores(alert.flow_uuid, ranked, settings)
         if settings.phase >= 1:
             grounding_dict = None

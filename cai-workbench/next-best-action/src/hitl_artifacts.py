@@ -29,6 +29,7 @@ def finalize_hitl_artifacts(
     simulations: list[Any] | None,
     agent_state: MaritimeIncidentState | None,
     ticks: int = 6,
+    materialized: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     legal = evaluate_playbook(alert, ranked)
     playbook_best = playbook_recommended_coa(legal, ranked, best_coa_id)
@@ -43,13 +44,20 @@ def finalize_hitl_artifacts(
     scenario_runs = run_scenario_matrix(
         alert, env, coa_id=playbook_best or best_coa_id, ticks=ticks
     )
+    coa_play = playbook_best or best_coa_id or "A"
     gameplay = run_red_blue_episode(
         alert,
         env,
-        coa_id=(playbook_best or best_coa_id or "A"),
+        coa_id=coa_play,
         red_doctrine="evasive",
         ticks=ticks,
     )
+    what_if_replays = [
+        run_red_blue_episode(
+            alert, env, coa_id=coa_play, red_doctrine=d, ticks=ticks
+        ).to_dict()
+        for d in ("evasive", "aggressive", "cooperative")
+    ]
 
     ranked_dicts = [s.to_dict() for s in ranked]
     sim_dicts = [s.to_dict() for s in simulations] if simulations else None
@@ -65,6 +73,8 @@ def finalize_hitl_artifacts(
         agent_state=agent_state,
         scenario_runs=scenario_runs,
         gameplay=gameplay,
+        materialized=materialized,
+        what_if_replays=what_if_replays,
     )
 
     artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -76,6 +86,9 @@ def finalize_hitl_artifacts(
     )
     (artifact_dir / "red_blue_replay.json").write_text(
         json.dumps(gameplay.to_dict(), indent=2), encoding="utf-8"
+    )
+    (artifact_dir / "what_if_red_doctrines.json").write_text(
+        json.dumps(what_if_replays, indent=2), encoding="utf-8"
     )
     decision_path = artifact_dir / "decision_record.json"
     decision_path.write_text(
