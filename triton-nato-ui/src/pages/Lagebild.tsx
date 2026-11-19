@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchJson } from "../api";
+import { fetchJson, type NbaIncident } from "../api";
 import { DataTable } from "../components/DataTable";
 import { RouteTrackMap } from "../components/RouteTrackMap";
 import {
@@ -145,6 +145,8 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
   const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
   const [tracks, setTracks] = useState<PositionTrack[]>([]);
   const [tracksLoading, setTracksLoading] = useState(false);
+  const [nbaIncidents, setNbaIncidents] = useState<NbaIncident[]>([]);
+  const [nbaSource, setNbaSource] = useState("…");
   const [layers, setLayers] = useState({
     ais: true,
     areas: true,
@@ -153,12 +155,41 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
     outliers: true,
     germanFleet: true,
     russianFleet: true,
+    nba: true,
     routeTracks: true,
   });
 
+  const nbaOnMap = useMemo(
+    () =>
+      nbaIncidents
+        .map((row) => {
+          const lat = Number(row.latitude);
+          const lon = Number(row.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+          return {
+            flow_uuid: row.flow_uuid,
+            latitude: lat,
+            longitude: lon,
+            priority: row.priority,
+            theatre: row.theatre,
+            alert_type: row.alert_type,
+            best_coa_id: row.best_coa_id,
+            status: row.status,
+          };
+        })
+        .filter(Boolean) as import("../components/TacticalMap").NbaIncidentMarker[],
+    [nbaIncidents]
+  );
+
+  function openNbaIncident(flowUuid: string) {
+    sessionStorage.setItem("triton_nba_selected_flow", flowUuid);
+    window.location.hash = "nba";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  }
+
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, infraRes, outlierRes, fleetRes, kpiRes] = await Promise.all([
+      const [aisRes, areaRes, infraRes, outlierRes, fleetRes, kpiRes, nbaRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
         fetchJson<{ rows?: ObservationArea[]; source?: string }>("/api/observation-areas"),
         fetchJson<{
@@ -173,7 +204,10 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
           source?: string;
         }>("/api/fleet-positions"),
         fetchJson<Kpis & { ok: boolean }>("/api/kpis"),
+        fetchJson<{ rows?: NbaIncident[]; source?: string }>("/api/nba/incidents"),
       ]);
+      setNbaIncidents(nbaRes.rows ?? []);
+      setNbaSource(nbaRes.source ?? "…");
       setAis(aisRes.rows ?? []);
       setAreas(
         (areaRes.rows ?? [])
@@ -305,6 +339,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
             "routeTracks",
             "areas",
             "infrastructure",
+            "nba",
             "sanctions",
           ] as const
         ).map((key) => (
@@ -328,11 +363,14 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
                         ? `Restricted Areas (${areas.length})`
                         : key === "infrastructure"
                           ? `Pipelines & Cables (${ostseeInfra.length + ostseePipelines.length})`
-                          : "Sanctions overlay"}
+                          : key === "nba"
+                            ? `NBA incidents (${nbaOnMap.length})`
+                            : "Sanctions overlay"}
           </button>
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
           Data: {source}
+          {layers.nba ? ` · NBA: ${nbaSource}` : ""}
         </span>
       </div>
 
@@ -346,6 +384,9 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
           outliers={layers.outliers ? filteredOutliers : []}
           germanFleet={layers.germanFleet ? filteredGerman : []}
           russianFleet={layers.russianFleet ? filteredRussian : []}
+          nbaIncidents={nbaOnMap}
+          showNba={layers.nba}
+          onNbaIncidentClick={openNbaIncident}
           showSanctions={layers.sanctions}
           showAreas={layers.areas}
           showInfrastructure={layers.infrastructure}

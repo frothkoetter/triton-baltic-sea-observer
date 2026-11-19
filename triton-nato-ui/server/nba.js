@@ -1,4 +1,5 @@
 import { nbaIncidentsSample, nbaCoaRunsSample } from "./nba-sample.js";
+import { resolveNbaCoaRuns } from "./nba-coa.js";
 import {
   getTrinoState,
   runTrino,
@@ -71,15 +72,28 @@ ORDER BY rank ASC, score_total DESC
     return { ok: true, source: "sample", rows: nbaCoaRunsSample(id) };
   }
   const result = await runTrino(sql);
-  if (result.ok) {
-    return result;
+  const trinoRows = result.ok ? result.rows ?? [] : [];
+  const resolved = await resolveNbaCoaRuns(id, trinoRows);
+  if (resolved.rows.length) {
+    return {
+      ok: true,
+      source: resolved.source,
+      rows: resolved.rows,
+      fallbackReason: result.ok ? undefined : result.error,
+    };
   }
-  return {
-    ok: true,
-    source: "sample",
-    rows: nbaCoaRunsSample(id),
-    fallbackReason: result.error,
-  };
+  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+    return { ok: true, source: "sample", rows: nbaCoaRunsSample(id) };
+  }
+  if (!result.ok) {
+    return {
+      ok: true,
+      source: "empty",
+      rows: [],
+      fallbackReason: result.error,
+    };
+  }
+  return { ok: true, source: "empty", rows: [] };
 }
 
 export async function getNbaDecisionRecordFromTrino(flowUuid) {

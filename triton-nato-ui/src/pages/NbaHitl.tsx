@@ -44,6 +44,9 @@ export function NbaHitlPage() {
   const [msg, setMsg] = useState("");
   const [govUrl, setGovUrl] = useState<string | null>(null);
   const [semUrl, setSemUrl] = useState<string | null>(null);
+  const [coaSource, setCoaSource] = useState<string>("");
+
+  const NBA_FLOW_STORAGE = "triton_nba_selected_flow";
 
   const loadIncidents = useCallback(async () => {
     const res = await fetchNbaIncidents();
@@ -54,6 +57,7 @@ export function NbaHitlPage() {
   const loadCoa = useCallback(async (flowUuid: string) => {
     const res = await fetchNbaCoaRuns(flowUuid);
     setCoaRuns(res.rows ?? []);
+    setCoaSource((res as { source?: string }).source ?? "");
   }, []);
 
   const loadDecision = useCallback(async (flowUuid: string) => {
@@ -65,6 +69,14 @@ export function NbaHitlPage() {
   useEffect(() => {
     void loadIncidents();
   }, [loadIncidents]);
+
+  useEffect(() => {
+    const fromMap = sessionStorage.getItem(NBA_FLOW_STORAGE);
+    if (fromMap) {
+      setSelected(fromMap);
+      sessionStorage.removeItem(NBA_FLOW_STORAGE);
+    }
+  }, []);
 
   useEffect(() => {
     if (selected) {
@@ -211,7 +223,21 @@ export function NbaHitlPage() {
                 </div>
               )}
 
-              <h3>COA matrix (scores · gates · rank)</h3>
+              <h3>
+                COA matrix (scores · gates · rank)
+                {coaSource ? (
+                  <span className="text-muted" style={{ fontSize: 11, fontWeight: 400 }}>
+                    {" "}
+                    — source {coaSource}
+                  </span>
+                ) : null}
+              </h3>
+              {!coaRuns.length && (
+                <p className="text-muted" style={{ fontSize: 12 }}>
+                  No rows in <code>nba_coa_runs</code> — reload after pipeline fix or ensure{" "}
+                  <code>decision_record_json</code> contains ranked COAs.
+                </p>
+              )}
               <table className="data-table compact nba-coa-matrix">
                 <thead>
                   <tr>
@@ -251,7 +277,7 @@ export function NbaHitlPage() {
                             </div>
                           )}
                         </td>
-                        <td>{run.rank ?? "—"}</td>
+                        <td>{run.rank ? run.rank : "—"}</td>
                         <td>
                           <button
                             type="button"

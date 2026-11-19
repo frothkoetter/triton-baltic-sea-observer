@@ -54,20 +54,22 @@ def insert_snapshots(bundle: SnapshotBundle, settings: Settings) -> None:
 
 
 def insert_coa_scores(flow_uuid: str, ranked: list[CoaScore], settings: Settings) -> None:
+    """Persist full COA matrix (incl. gate failures) for HITL / Lagebild."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
-    rank = 0
+    pass_rank = 0
     for score in ranked:
-        if not score.gates_passed:
-            continue
-        rank += 1
+        if score.gates_passed:
+            pass_rank += 1
+        rank_val = pass_rank if score.gates_passed else 0
+        gates_sql = "TRUE" if score.gates_passed else "FALSE"
         detail = _esc(json.dumps(score.to_dict(), ensure_ascii=False))
         sql = (
             f"INSERT INTO {settings.trino_catalog}.{settings.trino_schema}.nba_coa_runs "
             f"(flow_uuid, coa_id, rank, score_total, score_latenz, score_entdeckung, "
             f"score_eskalation, score_kosten, gates_passed, detail_json, created_at) VALUES ("
-            f"'{_esc(flow_uuid)}', '{_esc(score.coa.coa_id)}', {rank}, {score.score_total}, "
+            f"'{_esc(flow_uuid)}', '{_esc(score.coa.coa_id)}', {rank_val}, {score.score_total}, "
             f"{score.score_latenz}, {score.score_entdeckung}, {score.score_eskalation}, "
-            f"{score.score_kosten}, TRUE, '{detail}', TIMESTAMP '{now}')"
+            f"{score.score_kosten}, {gates_sql}, '{detail}', TIMESTAMP '{now}')"
         )
         trino_client.execute_sql(sql)
 
