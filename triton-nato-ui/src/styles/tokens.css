@@ -252,6 +252,32 @@ a {
   opacity: 0.9;
 }
 
+.kpi-nba-count {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 6px 0 0;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.kpi-nba-count:hover {
+  color: var(--text-primary);
+}
+
+.kpi-nba-count-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-cyan, #45bac7);
+  margin-left: 4px;
+}
+
 .kpi-source-line {
   font-size: 10px;
   color: var(--text-muted);
