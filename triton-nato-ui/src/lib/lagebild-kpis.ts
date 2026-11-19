@@ -38,7 +38,7 @@ export const LAGEBILD_KPI_DEFS: LagebildKpiDef[] = [
     title: "Alerts",
     hint: "AIS-Anomalien 24 h (hoch)",
     detail:
-      "Anzahl vessel_outliers mit severity_level ≥ 70 in den letzten 24 h (Ostsee-Korridor). Entspricht kritischen Hinweisen im Lagebild.",
+      "Oben: AIS-Anomalien (vessel_outliers, severity ≥ 70, 24 h). Darunter: NBA-Fälle aus nba_incidents (Next Best Action / HITL) — gleiche Quelle wie Kartenebene NBA.",
     alert: true,
   },
 ];

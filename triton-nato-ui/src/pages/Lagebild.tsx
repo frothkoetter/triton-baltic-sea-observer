@@ -314,11 +314,30 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         {LAGEBILD_KPI_DEFS.map((def) => {
           const raw = kpis?.[def.key];
           const display = raw == null ? "—" : Number(raw).toLocaleString("de-DE");
+          const nbaCount = nbaIncidents.length;
+          const tooltip =
+            def.key === "alerts"
+              ? `${def.detail} Aktuell ${nbaCount.toLocaleString("de-DE")} NBA incident(s) (${nbaSource}).`
+              : def.detail;
           return (
-            <div key={def.key} className="kpi" title={def.detail}>
+            <div key={def.key} className="kpi" title={tooltip}>
               <div className={`kpi-value${def.alert ? " status-alert" : ""}`}>{display}</div>
               <div className="kpi-label">{def.title}</div>
               <div className="kpi-hint">{def.hint}</div>
+              {def.key === "alerts" ? (
+                <button
+                  type="button"
+                  className="kpi-nba-count"
+                  title="nba_incidents · Tab NBA HITL"
+                  onClick={() => {
+                    window.location.hash = "nba";
+                    window.dispatchEvent(new HashChangeEvent("hashchange"));
+                  }}
+                >
+                  NBA incidents{" "}
+                  <span className="kpi-nba-count-value">{nbaCount.toLocaleString("de-DE")}</span>
+                </button>
+              ) : null}
             </div>
           );
         })}
