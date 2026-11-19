@@ -69,7 +69,8 @@ See `.env.example`. Credentials belong only in `.env.local`.
 | `IMPALA_USER` / `IMPALA_PASSWORD` | LDAP or workload credentials |
 | `IMPALA_AUTH_MECH` | `LDAP` (typical for AuthMech=12 workloads) |
 | `IMPALA_HTTP_PATH` | `cliservice` |
-| `TRITON_FORCE_SAMPLE_DATA` | `true` to skip Impala and use embedded demo data |
+| `TRITON_FORCE_SAMPLE_DATA` | `true` to skip Impala/Trino and use embedded demo data |
+| *(autonomous demo)* | Leave `TRINO_*` / `IMPALA_*` empty **or** set `TRITON_FORCE_SAMPLE_DATA=true` — Lagebild uses `sample-data.js`; NBA HITL uses `nba-sample.js` + bundled decision/governance/semantica JSON (no warehouse required) |
 | `PROXIMITY_ALERT_API_KEY` | SSB MVE key for Schiffsnähe (`GET /api/proximity-alerts`) |
 
 ## Impala notes
@@ -81,6 +82,8 @@ JDBC reference used in CDV:
 The MVP maps this to `impyla` with `use_http_transport=true`. Browser OAuth cannot run inside the API; use username/password in `.env.local` when your CDW tenant allows LDAP/PLAIN for programmatic access.
 
 If Impala is unreachable (503, VPN, or auth failure), map and analysis panels automatically use **sample data**; the status bar shows `SAMPLE DATA`.
+
+**Autonomous demo (no Trino):** With no `TRINO_USER` / `TRINO_PASSWORD`, `/api/nba/incidents` serves three embedded incidents (incl. Greifswald `49d1d9d5-…`), COA matrix from `nba-decision-record-sample.json`, decision recorder §8/§9, governance + Semantica download stubs — approve works in-memory on sample rows. Check `/api/health` → `nba.demoMode: true`.
 
 ## NBA HITL (Phase 4)
 

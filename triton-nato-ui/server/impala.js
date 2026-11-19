@@ -760,7 +760,12 @@ export async function getLidarScans() {
 
 export async function getKpis() {
   if (forceSample()) {
-    return { ok: true, source: "sample", ...sample.kpis };
+    return {
+      ok: true,
+      source: "sample",
+      ...sample.kpis,
+      demoMode: true,
+    };
   }
   const [fleet, personnel, surv, alerts] = await Promise.all([
     queryWarehouse(PREDEFINED.fleetKpi),
@@ -779,7 +784,13 @@ export async function getKpis() {
       alerts: alerts.ok ? Number(alerts.rows?.[0]?.cnt ?? 0) : 2,
     };
   }
-  return { ok: true, source: "sample", ...sample.kpis, fallbackReason: fleet.error };
+  return {
+    ok: true,
+    source: "sample",
+    ...sample.kpis,
+    fallbackReason: fleet.error,
+    demoMode: true,
+  };
 }
 
 export function getDatasets() {

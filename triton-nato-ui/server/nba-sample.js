@@ -2,6 +2,22 @@
 
 export const nbaIncidentsSample = [
   {
+    flow_uuid: "49d1d9d5-2ef1-458b-9ca9-d5284bae2b1a",
+    status: "SCORED",
+    alert_type: "demo_greifswald",
+    priority: "FLASH",
+    theatre: "Greifswald / Adlergrund",
+    latitude: 54.55,
+    longitude: 14.1,
+    best_coa_id: "A",
+    approved_coa_id: null,
+    approved_at: null,
+    approved_by: null,
+    sitrep_link: "FLASH / IMMEDIATE | NBA demo_greifswald",
+    created_at: "2026-11-18T17:25:29.000000",
+    updated_at: "2026-11-18T17:25:29.000000",
+  },
+  {
     flow_uuid: "77870eca-63e5-4af4-94af-5097340fe906",
     status: "SCORED",
     alert_type: "gps_jammer",

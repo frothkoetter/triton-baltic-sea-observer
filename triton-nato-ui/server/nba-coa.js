@@ -1,4 +1,6 @@
 import { loadCoaMatrixArtifact, loadDecisionRecord } from "./nba-artifacts.js";
+import { useOfflineDemoData } from "./demo-fallback.js";
+import { nbaCoaRunsSample } from "./nba-sample.js";
 import { runTrino, TRINO_FQ as FQ } from "./trino-client.js";
 
 function escUuid(value) {
@@ -68,19 +70,25 @@ export async function resolveNbaCoaRuns(flowUuid, trinoRows) {
     return { ok: true, source: "trino", rows: trinoRows };
   }
 
-  const recordTrino = await loadDecisionFromTrino(flowUuid);
-  if (recordTrino) {
-    const rows = coaRowsFromDecisionRecord(recordTrino);
-    if (rows.length) {
-      return { ok: true, source: "decision_record_trino", rows };
+  if (!useOfflineDemoData()) {
+    const recordTrino = await loadDecisionFromTrino(flowUuid);
+    if (recordTrino) {
+      const rows = coaRowsFromDecisionRecord(recordTrino);
+      if (rows.length) {
+        return { ok: true, source: "decision_record_trino", rows };
+      }
     }
   }
 
-  const fromArt = loadDecisionRecord(flowUuid, null);
+  const fromArt = await loadDecisionRecord(flowUuid, null);
   if (fromArt?.ok && fromArt.record) {
     const rows = coaRowsFromDecisionRecord(fromArt.record);
     if (rows.length) {
-      return { ok: true, source: "decision_record_artifacts", rows };
+      return {
+        ok: true,
+        source: fromArt.source === "sample" ? "decision_record_sample" : "decision_record_artifacts",
+        rows,
+      };
     }
   }
 
@@ -91,6 +99,11 @@ export async function resolveNbaCoaRuns(flowUuid, trinoRows) {
       source: "coa_matrix_artifacts",
       rows: coaRowsFromScores(matrix.rows, "coa_matrix"),
     };
+  }
+
+  const sampleRows = nbaCoaRunsSample(flowUuid);
+  if (sampleRows.length) {
+    return { ok: true, source: "sample", rows: sampleRows };
   }
 
   return { ok: true, source: "empty", rows: [] };

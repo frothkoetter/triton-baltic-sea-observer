@@ -1,0 +1,21 @@
+{
+  "schema": "nba-governance-bundle/1",
+  "flow_uuid": "49d1d9d5-2ef1-458b-9ca9-d5284bae2b1a",
+  "generated_at": "2026-11-18T17:25:29.154465+00:00",
+  "playbook_version": "bundled-demo",
+  "artifact_manifest": [
+    { "name": "decision_record.json", "sha256": "demo", "bytes": 0 },
+    { "name": "grounding.json", "sha256": "demo", "bytes": 0 },
+    { "name": "red_blue_replay.json", "sha256": "demo", "bytes": 0 }
+  ],
+  "prov": {
+    "@context": {
+      "prov": "http://www.w3.org/ns/prov#",
+      "triton": "https://triton.baltic/defense#"
+    },
+    "id": "triton:entity/decision-record/demo",
+    "type": "prov:Entity",
+    "label": "NBA decision record (demo fallback)"
+  },
+  "notes": "Bundled sample — Trino offline or TRITON_FORCE_SAMPLE_DATA."
+}
