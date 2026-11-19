@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # UC2 NBA — CML Scheduled Job: select this .py file.
 # Env: NBA_PERSIST_TRINO, NBA_EXIT_IF_QUIET, NBA_PHASE, NBA_DEMO_GREIFSWALD=0, TRINO_*
+# If NBA_MATERIALIZE=1: once apply cdw-analyse/sql/nba_apply_all_ddl.sh (includes phase6 table)
 # Build: pip install -r requirements.txt
 from __future__ import annotations
 
