@@ -77,3 +77,12 @@ export function hasSemanticaRecord(flowUuid) {
     path.join(artifactsRoot(), flowUuid, "semantica_record.json"),
   );
 }
+
+export function loadCoaMatrixArtifact(flowUuid) {
+  const file = path.join(artifactsRoot(), flowUuid, "coa_matrix.json");
+  if (!fs.existsSync(file)) {
+    return { ok: false, source: "missing" };
+  }
+  const rows = JSON.parse(fs.readFileSync(file, "utf8"));
+  return { ok: true, source: "artifacts", rows: Array.isArray(rows) ? rows : [] };
+}

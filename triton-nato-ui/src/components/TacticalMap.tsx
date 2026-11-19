@@ -55,6 +55,17 @@ export type FleetPosition = {
   event_timestamp?: string;
 };
 
+export type NbaIncidentMarker = {
+  flow_uuid: string;
+  latitude: number;
+  longitude: number;
+  priority?: string;
+  theatre?: string;
+  alert_type?: string;
+  best_coa_id?: string | null;
+  status?: string;
+};
+
 export type OutlierRow = {
   mmsi: number;
   latitude: number;
@@ -75,6 +86,9 @@ type Props = {
   outliers: OutlierRow[];
   germanFleet: FleetPosition[];
   russianFleet: FleetPosition[];
+  nbaIncidents?: NbaIncidentMarker[];
+  showNba?: boolean;
+  onNbaIncidentClick?: (flowUuid: string) => void;
   showSanctions: boolean;
   showAreas: boolean;
   showInfrastructure: boolean;
@@ -103,6 +117,9 @@ export function TacticalMap({
   outliers,
   germanFleet,
   russianFleet,
+  nbaIncidents = [],
+  showNba = false,
+  onNbaIncidentClick,
   showSanctions,
   showAreas,
   showInfrastructure,
@@ -305,6 +322,37 @@ export function TacticalMap({
             </CircleMarker>
           );
         })}
+        {showNba &&
+          nbaIncidents.map((inc) => {
+            const flash = (inc.priority ?? "").toUpperCase() === "FLASH";
+            const color = flash ? "#D32F2F" : "#7E57C2";
+            return (
+              <CircleMarker
+                key={`nba-${inc.flow_uuid}`}
+                center={[inc.latitude, inc.longitude]}
+                radius={11}
+                pathOptions={{
+                  color: "#1A0A2E",
+                  fillColor: color,
+                  fillOpacity: 0.95,
+                  weight: 2,
+                }}
+                eventHandlers={{
+                  click: () => onNbaIncidentClick?.(inc.flow_uuid),
+                }}
+              >
+                <Tooltip>
+                  <span className="mono">
+                    <strong>NBA · {inc.theatre ?? inc.alert_type ?? "incident"}</strong>
+                    <br />
+                    {inc.priority ?? "—"} · COA {inc.best_coa_id ?? "—"}
+                    <br />
+                    {inc.flow_uuid.slice(0, 8)}…
+                  </span>
+                </Tooltip>
+              </CircleMarker>
+            );
+          })}
         {outliers.map((o) => {
           const sev = Number(o.severity_level ?? 50);
           const color = sev >= 75 ? "#FF5252" : sev >= 55 ? "#FF9800" : "#FFB74D";

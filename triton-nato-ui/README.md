@@ -84,7 +84,9 @@ If Impala is unreachable (503, VPN, or auth failure), map and analysis panels au
 
 ## NBA HITL (Phase 4)
 
-Tab **NBA HITL** (`#nba`): lists `nba_incidents`, COA matrix from `nba_coa_runs`, operator **Approve** writes `approved_coa_id` to Trino.
+Tab **NBA HITL** (`#nba`): lists `nba_incidents`, COA matrix from `nba_coa_runs` (falls back to `decision_record_json` / `coa_matrix.json` when runs are empty), operator **Approve** writes `approved_coa_id` to Trino.
+
+**Lagebild:** toggle **NBA incidents** — markers from `nba_incidents`; click opens HITL for that `flow_uuid`.
 
 Requires `TRINO_USER` / `TRINO_PASSWORD` in `.env.local` (see `.env.example`). Apply DDL:
 
