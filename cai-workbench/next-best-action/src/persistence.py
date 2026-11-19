@@ -119,12 +119,36 @@ def update_decision_artifacts(
     trino_client.execute_sql(sql)
 
 
+def materialized_registry_ready(settings: Settings) -> bool:
+    """Return False when Phase 6 DDL was not applied on Trino."""
+    fq = f"{settings.trino_catalog}.{settings.trino_schema}"
+    try:
+        trino_client.fetch_all(
+            f"SELECT flow_uuid FROM {fq}.nba_materialized_tables LIMIT 1"
+        )
+        return True
+    except Exception as exc:  # noqa: BLE001 — Trino table missing
+        msg = str(exc)
+        if "TABLE_NOT_FOUND" in msg or "does not exist" in msg.lower():
+            return False
+        raise
+
+
 def insert_materialized_tables(
     flow_uuid: str,
     results: list[MaterializeResult],
     settings: Settings,
 ) -> None:
     if not results:
+        return
+    if not materialized_registry_ready(settings):
+        import sys
+
+        print(
+            "NBA: skipping nba_materialized_tables INSERT — table missing. "
+            "Apply cdw-analyse/sql/nba_schema_phase6_materialize.sql (or nba_apply_all_ddl.sh).",
+            file=sys.stderr,
+        )
         return
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
     fq = f"{settings.trino_catalog}.{settings.trino_schema}"

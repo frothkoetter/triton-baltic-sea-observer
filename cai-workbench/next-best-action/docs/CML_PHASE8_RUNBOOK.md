@@ -20,6 +20,18 @@ Secrets via project env (not git): `TRINO_USER`, `TRINO_PASSWORD`, `TRINO_JDBC_U
 | `--persist-trino` | `NBA_PERSIST_TRINO=1` | On for HITL UI via Trino |
 | `--skip-llm` | `NBA_SKIP_LLM=1` | On for deterministic CML |
 
+## Trino DDL (UC2 / persist / materialize)
+
+Once per cluster (or after reset):
+
+```bash
+cd cdw-analyse
+set -a && source .env.trino.local && set +a
+bash sql/nba_apply_all_ddl.sh
+```
+
+Required when `NBA_MATERIALIZE=1` (registry `nba_materialized_tables`) or Phase 5+ (`decision_record_json` columns).
+
 ## Dependencies
 
 ```bash
