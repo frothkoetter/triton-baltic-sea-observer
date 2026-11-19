@@ -438,6 +438,13 @@ a {
   padding: 4px 6px;
 }
 
+.nba-hint[title] {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--text-muted);
+  text-underline-offset: 2px;
+}
+
 .text-muted {
   color: var(--text-muted);
 }

@@ -1,4 +1,18 @@
 import type { NbaDecisionRecord, NbaRuleCitation } from "../lib/nba-decision";
+import {
+  AGENTIC_BLUE_REWARD_HINT,
+  AGENTIC_COA_HINT,
+  AGENTIC_PDET_HINT,
+  AGENTIC_RED_DOCTRINE_HINT,
+  AGENTIC_RED_REWARD_HINT,
+  AGENTIC_SECTION_HINT,
+  AGENTIC_TICK_HINT,
+  SCENARIO_DISCOVERY_HINT,
+  WHAT_IF_DOCTRINE_HINT,
+  blueActionTooltip,
+  redActionTooltip,
+  scenarioTooltip,
+} from "../lib/nba-decision-tooltips";
 import { NbaRuleCitationButton } from "./NbaRuleCitation";
 
 type HitlState = {
@@ -154,19 +168,29 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
       </section>
 
       <section className="nba-decision-section">
-        <h4>8 · Scenario matrix</h4>
+        <h4 className="nba-hint" title="What-if fan on the selected COA: same 6-tick sim with adjusted Red, weather, ISR, or C2 delay.">
+          8 · Scenario matrix
+        </h4>
         <table className="data-table compact">
           <thead>
             <tr>
-              <th>Scenario</th>
-              <th>Discovery</th>
+              <th className="nba-hint" title="Named preset from the NBA scenario_matrix (baseline, aggressive Red, weather, C2 delay).">
+                Scenario
+              </th>
+              <th className="nba-hint" title={SCENARIO_DISCOVERY_HINT}>
+                Discovery
+              </th>
             </tr>
           </thead>
           <tbody>
             {(s["8_scenario_matrix"]?.runs ?? []).map((run) => (
               <tr key={run.scenario_id}>
-                <td>{run.label}</td>
-                <td>{run.final_discovery.toFixed(3)}</td>
+                <td className="nba-hint" title={scenarioTooltip(run.scenario_id, run.notes)}>
+                  {run.label}
+                </td>
+                <td className="nba-hint" title={`${SCENARIO_DISCOVERY_HINT}${run.notes ? ` (${run.notes})` : ""}`}>
+                  {run.final_discovery.toFixed(3)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -174,31 +198,60 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
       </section>
 
       <section className="nba-decision-section">
-        <h4>9 · Agentic Red vs Blue</h4>
+        <h4 className="nba-hint" title={AGENTIC_SECTION_HINT}>
+          9 · Agentic Red vs Blue
+        </h4>
         {s["9_agentic_gameplay"]?.replay ? (
           <>
             <p className="text-muted" style={{ fontSize: 12 }}>
-              COA {s["9_agentic_gameplay"].replay.coa_id} · Red doctrine{" "}
-              {s["9_agentic_gameplay"].replay.red_doctrine} · Blue reward{" "}
-              {s["9_agentic_gameplay"].replay.blue_reward?.toFixed(3)} · Red reward{" "}
-              {s["9_agentic_gameplay"].replay.red_reward?.toFixed(3)}
+              <span className="nba-hint" title={AGENTIC_COA_HINT}>
+                COA {s["9_agentic_gameplay"].replay.coa_id}
+              </span>
+              {" · "}
+              <span className="nba-hint" title={AGENTIC_RED_DOCTRINE_HINT}>
+                Red doctrine {s["9_agentic_gameplay"].replay.red_doctrine}
+              </span>
+              {" · "}
+              <span className="nba-hint" title={AGENTIC_BLUE_REWARD_HINT}>
+                Blue reward {s["9_agentic_gameplay"].replay.blue_reward?.toFixed(3)}
+              </span>
+              {" · "}
+              <span className="nba-hint" title={AGENTIC_RED_REWARD_HINT}>
+                Red reward {s["9_agentic_gameplay"].replay.red_reward?.toFixed(3)}
+              </span>
             </p>
             <table className="data-table compact">
               <thead>
                 <tr>
-                  <th>T</th>
-                  <th>Blue</th>
-                  <th>Red</th>
-                  <th>P(det)</th>
+                  <th className="nba-hint" title={AGENTIC_TICK_HINT}>
+                    T
+                  </th>
+                  <th className="nba-hint" title="Blue move this tick from the COA sensor/surface profile (SAR, buoys, K130).">
+                    Blue
+                  </th>
+                  <th className="nba-hint" title="Red move from the selected doctrine script (cycles every 3 ticks).">
+                    Red
+                  </th>
+                  <th className="nba-hint" title={AGENTIC_PDET_HINT}>
+                    P(det)
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {(s["9_agentic_gameplay"].replay.ticks ?? []).map((t) => (
                   <tr key={t.tick}>
-                    <td>{t.tick}</td>
-                    <td className="mono">{t.blue_action}</td>
-                    <td className="mono">{t.red_action}</td>
-                    <td>{t.discovery_probability.toFixed(3)}</td>
+                    <td className="nba-hint" title={AGENTIC_TICK_HINT}>
+                      {t.tick}
+                    </td>
+                    <td className="mono nba-hint" title={blueActionTooltip(t.blue_action)}>
+                      {t.blue_action}
+                    </td>
+                    <td className="mono nba-hint" title={redActionTooltip(t.red_action)}>
+                      {t.red_action}
+                    </td>
+                    <td className="nba-hint" title={AGENTIC_PDET_HINT}>
+                      {t.discovery_probability.toFixed(3)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -213,9 +266,15 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
           <table className="data-table compact" style={{ marginTop: 8 }}>
             <thead>
               <tr>
-                <th>Red doctrine</th>
-                <th>Blue reward</th>
-                <th>Red reward</th>
+                <th className="nba-hint" title={WHAT_IF_DOCTRINE_HINT}>
+                  Red doctrine
+                </th>
+                <th className="nba-hint" title={AGENTIC_BLUE_REWARD_HINT}>
+                  Blue reward
+                </th>
+                <th className="nba-hint" title={AGENTIC_RED_REWARD_HINT}>
+                  Red reward
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -225,9 +284,15 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
                 red_reward?: number;
               }[]).map((w) => (
                 <tr key={w.red_doctrine}>
-                  <td>{w.red_doctrine}</td>
-                  <td>{w.blue_reward?.toFixed(3) ?? "—"}</td>
-                  <td>{w.red_reward?.toFixed(3) ?? "—"}</td>
+                  <td className="nba-hint" title={AGENTIC_RED_DOCTRINE_HINT}>
+                    {w.red_doctrine}
+                  </td>
+                  <td className="nba-hint" title={AGENTIC_BLUE_REWARD_HINT}>
+                    {w.blue_reward?.toFixed(3) ?? "—"}
+                  </td>
+                  <td className="nba-hint" title={AGENTIC_RED_REWARD_HINT}>
+                    {w.red_reward?.toFixed(3) ?? "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
