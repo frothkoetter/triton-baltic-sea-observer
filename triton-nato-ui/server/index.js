@@ -30,6 +30,7 @@ import {
 } from "./impala.js";
 import { DATASET_STARTER_SQL } from "./queries.js";
 import { fetchProximityAlertsLive } from "./proximity-alerts.js";
+import { demoMeta } from "./demo-fallback.js";
 import {
   approveNbaIncident,
   getNbaCoaRuns,
@@ -122,6 +123,7 @@ app.get("/api/health", async (_req, res) => {
       trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),
       trinoLive: nbaTrino.live,
       lastError: nbaTrino.lastError,
+      ...demoMeta(),
     },
     lidar: {
       s3Configured: s3Configured(),

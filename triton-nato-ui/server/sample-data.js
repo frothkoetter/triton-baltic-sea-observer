@@ -699,6 +699,7 @@ export const kpis = {
   personnel: 1280,
   surveillanceReports: 847,
   alerts: 2,
+  nbaIncidents: 3,
 };
 
 /** Offline fallback for /api/analyses/buoy-analytics */

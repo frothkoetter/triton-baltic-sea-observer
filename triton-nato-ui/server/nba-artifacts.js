@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import decisionSample from "./data/nba-decision-record-sample.json" with { type: "json" };
+import governanceSample from "./data/nba-governance-bundle-sample.json" with { type: "json" };
+import semanticaSample from "./data/nba-semantica-record-sample.json" with { type: "json" };
 import playbookBundled from "./data/nba-rules-playbook.json" with { type: "json" };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,7 +59,11 @@ export function loadGovernanceBundle(flowUuid) {
       bundle: JSON.parse(fs.readFileSync(file, "utf8")),
     };
   }
-  return { ok: false, source: "missing" };
+  return {
+    ok: true,
+    source: "sample",
+    bundle: { ...governanceSample, flow_uuid: flowUuid },
+  };
 }
 
 export function loadSemanticaRecord(flowUuid) {
@@ -69,7 +75,11 @@ export function loadSemanticaRecord(flowUuid) {
       record: JSON.parse(fs.readFileSync(file, "utf8")),
     };
   }
-  return { ok: false, source: "missing" };
+  return {
+    ok: true,
+    source: "sample",
+    record: { ...semanticaSample, flow_uuid: flowUuid },
+  };
 }
 
 export function hasSemanticaRecord(flowUuid) {

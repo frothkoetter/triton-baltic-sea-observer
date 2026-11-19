@@ -1,3 +1,4 @@
+import { demoMeta, useOfflineDemoData } from "./demo-fallback.js";
 import { nbaIncidentsSample, nbaCoaRunsSample } from "./nba-sample.js";
 import { resolveNbaCoaRuns } from "./nba-coa.js";
 import {
@@ -40,11 +41,12 @@ LIMIT 50
 `;
 
 export async function listNbaIncidents() {
-  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+  if (useOfflineDemoData()) {
     return {
       ok: true,
       source: "sample",
       rows: nbaIncidentsSample,
+      ...demoMeta(),
     };
   }
   const result = await runTrino(INCIDENTS_SQL);
@@ -56,6 +58,7 @@ export async function listNbaIncidents() {
     source: "sample",
     rows: nbaIncidentsSample,
     fallbackReason: result.error,
+    ...demoMeta(),
   };
 }
 
@@ -68,8 +71,14 @@ FROM ${FQ}.nba_coa_runs
 WHERE flow_uuid = '${id}'
 ORDER BY rank ASC, score_total DESC
 `;
-  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
-    return { ok: true, source: "sample", rows: nbaCoaRunsSample(id) };
+  if (useOfflineDemoData()) {
+    const resolved = await resolveNbaCoaRuns(id, []);
+    return {
+      ok: true,
+      source: resolved.source,
+      rows: resolved.rows,
+      ...demoMeta(),
+    };
   }
   const result = await runTrino(sql);
   const trinoRows = result.ok ? result.rows ?? [] : [];
@@ -82,15 +91,13 @@ ORDER BY rank ASC, score_total DESC
       fallbackReason: result.ok ? undefined : result.error,
     };
   }
-  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
-    return { ok: true, source: "sample", rows: nbaCoaRunsSample(id) };
-  }
   if (!result.ok) {
     return {
       ok: true,
-      source: "empty",
-      rows: [],
+      source: "sample",
+      rows: nbaCoaRunsSample(id),
       fallbackReason: result.error,
+      ...demoMeta(),
     };
   }
   return { ok: true, source: "empty", rows: [] };
@@ -104,7 +111,7 @@ FROM ${FQ}.nba_incidents
 WHERE flow_uuid = '${id}'
 LIMIT 1
 `;
-  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+  if (useOfflineDemoData()) {
     return { ok: false, reason: "sample" };
   }
   const result = await runTrino(sql);
@@ -140,7 +147,7 @@ SET approved_coa_id = '${coa}',
     updated_at = current_timestamp
 WHERE flow_uuid = '${id}'
 `;
-  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+  if (useOfflineDemoData()) {
     const row = nbaIncidentsSample.find((r) => r.flow_uuid === id);
     if (!row) {
       return { ok: false, error: "Incident not found (sample mode)" };
