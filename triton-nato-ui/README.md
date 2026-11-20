@@ -6,7 +6,7 @@ React + Vite front end with an Express API and Python Impala bridge for the **de
 
 Full integration description (Lagebild, Buoys, LiDAR, NBA HITL, APIs, tables):
 
-**[docs/UI_OVERVIEW.md](./docs/UI_OVERVIEW.md)**
+**[docs/UI_OVERVIEW.md](./docs/UI_OVERVIEW.md)** · API latency: **[docs/API_LATENCY.md](./docs/API_LATENCY.md)** (`node scripts/bench-api-latency.mjs`)
 
 ![Main views — Lagebild, Buoys, LiDAR, NBA](./docs/images/ui-main-views-overview.svg)
 
