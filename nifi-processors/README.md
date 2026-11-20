@@ -60,7 +60,7 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 
 **Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** (**1.2.0**) in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`). With **Dump State To Payload** = true (default), each run embeds pre-reset `/tmp` JSON under `snapshots` in the outgoing FlowFile, then deletes or clears routes—useful when the NiFi pod `/tmp` is not reachable.
 
-**LiDAR disk:** Failed pip installs often trace to **`No space left on device`** under `/var/opt/nifi/python/work/extensions/`. Keep **`requirements.txt`** minimal; prune stale venv dirs.
+**LiDAR disk:** Failed pip installs often trace to **`No space left on device`** under `/var/opt/nifi/python/work/extensions/`. Keep **`requirements.txt`** minimal; prune stale venv dirs. **LidarSimulator** does not keep `.las` on disk (temp dir only); full queues or a full **content repository** cause `FlowFileAccessException` — see [`docs/LIDAR_NIFI_DISK.md`](docs/LIDAR_NIFI_DISK.md).
 
 **Russian Baltic Fleet:** `upload/RusFleetPositionSimulator.py` with `rus_fleet_registry.py` / `rus_fleet_sim_engine.py`. FlowFile attribute `ship.simulation.route` = `rus_fleet_positions`; state `/tmp/rus_fleet_state.json`. Reset via **Reset RUS Fleet State** on `BalticShipRouteStateReset`. Details in `upload/README.md`.
 
