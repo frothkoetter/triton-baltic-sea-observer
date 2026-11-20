@@ -88,6 +88,15 @@ class Settings:
     skip_llm: bool = field(
         default_factory=lambda: _env_bool("NBA_SKIP_LLM", False)
     )
+    sap_readiness_mode: str = field(
+        default_factory=lambda: os.environ.get("NBA_SAP_READINESS_MODE", "off").strip().lower()
+    )
+    sap_readiness_sample_path: str | None = field(
+        default_factory=lambda: os.environ.get("NBA_SAP_READINESS_SAMPLE_PATH") or None
+    )
+    sap_capability_map_path: str | None = field(
+        default_factory=lambda: os.environ.get("NBA_SAP_CAPABILITY_MAP_PATH") or None
+    )
 
     def __post_init__(self) -> None:
         raw = os.environ.get("NBA_LAGEBILD_ARTIFACTS_DIR")

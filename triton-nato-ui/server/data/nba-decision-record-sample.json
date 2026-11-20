@@ -725,6 +725,41 @@
         "blue_reward": 0.6339,
         "red_reward": 0.4041
       }
+    },
+    "10_mission_readiness": {
+      "source": "sap_sample",
+      "queried_at": "2026-11-20T08:30:00Z",
+      "capability_filter": [
+        "ALB_MCM",
+        "HEAVY_SURFACE",
+        "LITTORAL_PATROL",
+        "MARITIME_PATROL_AIR",
+        "OPTICAL_EO",
+        "PASSIVE_ISR",
+        "SPACE_SAR"
+      ],
+      "units": [
+        {
+          "force_element_id": "DE-M-F124",
+          "name": "FGS Sachsen",
+          "readiness_code": "R3",
+          "capabilities": ["HEAVY_SURFACE", "OPTICAL_EO"],
+          "rotation_conflict": false,
+          "fuel_days_remaining": 9,
+          "munition_gate": "warning"
+        }
+      ],
+      "coa_impact": {
+        "A": { "executable": true, "blockers": [] },
+        "B": {
+          "executable": false,
+          "blockers": [
+            "sap_readiness:FGS Sachsen (DE-M-F124) not R1,R2 for HEAVY_SURFACE (actual R3)"
+          ]
+        },
+        "C": { "executable": true, "blockers": [] },
+        "D": { "executable": true, "blockers": [] }
+      }
     }
   }
 }

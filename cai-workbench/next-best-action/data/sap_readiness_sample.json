@@ -1,0 +1,51 @@
+{
+  "queried_at": "2026-11-20T08:30:00Z",
+  "theatre_default": "Baltic",
+  "units": [
+    {
+      "force_element_id": "DE-M-K130-1",
+      "name": "FGS Braunschweig",
+      "readiness_code": "R1",
+      "capabilities": ["LITTORAL_PATROL", "SEA_SURVEILLANCE"],
+      "rotation_conflict": false,
+      "fuel_days_remaining": 14,
+      "munition_gate": "ok"
+    },
+    {
+      "force_element_id": "DE-M-K130-2",
+      "name": "FGS Magdeburg",
+      "readiness_code": "R1",
+      "capabilities": ["LITTORAL_PATROL", "ALB_MCM"],
+      "rotation_conflict": false,
+      "fuel_days_remaining": 11,
+      "munition_gate": "ok"
+    },
+    {
+      "force_element_id": "DE-M-F124",
+      "name": "FGS Sachsen",
+      "readiness_code": "R3",
+      "capabilities": ["HEAVY_SURFACE", "OPTICAL_EO"],
+      "rotation_conflict": false,
+      "fuel_days_remaining": 9,
+      "munition_gate": "warning"
+    },
+    {
+      "force_element_id": "DE-AIR-P8",
+      "name": "Maritime Patrol P-8A Det.",
+      "readiness_code": "R1",
+      "capabilities": ["MARITIME_PATROL_AIR"],
+      "rotation_conflict": false,
+      "fuel_days_remaining": null,
+      "munition_gate": "ok"
+    },
+    {
+      "force_element_id": "DE-ISR-SAR",
+      "name": "ICEYE / SAR cue tasking",
+      "readiness_code": "R1",
+      "capabilities": ["SPACE_SAR", "PASSIVE_ISR"],
+      "rotation_conflict": false,
+      "fuel_days_remaining": null,
+      "munition_gate": "ok"
+    }
+  ]
+}

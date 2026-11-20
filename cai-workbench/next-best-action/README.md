@@ -2,7 +2,17 @@
 
 Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observer-Stack (Trino/Iceberg, NiFi-Simulatoren, optional CrewAI).
 
-**Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · UC1: [`../situation-awareness/`](../situation-awareness/)
+**Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · Mission Planning + SAP: [`../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) · UC1: [`../situation-awareness/`](../situation-awareness/)
+
+## Mission Planning + SAP (MP-0 / MP-1)
+
+```bash
+export NBA_SAP_READINESS_MODE=sample   # off | sample | odata | trino
+python3 run_nba.py --demo-greifswald --phase 1
+# audit.json → sap_readiness_audit; decision_record.json → §10_mission_readiness
+```
+
+Fixtures: `data/sap_readiness_sample.json`, `data/sap_capability_map.json`. Trino DDL: `cdw-analyse/sql/nba_schema_mp0_readiness.sql`, `nba_schema_mp1_mission.sql`.
 
 ## CML Scheduled Job (UC2)
 

@@ -53,6 +53,20 @@ export type NbaDecisionRecord = {
         }[];
       };
     };
+    "10_mission_readiness"?: {
+      source?: string;
+      queried_at?: string;
+      units?: {
+        force_element_id: string;
+        name: string;
+        readiness_code: string;
+        capabilities?: string[];
+        rotation_conflict?: boolean;
+        fuel_days_remaining?: number | null;
+        munition_gate?: string;
+      }[];
+      coa_impact?: Record<string, { executable?: boolean; blockers?: string[] }>;
+    };
   };
 };
 

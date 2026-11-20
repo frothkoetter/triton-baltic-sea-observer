@@ -81,6 +81,7 @@ def update_decision_artifacts(
     grounding: dict | None,
     settings: Settings,
     shacl_report: dict | None = None,
+    mission_readiness: dict | None = None,
 ) -> None:
     """Phase 5: persist full decision card + grounding on nba_incidents."""
     from .shacl_gate import (
@@ -109,14 +110,29 @@ def update_decision_artifacts(
     grounding_sql = "NULL"
     if grounding:
         grounding_sql = f"'{_esc(json.dumps(grounding, ensure_ascii=False))}'"
+    readiness_sql = ""
+    if mission_readiness:
+        readiness_json = _esc(json.dumps(mission_readiness, ensure_ascii=False))
+        readiness_sql = f", mission_readiness_json = '{readiness_json}'"
     sql = (
         f"UPDATE {settings.trino_catalog}.{settings.trino_schema}.nba_incidents "
         f"SET decision_record_json = '{decision_json}', "
-        f"grounding_json = {grounding_sql}, "
+        f"grounding_json = {grounding_sql}{readiness_sql}, "
         f"updated_at = TIMESTAMP '{now}' "
         f"WHERE flow_uuid = '{_esc(flow_uuid)}'"
     )
-    trino_client.execute_sql(sql)
+    try:
+        trino_client.execute_sql(sql)
+    except Exception:
+        if mission_readiness:
+            sql = (
+                f"UPDATE {settings.trino_catalog}.{settings.trino_schema}.nba_incidents "
+                f"SET decision_record_json = '{decision_json}', "
+                f"grounding_json = {grounding_sql}, "
+                f"updated_at = TIMESTAMP '{now}' "
+                f"WHERE flow_uuid = '{_esc(flow_uuid)}'"
+            )
+        trino_client.execute_sql(sql)
 
 
 def materialized_registry_ready(settings: Settings) -> bool:

@@ -106,7 +106,7 @@ Transport: **SAP Integration Suite (CPI)** + **Advanced Event Mesh**; im Showcas
 
 ## 6. Phasenplan (Implementierung im Repository)
 
-### MP-0 — Dokumentation, Contracts, Demo-Fixtures (1 Sprint)
+### MP-0 — Dokumentation, Contracts, Demo-Fixtures (1 Sprint) — **umgesetzt**
 
 **Ziel:** Kein SAP-System nötig; nachvollziehbare Schnittstellen.
 
@@ -120,7 +120,7 @@ Transport: **SAP Integration Suite (CPI)** + **Advanced Event Mesh**; im Showcas
 
 **Akzeptanz:** Pipeline läuft mit `NBA_SAP_READINESS_MODE=sample`; COA-Gate `sap_readiness_ok` in `scoring.py` dokumentiert.
 
-### MP-1 — Readiness-Fusion im NBA-Pipeline (2 Sprints)
+### MP-1 — Readiness-Fusion im NBA-Pipeline (2 Sprints) — **umgesetzt**
 
 | Aufgabe | Modul | Verhalten |
 | :---- | :---- | :---- |
