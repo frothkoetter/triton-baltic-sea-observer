@@ -78,6 +78,9 @@ Open **Application logs** and check:
 | `cdsw-build.sh failed` | Run build manually in session; fix network/curl |
 | `node not found` | Run `bash cdsw-build.sh` in session |
 | `dist/ missing` | Same |
+| `UI bundle is stale` | Normal after `git pull` — wait for `cdsw-build.sh`, or run it in a Session |
+| Footer **`Alerts: 2`** (no **Trino live \| Demo**) | Stale `dist/` from before PR #130 — `bash cdsw-build.sh` or restart with `TRITON_FORCE_UI_REBUILD=1` |
+| Footer missing **`Build 0.2.0-data-mode`** | Same — old Vite bundle; check `/api/version` |
 | `Cannot find module` | Run `bash cdsw-build.sh` |
 | Python `trino` errors on API only | OK at startup; set `TRINO_*` env |
 | LiDAR: `No module named 'laspy'` | Run once in Session: `python3 -m pip install -r requirements-cml-app.txt`; **Restart Application** (`entry.py` installs laspy when trino is present but laspy is not) |

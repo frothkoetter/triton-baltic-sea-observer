@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson, getClientDataMode, setServerDataMode } from "./api";
+import { TRITON_UI_BUILD } from "./lib/build-info";
 import { FilterRail } from "./components/FilterRail";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
@@ -231,6 +232,9 @@ export default function App() {
         {health?.impala?.lastError && !isLiveFeed(health?.dataSource) && (
           <span title={health.impala.lastError}>Warehouse: offline</span>
         )}
+        <span className="mono" title="UI build — if missing, run bash cdsw-build.sh">
+          Build {TRITON_UI_BUILD}
+        </span>
       </footer>
       <div className="classification-banner">NATO UNCLASSIFIED // TRAINING</div>
     </div>
