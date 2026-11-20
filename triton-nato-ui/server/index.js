@@ -51,6 +51,11 @@ import {
   sitrepConfigured,
 } from "./sitrep.js";
 import { validateReadOnlySql } from "./sql-validator.js";
+import {
+  AGENT_APPS,
+  postAgentChat,
+  readOntologySummary,
+} from "./agent-chat.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
@@ -341,6 +346,26 @@ app.get("/api/lidar/points", async (req, res) => {
 app.get("/api/proximity-alerts", async (_req, res) => {
   const result = await fetchProximityAlertsLive();
   res.json(result);
+});
+
+app.get("/api/agents/apps", (_req, res) => {
+  res.json({ ok: true, apps: AGENT_APPS });
+});
+
+app.get("/api/agents/ontology", (_req, res) => {
+  res.json(readOntologySummary());
+});
+
+app.post("/api/agents/chat", async (req, res) => {
+  try {
+    const result = await postAgentChat(req.body);
+    if (!result.ok) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
 });
 
 app.post("/api/query", async (req, res) => {

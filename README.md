@@ -10,7 +10,7 @@ Copy names into CML; set **passwords and API keys only in the CML UI**, not in g
 
 ## NATO UI MVP
 
-Standalone web app (Lagebild · Analysen · SQL) with Impala `defense` backend and sample-data fallback:
+Standalone web app (Lagebild · Analysen · **Agenten**/CrewAI) with Impala `defense` backend and sample-data fallback:
 
 - Code: [`triton-nato-ui/`](./triton-nato-ui/)
 - UI data map: [`triton-nato-ui/docs/UI_OVERVIEW.md`](./triton-nato-ui/docs/UI_OVERVIEW.md)

@@ -783,6 +783,113 @@ a {
   }
 }
 
+.agent-console-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr 220px;
+  gap: 8px;
+  min-height: 520px;
+}
+
+.agent-chat-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+.agent-chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(60vh, 520px);
+}
+
+.agent-bubble {
+  max-width: 92%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.agent-bubble-user {
+  align-self: flex-end;
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid var(--border-subtle);
+}
+
+.agent-bubble-assistant {
+  align-self: flex-start;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.agent-bubble-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.agent-bubble-body {
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.agent-chat-compose {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: flex-end;
+}
+
+.agent-chat-compose textarea {
+  flex: 1;
+  min-height: 72px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 8px;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.agent-ontology-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.agent-ontology-list li {
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.catalog-item.active {
+  border-color: var(--accent-amber);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.linkish {
+  background: none;
+  border: none;
+  color: var(--accent-amber);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
 .sql-layout {
   display: grid;
   grid-template-columns: 220px 1fr;

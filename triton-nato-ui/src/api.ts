@@ -9,8 +9,8 @@ export type QueryResult = {
   fallbackReason?: string;
 };
 
-export async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(path);
+export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
   return res.json() as Promise<T>;
 }
 
