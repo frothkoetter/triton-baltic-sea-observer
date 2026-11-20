@@ -90,8 +90,24 @@ export TRITON_AGENT_MODE=llm
 
 ---
 
+## `crewai run` / `gpt-6-luna` / `OPENAI_API_KEY`
+
+This is **not** the Triton NBA or NATO UI path. The CLI `crewai run` uses a **separate** CrewAI project (often with a template `.env` and `YOUR_API_KEY`).
+
+| Symptom | Fix for Triton |
+|---------|----------------|
+| `OPENAI_API_KEY … YOUR_API_KEY` | Do **not** use `crewai run` for the showcase. |
+| NATO Agenten-Tab | `TRITON_AGENT_MODE=llm` + existing **`LAGEBILD_LLM_BASE_URL`**, **`LAGEBILD_API_KEY`** (Azure/Mistral). |
+| NBA Job | `NBA_SKIP_LLM=1` or same Lagebild LLM env — no CrewAI CLI. |
+| Agent bridge smoke | `TRITON_AGENT_MODE=offline` or `llm`. |
+
+If you **intentionally** use `crewai run` (own experiment): set a real `OPENAI_API_KEY` in that project's `.env`, or point the CrewAI project LLM to Azure/OpenAI-compatible URL per CrewAI docs — unrelated to `cml_job.py` / `run_nba.py`.
+
+---
+
 ## Summary
 
 - Your install **succeeded**; the **dependency conflict** is real for **MLflow on CML**.
 - **Do not** install `requirements-crewai.txt` into the **default CML project engine** used for MLflow jobs.
 - Use **`TRITON_AGENT_MODE=llm`** for live agent answers, or an **isolated venv** for CrewAI experiments.
+- **Do not** run `crewai run` for Triton — use `python3 cml_job.py`, `run_nba.py`, or NATO UI with `TRITON_AGENT_MODE`.

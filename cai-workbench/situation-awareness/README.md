@@ -30,7 +30,8 @@ With a live cluster: set `LAGEBILD_CONNECTION_NAME` to your **Trino** or legacy 
 | Type | **Scheduled Job** |
 | **Python script** (CML wählt nur `.py`) | **`cml_job.py`** in this folder (alternativ `entry.py`) |
 | **Kernel** | Python 3 / ML Runtime |
-| **Build** | `bash cdsw-build.sh` oder `pip install -r requirements.txt` |
+| **Build** | `bash cdsw-build.sh` oder `pip install -r requirements.txt` (**nach Runtime-Wechsel z. B. Python 3.13 erneut**) |
+| **UC1 deps** | PDF braucht **`fpdf2`** (Import `from fpdf import FPDF`) — steht in `requirements.txt` |
 | **Argumente** | Keine — alles über **Job Environment** (siehe `.env.example`) |
 | Schedule | `0 * * * *` |
 
