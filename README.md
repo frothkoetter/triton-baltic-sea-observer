@@ -8,6 +8,8 @@ Show case - Baltic Sea Observer
 Template for **Project → Environment Variables** (and Applications): [`.env.default`](./.env.default).  
 Copy names into CML; set **passwords and API keys only in the CML UI**, not in git.
 
+Bulk apply via API v2: [`scripts/cml/`](./scripts/cml/) (`set_project_environment.py` + local `triton-project.env.local`).
+
 ## NATO UI MVP
 
 Standalone web app (Lagebild · Analysen · **Agenten**/CrewAI) with Impala `defense` backend and sample-data fallback:
