@@ -1,0 +1,176 @@
+{
+  "version": "2026-11",
+  "classification_note": "Training showcase — rules paraphrase publicly released NATO / UN texts; not operational policy.",
+  "nato_public_sources": [
+    {
+      "source_id": "NATO:AJP-3.10.2",
+      "title": "ALLIED JOINT DOCTRINE FOR OPERATIONS AND DECEPTION (OPSEC)",
+      "edition": "Ed A",
+      "publication_year": 2024,
+      "public_url": "https://assets.publishing.service.gov.uk/media/69ccfbd59b2e6e135502d04a/ARCHIVE-AJP_3_10_2_Ops_and_Deception_EdA-O.pdf",
+      "topics": ["OPSEC", "EEFI", "maritime AIS technical measures"]
+    },
+    {
+      "source_id": "NATO:ATP-02.1",
+      "title": "Naval Cooperation and Guidance for Shipping (NCAGS)",
+      "edition": "Ed B Ver 1",
+      "publication_year": 2024,
+      "public_url": "https://shipping.nato.int/resources/site58/General/Documents/ATP-02.1%20EDB%20V1%20E.pdf",
+      "topics": ["EMCON", "AIS restriction", "merchant shipping in AOO"]
+    },
+    {
+      "source_id": "NATO:MC362-1-EXTRACT",
+      "title": "MC 0362/1 NATO Rules of Engagement (public extract)",
+      "edition": "2003 extract",
+      "public_url": "https://archives.nato.int/uploads/r/nato-archives-online/d/c/1/dc1dc4cf3a21721d83155cd5446d11b6a97d982a935659b2051a6f4769eaa1c0/MC_0362_1_FINAL_EXTRACT_ENG_NHQO03009291E.pdf",
+      "topics": ["warnings", "diversions", "minimum force framing"]
+    },
+    {
+      "source_id": "NATO:MC362-2",
+      "title": "MC 362/2 Collective Operations Security",
+      "note": "Referenced in national OPSEC training; full text often restricted — summary only in ontology.",
+      "topics": ["collective OPSEC", "information sharing in coalitions"]
+    },
+    {
+      "source_id": "UNCLOS",
+      "title": "United Nations Convention on the Law of the Sea",
+      "public_url": "https://www.un.org/depts/los/convention_agreements/texts/unclos/unclos_e.pdf",
+      "topics": ["innocent passage", "territorial sea"]
+    }
+  ],
+  "business_rules": [
+    {
+      "rule_id": "BR-OPSEC-AIS-001",
+      "title": "Control maritime AIS emissions under OPSEC",
+      "source_ids": ["NATO:AJP-3.10.2", "NATO:ATP-02.1"],
+      "paraphrase": "Allied OPSEC doctrine treats temporary AIS deactivation in the maritime domain as a technical measure to protect essential information. NCAGS EMCON may restrict AIS when threat and military commander policy warrant it; friendly cueing must not assume persistent AIS.",
+      "playbook_rule_id": "JAMMER_PASSIVE_BIAS",
+      "ontology_alert_types": ["gps_jammer", "ais_pipeline_blackout", "lagebild_flash"],
+      "ontology_term": "triton:GPSJammingEvent",
+      "coa_guidance": {
+        "prefer_coa_ids": ["A", "D"],
+        "caution_coa_ids": ["B"],
+        "rationale": "Passive/multidomain first; heavy surface advertises intent (MC 362/2 training alignment)."
+      },
+      "trino_bindings": {
+        "entities": ["AISObservation", "MaritimeAnomaly"],
+        "tables": ["ais_events_ice", "vessel_outliers"],
+        "filters": {
+          "outlier_type_in": ["Dark Vessel", "Misreported Status", "MMSI Teleportation"]
+        },
+        "evidence_template": "SELECT mmsi, outlier_type, event_timestamp, severity FROM iceberg.defense.vessel_outliers WHERE outlier_type IN ('Dark Vessel', 'Misreported Status') ORDER BY event_timestamp DESC LIMIT 50"
+      },
+      "agent_constraints": [
+        "Do not publish exact friendly unit tasking derived from live fleet tables in chat.",
+        "Cite BR-OPSEC-AIS-001 when recommending COA with passive ISR."
+      ]
+    },
+    {
+      "rule_id": "BR-CUI-PIPE-002",
+      "title": "Protect critical underwater infrastructure segment detail",
+      "source_ids": ["NATO:ATP-02.1", "BALTIC:CUI-pipeline-corridor"],
+      "paraphrase": "Sailing Information and NCAGS products treat security-related route and threat data as need-to-know. Exact pipeline segment identifiers in UNCLASSIFIED training products should be generalized; national C2 coordinates response.",
+      "playbook_rule_id": "PIPELINE_SOVEREIGN_SENSITIVE",
+      "ontology_alert_types": ["ais_pipeline_blackout"],
+      "ontology_term": "triton:AISBlackoutNearCriticalInfrastructure",
+      "coa_guidance": {
+        "prefer_coa_ids": ["A", "C"],
+        "required_coordination": ["national_c2", "pipeline_operator"]
+      },
+      "trino_bindings": {
+        "entities": ["CriticalInfrastructure", "MaritimeAnomaly", "AISObservation"],
+        "tables": ["ostsee_pipelines", "ostsee_infrastruktur", "vessel_outliers", "ais_events_ice"],
+        "filters": {
+          "outlier_type_in": ["Dark Vessel"]
+        },
+        "evidence_template": "SELECT v.mmsi, v.outlier_type, v.severity FROM iceberg.defense.vessel_outliers v WHERE v.outlier_type = 'Dark Vessel' ORDER BY v.event_timestamp DESC LIMIT 25",
+        "spatial_join_note": "Pipeline proximity uses ostsee_pipelines + cdw-analyse spatial AIS jobs"
+      },
+      "agent_constraints": [
+        "Map blackout to segment category, not operator-secret segment IDs in user-facing text.",
+        "Reference table ostsee_pipelines only as 'CUI corridor' in UNCLASSIFIED chat."
+      ]
+    },
+    {
+      "rule_id": "BR-ROE-DEESCAL-003",
+      "title": "De-escalatory ISR before surface diversion",
+      "source_ids": ["NATO:MC362-1-EXTRACT", "UNCLOS"],
+      "paraphrase": "Public ROE extract frames warnings and diversions as authorised only in designated circumstances. Adversary proximity in peacetime policing contexts defaults to passive ISR and discovery threshold review before surface escalation.",
+      "playbook_rule_id": "RUS_FLEET_DEESCALATION",
+      "ontology_alert_types": ["rus_fleet_proximity"],
+      "ontology_term": "triton:AdversaryFleetProximity",
+      "coa_guidance": {
+        "prefer_coa_ids": ["A", "D"],
+        "caution_coa_ids": ["B"],
+        "unless_discovery_below": 0.5
+      },
+      "trino_bindings": {
+        "entities": ["MaritimeUnit", "AISObservation"],
+        "tables": ["rus_naval_fleet_positions", "ships", "ais_events_ice"],
+        "evidence_template": "SELECT name, latitude, longitude, mmsi FROM iceberg.defense.rus_naval_fleet_positions ORDER BY latitude LIMIT 50"
+      },
+      "agent_constraints": [
+        "Never infer ROE release in chat; state 'commander decision required' for COA B.",
+        "Use rus_naval_fleet_positions for pattern-of-life, not targeting."
+      ]
+    },
+    {
+      "rule_id": "BR-RESTRICTED-AREA-004",
+      "title": "Observation areas and violation analytics",
+      "source_ids": ["UNCLOS", "NATO:ATP-02.1"],
+      "paraphrase": "Coastal jurisdiction and NCAGS area warnings inform restricted-area monitoring. Vessels entering published observation polygons trigger analytics, not automatic engagement.",
+      "playbook_rule_id": null,
+      "ontology_alert_types": ["lagebild_flash", "sitrep_escalation"],
+      "ontology_term": "triton:LagebildFlashPriority",
+      "coa_guidance": {
+        "prefer_coa_ids": ["A", "D"]
+      },
+      "trino_bindings": {
+        "entities": ["RestrictedOperatingArea", "SituationPicture"],
+        "tables": ["observation_areas", "area_violation", "lagebild"],
+        "evidence_template": "SELECT * FROM iceberg.defense.area_violation LIMIT 100"
+      },
+      "agent_constraints": [
+        "Tier-A observation_areas are training polygons; link to /api/analyses/restricted-analytics."
+      ]
+    },
+    {
+      "rule_id": "BR-SANCTIONS-005",
+      "title": "Sanctions intelligence separation",
+      "source_ids": ["NATO:ATP-02.1"],
+      "paraphrase": "NCAGS distinguishes unclassified sailing information from sensitive embarked material. Sanctioned vessel lists are intelligence-adjacent: use counts and programmes in chat, not full identity dumps.",
+      "playbook_rule_id": null,
+      "ontology_alert_types": ["demo_greifswald"],
+      "ontology_term": "triton:TrainingScenarioGreifswald",
+      "coa_guidance": {},
+      "trino_bindings": {
+        "entities": ["SanctionedVessel"],
+        "tables": ["sanctioned_vessels"],
+        "evidence_template": "SELECT sanction_program, COUNT(*) AS n FROM iceberg.defense.sanctioned_vessels GROUP BY sanction_program"
+      },
+      "agent_constraints": [
+        "Aggregate sanctioned_vessels in agent replies unless user is on authorised analytics view."
+      ]
+    },
+    {
+      "rule_id": "BR-NBA-HITL-006",
+      "title": "Human approval before execution",
+      "source_ids": ["NATO:AJP-3.10.2", "NATO:MC362-2"],
+      "paraphrase": "OPSEC and collective OPSEC require protecting friendly intent. NBA COA activation and SAP force assignment remain human-gated; agents recommend only.",
+      "playbook_rule_id": null,
+      "ontology_alert_types": ["sitrep_escalation", "demo_greifswald"],
+      "ontology_term": "triton:SitrepEscalation",
+      "coa_guidance": {
+        "hitl_required": true
+      },
+      "trino_bindings": {
+        "entities": ["NbaDecision"],
+        "tables": ["nba_incidents", "nba_coa_runs"],
+        "evidence_template": "SELECT flow_uuid, alert_type, status, best_coa_id, approved_coa_id FROM iceberg.defense.nba_incidents ORDER BY updated_at DESC LIMIT 20"
+      },
+      "agent_constraints": [
+        "Agents must not write approved_coa_id; cite NBA HITL UI and §7 decision record."
+      ]
+    }
+  ]
+}

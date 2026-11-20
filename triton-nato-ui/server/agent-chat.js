@@ -10,13 +10,10 @@ const REPO_ROOT = process.env.TRITON_REPO_ROOT
   : path.resolve(__dirname, "..", "..");
 const CONSOLE_DIR = path.join(REPO_ROOT, "cai-workbench", "agent-console");
 const BRIDGE = path.join(CONSOLE_DIR, "chat_bridge.py");
-const ONTOLOGY_FILE = path.join(
-  REPO_ROOT,
-  "cai-workbench",
-  "next-best-action",
-  "data",
-  "baltic_ontology.json"
-);
+const DATA_DIR = path.join(REPO_ROOT, "cai-workbench", "next-best-action", "data");
+const ONTOLOGY_FILE = path.join(DATA_DIR, "baltic_ontology.json");
+const BUSINESS_RULES_FILE = path.join(DATA_DIR, "baltic_business_rules.json");
+const TRINO_MAPPING_FILE = path.join(DATA_DIR, "baltic_trino_mapping.json");
 
 function pythonEnv() {
   const nba = path.join(REPO_ROOT, "cai-workbench", "next-best-action");
@@ -96,6 +93,46 @@ export function readOntologySummary() {
     return { ok: false, error: String(e.message || e) };
   }
   return { ok: false, error: "Ontology file not found" };
+}
+
+export function readBusinessRulesSummary() {
+  try {
+    if (!fs.existsSync(BUSINESS_RULES_FILE) || !fs.existsSync(TRINO_MAPPING_FILE)) {
+      return { ok: false, error: "Business rules or Trino mapping file missing" };
+    }
+    const br = JSON.parse(fs.readFileSync(BUSINESS_RULES_FILE, "utf8"));
+    const tm = JSON.parse(fs.readFileSync(TRINO_MAPPING_FILE, "utf8"));
+    const rules = (br.business_rules || []).map((r) => ({
+      rule_id: r.rule_id,
+      title: r.title,
+      source_ids: r.source_ids,
+      ontology_alert_types: r.ontology_alert_types,
+      playbook_rule_id: r.playbook_rule_id,
+      tables: r.trino_bindings?.tables,
+      entities: r.trino_bindings?.entities,
+      evidence_template: r.trino_bindings?.evidence_template,
+    }));
+    return {
+      ok: true,
+      version: br.version,
+      classification_note: br.classification_note,
+      nato_public_sources: br.nato_public_sources,
+      business_rules: rules,
+      trino_mapping: {
+        version: tm.version,
+        warehouse: tm.warehouse,
+        semantic_entities: (tm.semantic_entities || []).map((e) => ({
+          entity_id: e.entity_id,
+          iri: e.iri,
+          tables: e.tables,
+          api_routes: e.api_routes,
+        })),
+        alert_type_bindings: tm.alert_type_bindings,
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
 }
 
 export const AGENT_APPS = [

@@ -54,6 +54,7 @@ import { validateReadOnlySql } from "./sql-validator.js";
 import {
   AGENT_APPS,
   postAgentChat,
+  readBusinessRulesSummary,
   readOntologySummary,
 } from "./agent-chat.js";
 
@@ -354,6 +355,10 @@ app.get("/api/agents/apps", (_req, res) => {
 
 app.get("/api/agents/ontology", (_req, res) => {
   res.json(readOntologySummary());
+});
+
+app.get("/api/agents/business-rules", (_req, res) => {
+  res.json(readBusinessRulesSummary());
 });
 
 app.post("/api/agents/chat", async (req, res) => {

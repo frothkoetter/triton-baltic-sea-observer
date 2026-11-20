@@ -12,6 +12,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from src.crew_runtime import run_agent_chat  # noqa: E402
+from src.business_rules import business_rules_summary  # noqa: E402
 from src.ontology import ontology_summary  # noqa: E402
 
 
@@ -24,6 +25,9 @@ def main() -> int:
     action = payload.get("action", "chat")
     if action == "ontology":
         json.dump({"ok": True, "ontology": ontology_summary()}, sys.stdout, ensure_ascii=False)
+        return 0
+    if action == "business_rules":
+        json.dump({"ok": True, **business_rules_summary()}, sys.stdout, ensure_ascii=False)
         return 0
     if action == "chat":
         app_id = str(payload.get("app_id") or "lage-analyst")

@@ -12,6 +12,20 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 
 type OntologyConcept = { id: string; label?: string; iri?: string };
 
+type BusinessRuleRow = {
+  rule_id: string;
+  title: string;
+  source_ids?: string[];
+  tables?: string[];
+  evidence_template?: string;
+};
+
+type TrinoEntity = {
+  entity_id: string;
+  iri?: string;
+  tables?: { table: string; role?: string }[];
+};
+
 export function AgentConsolePage() {
   const [apps, setApps] = useState<AgentApp[]>([]);
   const [appId, setAppId] = useState("lage-analyst");
@@ -22,6 +36,9 @@ export function AgentConsolePage() {
   const [busy, setBusy] = useState(false);
   const [engine, setEngine] = useState<string>("");
   const [error, setError] = useState("");
+  const [businessRules, setBusinessRules] = useState<BusinessRuleRow[]>([]);
+  const [trinoEntities, setTrinoEntities] = useState<TrinoEntity[]>([]);
+  const [rulesNote, setRulesNote] = useState("");
   const tailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -33,6 +50,15 @@ export function AgentConsolePage() {
       }>("/api/agents/ontology");
       setConcepts(onto.ontology?.concepts ?? []);
       setNamespace(onto.ontology?.namespace ?? "");
+      const br = await fetchJson<{
+        ok?: boolean;
+        business_rules?: BusinessRuleRow[];
+        classification_note?: string;
+        trino_mapping?: { semantic_entities?: TrinoEntity[] };
+      }>("/api/agents/business-rules");
+      setBusinessRules(br.business_rules ?? []);
+      setRulesNote(br.classification_note ?? "");
+      setTrinoEntities(br.trino_mapping?.semantic_entities ?? []);
     })();
   }, []);
 
@@ -164,7 +190,38 @@ export function AgentConsolePage() {
       </section>
 
       <aside className="panel agent-ontology-rail">
-        <h2 className="panel-title">Semantica · KG-Seed</h2>
+        <h2 className="panel-title">NATO Business Rules</h2>
+        <p className="text-muted" style={{ fontSize: 10 }}>
+          {rulesNote}
+        </p>
+        <ul className="agent-ontology-list">
+          {businessRules.map((r) => (
+            <li key={r.rule_id}>
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => {
+                  setDraft(
+                    `Erkläre Regel ${r.rule_id} (${r.title}) und welche Trino-Tabellen ${(r.tables ?? []).join(", ")} als Evidence dienen.`
+                  );
+                }}
+              >
+                <span className="mono">{r.rule_id}</span>
+              </button>
+              <div className="text-muted" style={{ fontSize: 11 }}>
+                {r.title}
+              </div>
+              {r.tables?.length ? (
+                <div className="mono" style={{ fontSize: 10 }}>
+                  {r.tables.join(" · ")}
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        <h2 className="panel-title" style={{ marginTop: 12 }}>
+          Semantica · Konzepte
+        </h2>
         <ul className="agent-ontology-list">
           {concepts.map((c) => (
             <li key={c.id}>
@@ -179,6 +236,19 @@ export function AgentConsolePage() {
               </button>
               <div className="text-muted" style={{ fontSize: 11 }}>
                 {c.label}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <h2 className="panel-title" style={{ marginTop: 12 }}>
+          Trino-Entitäten
+        </h2>
+        <ul className="agent-ontology-list">
+          {trinoEntities.map((e) => (
+            <li key={e.entity_id}>
+              <span className="mono">{e.entity_id}</span>
+              <div className="text-muted" style={{ fontSize: 10 }}>
+                {(e.tables ?? []).map((t) => t.table).join(", ")}
               </div>
             </li>
           ))}

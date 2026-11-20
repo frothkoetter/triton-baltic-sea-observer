@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .apps import AgentApp, app_by_id
+from .business_rules import format_rules_context
 from .ontology import format_ontology_context, load_ontology
 
 _NBA_SRC = Path(__file__).resolve().parents[2] / "next-best-action"
@@ -132,7 +133,7 @@ def run_agent_chat(
     app = app_by_id(app_id)
     if app is None:
         return {"ok": False, "error": f"Unknown app_id: {app_id}"}
-    onto_ctx = format_ontology_context()
+    onto_ctx = format_ontology_context() + "\n\n" + format_rules_context()
     engine = "offline"
     reply: str | None = None
     crew_err: str | None = None
