@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="Triton NATO UI main views overview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f1419"/>
+      <stop offset="100%" stop-color="#161d24"/>
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <text x="600" y="42" text-anchor="middle" fill="#e6edf3" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="700">Triton NATO UI  Main views &amp; data sources</text>
+  <text x="600" y="68" text-anchor="middle" fill="#8b9cab" font-family="system-ui,sans-serif" font-size="13">iceberg.defense · Trino/Impala · sample fallback · NATO UNCLASSIFIED // TRAINING</text>
+
+  <!-- Lagebild -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="95" width="540" height="280" rx="8" fill="#1c2630" stroke="#2a3540"/>
+    <text x="60" y="125" fill="#45bac7" font-family="system-ui,sans-serif" font-size="16" font-weight="700">Lagebild</text>
+    <text x="60" y="148" fill="#8b9cab" font-size="11" font-family="system-ui,sans-serif">#lagebild (default)</text>
+    <rect x="60" y="162" width="500" height="140" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="75" y="185" fill="#6b7c8a" font-size="10" font-family="monospace">TacticalMap</text>
+    <circle cx="120" cy="220" r="4" fill="#4da3ff"/>
+    <circle cx="200" cy="250" r="4" fill="#4da3ff"/>
+    <circle cx="280" cy="210" r="5" fill="#e53935"/>
+    <circle cx="350" cy="235" r="4" fill="#ffb020"/>
+    <path d="M 400 260 L 450 200 L 480 270 Z" fill="none" stroke="#3ddc84" stroke-width="1.5" opacity="0.7"/>
+    <line x1="420" y1="230" x2="500" y2="250" stroke="#8b9cab" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+    <text x="75" y="320" fill="#e6edf3" font-size="10" font-family="system-ui,sans-serif">KPIs: fleet · personnel · surveillance · alerts (+ NBA count)</text>
+    <text x="75" y="338" fill="#8b9cab" font-size="10" font-family="system-ui,sans-serif">Layers: AIS · fleets · outliers · tracks · restricted · infra · NBA · sanctions</text>
+    <text x="75" y="356" fill="#8b9cab" font-size="10" font-family="system-ui,sans-serif">API: /api/ais · vessel-outliers · observation-areas · nba/incidents · kpis</text>
+  </g>
+
+  <!-- Buoy (Analysen) -->
+  <g filter="url(#shadow)">
+    <rect x="620" y="95" width="540" height="280" rx="8" fill="#1c2630" stroke="#2a3540"/>
+    <text x="640" y="125" fill="#45bac7" font-size="16" font-weight="700" font-family="system-ui,sans-serif">Analysen ’ Buoys</text>
+    <text x="640" y="148" fill="#8b9cab" font-size="11" font-family="system-ui,sans-serif">#analysen · tab buoys</text>
+    <rect x="640" y="162" width="240" height="140" rx="4" fill="#121820" stroke="#2a3540"/>
+    <circle cx="700" cy="210" r="6" fill="#45bac7" opacity="0.9"/>
+    <circle cx="760" cy="240" r="5" fill="#45bac7" opacity="0.6"/>
+    <circle cx="820" cy="200" r="7" fill="#ffb020"/>
+    <text x="655" y="285" fill="#6b7c8a" font-size="9" font-family="system-ui,sans-serif">Buoy map</text>
+    <rect x="900" y="162" width="240" height="65" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="915" y="185" fill="#e6edf3" font-size="10">Charts: KPI · trends</text>
+    <text x="915" y="205" fill="#8b9cab" font-size="9">buoy_data aggregates</text>
+    <rect x="900" y="237" width="240" height="65" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="915" y="260" fill="#e6edf3" font-size="10">Scatter: class × confidence</text>
+    <text x="915" y="280" fill="#8b9cab" font-size="9">GET /api/analyses/buoy-analytics</text>
+    <text x="640" y="338" fill="#8b9cab" font-size="10" font-family="system-ui,sans-serif">MAD sensors · dark-vessel support · links to outlier pipeline</text>
+  </g>
+
+  <!-- LiDAR -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="400" width="540" height="280" rx="8" fill="#1c2630" stroke="#2a3540"/>
+    <text x="60" y="430" fill="#45bac7" font-size="16" font-weight="700" font-family="system-ui,sans-serif">LiDAR</text>
+    <text x="60" y="453" fill="#8b9cab" font-size="11" font-family="system-ui,sans-serif">#lidar</text>
+    <rect x="60" y="467" width="180" height="180" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="75" y="490" fill="#6b7c8a" font-size="9">Scan list</text>
+    <rect x="75" y="500" width="150" height="12" rx="2" fill="#2a3540"/>
+    <rect x="75" y="520" width="130" height="12" rx="2" fill="#2a3540"/>
+    <rect x="75" y="540" width="140" height="12" rx="2" fill="#3ddc84" opacity="0.4"/>
+    <rect x="260" y="467" width="300" height="180" rx="4" fill="#0d1117" stroke="#2a3540"/>
+    <g opacity="0.85">
+      <circle cx="310" cy="520" r="2" fill="#6ee7b7"/>
+      <circle cx="320" cy="530" r="2" fill="#6ee7b7"/>
+      <circle cx="335" cy="515" r="2" fill="#fbbf24"/>
+      <circle cx="350" cy="540" r="2" fill="#6ee7b7"/>
+      <circle cx="400" cy="500" r="2" fill="#94a3b8"/>
+      <circle cx="420" cy="560" r="2" fill="#6ee7b7"/>
+      <circle cx="480" cy="530" r="2" fill="#f87171"/>
+    </g>
+    <text x="275" y="490" fill="#6b7c8a" font-size="9">Point cloud preview</text>
+    <text x="60" y="668" fill="#8b9cab" font-size="10" font-family="system-ui,sans-serif">GET /api/lidar/scans · /points · S3 LAS/LAZ (laspy bridge)</text>
+  </g>
+
+  <!-- NBA HITL -->
+  <g filter="url(#shadow)">
+    <rect x="620" y="400" width="540" height="280" rx="8" fill="#1c2630" stroke="#2a3540"/>
+    <text x="640" y="430" fill="#45bac7" font-size="16" font-weight="700" font-family="system-ui,sans-serif">NBA HITL</text>
+    <text x="640" y="453" fill="#8b9cab" font-size="11" font-family="system-ui,sans-serif">#nba · Next Best Action</text>
+    <rect x="640" y="467" width="200" height="180" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="655" y="490" fill="#6b7c8a" font-size="9">Incidents</text>
+    <text x="655" y="515" fill="#e6edf3" font-size="9" font-family="monospace">sitrep_escalation&</text>
+    <text x="655" y="535" fill="#e6edf3" font-size="9" font-family="monospace">gps_jammer&</text>
+    <rect x="855" y="467" width="285" height="85" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="870" y="492" fill="#e6edf3" font-size="10" font-weight="600">COA matrix A B C D</text>
+    <text x="870" y="512" fill="#3ddc84" font-size="9">A PASS rank 1 · Approve §7</text>
+    <text x="870" y="530" fill="#8b9cab" font-size="9">nba_coa_runs / decision_record</text>
+    <rect x="855" y="562" width="285" height="85" rx="4" fill="#121820" stroke="#2a3540"/>
+    <text x="870" y="585" fill="#e6edf3" font-size="10">Decision recorder §19</text>
+    <text x="870" y="605" fill="#8b9cab" font-size="9">Pin · sim · scenario · Red vs Blue</text>
+    <text x="870" y="625" fill="#8b9cab" font-size="9">Phase 7 PROV · Phase 8 Semantica</text>
+    <text x="640" y="668" fill="#8b9cab" font-size="10" font-family="system-ui,sans-serif">Trino nba_incidents · approve ’ approved_coa_id · map marker from Lagebild</text>
+  </g>
+</svg>
