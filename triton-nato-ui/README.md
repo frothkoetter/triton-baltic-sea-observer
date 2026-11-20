@@ -91,6 +91,10 @@ The MVP maps this to `impyla` with `use_http_transport=true`. Browser OAuth cann
 
 If Impala is unreachable (503, VPN, or auth failure), map and analysis panels automatically use **sample data**; the status bar shows `SAMPLE DATA`.
 
+**Data mode toggle:** Footer **Trino live** / **Demo** sets cookie `triton_data_mode` (+ `X-Triton-Data-Mode` header). `GET /api/health` runs `SELECT 1` when live mode is active and reports `warehouseProbeError` if credentials or JDBC fail.
+
+**Why SAMPLE DATA?** (1) `TRITON_FORCE_SAMPLE_DATA=true`, (2) `TRINO_USER` / `TRINO_PASSWORD` missing on the **Application** (inherit from project), (3) Demo mode selected, (4) previously: health showed `sample` before any query — fixed via Trino probe.
+
 **Autonomous demo (no Trino):** With no `TRINO_USER` / `TRINO_PASSWORD`, `/api/nba/incidents` serves three embedded incidents (incl. Greifswald `49d1d9d5-…`), COA matrix from `nba-decision-record-sample.json`, decision recorder §8/§9, governance + Semantica download stubs — approve works in-memory on sample rows. Check `/api/health` → `nba.demoMode: true`.
 
 ## NBA HITL (Phase 4)

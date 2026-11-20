@@ -14,6 +14,7 @@ import {
   buildRestrictedAnalyticsQueries,
 } from "./queries.js";
 import { shortenSanctionReason } from "./sanction-text.js";
+import { getEffectiveDataMode, shouldUseSampleData } from "./data-mode.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
@@ -26,11 +27,15 @@ let connectionState = {
 };
 
 function forceSample() {
-  return process.env.TRITON_FORCE_SAMPLE_DATA === "true";
+  return shouldUseSampleData();
 }
 
 export function getConnectionState() {
-  return { ...connectionState, forceSample: forceSample() };
+  return {
+    ...connectionState,
+    forceSample: forceSample(),
+    dataMode: getEffectiveDataMode(),
+  };
 }
 
 function runPython(sql) {
@@ -115,9 +120,29 @@ export async function queryWarehouse(sql) {
 }
 
 export async function runQueryOrSample(sql, sampleFn) {
+  if (shouldUseSampleData()) {
+    const rows = sampleFn();
+    return {
+      ok: true,
+      source: "sample",
+      columns: rows.length ? Object.keys(rows[0]) : [],
+      rows,
+      fallbackReason: getEffectiveDataMode() === "sample" ? "demo_mode" : "trino_not_configured",
+    };
+  }
   const live = await queryWarehouse(sql);
   if (live.ok) {
     return live;
+  }
+  const mode = getEffectiveDataMode();
+  if (mode === "live") {
+    return {
+      ok: false,
+      source: "none",
+      error: live.error || "Warehouse query failed",
+      rows: [],
+      columns: [],
+    };
   }
   const rows = sampleFn();
   return {

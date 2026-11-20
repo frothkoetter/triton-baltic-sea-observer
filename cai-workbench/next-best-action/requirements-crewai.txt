@@ -1,3 +1,4 @@
-# Optional Phase 8.4 — not for default CML schedule (heavy deps)
+# Optional Phase 8.4 — NOT for CML default engine (conflicts mlflow-cml-plugin protobuf==4.25.3).
+# See docs/CML_CREWAI_INSTALL.md — use isolated venv or TRITON_AGENT_MODE=llm on NATO UI.
 -r requirements.txt
-crewai>=0.86.0
+crewai>=0.86.0,<1.17

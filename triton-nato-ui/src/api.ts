@@ -9,9 +9,33 @@ export type QueryResult = {
   fallbackReason?: string;
 };
 
+const DATA_MODE_STORAGE = "triton_data_mode";
+
+export function getClientDataMode(): "live" | "sample" | "auto" {
+  const raw = localStorage.getItem(DATA_MODE_STORAGE);
+  if (raw === "live" || raw === "sample" || raw === "auto") return raw;
+  return "auto";
+}
+
+export function setClientDataMode(mode: "live" | "sample" | "auto") {
+  localStorage.setItem(DATA_MODE_STORAGE, mode);
+}
+
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init);
+  const mode = getClientDataMode();
+  const headers = new Headers(init?.headers);
+  headers.set("X-Triton-Data-Mode", mode);
+  const res = await fetch(path, { ...init, headers, credentials: "same-origin" });
   return res.json() as Promise<T>;
+}
+
+export async function setServerDataMode(mode: "live" | "sample" | "auto") {
+  setClientDataMode(mode);
+  return fetchJson<{ ok: boolean; mode?: string; error?: string }>("/api/data-mode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode }),
+  });
 }
 
 export async function postQuery(sql: string): Promise<QueryResult> {

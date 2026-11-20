@@ -57,6 +57,14 @@ import {
   readBusinessRulesSummary,
   readOntologySummary,
 } from "./agent-chat.js";
+import {
+  COOKIE_NAME,
+  dataModeMeta,
+  getSampleReason,
+  runWithDataMode,
+  shouldUseSampleData,
+} from "./data-mode.js";
+import { runTrino, trinoConfigured } from "./trino-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
@@ -77,6 +85,10 @@ app.get("/healthcheck", healthProbe);
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
+
+app.use((req, res, next) => {
+  runWithDataMode(req, () => next());
+});
 
 app.get("/api/s3/diagnose", async (req, res) => {
   const { spawn } = await import("node:child_process");
@@ -106,16 +118,56 @@ app.get("/api/s3/diagnose", async (req, res) => {
   });
 });
 
+app.post("/api/data-mode", (req, res) => {
+  const mode = String(req.body?.mode ?? "").toLowerCase();
+  if (!["live", "sample", "auto"].includes(mode)) {
+    return res.status(400).json({ ok: false, error: "mode must be live, sample, or auto" });
+  }
+  if (process.env.TRITON_FORCE_SAMPLE_DATA === "true") {
+    return res.status(409).json({
+      ok: false,
+      error: "TRITON_FORCE_SAMPLE_DATA=true — toggle disabled",
+      dataMode: "sample",
+    });
+  }
+  res.setHeader(
+    "Set-Cookie",
+    `${COOKIE_NAME}=${mode}; Path=/; Max-Age=31536000; SameSite=Lax`
+  );
+  res.json({
+    ok: true,
+    mode,
+    hint: mode === "live" ? "Requires TRINO_USER/TRINO_PASSWORD on the Application" : null,
+  });
+});
+
 app.get("/api/map-config", (_req, res) => {
   const mapboxToken =
     process.env.MAPBOX_ACCESS_TOKEN || process.env.VITE_MAPBOX_TOKEN || "";
   res.json({ mapboxToken });
 });
 
-app.get("/api/health", async (_req, res) => {
+app.get("/api/health", async (req, res) => {
   const state = getConnectionState();
   const nbaTrino = getNbaTrinoState();
-  const liveEngine = state.live ? state.engine || "impala" : "sample";
+  const modeMeta = dataModeMeta();
+  let dataSource = "sample";
+  let warehouseProbeError = null;
+  if (shouldUseSampleData()) {
+    warehouseProbeError = getSampleReason();
+  } else if (trinoConfigured()) {
+    const probe = await runTrino("SELECT 1 AS ok");
+    if (probe.ok) {
+      dataSource = "trino";
+    } else {
+      warehouseProbeError = probe.error || "Trino probe failed";
+    }
+  } else {
+    warehouseProbeError = "TRINO_USER/TRINO_PASSWORD not set on Application";
+  }
+  if (!warehouseProbeError && state.live && state.engine) {
+    dataSource = state.engine;
+  }
   res.json({
     ok: true,
     database:
@@ -123,7 +175,9 @@ app.get("/api/health", async (_req, res) => {
       process.env.IMPALA_DATABASE ||
       "defense",
     catalog: process.env.TRINO_CATALOG || "iceberg",
-    dataSource: liveEngine,
+    dataSource,
+    warehouseProbeError,
+    ...modeMeta,
     impala: state,
     nba: {
       trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),

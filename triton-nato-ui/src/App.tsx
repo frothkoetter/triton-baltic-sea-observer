@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { fetchJson } from "./api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchJson, getClientDataMode, setServerDataMode } from "./api";
 import { FilterRail } from "./components/FilterRail";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
@@ -41,6 +41,12 @@ type Health = {
   dataSource: string;
   database: string;
   catalog?: string;
+  dataMode?: "live" | "sample" | "auto";
+  dataModeLocked?: boolean;
+  sampleReason?: string | null;
+  warehouseProbeError?: string | null;
+  shouldUseSample?: boolean;
+  trinoConfigured?: boolean;
   impala: { lastError?: string | null; engine?: string | null };
   nba?: { trinoLive?: boolean; lastError?: string | null };
 };
@@ -64,6 +70,8 @@ export default function App() {
     window.location.hash = hash ? `#${hash}` : "";
   }
   const [health, setHealth] = useState<Health | null>(null);
+  const [dataMode, setDataMode] = useState<"live" | "sample" | "auto">(() => getClientDataMode());
+  const [modeBusy, setModeBusy] = useState(false);
   const [flag, setFlag] = useState("");
   const [vesselType, setVesselType] = useState("");
   const [shipName, setShipName] = useState("");
@@ -73,10 +81,17 @@ export default function App() {
     shipNames: [] as string[],
   });
 
+  const refreshHealth = useCallback(async () => {
+    const h = await fetchJson<Health>("/api/health");
+    setHealth(h);
+    if (h.dataMode && h.dataMode !== dataMode && !h.dataModeLocked) {
+      setDataMode(h.dataMode);
+    }
+  }, [dataMode]);
+
   useEffect(() => {
     void (async () => {
-      const h = await fetchJson<Health>("/api/health");
-      setHealth(h);
+      await refreshHealth();
       const ais = await fetchJson<{ rows?: Record<string, unknown>[] }>("/api/ais");
       const rows = ais.rows ?? [];
       setFilterOptions({
@@ -85,7 +100,22 @@ export default function App() {
         shipNames: uniq(rows.map((r) => String(r.ship_name ?? "")).filter(Boolean)),
       });
     })();
-  }, []);
+  }, [refreshHealth]);
+
+  async function switchDataMode(next: "live" | "sample") {
+    if (health?.dataModeLocked || modeBusy) return;
+    setModeBusy(true);
+    try {
+      const res = await setServerDataMode(next);
+      if (res.ok) {
+        setDataMode(next);
+        await refreshHealth();
+        window.location.reload();
+      }
+    } finally {
+      setModeBusy(false);
+    }
+  }
 
   const zulu = useMemo(() => {
     return new Date().toISOString().slice(11, 19) + "Z";
@@ -174,7 +204,30 @@ export default function App() {
           Schema: {health?.catalog ? `${health.catalog}.` : ""}
           {health?.database ?? "defense"}
         </span>
-        <span className="status-alert">Alerts: 2</span>
+        <span className="data-mode-toggle" title={health?.warehouseProbeError ?? health?.sampleReason ?? ""}>
+          Daten:
+          <button
+            type="button"
+            className={`data-mode-btn ${dataMode === "live" ? "active" : ""}`}
+            disabled={health?.dataModeLocked || modeBusy}
+            onClick={() => void switchDataMode("live")}
+          >
+            Trino live
+          </button>
+          <button
+            type="button"
+            className={`data-mode-btn ${dataMode === "sample" ? "active" : ""}`}
+            disabled={health?.dataModeLocked || modeBusy}
+            onClick={() => void switchDataMode("sample")}
+          >
+            Demo
+          </button>
+        </span>
+        {health?.warehouseProbeError && dataMode === "live" ? (
+          <span className="status-warn" title={health.warehouseProbeError}>
+            Trino: {health.trinoConfigured ? "Fehler" : "keine Credentials"}
+          </span>
+        ) : null}
         {health?.impala?.lastError && !isLiveFeed(health?.dataSource) && (
           <span title={health.impala.lastError}>Warehouse: offline</span>
         )}

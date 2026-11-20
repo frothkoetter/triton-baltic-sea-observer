@@ -2,22 +2,30 @@
 
 import { nbaIncidentsSample } from "./nba-sample.js";
 import { trinoConfigured } from "./trino-client.js";
+import {
+  dataModeMeta,
+  envForceSample,
+  getSampleReason,
+  shouldUseSampleData,
+} from "./data-mode.js";
 
 export function forceSampleData() {
-  return process.env.TRITON_FORCE_SAMPLE_DATA === "true";
+  return envForceSample() || shouldUseSampleData();
 }
 
 /** Skip Trino/Impala and use embedded payloads (explicit or no credentials). */
 export function useOfflineDemoData() {
-  return forceSampleData() || !trinoConfigured();
+  return shouldUseSampleData();
 }
 
 export function demoMeta() {
   const offline = useOfflineDemoData();
   return {
     demoMode: offline,
-    forceSample: forceSampleData(),
+    forceSample: envForceSample(),
     trinoConfigured: trinoConfigured(),
     nbaIncidentsSample: nbaIncidentsSample.length,
+    ...dataModeMeta(),
+    sampleReason: getSampleReason(),
   };
 }

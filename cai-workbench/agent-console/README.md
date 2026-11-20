@@ -35,4 +35,5 @@ cd cai-workbench/agent-console
 TRITON_AGENT_MODE=offline python3 -m unittest tests.test_agent_offline -v
 ```
 
-Optional CrewAI: `pip install -r ../next-best-action/requirements-crewai.txt`
+Optional CrewAI: only in an **isolated venv** on CML — see [`docs/CML_CREWAI_INSTALL.md`](../../docs/CML_CREWAI_INSTALL.md).  
+On CML prefer `TRITON_AGENT_MODE=llm` with `LAGEBILD_*` / `NBA_*` keys (no CrewAI install).
