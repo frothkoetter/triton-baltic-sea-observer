@@ -25,6 +25,7 @@ from .persistence import (
     insert_snapshots,
     update_decision_artifacts,
 )
+from .sap_readiness import apply_sap_readiness_gates, fetch_mission_readiness
 from .scoring import EnvironmentContext, rank_coas
 from .sim_adapter import apply_simulation_to_scores, simulate_passing_coas
 from .semantica_export import build_semantica_record, write_semantica_record
@@ -149,6 +150,12 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
     env = EnvironmentContext.from_alert_payload(alert.payload)
     gates = evaluate_sensor_gates(env)
     ranked = rank_coas(env)
+    mission_readiness_section: dict[str, Any] | None = None
+    readiness_ctx = fetch_mission_readiness(settings)
+    if readiness_ctx is not None:
+        ranked, mission_readiness_section = apply_sap_readiness_gates(
+            ranked, readiness_ctx
+        )
     simulations = None
 
     if settings.phase >= 1:
@@ -173,6 +180,8 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
         materialized=materialized_dicts or None,
         mcp_audit=mcp_audit,
     )
+    if mission_readiness_section:
+        audit["sap_readiness_audit"] = mission_readiness_section
     if materialized_dicts:
         (out_dir / "materialized_tables.json").write_text(
             json.dumps(materialized_dicts, indent=2), encoding="utf-8"
@@ -210,6 +219,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
             ticks=settings.sim_ticks,
             materialized=materialized_dicts or None,
             settings=settings,
+            mission_readiness=mission_readiness_section,
         )
         audit["decision_record"] = {
             "generated_at": decision["generated_at"],
@@ -298,6 +308,7 @@ def _run_pipeline(settings: Settings) -> PipelineResult:
                     grounding=grounding_dict,
                     settings=settings,
                     shacl_report=shacl_meta,
+                    mission_readiness=mission_readiness_section,
                 )
 
     return PipelineResult(

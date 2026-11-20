@@ -42,6 +42,7 @@ def build_decision_record(
     gameplay: RedBlueReplay | None,
     materialized: list[dict[str, Any]] | None = None,
     what_if_replays: list[dict[str, Any]] | None = None,
+    mission_readiness: dict[str, Any] | None = None,
 ) -> DecisionRecord:
     now = datetime.now(timezone.utc).isoformat()
     legal = {}
@@ -98,6 +99,8 @@ def build_decision_record(
             "what_if_red_doctrines": what_if_replays or [],
         },
     }
+    if mission_readiness:
+        sections["10_mission_readiness"] = mission_readiness
 
     return DecisionRecord(
         flow_uuid=alert.flow_uuid,

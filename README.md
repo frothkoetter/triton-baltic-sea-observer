@@ -19,4 +19,5 @@ Standalone web app (Lagebild · Analysen · SQL) with Impala `defense` backend a
 ## Next Best Action (UC2, planned)
 
 - Plan: [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md)
+- Mission Planning + SAP D&S: [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md)
 - Trino Iceberg snapshots (live matrix): [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md)

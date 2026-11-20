@@ -40,7 +40,10 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
   return (
     <div className="nba-decision-recorder">
       <header className="nba-decision-head">
-        <h3>Decision recorder (9 sections)</h3>
+        <h3>
+          Decision recorder (
+          {s["10_mission_readiness"] ? "10" : "9"} sections)
+        </h3>
         <span className="text-muted" style={{ fontSize: 11 }}>
           Source: {recordSource ?? "—"} · {record.generated_at ?? ""}
         </span>
@@ -299,6 +302,71 @@ export function NbaDecisionRecorder({ record, recordSource, hitl }: Props) {
           </table>
         ) : null}
       </section>
+
+      {s["10_mission_readiness"] ? (
+        <section className="nba-decision-section">
+          <h4>10 · Einsatzbereitschaft (SAP)</h4>
+          <p className="text-muted" style={{ fontSize: 12 }}>
+            Source: {String(s["10_mission_readiness"].source ?? "—")} ·{" "}
+            {String(s["10_mission_readiness"].queried_at ?? "")}
+          </p>
+          <table className="data-table compact" style={{ marginTop: 8 }}>
+            <thead>
+              <tr>
+                <th>Einheit</th>
+                <th>Readiness</th>
+                <th>Capabilities</th>
+                <th>Nachschub</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(
+                s["10_mission_readiness"].units as {
+                  force_element_id?: string;
+                  name?: string;
+                  readiness_code?: string;
+                  capabilities?: string[];
+                  munition_gate?: string;
+                }[]
+              )?.map((u) => (
+                <tr key={u.force_element_id}>
+                  <td>
+                    {u.name}
+                    <span className="mono text-muted"> ({u.force_element_id})</span>
+                  </td>
+                  <td>{u.readiness_code}</td>
+                  <td className="mono" style={{ fontSize: 11 }}>
+                    {(u.capabilities ?? []).join(", ")}
+                  </td>
+                  <td>{u.munition_gate ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {s["10_mission_readiness"].coa_impact ? (
+            <ul style={{ fontSize: 12, marginTop: 8 }}>
+              {Object.entries(
+                s["10_mission_readiness"].coa_impact as Record<
+                  string,
+                  { executable?: boolean; blockers?: string[] }
+                >
+              ).map(([coaId, impact]) => (
+                <li key={coaId}>
+                  COA {coaId}:{" "}
+                  {impact.executable ? (
+                    <strong style={{ color: "var(--ok)" }}>ausführbar</strong>
+                  ) : (
+                    <strong style={{ color: "var(--warn)" }}>blockiert</strong>
+                  )}
+                  {impact.blockers?.length ? (
+                    <span className="text-muted"> — {impact.blockers.join("; ")}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

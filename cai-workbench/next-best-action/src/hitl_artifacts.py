@@ -34,6 +34,7 @@ def finalize_hitl_artifacts(
     ticks: int = 6,
     materialized: list[dict[str, Any]] | None = None,
     settings: Settings | None = None,
+    mission_readiness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings()
     legal = evaluate_playbook(alert, ranked)
@@ -80,6 +81,7 @@ def finalize_hitl_artifacts(
         gameplay=gameplay,
         materialized=materialized,
         what_if_replays=what_if_replays,
+        mission_readiness=mission_readiness,
     )
 
     artifact_dir.mkdir(parents=True, exist_ok=True)

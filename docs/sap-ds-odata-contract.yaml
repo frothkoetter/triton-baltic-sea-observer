@@ -1,0 +1,78 @@
+# SAP S/4HANA Defense & Security — read-only OData contract (showcase / MP-0)
+# Full service names: configure from SAP API Business Hub at MP-2 integration time.
+openapi: 3.0.3
+info:
+  title: Triton NBA Mission Readiness (read-only)
+  version: "0.1.0-mp0"
+  description: |
+    Minimal contract for MP-0/1 sample and future BTP destination wiring.
+    No write operations in showcase; intent export uses CPI (MP-3).
+
+servers:
+  - url: https://{tenant}.sap.{landscape}
+    variables:
+      tenant:
+        default: your-tenant
+
+paths:
+  /sap/opu/odata4/sap/api_forceelement/srvd_a2x/sap/forceelement/0001/ForceElement:
+    get:
+      operationId: listForceElements
+      summary: List operational force elements (filtered)
+      parameters:
+        - name: $filter
+          in: query
+          schema:
+            type: string
+          example: Theatre eq 'BALTIC'
+        - name: $select
+          in: query
+          schema:
+            type: string
+          example: ForceElementID,Name,CapabilityCodes,ReadinessCode
+      responses:
+        "200":
+          description: Force element page
+
+  /sap/opu/odata4/sap/api_readiness/srvd_a2x/sap/readiness/0001/ReadinessSnapshot:
+    get:
+      operationId: queryReadinessByCapability
+      summary: Readiness status per force element
+      parameters:
+        - name: $filter
+          in: query
+          schema:
+            type: string
+          example: CapabilityCode eq 'LITTORAL_PATROL' and ReadinessCode in ('R1','R2')
+      responses:
+        "200":
+          description: Readiness rows mapped to Triton `sap_readiness_sample.json` shape
+
+components:
+  schemas:
+    TritonUnitRow:
+      type: object
+      required:
+        - force_element_id
+        - readiness_code
+        - capabilities
+      properties:
+        force_element_id:
+          type: string
+        name:
+          type: string
+        readiness_code:
+          type: string
+          enum: [R1, R2, R3, R4]
+        capabilities:
+          type: array
+          items:
+            type: string
+        rotation_conflict:
+          type: boolean
+        fuel_days_remaining:
+          type: integer
+          nullable: true
+        munition_gate:
+          type: string
+          enum: [ok, warning, blocked]
