@@ -28,6 +28,29 @@ def _package_root() -> Path:
     )
 
 
+def _verify_deps() -> None:
+    """Fail fast with CML-friendly hint (fpdf comes from pip package fpdf2)."""
+    missing: list[str] = []
+    checks = (
+        ("fpdf", "fpdf2"),
+        ("pandas", "pandas"),
+        ("trino", "trino"),
+        ("matplotlib", "matplotlib"),
+    )
+    for mod, pip_name in checks:
+        try:
+            __import__(mod)
+        except ImportError:
+            missing.append(pip_name)
+    if missing:
+        root = _package_root()
+        raise RuntimeError(
+            "UC1 missing Python packages: "
+            + ", ".join(missing)
+            + f". Run once: cd {root} && pip install -r requirements.txt"
+        )
+
+
 def _load_run_hourly(root: Path):
     path = root / "run_hourly.py"
     spec = importlib.util.spec_from_file_location("run_hourly", path)
@@ -44,6 +67,7 @@ def _run() -> int:
     os.chdir(root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    _verify_deps()
     mod = _load_run_hourly(root)
     rc = mod.main()
     mod._exit_job(rc)
