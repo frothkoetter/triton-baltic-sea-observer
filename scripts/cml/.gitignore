@@ -1,3 +1,4 @@
 *.local.env
 *cml-secrets*
 .env.cml.local
+__pycache__/
