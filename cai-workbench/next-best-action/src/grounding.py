@@ -17,6 +17,9 @@ _ONTOLOGY_PATH = (
 _PLAYBOOK_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "rules_playbook.json"
 )
+_BUSINESS_RULES_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "baltic_business_rules.json"
+)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -54,6 +57,7 @@ class IncidentGrounding:
     rulebook_refs: list[dict[str, str]]
     rule_citations: list[dict[str, Any]]
     coa_justifications: list[dict[str, Any]] = field(default_factory=list)
+    business_rule_bindings: list[dict[str, Any]] = field(default_factory=list)
     llm_grounding_mode: str = "narrative-only"
 
     def to_dict(self) -> dict[str, Any]:
@@ -64,9 +68,31 @@ class IncidentGrounding:
             "alert_type_iri": self.alert_type_iri,
             "rulebook_refs": self.rulebook_refs,
             "rule_citations": self.rule_citations,
+            "business_rule_bindings": self.business_rule_bindings,
             "coa_justifications": self.coa_justifications,
             "llm_grounding_mode": self.llm_grounding_mode,
         }
+
+
+def _business_rule_bindings(alert_type: str) -> list[dict[str, Any]]:
+    br = _load_json(_BUSINESS_RULES_PATH)
+    bindings: list[dict[str, Any]] = []
+    for rule in br.get("business_rules", []):
+        if alert_type not in rule.get("ontology_alert_types", []):
+            continue
+        tb = rule.get("trino_bindings") or {}
+        bindings.append(
+            {
+                "rule_id": rule.get("rule_id"),
+                "title": rule.get("title"),
+                "source_ids": rule.get("source_ids"),
+                "playbook_rule_id": rule.get("playbook_rule_id"),
+                "trino_tables": tb.get("tables"),
+                "trino_entities": tb.get("entities"),
+                "evidence_template": tb.get("evidence_template"),
+            }
+        )
+    return bindings
 
 
 def build_grounding(
@@ -128,6 +154,7 @@ def build_grounding(
         alert_type_iri=at.get("iri"),
         rulebook_refs=rulebook_refs,
         rule_citations=citations,
+        business_rule_bindings=_business_rule_bindings(alert.alert_type),
         coa_justifications=justifications,
         llm_grounding_mode="narrative-only",
     )

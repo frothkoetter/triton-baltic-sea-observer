@@ -13,10 +13,23 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | `#proximity` | **Schiffsnähe** | Live proximity alerts (SSB MVE API proxy) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
 | `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
-| `#sql` | **SQL** | Read-only Trino/Impala workspace |
+| `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
 
 Shared **Filter Rail** (flag, vessel type, ship name) applies to **Lagebild** and **Analysen** where noted.
+
+---
+
+## Agenten console
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/agents/apps` | Lage-Analyst, COA-Berater, Semantica-Kurator |
+| `GET /api/agents/ontology` | `baltic_ontology.json` concepts + rulebook refs |
+| `POST /api/agents/chat` | `{ app_id, messages[] }` → Python `chat_bridge.py` (CrewAI / LLM / offline) |
+| `GET /api/agents/business-rules` | NATO business rules + `baltic_trino_mapping.json` entity map |
+
+Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Override with `TRITON_ONTOLOGY_PATH`.
 
 ---
 

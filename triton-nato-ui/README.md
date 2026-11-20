@@ -108,9 +108,11 @@ python3 run_trino_ddl.py sql/nba_schema_phase4_hitl.sql
 
 Without Trino, the panel uses embedded sample incidents.
 
-## SQL workspace
+## Agent console (replaces SQL tab)
 
-Read-only: `SELECT`, `WITH`, `SHOW`, `DESCRIBE`, `EXPLAIN` only. DDL/DML is rejected server-side.
+Tab **Agenten** (`#agents`): three CrewAI-backed chat apps grounded on the **Semantica** KG seed (`baltic_ontology.json`). API: `GET /api/agents/apps`, `GET /api/agents/ontology`, `POST /api/agents/chat`. Bridge: [`cai-workbench/agent-console/`](../cai-workbench/agent-console/). Set `TRITON_AGENT_MODE=auto` and reuse `LAGEBILD_*` / `NBA_*` LLM env for live answers.
+
+Legacy `#sql` opens Agenten. `POST /api/query` remains for ops tooling only (not exposed in UI).
 
 ## Production
 

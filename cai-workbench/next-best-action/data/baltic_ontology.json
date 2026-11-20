@@ -1,45 +1,59 @@
 {
-  "version": "2026-11",
+  "version": "2026-11-brules",
   "namespace": "https://triton.baltic/defense#",
+  "catalog_files": {
+    "business_rules": "baltic_business_rules.json",
+    "trino_mapping": "baltic_trino_mapping.json",
+    "playbook": "rules_playbook.json"
+  },
   "alert_types": {
     "gps_jammer": {
       "iri": "triton:GPSJammingEvent",
       "label": "GPS jamming / PNT degradation",
-      "emodnet_hint": "HumanActivities:ElectronicWarfare"
+      "emodnet_hint": "HumanActivities:ElectronicWarfare",
+      "business_rule_ids": ["BR-OPSEC-AIS-001"]
     },
     "lagebild_flash": {
       "iri": "triton:LagebildFlashPriority",
-      "label": "Lagebild FLASH escalation"
+      "label": "Lagebild FLASH escalation",
+      "business_rule_ids": ["BR-OPSEC-AIS-001", "BR-RESTRICTED-AREA-004"]
     },
     "ais_pipeline_blackout": {
       "iri": "triton:AISBlackoutNearCriticalInfrastructure",
-      "label": "AIS blackout near pipeline CUI segment"
+      "label": "AIS blackout near pipeline CUI segment",
+      "business_rule_ids": ["BR-OPSEC-AIS-001", "BR-CUI-PIPE-002"]
     },
     "rus_fleet_proximity": {
       "iri": "triton:AdversaryFleetProximity",
-      "label": "Russian Federation naval unit proximity"
+      "label": "Russian Federation naval unit proximity",
+      "business_rule_ids": ["BR-ROE-DEESCAL-003"]
     },
     "sitrep_escalation": {
       "iri": "triton:SitrepEscalation",
-      "label": "SITREP ESCALATED theme"
+      "label": "SITREP ESCALATED theme",
+      "business_rule_ids": ["BR-RESTRICTED-AREA-004", "BR-NBA-HITL-006"]
     },
     "demo_greifswald": {
       "iri": "triton:TrainingScenarioGreifswald",
-      "label": "Training scenario — Greifswald / Adlergrund"
+      "label": "Training scenario — Greifswald / Adlergrund",
+      "business_rule_ids": ["BR-SANCTIONS-005", "BR-NBA-HITL-006"]
     }
   },
   "rulebook_refs": {
     "NATO:MC362-2§collective-opsec": {
       "label": "MC 362/2 Collective OPSEC",
-      "summary": "Limit disclosure of friendly positions and intent during cueing."
+      "summary": "Limit disclosure of friendly positions and intent during cueing.",
+      "public_note": "Full MC 362/2 often restricted; training uses AJP-3.10.2 + national OPSEC pubs."
     },
     "UNCLOS:Art19-innocent-passage": {
       "label": "UNCLOS Art. 19 (indicative)",
-      "summary": "Innocent passage — activities not prejudicial to peace."
+      "summary": "Innocent passage — activities not prejudicial to peace.",
+      "public_url": "https://www.un.org/depts/los/convention_agreements/texts/unclos/unclos_e.pdf"
     },
     "UNCLOS:Art25-coastal-rights": {
       "label": "UNCLOS Art. 25 (indicative)",
-      "summary": "Coastal state jurisdiction in territorial sea."
+      "summary": "Coastal state jurisdiction in territorial sea.",
+      "public_url": "https://www.un.org/depts/los/convention_agreements/texts/unclos/unclos_e.pdf"
     },
     "BALTIC:CUI-pipeline-corridor": {
       "label": "Baltic CUI pipeline corridor",

@@ -10,7 +10,7 @@ Copy names into CML; set **passwords and API keys only in the CML UI**, not in g
 
 ## NATO UI MVP
 
-Standalone web app (Lagebild · Analysen · SQL) with Impala `defense` backend and sample-data fallback:
+Standalone web app (Lagebild · Analysen · **Agenten**/CrewAI) with Impala `defense` backend and sample-data fallback:
 
 - Code: [`triton-nato-ui/`](./triton-nato-ui/)
 - UI data map: [`triton-nato-ui/docs/UI_OVERVIEW.md`](./triton-nato-ui/docs/UI_OVERVIEW.md)
@@ -20,4 +20,5 @@ Standalone web app (Lagebild · Analysen · SQL) with Impala `defense` backend a
 
 - Plan: [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md)
 - Mission Planning + SAP D&S: [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md)
+- NATO Business Rules + Trino mapping: [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md)
 - Trino Iceberg snapshots (live matrix): [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md)

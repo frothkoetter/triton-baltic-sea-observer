@@ -1,0 +1,183 @@
+{
+  "version": "2026-11",
+  "warehouse": {
+    "catalog": "iceberg",
+    "schema": "defense",
+    "comment": "Default Trino target for Triton Baltic Sea Observer"
+  },
+  "semantic_entities": [
+    {
+      "entity_id": "MaritimeUnit",
+      "iri": "triton:MaritimeUnit",
+      "tables": [
+        {
+          "table": "ships",
+          "role": "Latest AIS positions / fleet snapshot",
+          "key_columns": ["mmsi", "ship_name", "flag", "latitude", "longitude", "vessel_type"]
+        },
+        {
+          "table": "german_navy_fleet",
+          "role": "Friendly naval order of battle",
+          "key_columns": ["name", "besatzung", "home_port", "mmsi"]
+        },
+        {
+          "table": "rus_naval_fleet_positions",
+          "role": "Adversary / RF fleet telemetry",
+          "key_columns": ["name", "latitude", "longitude", "mmsi", "flag"]
+        },
+        {
+          "table": "marine_vessel_status",
+          "role": "Fleet readiness-style status (analytics)",
+          "key_columns": ["mmsi", "name", "status", "last_seen"]
+        }
+      ],
+      "api_routes": ["/api/ais", "/api/fleet-positions", "/api/analyses/fleet"]
+    },
+    {
+      "entity_id": "AISObservation",
+      "iri": "triton:AISObservation",
+      "tables": [
+        {
+          "table": "ais_events_ice",
+          "role": "Iceberg AIS event history",
+          "key_columns": ["mmsi", "event_timestamp", "latitude", "longitude", "sog", "cog", "nav_status"]
+        }
+      ],
+      "api_routes": ["/api/ais", "/api/position-tracks", "/api/analyses/ais-analytics"]
+    },
+    {
+      "entity_id": "CriticalInfrastructure",
+      "iri": "triton:CriticalUnderwaterInfrastructure",
+      "tables": [
+        {
+          "table": "ostsee_pipelines",
+          "role": "Pipeline segments (CUI corridor context)",
+          "key_columns": ["segment_id", "geometry", "operator", "name"]
+        },
+        {
+          "table": "ostsee_infrastruktur",
+          "role": "Cables, landing points, offshore assets",
+          "key_columns": ["name", "typ", "geometry"]
+        }
+      ],
+      "api_routes": ["/api/ostsee-infrastructure"]
+    },
+    {
+      "entity_id": "MaritimeAnomaly",
+      "iri": "triton:MaritimeAnomaly",
+      "tables": [
+        {
+          "table": "vessel_outliers",
+          "role": "Published outlier feed (9 detection types)",
+          "key_columns": ["mmsi", "outlier_type", "event_timestamp", "severity", "latitude", "longitude"]
+        }
+      ],
+      "sql_jobs": ["cdw-analyse/outlier_detection_trino.sql"],
+      "api_routes": ["/api/vessel-outliers"],
+      "outlier_types": [
+        "Dark Vessel",
+        "Rendezvous",
+        "Loitering",
+        "Misreported Status",
+        "Inconsistent Maneuvering",
+        "MMSI Teleportation"
+      ]
+    },
+    {
+      "entity_id": "RestrictedOperatingArea",
+      "iri": "triton:RestrictedOperatingArea",
+      "tables": [
+        {
+          "table": "observation_areas",
+          "role": "Tier-A / EMODnet observation polygons",
+          "key_columns": ["name", "geometry", "tier"]
+        },
+        {
+          "table": "area_violation",
+          "role": "Ship vs restricted area violations",
+          "key_columns": ["mmsi", "area_name", "violation_time"]
+        }
+      ],
+      "api_routes": ["/api/observation-areas", "/api/analyses/violations", "/api/analyses/restricted-analytics"]
+    },
+    {
+      "entity_id": "SituationPicture",
+      "iri": "triton:SituationPicture",
+      "tables": [
+        {
+          "table": "lagebild",
+          "role": "Aggregated Lagebild view (live, not snapshot-pinned in NBA)",
+          "key_columns": ["event_type", "latitude", "longitude", "priority"]
+        },
+        {
+          "table": "maritime_surveillance_reports",
+          "role": "Surveillance report count / metadata",
+          "key_columns": ["report_id", "created_at"]
+        },
+        {
+          "table": "marine_messages",
+          "role": "Marine traffic / STANAG-style messages",
+          "key_columns": ["message_type", "dtg", "body"]
+        }
+      ],
+      "api_routes": ["/api/kpis", "/api/analyses/surveillance"]
+    },
+    {
+      "entity_id": "SanctionedVessel",
+      "iri": "triton:SanctionedVessel",
+      "tables": [
+        {
+          "table": "sanctioned_vessels",
+          "role": "Sanctions / restricted analytics",
+          "key_columns": ["mmsi", "imo", "name", "sanction_program"]
+        }
+      ],
+      "api_routes": ["/api/analyses/sanctions", "/api/analyses/sanctioned-analytics"]
+    },
+    {
+      "entity_id": "NbaDecision",
+      "iri": "triton:NbaDecision",
+      "tables": [
+        {
+          "table": "nba_incidents",
+          "role": "NBA incidents + HITL + decision JSON",
+          "key_columns": ["flow_uuid", "alert_type", "priority", "best_coa_id", "decision_record_json"]
+        },
+        {
+          "table": "nba_coa_runs",
+          "role": "COA matrix scores",
+          "key_columns": ["flow_uuid", "coa_id", "score_total", "gates_passed"]
+        },
+        {
+          "table": "nba_incident_snapshots",
+          "role": "Iceberg snapshot bundle per incident",
+          "key_columns": ["flow_uuid", "table_name", "snapshot_id"]
+        }
+      ],
+      "api_routes": ["/api/nba/incidents"]
+    }
+  ],
+  "alert_type_bindings": {
+    "ais_pipeline_blackout": {
+      "primary_tables": ["vessel_outliers", "ais_events_ice", "ostsee_pipelines"],
+      "outlier_types": ["Dark Vessel"],
+      "detection_sql": "cdw-analyse/sql/alerts/pipeline_blackout_top1.sql"
+    },
+    "gps_jammer": {
+      "primary_tables": ["vessel_outliers", "ais_events_ice", "marine_messages"],
+      "outlier_types": ["Misreported Status", "MMSI Teleportation"]
+    },
+    "rus_fleet_proximity": {
+      "primary_tables": ["rus_naval_fleet_positions", "ships", "ais_events_ice"]
+    },
+    "sitrep_escalation": {
+      "primary_tables": ["maritime_surveillance_reports", "lagebild", "nba_incidents"]
+    },
+    "lagebild_flash": {
+      "primary_tables": ["lagebild", "nba_incidents"]
+    },
+    "demo_greifswald": {
+      "primary_tables": ["ships", "ais_events_ice"]
+    }
+  }
+}
