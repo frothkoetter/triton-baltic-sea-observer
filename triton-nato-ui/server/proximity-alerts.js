@@ -20,8 +20,10 @@ const FIELD_KEYS = [
   "distance_km",
 ];
 
+import { shouldUseSampleData } from "./data-mode.js";
+
 function forceSample() {
-  return process.env.TRITON_FORCE_SAMPLE_DATA === "true";
+  return shouldUseSampleData();
 }
 
 function pickField(row, key) {

@@ -890,6 +890,33 @@ a {
   font-size: 12px;
 }
 
+.data-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.data-mode-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.data-mode-btn.active {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.data-mode-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .sql-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
