@@ -118,11 +118,19 @@ Tab **Agenten** (`#agents`): three CrewAI-backed chat apps grounded on the **Sem
 
 Legacy `#sql` opens Agenten. `POST /api/query` remains for ops tooling only (not exposed in UI).
 
-## Production
+## Production (CML Application)
+
+After **every `git pull`** on `main`:
 
 ```bash
-npm run build
+cd triton-nato-ui
+bash cdsw-build.sh
+# Restart the Application in CML
 NODE_ENV=production npm start
 ```
+
+**Verify deploy:** Footer must show `Build 0.2.0-data-mode` and **Daten: Trino live | Demo**.  
+If you still see `Alerts: 2`, the old `dist/` is being served — rerun `npm run build`.  
+API check: `curl -sS http://127.0.0.1:$CDSW_APP_PORT/api/version` → `"build":"0.2.0-data-mode"`.
 
 Serves the built SPA from `dist/` on `API_PORT`.
