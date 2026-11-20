@@ -147,6 +147,10 @@ flowchart TB
 
 ---
 
+## Performance (live Trino)
+
+See **[API_LATENCY.md](./API_LATENCY.md)** and `scripts/bench-api-latency.mjs`.
+
 ## Related docs
 
 - App deploy & env: [`../README.md`](../README.md)  
