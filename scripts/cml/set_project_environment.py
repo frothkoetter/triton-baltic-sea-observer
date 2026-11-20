@@ -99,13 +99,24 @@ def _http_json(
         raise RuntimeError(f"{method} {url} → HTTP {exc.code}: {detail}") from exc
 
 
-def _list_projects(base: str, token: str, search: str, *, ca_cert: str | None) -> list[dict]:
+def _project_search_filter(name: str) -> str:
+    """CML API v2 requires searchFilter as escaped JSON, not a plain string."""
+    return json.dumps({"name": name})
+
+
+def _list_projects(
+    base: str,
+    token: str,
+    *,
+    search_filter_json: str | None = None,
+    ca_cert: str | None,
+) -> list[dict]:
     projects: list[dict] = []
     page_token: str | None = None
     while True:
         params: dict[str, str] = {"pageSize": "50"}
-        if search:
-            params["searchFilter"] = search
+        if search_filter_json:
+            params["searchFilter"] = search_filter_json
         if page_token:
             params["pageToken"] = page_token
         url = f"{base}/api/v2/projects?{urllib.parse.urlencode(params)}"
@@ -135,20 +146,34 @@ def _resolve_project_id(
     if not project_name:
         raise SystemExit("Provide --project-id or --project")
 
-    # Exact name match first; fall back to searchFilter substring.
-    hits = _list_projects(base, token, project_name, ca_cert=ca_cert)
-    exact = [p for p in hits if (p.get("name") or "").lower() == project_name.lower()]
+    want = project_name.lower()
+    hits = _list_projects(
+        base,
+        token,
+        search_filter_json=_project_search_filter(project_name),
+        ca_cert=ca_cert,
+    )
+    exact = [p for p in hits if (p.get("name") or "").lower() == want]
     if len(exact) == 1:
         return str(exact[0]["id"]), str(exact[0]["name"])
     if len(exact) > 1:
         raise SystemExit(f"Multiple projects named {project_name!r}")
 
-    if len(hits) == 1:
-        return str(hits[0]["id"]), str(hits[0]["name"])
-    if not hits:
-        raise SystemExit(f"No project matched search {project_name!r}")
-    names = ", ".join(sorted({p.get("name", "?") for p in hits}))
-    raise SystemExit(f"Ambiguous search {project_name!r}: {names}. Use --project-id.")
+    if len(exact) == 0 and hits:
+        # API name filter may be prefix/exact-only; narrow client-side.
+        exact = [p for p in hits if (p.get("name") or "").lower() == want]
+
+    if not exact:
+        # Full scan (no searchFilter) — expensive but reliable.
+        all_proj = _list_projects(base, token, search_filter_json=None, ca_cert=ca_cert)
+        exact = [p for p in all_proj if (p.get("name") or "").lower() == want]
+
+    if len(exact) == 1:
+        return str(exact[0]["id"]), str(exact[0]["name"])
+    if not exact:
+        raise SystemExit(f"No project named {project_name!r}. Use --project-id from the UI.")
+    names = ", ".join(sorted({p.get("name", "?") for p in exact}))
+    raise SystemExit(f"Ambiguous name {project_name!r}: {names}. Use --project-id.")
 
 
 def _merge_env(existing: dict[str, str] | None, updates: dict[str, str]) -> dict[str, str]:

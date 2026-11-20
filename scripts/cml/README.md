@@ -30,6 +30,8 @@ python3 scripts/cml/set_project_environment.py \
   --env-file scripts/cml/triton-project.env.local
 ```
 
+`searchFilter` on the API must be JSON, e.g. `{"name":"triton-lidar"}` — the script builds that from `--project`.
+
 Optional:
 
 - `--project-id <uuid>` if name search is ambiguous.
