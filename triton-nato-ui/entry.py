@@ -108,7 +108,40 @@ def ensure_cml_python_deps() -> None:
 
 ensure_cml_python_deps()
 
-if not (ROOT / "dist" / "index.html").is_file() or not (ROOT / "node_modules").is_dir():
+
+def _ui_bundle_stale() -> bool:
+    """True when committed React sources are newer than the baked Vite dist/."""
+    dist_index = ROOT / "dist" / "index.html"
+    if not dist_index.is_file():
+        return True
+    force = os.environ.get("TRITON_FORCE_UI_REBUILD", "").strip().lower()
+    if force in ("1", "true", "yes"):
+        print("TRITON_FORCE_UI_REBUILD set — rebuilding UI bundle", flush=True)
+        return True
+    dist_mtime = dist_index.stat().st_mtime
+    markers = [ROOT / "package.json", ROOT / "vite.config.ts", ROOT / "index.html"]
+    src_dir = ROOT / "src"
+    if src_dir.is_dir():
+        for path in src_dir.rglob("*"):
+            if path.is_file():
+                markers.append(path)
+    newest = max((p.stat().st_mtime for p in markers if p.is_file()), default=dist_mtime)
+    if newest > dist_mtime + 1.0:
+        print(
+            "UI bundle is stale (src newer than dist/) — will run cdsw-build.sh",
+            flush=True,
+        )
+        return True
+    return False
+
+
+needs_ui_build = (
+    not (ROOT / "node_modules").is_dir()
+    or not (ROOT / "dist" / "index.html").is_file()
+    or _ui_bundle_stale()
+)
+
+if needs_ui_build:
     print("Running cdsw-build.sh …", flush=True)
     try:
         subprocess.check_call(["bash", str(ROOT / "cdsw-build.sh")], timeout=1800)
