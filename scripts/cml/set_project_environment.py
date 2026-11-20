@@ -182,6 +182,30 @@ def _merge_env(existing: dict[str, str] | None, updates: dict[str, str]) -> dict
     return merged
 
 
+def _parse_env_field(raw: Any) -> dict[str, str]:
+    """CML often returns `environment` as a JSON string, not an object."""
+    if raw is None:
+        return {}
+    if isinstance(raw, dict):
+        return {str(k): str(v) for k, v in raw.items()}
+    if isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return {}
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict):
+                return {str(k): str(v) for k, v in parsed.items()}
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def _env_for_api(env: dict[str, str]) -> str:
+    """REST update expects environment as JSON-encoded string (Go string field)."""
+    return json.dumps(env, ensure_ascii=False)
+
+
 def _patch_via_rest(
     base: str,
     token: str,
@@ -198,8 +222,8 @@ def _patch_via_rest(
             "GET", f"{base}/api/v2/projects/{project_id}", token, ca_cert=ca_cert
         )
         raw = current.get("environment") if isinstance(current, dict) else None
-        env = _merge_env(raw if isinstance(raw, dict) else None, merged)
-    body = {"environment": env}
+        env = _merge_env(_parse_env_field(raw), merged)
+    body = {"environment": _env_for_api(env)}
 
     # API accepts PATCH or PUT with partial Project body (see CML_AMP_APIv2).
     for method in ("PATCH", "PUT"):
@@ -238,8 +262,8 @@ def _patch_via_cmlapi(
         env = merged
     else:
         proj = client.get_project(project_id=project_id)
-        env = _merge_env(getattr(proj, "environment", None) or {}, merged)
-    body = cmlapi.Project(environment=env)
+        env = _merge_env(_parse_env_field(getattr(proj, "environment", None)), merged)
+    body = cmlapi.Project(environment=_env_for_api(env))
     client.update_project(body, project_id)
 
 
