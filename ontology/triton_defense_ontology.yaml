@@ -14,6 +14,7 @@ ontology:
   graph: ontology/graph.yaml
   mappings:
     - ontology/mappings/lidar_simulation_metadata.yaml
+    - ontology/mappings/das_cable_spectrogram_metadata.yaml
 
 objectTypes:
   - apiName: LasPointCloudAsset
@@ -156,3 +157,60 @@ objectTypes:
       suggestedName: LidarSimulationMetadata
       sqlTable: defense.lidar_simulation_metadata
       htmlPanelExample: cdv/lidar_metadata_iris_style_example.html
+
+  - apiName: DasCableSpectrogramMetadata
+    displayName: DAS cable spectrogram metadata
+    description: >
+      One row per DAS spectrogram segment along a submarine cable corridor
+      (HDF5 batch in object store; metadata in Iceberg).
+    backingDatasource:
+      catalog: Hive
+      database: defense
+      table: das_cable_spectrogram_metadata
+      storage: iceberg
+      partition:
+        - column: ingested_at
+          transform: day
+      primaryKey:
+        - hadoop_file_url
+        - segment_index
+    titleProperty: cableName
+    mappingFile: ontology/mappings/das_cable_spectrogram_metadata.yaml
+    properties:
+      - apiName: hadoopFileUrl
+        type: string
+        column: hadoop_file_url
+        required: true
+      - apiName: segmentIndex
+        type: integer
+        column: segment_index
+      - apiName: cableAsset
+        type: string
+        column: cable_asset
+      - apiName: cableName
+        type: string
+        column: cable_name
+      - apiName: chainageMeters
+        type: double
+        column: chainage_m
+      - apiName: segmentLatitude
+        type: double
+        column: segment_lat
+      - apiName: segmentLongitude
+        type: double
+        column: segment_lon
+      - apiName: threatClass
+        type: string
+        column: threat_class
+      - apiName: predictedThreatType
+        type: string
+        column: predicted_threat_type
+      - apiName: modelConfidence
+        type: double
+        column: model_confidence
+      - apiName: ingestedAt
+        type: timestamp
+        column: ingested_at
+    cdvDataset:
+      suggestedName: DasCableSpectrogramMetadata
+      sqlTable: defense.das_cable_spectrogram_metadata
