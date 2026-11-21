@@ -1,42 +1,56 @@
 import { Fragment } from "react";
 import { CircleMarker, MapContainer, Polyline, Tooltip } from "react-leaflet";
 import type { PositionTrack, TrackKind } from "../lib/position-tracks";
+import { trackPathUpToTime } from "../lib/track-timeline";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 
-const KIND_STYLE: Record<TrackKind, { line: string; dot: string }> = {
-  ais: { line: "#3DDC84", dot: "#2E7D4E" },
-  deu_fleet: { line: "#42A5F5", dot: "#0D47A1" },
-  rus_fleet: { line: "#CE93D8", dot: "#4A148C" },
+const KIND_STYLE: Record<TrackKind, { line: string; dot: string; label: string }> = {
+  ais: { line: "#3DDC84", dot: "#2E7D4E", label: "AIS" },
+  deu_fleet: { line: "#42A5F5", dot: "#0D47A1", label: "DEU Fleet" },
+  rus_fleet: { line: "#CE93D8", dot: "#4A148C", label: "RUS Fleet" },
 };
 
 type Props = {
   tracks: PositionTrack[];
+  /** When set, only the trail up to this instant is drawn and the head marker follows the slider. */
+  cursorTimeMs?: number | null;
+  showStartMarkers?: boolean;
 };
 
-export function RouteTrackMap({ tracks }: Props) {
+export function RouteTrackMap({
+  tracks,
+  cursorTimeMs = null,
+  showStartMarkers = true,
+}: Props) {
   const center: [number, number] = [55.5, 17.5];
+  const scrub = cursorTimeMs != null && Number.isFinite(cursorTimeMs);
+
   return (
     <div className="map-wrap map-wrap-tracks">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
         <BasemapTileLayer />
         {tracks.map((t) => {
           const style = KIND_STYLE[t.kind] ?? KIND_STYLE.ais;
-          const last = t.points[t.points.length - 1];
+          const { path, head } = scrub
+            ? trackPathUpToTime(t, cursorTimeMs)
+            : { path: t.points, head: t.points[t.points.length - 1] ?? null };
           const first = t.points[0];
-          const showLine = t.points.length >= 2;
+          const showLine = path.length >= 2;
+          const showHead = head != null;
+
           return (
             <Fragment key={t.id}>
               {showLine && (
                 <Polyline
-                  positions={t.points}
+                  positions={path}
                   pathOptions={{
                     color: style.line,
                     weight: t.kind === "ais" ? 2 : 3,
-                    opacity: 0.72,
+                    opacity: scrub ? 0.85 : 0.72,
                   }}
                 />
               )}
-              {first && (
+              {showStartMarkers && first && (!scrub || path.length > 0) && (
                 <CircleMarker
                   center={first}
                   radius={4}
@@ -51,27 +65,27 @@ export function RouteTrackMap({ tracks }: Props) {
                     <span className="mono">
                       Start · {t.label}
                       <br />
-                      {t.kind} · {t.mmsi}
+                      {style.label} · {t.mmsi}
                     </span>
                   </Tooltip>
                 </CircleMarker>
               )}
-              {last && (
+              {showHead && (
                 <CircleMarker
-                  center={last}
-                  radius={6}
+                  center={head}
+                  radius={scrub ? 7 : 6}
                   pathOptions={{
                     color: style.dot,
                     fillColor: style.line,
-                    fillOpacity: 0.9,
+                    fillOpacity: 0.95,
                     weight: 2,
                   }}
                 >
                   <Tooltip>
                     <span className="mono">
-                      Latest · {t.label}
+                      {scrub ? "Zeitpunkt" : "Latest"} · {t.label}
                       <br />
-                      {t.pointCount} points · {t.kind}
+                      {t.pointCount} Punkte · {style.label}
                     </span>
                   </Tooltip>
                 </CircleMarker>

@@ -1,16 +1,56 @@
 export type TrackKind = "ais" | "deu_fleet" | "rus_fleet";
 
+export type TrackPoint = {
+  lat: number;
+  lon: number;
+  timeMs: number;
+};
+
 export type PositionTrack = {
   id: string;
   mmsi: string;
   kind: TrackKind;
   label: string;
   points: [number, number][];
+  trackPoints: TrackPoint[];
   pointCount: number;
+  startTimeMs: number;
+  endTimeMs: number;
 };
 
+function parseRowTimeMs(row: Record<string, unknown>): number {
+  const raw = row.event_timestamp ?? row.Event_Timestamp;
+  if (raw == null || raw === "") return NaN;
+  const t = Date.parse(String(raw));
+  return Number.isFinite(t) ? t : NaN;
+}
+
+function finalizeTrack(
+  track: Omit<PositionTrack, "points" | "trackPoints" | "startTimeMs" | "endTimeMs"> & {
+    trackPoints: TrackPoint[];
+  }
+): PositionTrack {
+  const sorted = [...track.trackPoints].sort((a, b) => a.timeMs - b.timeMs);
+  const startTimeMs = sorted.length ? sorted[0].timeMs : 0;
+  const endTimeMs = sorted.length ? sorted[sorted.length - 1].timeMs : 0;
+  return {
+    ...track,
+    trackPoints: sorted,
+    points: sorted.map((p) => [p.lat, p.lon] as [number, number]),
+    pointCount: sorted.length,
+    startTimeMs,
+    endTimeMs,
+  };
+}
+
 export function rowsToTracks(rows: Record<string, unknown>[]): PositionTrack[] {
-  const buckets = new Map<string, PositionTrack & { _seen: Set<string> }>();
+  const buckets = new Map<
+    string,
+    Omit<PositionTrack, "points" | "trackPoints" | "startTimeMs" | "endTimeMs"> & {
+      trackPoints: TrackPoint[];
+      _seq: number;
+    }
+  >();
 
   for (const row of rows) {
     const lat = Number(row.latitude ?? row.Latitude);
@@ -29,22 +69,23 @@ export function rowsToTracks(rows: Record<string, unknown>[]): PositionTrack[] {
         mmsi,
         kind,
         label,
-        points: [],
         pointCount: 0,
-        _seen: new Set(),
+        trackPoints: [],
+        _seq: 0,
       };
       buckets.set(key, track);
     }
-    const dedupe = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-    if (track._seen.has(dedupe)) continue;
-    track._seen.add(dedupe);
-    track.points.push([lat, lon]);
-    track.pointCount += 1;
+    let timeMs = parseRowTimeMs(row);
+    if (!Number.isFinite(timeMs)) {
+      timeMs = track._seq;
+      track._seq += 1;
+    }
+    track.trackPoints.push({ lat, lon, timeMs });
   }
 
   return [...buckets.values()]
-    .filter((t) => t.points.length >= 1)
-    .map(({ _seen: _, ...rest }) => rest);
+    .filter((t) => t.trackPoints.length >= 1)
+    .map(({ _seq: _, ...rest }) => finalizeTrack(rest));
 }
 
 export type PositionTracksQuery = {

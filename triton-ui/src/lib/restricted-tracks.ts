@@ -20,7 +20,10 @@ export function rowsToRestrictedTracks(rows: Record<string, unknown>[]): Positio
         kind: "ais",
         label: `${ship} · ${areaId}`,
         points: [],
+        trackPoints: [],
         pointCount: 0,
+        startTimeMs: 0,
+        endTimeMs: 0,
         _seen: new Set(),
       };
       buckets.set(key, track);
@@ -34,5 +37,17 @@ export function rowsToRestrictedTracks(rows: Record<string, unknown>[]): Positio
 
   return [...buckets.values()]
     .filter((t) => t.points.length >= 1)
-    .map(({ _seen: _, ...rest }) => rest);
+    .map(({ _seen: _, ...rest }) => {
+      const trackPoints = rest.points.map((p, i) => ({
+        lat: p[0],
+        lon: p[1],
+        timeMs: i,
+      }));
+      return {
+        ...rest,
+        trackPoints,
+        startTimeMs: 0,
+        endTimeMs: Math.max(0, trackPoints.length - 1),
+      };
+    });
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson, type NbaIncident } from "../api";
 import { DataTable } from "../components/DataTable";
-import { RouteTrackMap } from "../components/RouteTrackMap";
+import { RouteTrackTimeline } from "../components/RouteTrackTimeline";
 import {
   TacticalMap,
   type FleetPosition,
@@ -414,7 +414,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
 
       <section className="panel" style={{ marginTop: 8 }}>
         <h2 className="panel-title">
-          Position tracks — AIS events, DEU &amp; RUS fleet (24h)
+          Routen · Zeitachse (24h) — AIS, DEU &amp; RUS Fleet
         </h2>
         <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
           {layers.routeTracks ? (
@@ -429,7 +429,9 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
             "Enable “Route tracks 24h” to load histories from ais_events_ice, marine_vessel_status, rus_naval_fleet_positions."
           )}
         </p>
-        {layers.routeTracks && <RouteTrackMap tracks={tracks} />}
+        {layers.routeTracks && (
+          <RouteTrackTimeline tracks={tracks} loading={tracksLoading} />
+        )}
       </section>
 
       <section className="panel" style={{ marginTop: 8 }}>
