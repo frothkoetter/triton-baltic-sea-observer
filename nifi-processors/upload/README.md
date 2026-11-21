@@ -35,15 +35,22 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
 
-## DAS cable acoustic (Balticconnector)
+## DAS cable acoustic (EMODnet corridors)
 
-**DasCableAcousticSimulator** — synthetic **48-channel** DAS windows along **`BALTICCONNECTOR`** (EMODnet LINESTRING from `ostsee_infrastruktur`). Output **HDF5** (`triton/das-cable/v1`) with `channels`, `spectrogram`, ground-truth `threat_class` for ML.
+**DasCableAcousticSimulator** **1.1.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
 
-CML classifier: `cai-workbench/das-cable-classifier/` — `python3 scripts/validate_nifi_ml.py` after `train.py`.
+| Cable Asset | Typ | EMODnet id |
+|-------------|-----|------------|
+| `BALTICCONNECTOR` | Gaspipeline | EMODNET_BALTICCONNECTOR |
+| `NORD_STREAM_1` | Gaspipeline | EMODNET_NS1 |
+| `NORD_STREAM_2` | Gaspipeline | EMODNET_NS2 |
+| `PCABLE_BSH_1` … `PCABLE_BSH_4` | Seekabel | EMODNET_PCABLE_BSH_* |
+
+Output **HDF5** (`triton/das-cable/v1`). CML: `cai-workbench/das-cable-classifier/`.
 
 | Property | Default |
 |----------|---------|
-| Cable Asset | `BALTICCONNECTOR` |
+| Cable Asset | `BALTICCONNECTOR` (dropdown, 7 values) |
 | Segment Count | 6 |
 | Output Format | `hdf5` |
 

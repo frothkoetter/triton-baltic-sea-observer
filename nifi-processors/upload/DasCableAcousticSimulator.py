@@ -9,7 +9,7 @@ if _EXTENSIONS_DIR.as_posix() not in sys.path:
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 
-from cable_corridor_registry import CABLE_ASSETS, cable_meta
+from cable_corridor_registry import cable_asset_keys, cable_meta
 from das_acoustic_engine import (
     DEFAULT_CHANNELS,
     DEFAULT_FS_HZ,
@@ -30,17 +30,21 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.0.0'
+        version = '1.1.0'
         description = (
             'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
-            'Baltic submarine cable corridors — anchor drag & CUI sabotage scenarios.'
+            'EMODnet Baltic cables/pipelines (7 assets) — anchor drag & CUI scenarios.'
         )
         dependencies = ['numpy', 'h5py']
 
     CABLE_ASSET = PropertyDescriptor(
         name="Cable Asset",
-        description="EMODnet cable from project registry.",
-        allowable_values=sorted(CABLE_ASSETS.keys()),
+        description=(
+            "Submarine cable or pipeline corridor (WKT from defense.ostsee_infrastruktur). "
+            "Gaspipelines: BALTICCONNECTOR, NORD_STREAM_1/2. "
+            "Seekabel BSH/CONTIS: PCABLE_BSH_1 … PCABLE_BSH_4."
+        ),
+        allowable_values=cable_asset_keys(),
         default_value="BALTICCONNECTOR",
         required=True,
     )
