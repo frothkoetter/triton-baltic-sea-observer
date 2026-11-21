@@ -1,0 +1,163 @@
+import json
+import sys
+from pathlib import Path
+
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
+
+from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
+from nifiapi.properties import PropertyDescriptor, StandardValidators
+
+from cable_corridor_registry import CABLE_ASSETS, cable_meta
+from das_acoustic_engine import (
+    DEFAULT_CHANNELS,
+    DEFAULT_FS_HZ,
+    DEFAULT_SEGMENTS,
+    DEFAULT_WINDOW_S,
+    generate_das_batch,
+    write_hdf5_batch,
+)
+
+
+class DasCableAcousticSimulator(FlowFileTransform):
+    """
+    Seekabel-Akustik (DAS): Mehrkanal-Zeitreihen + Spektrogramme (HDF5)
+    entlang eines EMODnet-Unterseekabels (Default: Balticconnector).
+    """
+
+    class Java:
+        implements = ['org.apache.nifi.python.processor.FlowFileTransform']
+
+    class ProcessorDetails:
+        version = '1.0.0'
+        description = (
+            'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
+            'Baltic submarine cable corridors — anchor drag & CUI sabotage scenarios.'
+        )
+        dependencies = ['numpy', 'h5py']
+
+    CABLE_ASSET = PropertyDescriptor(
+        name="Cable Asset",
+        description="EMODnet cable from project registry.",
+        allowable_values=sorted(CABLE_ASSETS.keys()),
+        default_value="BALTICCONNECTOR",
+        required=True,
+    )
+
+    SEGMENT_COUNT = PropertyDescriptor(
+        name="Segment Count",
+        description="Spectrogram windows along the cable (chainage samples).",
+        validators=[StandardValidators.POSITIVE_INTEGER_VALIDATOR],
+        default_value=str(DEFAULT_SEGMENTS),
+        required=True,
+    )
+
+    CHANNEL_COUNT = PropertyDescriptor(
+        name="Channel Count",
+        description="DAS spatial channels (fibre samples).",
+        validators=[StandardValidators.POSITIVE_INTEGER_VALIDATOR],
+        default_value=str(DEFAULT_CHANNELS),
+        required=True,
+    )
+
+    WINDOW_SECONDS = PropertyDescriptor(
+        name="Window Seconds",
+        description="Time window per segment.",
+        validators=[StandardValidators.POSITIVE_INTEGER_VALIDATOR],
+        default_value=str(int(DEFAULT_WINDOW_S)),
+        required=True,
+    )
+
+    SAMPLE_RATE_HZ = PropertyDescriptor(
+        name="Sample Rate Hz",
+        description="DAS sampling rate.",
+        validators=[StandardValidators.POSITIVE_INTEGER_VALIDATOR],
+        default_value=str(int(DEFAULT_FS_HZ)),
+        required=True,
+    )
+
+    RANDOM_SEED = PropertyDescriptor(
+        name="Random Seed",
+        description="Optional seed for reproducible spectra (empty = random).",
+        default_value="",
+        required=False,
+    )
+
+    OUTPUT_FORMAT = PropertyDescriptor(
+        name="Output Format",
+        description="hdf5 binary or json preview (features only, no raw arrays).",
+        allowable_values=["hdf5", "json_preview"],
+        default_value="hdf5",
+        required=True,
+    )
+
+    def __init__(self, **kwargs):
+        kwargs.pop("jvm", None)
+        super().__init__(**kwargs)
+        self.descriptors = [
+            self.CABLE_ASSET,
+            self.SEGMENT_COUNT,
+            self.CHANNEL_COUNT,
+            self.WINDOW_SECONDS,
+            self.SAMPLE_RATE_HZ,
+            self.RANDOM_SEED,
+            self.OUTPUT_FORMAT,
+        ]
+
+    def getPropertyDescriptors(self):
+        return self.descriptors
+
+    def transform(self, context, flowFile):
+        try:
+            asset = context.getProperty(self.CABLE_ASSET.name).getValue() or "BALTICCONNECTOR"
+            n_seg = int(context.getProperty(self.SEGMENT_COUNT.name).getValue() or DEFAULT_SEGMENTS)
+            n_ch = int(context.getProperty(self.CHANNEL_COUNT.name).getValue() or DEFAULT_CHANNELS)
+            win_s = float(context.getProperty(self.WINDOW_SECONDS.name).getValue() or DEFAULT_WINDOW_S)
+            fs = float(context.getProperty(self.SAMPLE_RATE_HZ.name).getValue() or DEFAULT_FS_HZ)
+            seed_raw = (context.getProperty(self.RANDOM_SEED.name).getValue() or "").strip()
+            seed = int(seed_raw) if seed_raw.isdigit() else None
+            fmt = context.getProperty(self.OUTPUT_FORMAT.name).getValue() or "hdf5"
+
+            segments, batch_meta = generate_das_batch(
+                asset,
+                n_segments=min(24, max(1, n_seg)),
+                n_channels=min(128, max(8, n_ch)),
+                window_s=win_s,
+                fs_hz=fs,
+                seed=seed,
+            )
+            meta = cable_meta(asset)
+
+            if fmt == "json_preview":
+                preview = {
+                    **batch_meta,
+                    "features": [s.summary_features() | {"threat_class_gt": s.threat_class} for s in segments],
+                }
+                body = json.dumps(preview, indent=2).encode("utf-8")
+                mime = "application/json"
+            else:
+                body = write_hdf5_batch(segments, batch_meta)
+                mime = "application/x-hdf5"
+
+            threats = ",".join(sorted({s.threat_class for s in segments}))
+            attrs = {
+                "mime.type": mime,
+                "das.schema": "triton/das-cable/v1",
+                "das.cable.asset": asset,
+                "das.cable.id": meta["id"],
+                "das.cable.name": meta["name"],
+                "das.segment.count": str(len(segments)),
+                "das.channel.count": str(n_ch),
+                "das.fs_hz": str(int(fs)),
+                "das.threat.classes": threats,
+                "filename": f"das_{asset.lower()}_{len(segments)}seg.h5" if fmt == "hdf5" else f"das_{asset.lower()}_preview.json",
+            }
+            return FlowFileTransformResult(contents=body, attributes=attrs, relationship="success")
+        except Exception as e:
+            self.logger.error(f"DAS simulation failed: {e}")
+            return FlowFileTransformResult(
+                contents=str(e).encode("utf-8"),
+                attributes={"error": str(e)},
+                relationship="failure",
+            )

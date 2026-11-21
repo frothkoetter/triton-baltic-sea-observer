@@ -83,6 +83,7 @@ flowchart TB
 | **Next Best Action (UC2)** | [`cai-workbench/next-best-action/`](./cai-workbench/next-best-action/) | Alert rules, COA catalog, CrewAI persistence, Trino materialization, HITL artifacts, SAP readiness hooks; Greifswald demo scenario. |
 | **Trino batch jobs** | [`cai-workbench/trino-jobs/`](./cai-workbench/trino-jobs/) | CML utilities to refresh Lagebild-oriented Trino views. |
 | **LiDAR classifier** | [`cai-workbench/lidar-vessel-classifier/`](./cai-workbench/lidar-vessel-classifier/) | Train/deploy RandomForest on LAS features; S3-backed fit/predict for CML model serving. |
+| **DAS cable classifier** | [`cai-workbench/das-cable-classifier/`](./cai-workbench/das-cable-classifier/) | Spectrogram/HDF5 threat typing (anchor drag, CUI) — pairs with `DasCableAcousticSimulator` NiFi output. |
 | **Agent console bridge** | [`cai-workbench/agent-console/`](./cai-workbench/agent-console/) | Python chat bridge wired from `triton-ui` **Agenten** tab. |
 | **CML agent tools** | [`cai-agent/`](./cai-agent/) | Reusable CrewAI tools: CDW SQL query, schema introspection, weather. |
 | **RAG corpus** | [`cai-rag/`](./cai-rag/) | Static reference corpora (maritime operations notes, sample airspace bulletins) for retrieval-augmented prompts. |

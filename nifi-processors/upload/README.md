@@ -9,6 +9,9 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
+| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.0.0**) |
+| `das_acoustic_engine.py` | Multi-channel series + STFT along cable corridor |
+| `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
 | `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
 | `stanag_message_engine.py` | Message templates, traffic profiles, NDJSON render |
 | `MessengerSimulator.py` | Messenger sim |
@@ -31,6 +34,18 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `requirements.txt` | Empty on purpose; per-processor deps in `ProcessorDetails.dependencies` |
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
+
+## DAS cable acoustic (Balticconnector)
+
+**DasCableAcousticSimulator** — synthetic **48-channel** DAS windows along **`BALTICCONNECTOR`** (EMODnet LINESTRING from `ostsee_infrastruktur`). Output **HDF5** (`triton/das-cable/v1`) with `channels`, `spectrogram`, ground-truth `threat_class` for ML.
+
+CML classifier: `cai-workbench/das-cable-classifier/` — `python3 scripts/validate_nifi_ml.py` after `train.py`.
+
+| Property | Default |
+|----------|---------|
+| Cable Asset | `BALTICCONNECTOR` |
+| Segment Count | 6 |
+| Output Format | `hdf5` |
 
 ## STANAG / marine position alignment
 
