@@ -32,7 +32,7 @@ def allowed_uri(uri: str) -> bool:
 
 
 def s3_client():
-    # Local import; server/ on PYTHONPATH when run from triton-nato-ui
+    # Local import; server/ on PYTHONPATH when run from triton-ui
     import sys
     from pathlib import Path
 

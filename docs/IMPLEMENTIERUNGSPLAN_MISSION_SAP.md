@@ -1,7 +1,7 @@
 # Implementierungsplan: Operative Einsatzplanung (Mission Planning) mit SAP S/4HANA Defense & Security
 
 Stand: November 2026 · Repository: **Triton Baltic Sea Observer**  
-Verwandte Pläne: [NBA UC2](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) · [NATO UI](../triton-nato-ui/docs/UI_OVERVIEW.md) · [MCP Phase 8](../cai-workbench/next-best-action/docs/MCP_CURSOR_SETUP.md)
+Verwandte Pläne: [NBA UC2](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) · [NATO UI](../triton-ui/docs/UI_OVERVIEW.md) · [MCP Phase 8](../cai-workbench/next-best-action/docs/MCP_CURSOR_SETUP.md)
 
 ## 1. Executive Summary
 
@@ -56,7 +56,7 @@ flowchart TB
 | COA + Simulation | Scoring, Red/Blue | `scoring.py`, `sim_adapter.py`, `red_blue_gameplay.py` |
 | Decision Record §1–§9 | Audit + What-if | `decision_record.py`, HITL `NbaDecisionRecorder.tsx` |
 | Persistenz | Incidents, COA matrix, HITL | `persistence.py`, DDL `cdw-analyse/sql/nba_schema_*.sql` |
-| Freigabe | Human-in-the-Loop | `triton-nato-ui` `POST /api/nba/incidents/:uuid/approve` |
+| Freigabe | Human-in-the-Loop | `triton-ui` `POST /api/nba/incidents/:uuid/approve` |
 | Governance | PROV / Bundle | `governance_export.py` (Phase 7) |
 | Agenten-Schnittstelle | MCP Iceberg, Semantica | `mcp_snapshot_bundle.py`, `docs/MCP_CURSOR_SETUP.md` |
 
@@ -83,7 +83,7 @@ flowchart TB
 | `triton.nba.incident.escalated` | `sitrep_bridge.py` | CPI → SAP | Voranlage Operational Force Element |
 | `triton.nba.coa.approved` | HITL approve | CPI → SAP | Aktivierung, Reservierung, Wartungsauftrag |
 
-Transport: **SAP Integration Suite (CPI)** + **Advanced Event Mesh**; im Showcase zunächst **HTTP-Webhook-Stubs** in `triton-nato-ui/server/`.
+Transport: **SAP Integration Suite (CPI)** + **Advanced Event Mesh**; im Showcase zunächst **HTTP-Webhook-Stubs** in `triton-ui/server/`.
 
 ### 4.3 Semantisch: Datasphere / Business Data Cloud
 
@@ -235,7 +235,7 @@ gantt
 1. Demo-Incident (Greifswald oder Live-Blackout): mindestens eine COA wird durch SAP-Readiness **ausgeschlossen**, eine **bestätigt**.
 2. HITL zeigt §10 mit nachvollziehbarer Einheitenliste und Audit-Zeitstempel.
 3. Nach Approve: simulierter CPI-Call (Mock 202) mit Payload-Schema aus `sap_intent_export.py`.
-4. Dokumentierte Latenz: Readiness-OData &lt; 2 s P95 im Showcase-Netz (analog [API-Latenz-Messung](../triton-nato-ui/docs/API_LATENCY.md) falls vorhanden).
+4. Dokumentierte Latenz: Readiness-OData &lt; 2 s P95 im Showcase-Netz (analog [API-Latenz-Messung](../triton-ui/docs/API_LATENCY.md) falls vorhanden).
 
 ## 12. Risiken
 
@@ -249,6 +249,6 @@ gantt
 ## 13. Referenzen
 
 - NBA UC2: [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md)
-- UI NBA HITL: [`triton-nato-ui/docs/UI_OVERVIEW.md`](../triton-nato-ui/docs/UI_OVERVIEW.md)
+- UI NBA HITL: [`triton-ui/docs/UI_OVERVIEW.md`](../triton-ui/docs/UI_OVERVIEW.md)
 - MCP: [`cai-workbench/next-best-action/docs/MCP_CURSOR_SETUP.md`](../cai-workbench/next-best-action/docs/MCP_CURSOR_SETUP.md)
 - SAP S/4HANA D&S / BTP: Product Help (Force Elements, Readiness, Display Status Board, Disconnected Operations) — konkrete OData-Namen im Accelerator Hub beim MP-2-Start festlegen.

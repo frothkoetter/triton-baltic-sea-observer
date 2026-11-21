@@ -9,22 +9,22 @@ from pathlib import Path
 
 
 def resolve_root() -> Path:
-    """Project root (triton-nato-ui). Works as script; not in Jupyter cells."""
+    """Project root (triton-ui). Works as script; not in Jupyter cells."""
     if globals().get("__file__"):
         return Path(__file__).resolve().parent
     work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
     if work:
-        for candidate in (Path(work) / "triton-nato-ui", Path(work)):
+        for candidate in (Path(work) / "triton-ui", Path(work)):
             if (candidate / "server" / "index.js").is_file():
                 return candidate
     here = Path.cwd()
     if (here / "server" / "index.js").is_file():
         return here
-    nested = here / "triton-nato-ui"
+    nested = here / "triton-ui"
     if (nested / "server" / "index.js").is_file():
         return nested
     raise RuntimeError(
-        "Cannot locate triton-nato-ui. Run: python3 triton-nato-ui/entry.py "
+        "Cannot locate triton-ui. Run: python3 triton-ui/entry.py "
         "(not from a notebook cell). CDSW_WORKING_DIRECTORY="
         f"{work or '(unset)'}"
     )
@@ -41,7 +41,7 @@ api_port = os.environ.get("API_PORT", "").strip()
 port = app_port or ro_port
 cwd = os.environ.get("CDSW_WORKING_DIRECTORY", os.getcwd())
 
-print("=== triton-nato-ui entry ===", flush=True)
+print("=== triton-ui entry ===", flush=True)
 print(f"CDSW_WORKING_DIRECTORY={cwd}", flush=True)
 print(f"CDSW_APP_PORT={app_port!r}", flush=True)
 print(f"CDSW_READONLY_PORT={ro_port!r}", flush=True)

@@ -10,7 +10,7 @@ SQL_FILE = ROOT / "sql" / "06_tier_a_observation_areas.sql"
 
 import importlib.util
 
-BRIDGE = Path(__file__).resolve().parents[3] / "triton-nato-ui" / "server" / "trino-bridge.py"
+BRIDGE = Path(__file__).resolve().parents[3] / "triton-ui" / "server" / "trino-bridge.py"
 _spec = importlib.util.spec_from_file_location("trino_bridge", BRIDGE)
 _mod = importlib.util.module_from_spec(_spec)
 assert _spec and _spec.loader

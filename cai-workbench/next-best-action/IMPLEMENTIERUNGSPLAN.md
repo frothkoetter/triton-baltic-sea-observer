@@ -117,7 +117,7 @@ flowchart LR
 
 CML: `python3 run_nba.py --no-demo --exit-if-quiet --persist-trino` (stündlich neben UC1).
 
-- Optional später: Webhook von `triton-nato-ui` (Phase 4).
+- Optional später: Webhook von `triton-ui` (Phase 4).
 
 ### Phase 3 — Agenten (umgesetzt, CrewAI-ready)
 
@@ -134,7 +134,7 @@ Vollständiger **CrewAI `@persist` Flow** optional später; aktuell deterministi
 
 | Komponente | Ort |
 | :---- | :---- |
-| UI | `triton-nato-ui` Tab **NBA HITL** (`src/pages/NbaHitl.tsx`) |
+| UI | `triton-ui` Tab **NBA HITL** (`src/pages/NbaHitl.tsx`) |
 | API | `GET /api/nba/incidents`, `…/coa-runs`, `POST …/approve` |
 | Trino | `server/trino-bridge.py`, DDL `nba_schema_phase4_hitl.sql` |
 | Persist | `approved_coa_id`, `sitrep_link` (`hitl.py`, `persistence.py`) |

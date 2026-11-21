@@ -90,7 +90,7 @@ See [`.env.example`](.env.example). Key settings:
 
 Reports land in `artifacts/reports/` (`latest.pdf`, `index.json`).
 
-### Object storage (triton-nato-ui)
+### Object storage (triton-ui)
 
 Set in the **hourly job** environment (and mirror on the NATO UI Application):
 
@@ -100,7 +100,7 @@ Set in the **hourly job** environment (and mirror on the NATO UI Application):
 | `LAGEBILD_S3_PREFIX` | e.g. `s3a://bucket/path/situation-awareness/reports/` |
 | `S3_WORKLOAD_USER` / `S3_WORKLOAD_PASSWORD` | CDP workload access key + secret |
 
-Uploads: PDF, PNGs, text, per-run JSON, `index.json`, `latest.pdf`. **triton-nato-ui** tab **SITREP** (`#sitrep`) reads the same prefix via `SITREP_S3_PREFIX`.
+Uploads: PDF, PNGs, text, per-run JSON, `index.json`, `latest.pdf`. **triton-ui** tab **SITREP** (`#sitrep`) reads the same prefix via `SITREP_S3_PREFIX`.
 
 ## Tests
 

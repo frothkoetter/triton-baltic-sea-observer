@@ -14,8 +14,8 @@ Bulk apply via API v2: [`scripts/cml/`](./scripts/cml/) (`set_project_environmen
 
 Standalone web app (Lagebild · Analysen · **Agenten**/CrewAI) with Impala `defense` backend and sample-data fallback:
 
-- Code: [`triton-nato-ui/`](./triton-nato-ui/)
-- UI data map: [`triton-nato-ui/docs/UI_OVERVIEW.md`](./triton-nato-ui/docs/UI_OVERVIEW.md)
+- Code: [`triton-ui/`](./triton-ui/)
+- UI data map: [`triton-ui/docs/UI_OVERVIEW.md`](./triton-ui/docs/UI_OVERVIEW.md)
 - Runbook: see project docs `triton-mvp-runbook.md`
 
 ## Next Best Action (UC2, planned)
