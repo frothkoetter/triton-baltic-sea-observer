@@ -150,7 +150,7 @@ app.get("/api/map-config", (_req, res) => {
 app.get("/api/version", (_req, res) => {
   res.json({
     ok: true,
-    app: "triton-nato-ui",
+    app: "triton-ui",
     version: "0.2.0",
     build: "0.2.0-data-mode",
     features: { dataModeFooterToggle: true, agentConsole: true },

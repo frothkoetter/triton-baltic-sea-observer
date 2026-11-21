@@ -7,7 +7,7 @@ Applications use a **fresh engine**; session `~/.nvm` is often **not** visible.
 In a **Session** (same project):
 
 ```bash
-cd "${CDSW_WORKING_DIRECTORY:-/home/cdsw}/triton-nato-ui"
+cd "${CDSW_WORKING_DIRECTORY:-/home/cdsw}/triton-ui"
 bash cdsw-build.sh
 ls -la dist/index.html node_modules/express
 ```
@@ -20,12 +20,12 @@ Then create/restart the Application.
 
 | Field | Value |
 |-------|--------|
-| Script | `triton-nato-ui/entry.py` |
+| Script | `triton-ui/entry.py` |
 | Kernel | `python3` |
 
 Do **not** use `bash cdsw-app-start.sh` as the Application script.
 
-## Cloudera samples vs triton-nato-ui
+## Cloudera samples vs triton-ui
 
 | Topic | [Flask example](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-projects-embedded-web-applications-example-flask-application.html) / [Shiny](https://docs.cloudera.com/machine-learning/cloud/projects/topics/ml-example--a-shiny-application.html) | This project |
 |-------|---------------|--------------|
@@ -95,7 +95,7 @@ Paste the **last 30 lines** of Application logs for debugging.
 **Session (once, persists in project venv/site-packages):**
 
 ```bash
-cd "${CDSW_WORKING_DIRECTORY:-/home/cdsw}/triton-nato-ui"
+cd "${CDSW_WORKING_DIRECTORY:-/home/cdsw}/triton-ui"
 python3 -m pip install -r requirements-cml-app.txt
 python3 -c "import laspy; print('laspy', laspy.__version__)"
 ```

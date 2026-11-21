@@ -69,7 +69,7 @@ Outputs: `incident_state.json`, `agent_narrative.md`, `state_history/`. Dedupe f
 
 DDL (einmalig auf bestehenden Tabellen): `cdw-analyse/sql/nba_schema_phase4_hitl.sql`
 
-Operator-Freigabe: [triton-nato-ui](../../triton-nato-ui/) → Tab **NBA HITL** → Approve schreibt `approved_coa_id`. Neue Incidents setzen `sitrep_link` für FLASH / SITREP-ESCALATED.
+Operator-Freigabe: [triton-ui](../../triton-ui/) → Tab **NBA HITL** → Approve schreibt `approved_coa_id`. Neue Incidents setzen `sitrep_link` für FLASH / SITREP-ESCALATED.
 
 ## Phase 5 — Decision record → Trino
 

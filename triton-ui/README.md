@@ -13,7 +13,7 @@ Full integration description (Lagebild, Buoys, LiDAR, NBA HITL, APIs, tables):
 ## Quick start
 
 ```bash
-cd triton-nato-ui
+cd triton-ui
 cp .env.example .env.local
 # Edit .env.local — set IMPALA_USER and IMPALA_PASSWORD (never commit this file)
 npm install
@@ -27,9 +27,9 @@ Open http://localhost:5173 (API on http://127.0.0.1:3001).
 Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/applications/topics/ml-applications-c.html):
 
 1. Project → **Applications** → **New Application**
-2. **Script:** `triton-nato-ui/entry.py` (Python host; starts Node on **`CDSW_APP_PORT`**)
+2. **Script:** `triton-ui/entry.py` (Python host; starts Node on **`CDSW_APP_PORT`**)
 3. **Kernel:** `python3` (or ML Runtime Python editor/kernel)
-4. **Subdomain:** e.g. `triton-nato-ui` → URL `https://<subdomain>.<domain>/`
+4. **Subdomain:** e.g. `triton-ui` → URL `https://<subdomain>.<domain>/`
 5. **Environment variables** (application overrides project):
 
    | Name | Example |
@@ -56,7 +56,7 @@ Per [Cloudera AI Applications](https://docs.cloudera.com/machine-learning/cloud/
 **Session test** (before deploy): in a session with port forwarding, run:
 
 ```bash
-cd /home/cdsw/triton-nato-ui
+cd /home/cdsw/triton-ui
 export CDSW_APP_PORT=8091
 python3 entry.py
 ```
@@ -123,7 +123,7 @@ Legacy `#sql` opens Agenten. `POST /api/query` remains for ops tooling only (not
 After **`git pull`**, either **restart** the Application ( `entry.py` rebuilds when `src/` is newer than `dist/`) or run manually:
 
 ```bash
-cd triton-nato-ui
+cd triton-ui
 bash cdsw-build.sh
 # Restart the Application in CML
 NODE_ENV=production npm start

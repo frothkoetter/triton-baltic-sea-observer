@@ -4,7 +4,7 @@ Repeatable benchmark:
 
 ```bash
 # API must be running (API_PORT=3001, TRINO_* set)
-cd triton-nato-ui
+cd triton-ui
 BENCH_RUNS=3 node scripts/bench-api-latency.mjs
 ```
 
