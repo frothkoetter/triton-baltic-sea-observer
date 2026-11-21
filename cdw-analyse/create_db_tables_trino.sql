@@ -617,6 +617,29 @@ CREATE TABLE lidar_simulation_metadata (
   ingested_at timestamp COMMENT 'When the metadata row was recorded (set at ingest).'
 ) WITH (partitioning = ARRAY['day(ingested_at)']);
 
+-- das_cable_spectrogram_metadata: one row per DAS spectrogram segment (NiFi DasCableAcousticSimulator HDF5 batch)
+DROP TABLE IF EXISTS das_cable_spectrogram_metadata;
+CREATE TABLE das_cable_spectrogram_metadata (
+  hadoop_file_url varchar COMMENT 'Object store URI of HDF5 batch (hadoop.file.url).',
+  segment_index integer COMMENT 'Segment index inside batch (das.segment.index).',
+  cable_asset varchar COMMENT 'Cable registry key (das.cable.asset).',
+  cable_id varchar COMMENT 'Cable id (das.cable.id).',
+  cable_name varchar COMMENT 'Cable display name (das.cable.name).',
+  chainage_m double COMMENT 'Along-cable chainage in meters.',
+  segment_lat double COMMENT 'Segment center latitude WGS84.',
+  segment_lon double COMMENT 'Segment center longitude WGS84.',
+  threat_class varchar COMMENT 'Ground-truth threat label (das.threat_class).',
+  predicted_threat_type varchar COMMENT 'ML-predicted threat type.',
+  model_confidence double COMMENT 'Model confidence for predicted_threat_type.',
+  channel_count integer COMMENT 'Number of DAS channels in segment.',
+  window_seconds double COMMENT 'Spectrogram window length (seconds).',
+  fs_hz double COMMENT 'Sample rate Hz.',
+  spectral_peak_hz double COMMENT 'Dominant spectral peak Hz (optional).',
+  energy_rms double COMMENT 'RMS energy feature (optional).',
+  filename varchar COMMENT 'HDF5 basename.',
+  ingested_at timestamp COMMENT 'Row ingest time (partition key).'
+) WITH (partitioning = ARRAY['day(ingested_at)']);
+
 -- gps_jammer_events: airspace integrity / GPS jamming simulation (NiFi GpsJammer)
 DROP TABLE IF EXISTS gps_jammer_events;
 CREATE TABLE gps_jammer_events (
@@ -1013,6 +1036,44 @@ FilteredLidarSimulations AS (
       AND distance_m <= 50000
 ),
 
+LatestDasCableSegments AS (
+    SELECT
+        d.hadoop_file_url,
+        d.segment_index,
+        d.filename,
+        d.cable_asset,
+        d.cable_name,
+        d.chainage_m,
+        d.ingested_at AS das_time,
+        d.segment_lat AS das_lat,
+        d.segment_lon AS das_lon,
+        d.threat_class,
+        d.predicted_threat_type,
+        d.model_confidence,
+        d.channel_count,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(d.segment_lat, d.segment_lon, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY d.hadoop_file_url, d.segment_index, h.harbour_name
+            ORDER BY d.ingested_at DESC
+        ) AS rn
+    FROM
+        defense.das_cable_spectrogram_metadata d
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE
+        d.ingested_at >= current_timestamp - interval '24' hour
+        AND d.segment_lat IS NOT NULL
+        AND d.segment_lon IS NOT NULL
+),
+FilteredDasCableSegments AS (
+    SELECT *
+    FROM LatestDasCableSegments
+    WHERE rn = 1
+      AND distance_m <= 50000
+),
+
 -- CTE: Russian Baltic Fleet (positions + registry)
 LatestRusNavalPositions AS (
     SELECT
@@ -1258,6 +1319,32 @@ SELECT
     ) AS details
 FROM
     FilteredLidarSimulations l
+
+UNION ALL
+
+SELECT
+    'DAS_Cable' AS Data_Source,
+    CONCAT(COALESCE(d.filename, d.hadoop_file_url), '#', CAST(d.segment_index AS VARCHAR)) AS ID,
+    d.das_time AS "timestamp",
+    d.das_lat AS latitude,
+    d.das_lon AS longitude,
+    d.harbour_name AS harbour_name,
+    d.distance_m AS dist_m_raw,
+    CAST(ROUND(d.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(d.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Cable: ', COALESCE(d.cable_name, d.cable_asset, 'unknown'),
+        ' | Chainage: ', CAST(ROUND(d.chainage_m, 0) AS VARCHAR), ' m',
+        ' | Threat: ', COALESCE(d.threat_class, 'ambient'),
+        COALESCE(
+            CONCAT(' | ML: ', d.predicted_threat_type, ' (conf ', CAST(d.model_confidence AS VARCHAR), ')'),
+            ''
+        ),
+        ' | Ch: ', CAST(COALESCE(d.channel_count, 0) AS VARCHAR),
+        COALESCE(CONCAT(' | HDF5: ', d.hadoop_file_url), '')
+    ) AS details
+FROM
+    FilteredDasCableSegments d
 
 UNION ALL
 
@@ -1511,6 +1598,43 @@ FilteredLidarSimulations AS (
     WHERE distance_m <= 50000
 ),
 
+LatestDasCableSegments AS (
+    SELECT
+        d.hadoop_file_url,
+        d.segment_index,
+        d.filename,
+        d.cable_asset,
+        d.cable_name,
+        d.chainage_m,
+        d.ingested_at AS das_time,
+        d.segment_lat AS das_lat,
+        d.segment_lon AS das_lon,
+        d.threat_class,
+        d.predicted_threat_type,
+        d.model_confidence,
+        d.channel_count,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        great_circle_distance(d.segment_lat, d.segment_lon, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY d.hadoop_file_url, d.segment_index, h.harbour_name
+            ORDER BY d.ingested_at DESC
+        ) AS rn
+    FROM
+        defense.das_cable_spectrogram_metadata d
+    CROSS JOIN
+        Harbour_Ref h
+    WHERE
+        d.ingested_at >= current_timestamp - interval '24' hour
+        AND d.segment_lat IS NOT NULL
+        AND d.segment_lon IS NOT NULL
+),
+FilteredDasCableSegments AS (
+    SELECT *
+    FROM LatestDasCableSegments
+    WHERE distance_m <= 50000
+),
+
 -- CTE: Russian Baltic Fleet (positions + registry)
 LatestRusNavalPositions AS (
     SELECT
@@ -1737,6 +1861,32 @@ SELECT
     ) AS details
 FROM
     FilteredLidarSimulations l
+
+UNION ALL
+
+SELECT
+    'DAS_Cable' AS Data_Source,
+    CONCAT(COALESCE(d.filename, d.hadoop_file_url), '#', CAST(d.segment_index AS VARCHAR)) AS ID,
+    d.das_time AS "timestamp",
+    d.das_lat AS latitude,
+    d.das_lon AS longitude,
+    d.harbour_name AS harbour_name,
+    d.distance_m AS dist_m_raw,
+    CAST(ROUND(d.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(d.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Cable: ', COALESCE(d.cable_name, d.cable_asset, 'unknown'),
+        ' | Chainage: ', CAST(ROUND(d.chainage_m, 0) AS VARCHAR), ' m',
+        ' | Threat: ', COALESCE(d.threat_class, 'ambient'),
+        COALESCE(
+            CONCAT(' | ML: ', d.predicted_threat_type, ' (conf ', CAST(d.model_confidence AS VARCHAR), ')'),
+            ''
+        ),
+        ' | Ch: ', CAST(COALESCE(d.channel_count, 0) AS VARCHAR),
+        COALESCE(CONCAT(' | HDF5: ', d.hadoop_file_url), '')
+    ) AS details
+FROM
+    FilteredDasCableSegments d
 
 UNION ALL
 

@@ -16,6 +16,15 @@
       "unless_priority": "FLASH"
     },
     {
+      "id": "DAS_CUI_ACOUSTIC",
+      "alert_types": ["das_cable_threat", "lagebild_flash"],
+      "message": "DAS cable threat: task ROV/patrol; correlate AIS dark window before public release.",
+      "full_text": "Acoustic DAS indicators on a CUI cable segment require national C2 and ROV/patrol tasking. Correlate nearest AIS blackout or trawl activity before unclassified briefing.",
+      "ontology_term": "triton:DASCableAcousticThreat",
+      "rulebook_ref": "BALTIC:CUI-pipeline-corridor",
+      "required_notes": ["pipeline_sovereignty"]
+    },
+    {
       "id": "PIPELINE_SOVEREIGN_SENSITIVE",
       "alert_types": ["ais_pipeline_blackout"],
       "message": "Pipeline corridor: coordinate national C2; avoid public-domain disclosure of exact segment.",
