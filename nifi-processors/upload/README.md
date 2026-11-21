@@ -9,7 +9,8 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
-| `STANAGSimulator.py` | STANAG messages (**1.7.0** — POSITION = MarineShipSimulator) |
+| `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
+| `stanag_message_engine.py` | Message templates, traffic profiles, NDJSON render |
 | `MessengerSimulator.py` | Messenger sim |
 | `gpsjammer.py` | GPS jamming sim |
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
@@ -33,13 +34,24 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 
 ## STANAG / marine position alignment
 
-**StanagMessageGenerator** (`STANAGSimulator.py` **1.7.0**) uses the same coordinates as **MarineShipSimulator** for each `FROM/` unit:
+**StanagMessageGenerator** (`STANAGSimulator.py` **2.0.0**) uses MarineShipSimulator coordinates and simulates **NATO-style operational traffic**:
 
-1. Preferred: connect **MarineShipSimulator → success → StanagMessageGenerator** (use marine NDJSON on the FlowFile).
-2. Fallback: read **`/tmp/marineship_state.json`** written on the same NiFi node (5 decimal places, same as `marine_vessel_status`).
-3. Property **Require Marine Ship Positions** = `true` (default) avoids random Baltic coordinates when marine data is missing.
+- **Unit → HQ:** SITREP, POSREP, SPOT, MEDREP  
+- **HQ → unit:** FRAGO, WMSG (MOC / TFHQ / LOGCELL …)  
+- **Unit → unit:** INTSNO (PIM / escort handover), LOGREQ rendezvous  
 
-Disable the standalone **GenerateFlowFile** in *Surveillance Report Simulator* when marine output feeds STANAG.
+| Property | Typical value |
+|----------|----------------|
+| Traffic Profile | `watch_section` (14–22 msgs), `major_exercise` (42–58), `custom` + Number of Messages |
+| Exercise Designation | `BALTOPS` (or empty → random) |
+| Output Format | `text_bundle` (CDV) or `ndjson` (Kafka / SplitRecord) |
+| Include Inter-Unit / HQ Traffic | `true` |
+
+1. Connect **MarineShipSimulator → success → StanagMessageGenerator** (NDJSON preferred).  
+2. Fallback: **`/tmp/marineship_state.json`** on the NiFi node.  
+3. **Require Marine Ship Positions** = `true` avoids random coordinates.
+
+FlowFile attributes include `message_id`, `message_dtg`, `message_from`, `message_to`, `stanag.traffic.*` counts for **AttributesToJSON**.
 
 ## Russian Baltic Fleet route
 

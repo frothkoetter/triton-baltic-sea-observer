@@ -1,12 +1,7 @@
-import json
-import random
-import datetime
 import os
 import sys
 from pathlib import Path
 
-# NiFi loads this file from python/extensions but runs the processor in an isolated
-# venv; sibling modules are only importable if the extensions dir is on sys.path.
 _EXTENSIONS_DIR = Path(__file__).resolve().parent
 if _EXTENSIONS_DIR.as_posix() not in sys.path:
     sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
@@ -16,36 +11,84 @@ from nifiapi.properties import PropertyDescriptor, StandardValidators
 
 from marine_fleet_registry import (
     GERMAN_NAVAL_FLEET,
-    MARINE_POSITION_DECIMALS,
     MARINESHIP_STATE_FILE,
     load_simulated_ship_positions,
     parse_marine_simulator_ndjson,
 )
+from stanag_message_engine import (
+    DEFAULT_EXERCISE_NAMES,
+    TRAFFIC_PROFILES,
+    batch_summary_attributes,
+    generate_stanag_batch,
+    render_ndjson,
+    render_text_bundle,
+    resolve_message_count,
+)
+
 
 class StanagMessageGenerator(FlowFileTransform):
     """
-    NiFi Python-Prozessor zum Generieren von STANAG-ähnlichen Nachrichten.
+    NiFi Python-Prozessor: STANAG / ADatP-3-ähnlicher Nachrichtenverkehr
+  (Einheit ↔ HQ, HQ → Einheit, Einheit ↔ Einheit) für Übungslagen.
     """
 
     class Java:
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.7.0'
+        version = '2.0.0'
         description = (
-            'STANAG-style naval surveillance reports. POSITION/LAT-LON matches '
-            'MarineShipSimulator for the same MMSI (incoming NDJSON preferred, '
-            'else /tmp/marineship_state.json). Wire MarineShipSimulator success '
-            'into this processor instead of a separate GenerateFlowFile.'
+            'NATO-style operational messaging (SITREP, POSREP, FRAGO, WMSG, SPOT, '
+            'LOGREQ, MEDREP, inter-unit PIM). POSITION matches MarineShipSimulator. '
+            'Traffic profiles simulate realistic counts per exercise phase.'
         )
         dependencies = []
 
     NUM_MESSAGES = PropertyDescriptor(
         name="Number of Messages",
-        description="The number of STANAG messages to generate per incoming FlowFile.",
+        description="Used when Traffic Profile is custom (1–80).",
         validators=[StandardValidators.NON_NEGATIVE_INTEGER_VALIDATOR],
-        default_value="5",
-        required=True
+        default_value="12",
+        required=True,
+    )
+
+    TRAFFIC_PROFILE = PropertyDescriptor(
+        name="Traffic Profile",
+        description="Preset message batch size and mix (overrides Number of Messages unless custom).",
+        allowable_values=list(TRAFFIC_PROFILES.keys()),
+        default_value="watch_section",
+        required=True,
+    )
+
+    EXERCISE_DESIGNATION = PropertyDescriptor(
+        name="Exercise Designation",
+        description="Exercise name in SUBJ/TXT (e.g. BALTOPS). Empty = random NATO-style codename.",
+        default_value="",
+        required=False,
+    )
+
+    OUTPUT_FORMAT = PropertyDescriptor(
+        name="Output Format",
+        description="text_bundle: ACP-style blocks; ndjson: one JSON object per line for SplitRecord.",
+        allowable_values=["text_bundle", "ndjson"],
+        default_value="text_bundle",
+        required=True,
+    )
+
+    INCLUDE_INTER_UNIT = PropertyDescriptor(
+        name="Include Inter-Unit Traffic",
+        description="Ship-to-ship PIM, rendezvous, fuel coordination.",
+        allowable_values=["true", "false"],
+        default_value="true",
+        required=True,
+    )
+
+    INCLUDE_HQ_TRAFFIC = PropertyDescriptor(
+        name="Include HQ Traffic",
+        description="Orders and warnings from Maritime Operations Centre / TF HQ.",
+        allowable_values=["true", "false"],
+        default_value="true",
+        required=True,
     )
 
     REQUIRE_MARINE_POSITIONS = PropertyDescriptor(
@@ -66,35 +109,32 @@ class StanagMessageGenerator(FlowFileTransform):
         default_value="true",
         required=True,
     )
-    
+
+    LEGACY_SIMPLE_MODE = PropertyDescriptor(
+        name="Legacy Simple Mode",
+        description="When true and ≤3 messages, emit pre-2.0 short SITREP/SICK style only.",
+        allowable_values=["true", "false"],
+        default_value="false",
+        required=True,
+    )
+
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
         self.descriptors = [
             self.NUM_MESSAGES,
+            self.TRAFFIC_PROFILE,
+            self.EXERCISE_DESIGNATION,
+            self.OUTPUT_FORMAT,
+            self.INCLUDE_INTER_UNIT,
+            self.INCLUDE_HQ_TRAFFIC,
             self.REQUIRE_MARINE_POSITIONS,
             self.PREFER_INCOMING_NDJSON,
+            self.LEGACY_SIMPLE_MODE,
         ]
-        
-        self.activities = ["patrolling", "shadowing", "intercepting", "escorting", "monitoring"]
-        self.targets = ["unidentified vessel", "fishing trawler", "merchant ship", "submarine contact", "fast attack craft"]
-        self.outcomes = [
-            "no hostile intent detected",
-            "contact maintained",
-            "vessel diverted",
-            "boarding party deployed",
-            "submarine submerged and lost contact"
-        ]
-        self.subjects = ["MARITIME SURVEILLANCE REPORT", "SICK REPORT"]
-        self.illnesses = ["fever", "stomach flu", "respiratory infection", "sea sickness", "minor injury"]
 
     def getPropertyDescriptors(self):
         return self.descriptors
-
-    def _format_position(self, lat: float, lon: float) -> str:
-        lat_r = round(lat, MARINE_POSITION_DECIMALS)
-        lon_r = round(lon, MARINE_POSITION_DECIMALS)
-        return f"LAT {lat_r}°N, LON {lon_r}°E"
 
     def _resolve_reporting_ships(self, content: bytes, prefer_ndjson: bool) -> list[dict]:
         if prefer_ndjson and content:
@@ -107,49 +147,25 @@ class StanagMessageGenerator(FlowFileTransform):
             return from_state
         return []
 
-    def _generate_stanag_message(self, unit_name: str, lat: float, lon: float, mmsi: str) -> str:
-        location = self._format_position(lat, lon)
-        dtg = datetime.datetime.utcnow().strftime("%d%H%MZ%b%y").upper()
-        subject = random.choice(self.subjects)
-        unit_key = unit_name.replace(" ", "")
-
-        if subject == "MARITIME SURVEILLANCE REPORT":
-            activity = random.choice(self.activities)
-            target = random.choice(self.targets)
-            outcome = random.choice(self.outcomes)
-            message_text = f"{unit_name} at {location} is {activity} {target}. Result: {outcome}."
-        elif subject == "SICK REPORT":
-            illness = random.choice(self.illnesses)
-            message_text = (
-                f"SICK REPORT: ONE CREWMEMBER ONBOARD {unit_name} HAS BEEN DIAGNOSED WITH "
-                f"{illness}. CONDITION IS STABLE. REQUESTING MEDICAL ADVICE."
-            )
-        else:
-            message_text = "UNKNOWN REPORT TYPE: No content generated."
-
-        return f"""ZCZC
-MSGID/SITREP/{unit_key}/0001
-DTG/{dtg}
-FROM/{unit_name}
-TO/NAVAL COMMAND
-SUBJ/{subject}
-
-POSITION/{location}
-
-TXT/{message_text}
-
-NNNN""".strip()
-
     def transform(self, context, flowFile):
         try:
-            num_messages_str = context.getProperty(self.NUM_MESSAGES.name).getValue()
-            num_messages = int(num_messages_str) if num_messages_str.isdigit() else 5
+            import random
+
+            num_messages = int(context.getProperty(self.NUM_MESSAGES.name).getValue() or "12")
+            profile = context.getProperty(self.TRAFFIC_PROFILE.name).getValue() or "watch_section"
+            exercise = (context.getProperty(self.EXERCISE_DESIGNATION.name).getValue() or "").strip()
+            if not exercise:
+                exercise = random.choice(DEFAULT_EXERCISE_NAMES)
+            output_format = context.getProperty(self.OUTPUT_FORMAT.name).getValue() or "text_bundle"
+            include_inter = context.getProperty(self.INCLUDE_INTER_UNIT.name).getValue() == "true"
+            include_hq = context.getProperty(self.INCLUDE_HQ_TRAFFIC.name).getValue() == "true"
             require_marine = (
                 context.getProperty(self.REQUIRE_MARINE_POSITIONS.name).getValue() == "true"
             )
             prefer_ndjson = (
                 context.getProperty(self.PREFER_INCOMING_NDJSON.name).getValue() == "true"
             )
+            legacy_simple = context.getProperty(self.LEGACY_SIMPLE_MODE.name).getValue() == "true"
 
             content = flowFile.getContentsAsBytes()
             ships = self._resolve_reporting_ships(content, prefer_ndjson)
@@ -170,14 +186,27 @@ NNNN""".strip()
                     {
                         "name": u["name"],
                         "mmsi": u["mmsi"],
-                        "lat": 54.3233,
-                        "lon": 10.1228,
+                        "lat": 54.3233 + (i * 0.05),
+                        "lon": 10.1228 + (i * 0.08),
                     }
-                    for u in GERMAN_NAVAL_FLEET[: max(1, num_messages)]
+                    for i, u in enumerate(GERMAN_NAVAL_FLEET[:12])
                 ]
 
-            pool = list(ships)
-            random.shuffle(pool)
+            count = resolve_message_count(
+                profile,
+                num_messages,
+                include_inter_unit=include_inter,
+                include_hq=include_hq,
+            )
+
+            messages = generate_stanag_batch(
+                ships,
+                count=count,
+                exercise=exercise,
+                include_inter_unit=include_inter,
+                include_hq_traffic=include_hq,
+                legacy_simple=legacy_simple,
+            )
 
             position_source = "registry_fallback"
             if prefer_ndjson and content:
@@ -189,25 +218,24 @@ NNNN""".strip()
             elif os.path.exists(MARINESHIP_STATE_FILE):
                 position_source = "state_file"
 
-            output_messages = []
-            mmsi_list = []
-            for i in range(num_messages):
-                ship = pool[i % len(pool)]
-                output_messages.append(
-                    self._generate_stanag_message(
-                        ship["name"], float(ship["lat"]), float(ship["lon"]), str(ship["mmsi"])
-                    )
-                )
-                mmsi_list.append(str(ship["mmsi"]))
+            if output_format == "ndjson":
+                output_content = render_ndjson(messages)
+                fmt = "application/x-ndjson"
+            else:
+                output_content = render_text_bundle(messages)
+                fmt = "text/plain"
 
-            output_content = ("\n\n" + ("=" * 60) + "\n\n").join(output_messages)
-
+            mmsi_list = list(dict.fromkeys(m.mmsi for m in messages))
             attrs = {
-                "format": "text/plain",
+                "format": fmt,
                 "message.type": "stanag_report",
+                "stanag.version": "2.0.0",
+                "stanag.output.format": output_format,
+                "stanag.traffic.profile": profile,
                 "marine.position.source": position_source,
                 "marine.mmsi.list": ",".join(mmsi_list),
             }
+            attrs.update(batch_summary_attributes(messages))
 
             return FlowFileTransformResult(
                 contents=output_content.encode("utf-8"),
