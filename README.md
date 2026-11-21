@@ -1,6 +1,6 @@
 # Triton — Baltic Sea Observer
 
-**Triton** is an end-to-end demonstration and reference implementation for **NATO-aligned maritime situational awareness** in the **Baltic Sea**. It connects simulated and analytic data (AIS, naval fleet positions, buoys, LiDAR point clouds, STANAG surveillance traffic, and NATO business rules) on a **Cloudera Data Platform (CDP)** stack: **Apache NiFi** ingestion, **Kafka**, **Apache Iceberg** on the **defense** hive catalog, **Trino** / **Impala**, **Cloudera Streaming Analytics (Flink)**, **Cloudera Data Visualization (CDV)**, and **Cloudera Machine Learning (CML)** for agents, reporting, and ML.
+**Triton** is an end-to-end demonstration and reference implementation for **maritime situational awareness** in the **Baltic Sea**. It connects simulated and analytic data (AIS, naval fleet positions, buoys, LiDAR point clouds, STANAG-style surveillance traffic, and configurable business rules) on a **Cloudera Data Platform (CDP)** stack: **Apache NiFi** ingestion, **Kafka**, **Apache Iceberg** on the **defense** hive catalog, **Trino** / **Impala**, **Cloudera Streaming Analytics (Flink)**, **Cloudera Data Visualization (CDV)**, and **Cloudera Machine Learning (CML)** for agents, reporting, and ML.
 
 The repository is organized as a **modular monorepo**: each top-level folder is a deployable or runnable component with its own README and runbooks.
 
@@ -12,11 +12,11 @@ The repository is organized as a **modular monorepo**: each top-level folder is 
 
 | Capability | Description |
 |------------|-------------|
-| **Lagebild** | Operational situation picture — live AIS, German and Russian fleet overlays, restricted areas, infrastructure, sanctions, and NBA incident markers. |
+| **Lagebild** | Operational situation picture — live AIS, simulated naval fleet overlays, restricted areas, infrastructure, compliance flags, and NBA incident markers. |
 | **Streaming analytics** | Real-time geofencing (vessels within ~5 km of Baltic harbours) via Flink SQL and Iceberg sinks. |
 | **Synthetic maritime traffic** | NiFi Python processors simulate civilian AIS, naval patrol patterns, fishing fleets, trade routes, buoys, LiDAR captures, GPS jamming, and STANAG-style reports into Kafka / object store / Iceberg. |
 | **LiDAR workflow** | Simulated vessel LAS files in S3 with metadata in `defense.lidar_simulation_metadata`, ontology mappings, CDV dashboards, optional **vessel-type classifier** (CML). |
-| **Situation reports (UC1)** | Hourly LLM-assisted NATO SITREP-style PDFs and summaries from warehouse views, published to S3 for the UI. |
+| **Situation reports (UC1)** | Hourly LLM-assisted situation-report PDFs and summaries from warehouse views, published to S3 for the UI. |
 | **Next Best Action (UC2)** | Alert detection, COA scoring, CrewAI agents, human-in-the-loop approval in the UI, governance and Semantica RDF export (Trino-backed). |
 | **Agent console** | CrewAI chat apps grounded on the Baltic ontology and business rules (Lage-Analyst, COA-Berater, Semantica-Kurator). |
 
@@ -39,7 +39,7 @@ flowchart TB
     S3[S3 / HDFS — LAS point clouds]
   end
   subgraph consume [Consumption]
-    UI[triton-ui — NATO MVP]
+    UI[triton-ui — web MVP]
     CDV[CDV visuals]
     CML[CML jobs — UC1 / UC2 / ML]
     Trino[Trino / Impala queries]
@@ -72,28 +72,28 @@ flowchart TB
 
 | Module | Path | Role |
 |--------|------|------|
-| **NATO UI (MVP)** | [`triton-ui/`](./triton-ui/) | React + Vite SPA; Express API; Python bridges for Trino, Impala, S3 LAS, SITREP, NBA, and CrewAI agent chat. Hash routes: Lagebild, Analysen, Schiffsnähe, LiDAR, SITREP, Agenten, NBA HITL. |
+| **Web UI (MVP)** | [`triton-ui/`](./triton-ui/) | React + Vite SPA; Express API; Python bridges for Trino, Impala, S3 LAS, SITREP, NBA, and CrewAI agent chat. Hash routes: Lagebild, Analysen, Schiffsnähe, LiDAR, SITREP, Agenten, NBA HITL. |
 | **CDW analytics & DDL** | [`cdw-analyse/`](./cdw-analyse/) | Hive/Impala/Trino table creation, sample and production analytics, outlier detection, vessel route GeoJSON, NBA SQL phases, Iceberg snapshot probes, Trino spatial AIS experiments. |
-| **NiFi processors** | [`nifi-processors/`](./nifi-processors/) | Python extension bundle (`upload/`) for LAS simulation, Baltic ship routing, marine and RUS fleet simulators, fishing/trade routes, buoys, messengers, STANAG generators; tests in `tests/`. |
+| **NiFi processors** | [`nifi-processors/`](./nifi-processors/) | Python extension bundle (`upload/`) for LAS simulation, Baltic ship routing, multi-fleet naval simulators, fishing/trade routes, buoys, messengers, STANAG generators; tests in `tests/`. |
 | **NiFi flows** | [`nifi-flow/`](./nifi-flow/) | Exported Data Hub flow JSON (e.g. `proj_triton`, Triton Data Simulator), parameter groups, deployment shell helpers. |
 | **Defense ontology** | [`ontology/`](./ontology/) | YAML semantic layer: object types, link graph, LiDAR column mappings, classification enums; ties NiFi attributes, Iceberg columns, and CDV parameters. |
 | **CDV assets** | [`cdv/`](./cdv/) | Dashboard/visual export JSON, LiDAR dataset stub, HTML panel examples for metadata drill-down. |
 | **CSA / Flink** | [`csa-flink/`](./csa-flink/) | Real-time geospatial analytics on cluster `triton-csa`: Kafka virtual tables, Sedona distance jobs, Iceberg sink for port proximity monitoring. |
-| **Situation awareness (UC1)** | [`cai-workbench/situation-awareness/`](./cai-workbench/situation-awareness/) | CML scheduled job: query `lagebild` views, LLM narrative, NATO SITREP PDFs, S3 artifact layout consumed by the UI. |
+| **Situation awareness (UC1)** | [`cai-workbench/situation-awareness/`](./cai-workbench/situation-awareness/) | CML scheduled job: query `lagebild` views, LLM narrative, situation-report PDFs, S3 artifact layout consumed by the UI. |
 | **Next Best Action (UC2)** | [`cai-workbench/next-best-action/`](./cai-workbench/next-best-action/) | Alert rules, COA catalog, CrewAI persistence, Trino materialization, HITL artifacts, SAP readiness hooks; Greifswald demo scenario. |
 | **Trino batch jobs** | [`cai-workbench/trino-jobs/`](./cai-workbench/trino-jobs/) | CML utilities to refresh Lagebild-oriented Trino views. |
 | **LiDAR classifier** | [`cai-workbench/lidar-vessel-classifier/`](./cai-workbench/lidar-vessel-classifier/) | Train/deploy RandomForest on LAS features; S3-backed fit/predict for CML model serving. |
 | **Agent console bridge** | [`cai-workbench/agent-console/`](./cai-workbench/agent-console/) | Python chat bridge wired from `triton-ui` **Agenten** tab. |
 | **CML agent tools** | [`cai-agent/`](./cai-agent/) | Reusable CrewAI tools: CDW SQL query, schema introspection, weather. |
-| **RAG corpus** | [`cai-rag/`](./cai-rag/) | Static text corpora (NATO operations, sample Luftaumeldungen) for retrieval-augmented prompts. |
-| **Project docs** | [`docs/`](./docs/) | Cross-cutting plans: NATO business rules + Trino mapping, Mission Planning / SAP, CML CrewAI install notes. |
+| **RAG corpus** | [`cai-rag/`](./cai-rag/) | Static reference corpora (maritime operations notes, sample airspace bulletins) for retrieval-augmented prompts. |
+| **Project docs** | [`docs/`](./docs/) | Cross-cutting plans: ontology business rules + Trino mapping, Mission Planning / SAP, CML CrewAI install notes. |
 | **CML env automation** | [`scripts/cml/`](./scripts/cml/) | Apply project environment variables via Cloudera AI API v2. |
 
 Deeper integration notes for the UI (tables, endpoints, layers): [`triton-ui/docs/UI_OVERVIEW.md`](./triton-ui/docs/UI_OVERVIEW.md).
 
 ---
 
-## NATO UI MVP (entry point for operators)
+## Web UI MVP (entry point for operators)
 
 Standalone web application (**Lagebild · Analysen · Agenten · NBA HITL**) with **Trino** preferred, **Impala** fallback, and **embedded sample data** when the warehouse is unreachable.
 
@@ -115,7 +115,7 @@ Simulation-backed **Next Best Action** on the same `defense` schema and NiFi sim
 | Module README & CML job | [`cai-workbench/next-best-action/README.md`](./cai-workbench/next-best-action/README.md) |
 | Implementation plan | [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) |
 | Mission Planning + SAP D&S | [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) |
-| NATO business rules + Trino | [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md) |
+| Business rules + Trino | [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md) |
 | Iceberg snapshots (Trino) | [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md) |
 
 ---
@@ -143,4 +143,4 @@ Bulk apply via API v2: [`scripts/cml/`](./scripts/cml/) (`set_project_environmen
 
 ## License & operations note
 
-Triton is a **showcase** stack: simulated traffic, demo credentials patterns, and sample governance bundles are for lab and pilot environments. Harden authentication, network egress, and data classification before any production NATO use.
+Triton is a **showcase** stack: simulated traffic, demo credentials patterns, and sample governance bundles are for lab and pilot environments. Harden authentication, network egress, and data classification before any production deployment.
