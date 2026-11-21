@@ -9,6 +9,9 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
+| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.0.0**) |
+| `das_acoustic_engine.py` | Multi-channel series + STFT along cable corridor |
+| `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
 | `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
 | `stanag_message_engine.py` | Message templates, traffic profiles, NDJSON render |
 | `MessengerSimulator.py` | Messenger sim |
@@ -31,6 +34,25 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `requirements.txt` | Empty on purpose; per-processor deps in `ProcessorDetails.dependencies` |
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
+
+## DAS cable acoustic (EMODnet corridors)
+
+**DasCableAcousticSimulator** **1.1.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
+
+| Cable Asset | Typ | EMODnet id |
+|-------------|-----|------------|
+| `BALTICCONNECTOR` | Gaspipeline | EMODNET_BALTICCONNECTOR |
+| `NORD_STREAM_1` | Gaspipeline | EMODNET_NS1 |
+| `NORD_STREAM_2` | Gaspipeline | EMODNET_NS2 |
+| `PCABLE_BSH_1` … `PCABLE_BSH_4` | Seekabel | EMODNET_PCABLE_BSH_* |
+
+Output **HDF5** (`triton/das-cable/v1`). CML: `cai-workbench/das-cable-classifier/`.
+
+| Property | Default |
+|----------|---------|
+| Cable Asset | `BALTICCONNECTOR` (dropdown, 7 values) |
+| Segment Count | 6 |
+| Output Format | `hdf5` |
 
 ## STANAG / marine position alignment
 
