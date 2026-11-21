@@ -520,6 +520,118 @@ a {
   height: 380px;
 }
 
+.route-track-timeline-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.route-track-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.route-track-picker-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.route-track-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.route-track-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.route-track-picker-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.route-track-picker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-track-picker-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.chip-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+  min-width: 2.5rem;
+}
+
+.route-track-timebar {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  border-radius: 4px;
+}
+
+.route-track-timebar-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.route-track-timebar-now {
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.route-track-slider {
+  width: 100%;
+  margin: 4px 0 10px;
+  accent-color: var(--accent-amber);
+}
+
+.route-track-timebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.route-track-selection-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
 .filter-active-banner {
   font-size: 12px;
   margin-bottom: 8px;
