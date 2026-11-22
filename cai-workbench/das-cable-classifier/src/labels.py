@@ -5,8 +5,12 @@ THREAT_CLASSES = [
     "vessel_passage",
     "trawler_scrape",
     "anchor_drag",
+    "anchor_slip",
     "cui_sabotage_tap",
     "cable_strain_anomaly",
+    "uboat_acoustic",
+    "whale_vocalization",
+    "hard_beep",
 ]
 
 FEATURE_NAMES = [

@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.7-das-wav-api",
+  "build": "0.2.8-das-threat-palette",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
