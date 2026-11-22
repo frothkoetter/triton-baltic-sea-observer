@@ -11,6 +11,13 @@ import trino
 from trino.auth import BasicAuthentication
 
 
+def normalize_trino_coordinator_host(host: str) -> str:
+    """DW overview hostname `cdw-triton.*` is not the Trino statement API (`triton-trino.*`)."""
+    if re.match(r"^cdw-triton\.", host, re.I):
+        return re.sub(r"^cdw-triton\.", "triton-trino.", host, count=1, flags=re.I)
+    return host
+
+
 def apply_jdbc_url_env() -> None:
     url = os.environ.get("TRINO_JDBC_URL", "").strip()
     if not url:
@@ -23,7 +30,8 @@ def apply_jdbc_url_env() -> None:
     if not m:
         raise ValueError(f"Invalid TRINO_JDBC_URL: {url}")
     host, port, catalog, schema = m.groups()
-    os.environ.setdefault("TRINO_HOST", host)
+    host = normalize_trino_coordinator_host(host)
+    os.environ["TRINO_HOST"] = host
     if port:
         os.environ.setdefault("TRINO_PORT", port)
     if catalog:
@@ -39,11 +47,12 @@ def connect():
     if not user or not password:
         raise RuntimeError("Set TRINO_USER and TRINO_PASSWORD (or TRINO_JDBC_URL)")
     # Password only via BasicAuthentication — dbapi.connect() has no password= kwarg.
+    raw_host = os.environ.get(
+        "TRINO_HOST",
+        "triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site",
+    )
     return trino.dbapi.connect(
-        host=os.environ.get(
-            "TRINO_HOST",
-            "triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site",
-        ),
+        host=normalize_trino_coordinator_host(raw_host),
         port=int(os.environ.get("TRINO_PORT", "443")),
         user=user,
         catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
