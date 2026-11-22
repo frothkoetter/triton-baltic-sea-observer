@@ -360,7 +360,7 @@ def connect(*, for_ddl: bool = True, schema: str | None = None):
     _apply_statement_path_override()
     host = os.environ.get(
         "TRINO_HOST",
-        "cdw-triton.dw-triton-cdp-env.a465-9q4k.cloudera.site",
+        "triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site",
     )
     user = os.environ["TRINO_USER"]
     password = os.environ["TRINO_PASSWORD"]

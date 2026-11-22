@@ -6,7 +6,7 @@ That is **not** missing table/schema metadata. The Python client never reached a
 
 ### Checklist
 
-1. **Virtual Warehouse** (`cdw-triton` or yours) is **Running** (not Stopped/Suspended).
+1. **Virtual Warehouse** is **Running** (not Stopped/Suspended). Use host **`triton-trino.…cloudera.site`** (Copy Trino URL), not the DW overview hostname `cdw-triton.…`.
 2. In CDW UI: **⋮ → Copy Trino URL** (HTTPS `https://host:443`). Put in `.env.trino.local`:
    ```bash
    TRINO_SERVER='https://YOUR-COORDINATOR.cloudera.site:443'

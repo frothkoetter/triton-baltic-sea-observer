@@ -42,7 +42,7 @@ def connect():
     return trino.dbapi.connect(
         host=os.environ.get(
             "TRINO_HOST",
-            "cdw-triton.dw-triton-cdp-env.a465-9q4k.cloudera.site",
+            "triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site",
         ),
         port=int(os.environ.get("TRINO_PORT", "443")),
         user=user,

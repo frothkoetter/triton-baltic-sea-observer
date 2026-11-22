@@ -24,7 +24,7 @@ elif [[ -f "${ROOT}/.env.trino.local.example" ]]; then
   exit 1
 fi
 
-export TRINO_JDBC_URL="${TRINO_JDBC_URL:-jdbc:trino://cdw-triton.dw-triton-cdp-env.a465-9q4k.cloudera.site:443/iceberg/defense}"
+export TRINO_JDBC_URL="${TRINO_JDBC_URL:-jdbc:trino://triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site:443/iceberg/defense}"
 export TRINO_USER="${TRINO_USER:-frothkoetter}"
 export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
 export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
