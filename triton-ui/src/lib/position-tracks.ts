@@ -88,22 +88,19 @@ export function rowsToTracks(rows: Record<string, unknown>[]): PositionTrack[] {
     .map(({ _seq: _, ...rest }) => finalizeTrack(rest));
 }
 
-export type PositionTracksQuery = {
+import type { LagebildFilters } from "./lagebild-filters";
+import { serializeFilterQueryParams } from "./lagebild-filters";
+
+export type PositionTracksQuery = LagebildFilters & {
   hours?: number;
-  flag?: string;
-  vesselType?: string;
-  shipName?: string;
   ais?: boolean;
   german?: boolean;
   russian?: boolean;
 };
 
 export function buildTracksQueryString(q: PositionTracksQuery): string {
-  const params = new URLSearchParams();
+  const params = serializeFilterQueryParams(q);
   params.set("hours", String(q.hours ?? 24));
-  if (q.flag) params.set("flag", q.flag);
-  if (q.vesselType) params.set("vessel_type", q.vesselType);
-  if (q.shipName) params.set("ship_name", q.shipName);
   if (q.ais === false) params.set("ais", "0");
   if (q.german === false) params.set("german", "0");
   if (q.russian === false) params.set("russian", "0");

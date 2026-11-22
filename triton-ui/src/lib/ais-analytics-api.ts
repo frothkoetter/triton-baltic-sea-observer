@@ -1,4 +1,5 @@
 import type { LagebildFilters } from "./lagebild-filters";
+import { serializeFilterQueryParams } from "./lagebild-filters";
 
 export type AisAnalyticsPayload = {
   ok?: boolean;
@@ -17,10 +18,6 @@ export type AisAnalyticsPayload = {
 };
 
 export function aisAnalyticsQuery(filters: LagebildFilters): string {
-  const params = new URLSearchParams();
-  if (filters.flag) params.set("flag", filters.flag);
-  if (filters.vesselType) params.set("vessel_type", filters.vesselType);
-  if (filters.shipName) params.set("ship_name", filters.shipName);
-  const q = params.toString();
+  const q = serializeFilterQueryParams(filters).toString();
   return q ? `?${q}` : "";
 }

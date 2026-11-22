@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.11-das-anchor-alarm",
+  "build": "0.2.13-acoustic-sensors-label",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

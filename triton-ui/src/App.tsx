@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson, getClientDataMode, setServerDataMode } from "./api";
 import { TRITON_UI_BUILD } from "./lib/build-info";
-import { FilterRail } from "./components/FilterRail";
+import { FilterRail, type FilterRailPicklists } from "./components/FilterRail";
+import { EMPTY_LAGEBILD_FILTERS, type LagebildFilters } from "./lib/lagebild-filters";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
 import { NbaHitlPage } from "./pages/NbaHitl";
@@ -74,13 +75,13 @@ export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [dataMode, setDataMode] = useState<"live" | "sample" | "auto">(() => getClientDataMode());
   const [modeBusy, setModeBusy] = useState(false);
-  const [flag, setFlag] = useState("");
-  const [vesselType, setVesselType] = useState("");
-  const [shipName, setShipName] = useState("");
-  const [filterOptions, setFilterOptions] = useState({
-    flags: [] as string[],
-    vesselTypes: [] as string[],
-    shipNames: [] as string[],
+  const [lagebildFilters, setLagebildFilters] = useState<LagebildFilters>(EMPTY_LAGEBILD_FILTERS);
+  const [filterOptions, setFilterOptions] = useState<FilterRailPicklists>({
+    flags: [],
+    vesselTypes: [],
+    shipNames: [],
+    germanUnits: [],
+    russianUnits: [],
   });
 
   const refreshHealth = useCallback(async () => {
@@ -94,12 +95,25 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       await refreshHealth();
-      const ais = await fetchJson<{ rows?: Record<string, unknown>[] }>("/api/ais");
+      const [ais, fleet] = await Promise.all([
+        fetchJson<{ rows?: Record<string, unknown>[] }>("/api/ais"),
+        fetchJson<{ german?: Record<string, unknown>[]; russian?: Record<string, unknown>[] }>(
+          "/api/fleet-positions"
+        ),
+      ]);
       const rows = ais.rows ?? [];
+      const germanLabels = (fleet.german ?? [])
+        .map((r) => String(r.unit_name ?? r.Unit_Name ?? r.name ?? "").trim())
+        .filter(Boolean);
+      const russianLabels = (fleet.russian ?? [])
+        .map((r) => String(r.unit_name ?? r.Unit_Name ?? r.name ?? "").trim())
+        .filter(Boolean);
       setFilterOptions({
         flags: uniq(rows.map((r) => String(r.flag ?? "")).filter(Boolean)),
         vesselTypes: uniq(rows.map((r) => String(r.vessel_type ?? "")).filter(Boolean)),
         shipNames: uniq(rows.map((r) => String(r.ship_name ?? "")).filter(Boolean)),
+        germanUnits: uniq(germanLabels),
+        russianUnits: uniq(russianLabels),
       });
     })();
   }, [refreshHealth]);
@@ -149,7 +163,7 @@ export default function App() {
               ["lagebild", "Lagebild"],
               ["analysen", "Analysen"],
               ["lidar", "LiDAR"],
-              ["das", "Distributed Acoustic Sensing"],
+              ["das", "Acoustic Sensors"],
               ["sitrep", "SITREP"],
               ["agents", "Agenten"],
               ["nba", "NBA HITL"],
@@ -173,20 +187,12 @@ export default function App() {
       <div className="app-body">
         <FilterRail
           {...filterOptions}
-          flag={flag}
-          vesselType={vesselType}
-          shipName={shipName}
-          onFlag={setFlag}
-          onVesselType={setVesselType}
-          onShipName={setShipName}
+          filters={lagebildFilters}
+          onFiltersChange={setLagebildFilters}
         />
         <main className="main-pane">
-          {zone === "lagebild" && (
-            <LagebildPage flag={flag} vesselType={vesselType} shipName={shipName} />
-          )}
-          {zone === "analysen" && (
-            <AnalysenPage flag={flag} vesselType={vesselType} shipName={shipName} />
-          )}
+          {zone === "lagebild" && <LagebildPage filters={lagebildFilters} />}
+          {zone === "analysen" && <AnalysenPage filters={lagebildFilters} />}
           {zone === "lidar" && <LidarPage />}
           {zone === "das" && <DasCablePage />}
           {zone === "sitrep" && <SitrepPage />}
