@@ -78,17 +78,44 @@ import cml.models_v1 as models
 
 from src.features import features_from_hdf5_bytes, features_from_summary
 from src.labels import FEATURE_NAMES
+from src.s3_client import get_s3_client
 
 _MODEL = joblib.load(_MODEL_PKL)
 
 
-def _rows_from_args(args: dict) -> list[dict]:
+def _s3_uri_from_args(args: dict) -> str | None:
+    for key in ("s3_uri", "uri", "s3a_uri", "hadoop_file_url"):
+        val = args.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return None
+
+
+def _read_hdf5_bytes(args: dict) -> bytes:
     if "hdf5_bytes_base64" in args:
-        raw = base64.b64decode(args["hdf5_bytes_base64"])
-        return features_from_hdf5_bytes(raw)
+        return base64.b64decode(args["hdf5_bytes_base64"])
+    uri = _s3_uri_from_args(args)
+    if uri:
+        norm = uri.replace("s3a://", "s3://")
+        if not norm.startswith("s3://"):
+            raise ValueError("S3 URI must start with s3:// or s3a://")
+        path = norm[5:]
+        bucket, key = path.split("/", 1)
+        client = get_s3_client()
+        return client.get_object(Bucket=bucket, Key=key)["Body"].read()
+    raise ValueError(
+        "Provide hdf5_bytes_base64, s3_uri/uri (s3a://bucket/key), or features dict"
+    )
+
+
+def _rows_from_args(args: dict) -> list[dict]:
+    if "hdf5_bytes_base64" in args or _s3_uri_from_args(args):
+        return features_from_hdf5_bytes(_read_hdf5_bytes(args))
     if "features" in args and isinstance(args["features"], dict):
         return [args["features"]]
-    raise ValueError("Provide hdf5_bytes_base64 (NiFi DAS output) or features dict")
+    raise ValueError(
+        "Provide hdf5_bytes_base64, s3_uri/uri (s3a://bucket/key), or features dict"
+    )
 
 
 @models.cml_model
