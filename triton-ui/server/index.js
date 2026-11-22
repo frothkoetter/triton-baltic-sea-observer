@@ -21,6 +21,7 @@ import {
   getOstseeInfrastructure,
   getPositionTracks,
   getVesselOutliers,
+  getVesselOutlierAnalytics,
   getGpsJammerEvents,
   getSanctions,
   getSanctionedAnalytics,
@@ -372,6 +373,10 @@ app.get("/api/analyses/violations", async (_req, res) => {
 
 app.get("/api/analyses/restricted-analytics", async (_req, res) => {
   res.json(await getRestrictedAnalytics());
+});
+
+app.get("/api/analyses/vessel-outlier-analytics", async (_req, res) => {
+  res.json(await getVesselOutlierAnalytics());
 });
 
 app.get("/api/analyses/surveillance", async (_req, res) => {

@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.15-trino-tracks-limit",
+  "build": "0.2.16-vessel-outlier-analytics",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

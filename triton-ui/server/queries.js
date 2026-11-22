@@ -1111,6 +1111,98 @@ export const PREDEFINED = {
     ORDER BY 4 DESC
     LIMIT 5000
   `,
+  vesselOutlierAnalyticsKpi: `
+    SELECT
+      COUNT(*) AS total_events,
+      COUNT(DISTINCT mmsi) AS unique_mmsi,
+      SUM(CASE WHEN severity_level >= 70 THEN 1 ELSE 0 END) AS high_severity,
+      COUNT(DISTINCT outlier_type) AS distinct_types
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+  `,
+  vesselOutlierAnalyticsByType: `
+    SELECT outlier_type AS name, COUNT(*) AS value
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 40
+  `,
+  vesselOutlierAnalyticsBySeverity: `
+    SELECT
+      CASE
+        WHEN severity_level >= 90 THEN '90+ (critical)'
+        WHEN severity_level >= 70 THEN '70–89 (high)'
+        WHEN severity_level >= 50 THEN '50–69 (medium)'
+        ELSE '<50 (low)'
+      END AS name,
+      COUNT(*) AS value
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+    GROUP BY 1
+    ORDER BY 1
+  `,
+  vesselOutlierAnalyticsTopMmsi: `
+    SELECT
+      CAST(v.mmsi AS varchar) AS mmsi,
+      COALESCE(s.ship_name, CAST(v.mmsi AS varchar)) AS ship_name,
+      COUNT(*) AS event_count,
+      MAX(v.severity_level) AS max_severity,
+      MAX(v.outlier_type) AS latest_type
+    FROM defense.vessel_outliers v
+    LEFT JOIN defense.ships s ON v.mmsi = s.mmsi
+    WHERE v.mmsi > 0
+      AND v.latitude BETWEEN 53.0 AND 60.5
+      AND v.longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("v.event_timestamp")} >= current_timestamp - interval '24' hour
+    GROUP BY 1, 2
+    ORDER BY event_count DESC, max_severity DESC
+    LIMIT 30
+  `,
+  vesselOutlierAnalyticsRecent: `
+    SELECT
+      v.mmsi,
+      s.ship_name,
+      v.event_timestamp,
+      v.latitude,
+      v.longitude,
+      v.speed,
+      v.course,
+      v.status,
+      v.outlier_type,
+      v.reason,
+      v.severity_level
+    FROM defense.vessel_outliers v
+    LEFT JOIN defense.ships s ON v.mmsi = s.mmsi
+    WHERE v.mmsi > 0
+      AND v.latitude BETWEEN 53.0 AND 60.5
+      AND v.longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("v.event_timestamp")} >= current_timestamp - interval '24' hour
+    ORDER BY ${tsParse("v.event_timestamp")} DESC
+    LIMIT 200
+  `,
+  vesselOutlierAnalyticsHourly: `
+    SELECT
+      date_trunc('hour', ${tsParse("event_timestamp")}) AS hour_bucket,
+      COUNT(*) AS event_count
+    FROM defense.vessel_outliers
+    WHERE mmsi > 0
+      AND latitude BETWEEN 53.0 AND 60.5
+      AND longitude BETWEEN 10.0 AND 21.0
+      AND ${tsParse("event_timestamp")} >= current_timestamp - interval '24' hour
+    GROUP BY 1
+    ORDER BY 1
+    LIMIT 48
+  `,
   alertsKpi: `
     SELECT COUNT(*) AS cnt
     FROM defense.vessel_outliers
