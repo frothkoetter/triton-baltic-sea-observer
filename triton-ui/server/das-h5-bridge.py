@@ -60,6 +60,38 @@ def fetch_h5_bytes(uri: str) -> bytes:
     return client.get_object(Bucket=bucket, Key=key)["Body"].read()
 
 
+def _orient_spectrogram(spec) -> "np.ndarray":
+    """Ensure shape (n_freq, n_time) — tolerate legacy (time, freq) layouts."""
+    import numpy as np
+
+    a = np.asarray(spec, dtype=np.float32)
+    if a.ndim != 2 or a.size == 0:
+        return a
+    r, c = a.shape
+    # STFT: freq bins <= fs/2 (~500–1000); time frames often > freq bins
+    if r > c and c <= 512 and r > 512:
+        a = a.T
+    # Tame DC leakage so global scaling is not dominated by row 0
+    if a.shape[0] > 1:
+        a = a.copy()
+        a[0, :] *= 0.12
+    return a
+
+
+def _mono_from_channels(channels):
+    import numpy as np
+
+    ch = np.asarray(channels, dtype=np.float64)
+    if ch.ndim == 1:
+        return ch
+    if ch.ndim != 2:
+        return ch.reshape(-1)
+    r, c = ch.shape
+    if c >= r:
+        return ch.mean(axis=0)
+    return ch.mean(axis=1)
+
+
 def _downsample_2d(arr, max_rows: int, max_cols: int):
     import numpy as np
 
@@ -79,13 +111,18 @@ def _mono_wav_b64(channels, fs_hz: float, play_max_sec: float) -> tuple[str, flo
     play_max = float(os.environ.get("DAS_PLAY_MAX_SEC", str(play_max_sec)))
     play_max = max(0.5, min(play_max, 30.0))
 
-    ch = np.asarray(channels, dtype=np.float64)
-    if ch.ndim == 1:
-        mono = ch
-    else:
-        mono = ch.mean(axis=0)
+    mono = _mono_from_channels(channels)
+    ch = np.asarray(channels)
+    if ch.ndim == 2 and len(mono) < int(fs * 0.25):
+        mono = ch.mean(axis=1) if ch.shape[0] > ch.shape[1] else ch.mean(axis=0)
 
+    if fs <= 0:
+        fs = 2000.0
     n_take = int(min(len(mono), play_max * fs))
+    if n_take < 8:
+        raise ValueError(
+            f"DAS channel waveform too short ({len(mono)} samples @ {fs} Hz)"
+        )
     mono = mono[:n_take]
     duration_s = len(mono) / fs if fs > 0 else 0.0
 
@@ -125,15 +162,18 @@ def segment_preview(payload: bytes, segment_index: int, play_max_sec: float = 10
                 raise ValueError("No segments in HDF5")
             seg_name = names[min(segment_index, len(names) - 1)]
         sg = h5["segments"][seg_name]
-        spec = np.asarray(sg["spectrogram"][:], dtype=np.float32)
+        spec = _orient_spectrogram(sg["spectrogram"][:])
         freqs = np.asarray(sg["frequencies_hz"][:], dtype=np.float32)
         channels = sg["channels"][:]
-        fs_hz = float(sg.attrs.get("fs_hz", 2000.0))
+        fs_hz = float(sg.attrs.get("fs_hz", 2000.0) or 2000.0)
         threat = str(sg.attrs.get("threat_class", "ambient"))
         chainage_m = float(sg.attrs.get("chainage_m", 0.0))
 
     small, n_f, n_t = _downsample_2d(spec, 160, 120)
-    log_spec = np.log1p(small).tolist()
+    p_lo, p_hi = np.percentile(small, [4, 99.5])
+    denom = max(float(p_hi - p_lo), 1e-9)
+    norm = np.clip((small - p_lo) / denom, 0.0, 1.0)
+    log_spec = (np.log1p(norm * 12.0)).tolist()
     f_idx = np.linspace(0, max(0, len(freqs) - 1), n_f).astype(int) if len(freqs) else np.array([0])
     freq_axis = [float(freqs[i]) for i in f_idx] if len(freqs) else [0.0]
 
@@ -150,7 +190,9 @@ def segment_preview(payload: bytes, segment_index: int, play_max_sec: float = 10
             "n_freq": n_f,
             "n_time": n_t,
             "frequencies_hz": freq_axis,
-            "scale": "log1p(magnitude)",
+            "scale": "log1p(percentile-norm)",
+            "display_floor": float(p_lo),
+            "display_ceiling": float(p_hi),
         },
         "audio": {
             "wav_base64": wav_b64,

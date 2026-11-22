@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.5-das-s3-hint",
+  "build": "0.2.6-das-spec-audio",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

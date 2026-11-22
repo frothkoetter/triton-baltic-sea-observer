@@ -31,13 +31,15 @@ export function DasSpectrogramCanvas({ values, frequenciesHz, label }: Props) {
     const cols = values[0]?.length ?? 0;
     if (!cols) return;
 
-    let max = 0;
+    const samples: number[] = [];
     for (const row of values) {
-      for (const v of row) {
-        if (v > max) max = v;
-      }
+      for (const v of row) samples.push(v);
     }
-    max = max || 1;
+    samples.sort((a, b) => a - b);
+    const n = samples.length;
+    const pLow = samples[Math.floor(n * 0.04)] ?? 0;
+    const pHigh = samples[Math.floor(n * 0.995)] ?? 1;
+    const span = Math.max(pHigh - pLow, 1e-9);
 
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth || 360;
@@ -53,7 +55,8 @@ export function DasSpectrogramCanvas({ values, frequenciesHz, label }: Props) {
     const cellH = h / rows;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const t = values[r][c] / max;
+        const raw = (values[r][c] - pLow) / span;
+        const t = Math.pow(Math.max(0, Math.min(1, raw)), 0.72);
         ctx.fillStyle = spectrogramColor(t);
         ctx.fillRect(c * cellW, (rows - 1 - r) * cellH, cellW + 1, cellH + 1);
       }
