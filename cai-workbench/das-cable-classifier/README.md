@@ -35,7 +35,7 @@ python3 scripts/validate_nifi_ml.py
 | `cdsw-build.sh` | Engine Build — `pip install` + Kopie `bundled/model.pkl` |
 | `bundled/model.pkl` | Vorgefertigtes Modell im Repo (Deploy ohne Experiment) |
 
-**Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`**, Input function **`predict`**. Build engine = `cdsw-build.sh`.
+**Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`** (Datei — **kein** Notebook), Input function **`predict`**. Build engine = `cdsw-build.sh`. Fehler `__file__ is not defined` → Model läuft Notebook-Code; Entry auf `predict.py` setzen und neu deployen.
 
 CML kopiert oft **kein** `bundled/` ins Model-Image (Build-Log `transferring context: 3kB`). Dann erzeugt `cdsw-build.sh` per `scripts/build_model_for_deploy.py` ein **`model.pkl`** (synthetisch, ~1 Min). Besser: unter Model **Files** auch `bundled/model.pkl` + `bundled/label_names.json` + `src/` mit aufnehmen, oder vor Deploy `python3 train.py` laufen lassen und **`model.pkl`** im Projekt root belassen (nicht gitignored im Workspace — wird mit ins Image genommen, wenn die Datei im Projekt liegt).
 
