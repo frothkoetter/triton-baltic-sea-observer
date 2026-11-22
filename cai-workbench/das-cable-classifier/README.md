@@ -37,7 +37,7 @@ python3 scripts/validate_nifi_ml.py
 
 **Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`**, Input function **`predict`**. Build engine = `cdsw-build.sh`.
 
-Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — CML setzt `CDSW_WORKING_DIRECTORY` oft auf `/home/cdsw`; `predict.py` lädt relativ zu `predict.py` bzw. `bundled/model.pkl` (nach `git pull` + Redeploy).
+Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — **alter** `predict.py` (ohne `bundled/`-Fallback). Im Projekt prüfen: `head -3 predict.py` enthält `_model_pkl_path`. Dann **Engine neu bauen** (`cdsw-build.sh`) und **Model neu deployen** (nicht nur Session). `model.pkl` ist gitignored — Build kopiert `bundled/model.pkl`. Logs zeigen `das-cable-classifier: loading …` bei Erfolg.
 
 ### predict API
 

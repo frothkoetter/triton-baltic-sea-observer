@@ -2,8 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 pip install -r requirements.txt
-if [[ ! -f model.pkl && -f bundled/model.pkl ]]; then
-  cp bundled/model.pkl model.pkl
-  cp bundled/label_names.json label_names.json
-  echo "Installed bundled/model.pkl → model.pkl (skipped if you already trained)"
+if [[ ! -f bundled/model.pkl ]]; then
+  echo "ERROR: bundled/model.pkl missing (git checkout required)" >&2
+  exit 1
 fi
+cp -f bundled/model.pkl model.pkl
+cp -f bundled/label_names.json label_names.json
+ls -la model.pkl bundled/model.pkl
+echo "das-cable-classifier build OK — model.pkl ready for CML deploy"
