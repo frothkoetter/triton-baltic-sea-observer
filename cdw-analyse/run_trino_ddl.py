@@ -390,6 +390,17 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
     stmts = _skip_drop_statements(_skip_schema_setup(split_statements(transformed)))
+    if os.environ.get("TRINO_ONLY_VIEWS", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        stmts = [
+            s
+            for s in stmts
+            if re.match(r"(?is)^CREATE\s+(OR\s+REPLACE\s+)?VIEW\b", s.strip())
+        ]
+        print(f"TRINO_ONLY_VIEWS: {len(stmts)} view statement(s)")
     conn = connect(for_ddl=True)
     ready, pre_err = ensure_defense_schema(conn)
     if not ready:
