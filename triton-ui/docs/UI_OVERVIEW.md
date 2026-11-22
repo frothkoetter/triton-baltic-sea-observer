@@ -56,6 +56,7 @@ Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Overr
 | AIS Outliers | `/api/vessel-outliers` | `vessel_outliers` (Trino detection job) |
 | GPS jammer | `/api/gps-jammer-events` | `gps_jammer_events` (NiFi GpsJammer) · fallback `lagebild` `GPS_Jammer` |
 | Route tracks 24h · Zeitachse | `/api/position-tracks` | `ais_events_ice`, DE/RUS fleet history; max 10 objects, time slider; Trino via `trino-bridge.py` respects SQL `LIMIT` (cap `TRINO_MAX_ROWS`, default 25000) |
+| AIS Outliers (Analysen) | `/api/analyses/vessel-outlier-analytics` | `vessel_outliers` 24h — KPI, Typ/Severity, hourly, Tabelle |
 | Restricted Areas | `/api/observation-areas` | Tier-A `observation_areas` (EMODnet military) |
 | Pipelines & Cables | `/api/ostsee-infrastructure` | `ostsee_infrastruktur`, `ostsee_pipelines` |
 | NBA incidents | `/api/nba/incidents` | Markers → click opens **#nba** for `flow_uuid` |

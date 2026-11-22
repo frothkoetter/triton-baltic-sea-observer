@@ -424,6 +424,131 @@ const FLEET_ANALYTICS_KEYS = [
   ["recentMessages", "fleetAnalyticsRecentMessages"],
 ];
 
+const VESSEL_OUTLIER_ANALYTICS_KEYS = [
+  ["kpi", "vesselOutlierAnalyticsKpi"],
+  ["byType", "vesselOutlierAnalyticsByType"],
+  ["bySeverity", "vesselOutlierAnalyticsBySeverity"],
+  ["topMmsi", "vesselOutlierAnalyticsTopMmsi"],
+  ["recent", "vesselOutlierAnalyticsRecent"],
+  ["hourly", "vesselOutlierAnalyticsHourly"],
+];
+
+function sampleVesselOutlierAnalytics() {
+  const rows = sample.vesselOutliers;
+  const byType = new Map();
+  const bySev = new Map();
+  const mmsiStats = new Map();
+  for (const r of rows) {
+    const t = String(r.outlier_type ?? "Unknown");
+    byType.set(t, (byType.get(t) ?? 0) + 1);
+    const sev = Number(r.severity_level ?? 0);
+    const band =
+      sev >= 90
+        ? "90+ (critical)"
+        : sev >= 70
+          ? "70–89 (high)"
+          : sev >= 50
+            ? "50–69 (medium)"
+            : "<50 (low)";
+    bySev.set(band, (bySev.get(band) ?? 0) + 1);
+    const key = String(r.mmsi);
+    const cur = mmsiStats.get(key) ?? {
+      mmsi: key,
+      ship_name: key,
+      event_count: 0,
+      max_severity: 0,
+      latest_type: t,
+    };
+    cur.event_count += 1;
+    cur.max_severity = Math.max(cur.max_severity, sev);
+    cur.latest_type = t;
+    mmsiStats.set(key, cur);
+  }
+  const high = rows.filter((r) => Number(r.severity_level ?? 0) >= 70).length;
+  return {
+    panels: {
+      kpi: {
+        columns: ["total_events", "unique_mmsi", "high_severity", "distinct_types"],
+        rows: [
+          {
+            total_events: rows.length,
+            unique_mmsi: mmsiStats.size,
+            high_severity: high,
+            distinct_types: byType.size,
+          },
+        ],
+      },
+      byType: {
+        columns: ["name", "value"],
+        rows: [...byType.entries()].map(([name, value]) => ({ name, value })),
+      },
+      bySeverity: {
+        columns: ["name", "value"],
+        rows: [...bySev.entries()].map(([name, value]) => ({ name, value })),
+      },
+      topMmsi: {
+        columns: ["mmsi", "ship_name", "event_count", "max_severity", "latest_type"],
+        rows: [...mmsiStats.values()].sort(
+          (a, b) => b.event_count - a.event_count || b.max_severity - a.max_severity
+        ),
+      },
+      recent: {
+        columns: [
+          "mmsi",
+          "ship_name",
+          "event_timestamp",
+          "latitude",
+          "longitude",
+          "speed",
+          "course",
+          "status",
+          "outlier_type",
+          "reason",
+          "severity_level",
+        ],
+        rows: rows.map((r) => ({
+          ...r,
+          ship_name: null,
+        })),
+      },
+      hourly: {
+        columns: ["hour_bucket", "event_count"],
+        rows: [{ hour_bucket: rows[0]?.event_timestamp ?? null, event_count: rows.length }],
+      },
+    },
+  };
+}
+
+export async function getVesselOutlierAnalytics() {
+  if (forceSample()) {
+    return { ok: true, source: "sample", ...sampleVesselOutlierAnalytics() };
+  }
+  const results = await Promise.all(
+    VESSEL_OUTLIER_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
+  );
+  const panels = {};
+  for (let i = 0; i < VESSEL_OUTLIER_ANALYTICS_KEYS.length; i++) {
+    const [panelKey] = VESSEL_OUTLIER_ANALYTICS_KEYS[i];
+    const res = results[i];
+    panels[panelKey] = {
+      columns: res.columns ?? [],
+      rows: res.rows ?? [],
+      ok: res.ok,
+    };
+  }
+  const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
+  const allOk = results.every((r) => r.ok);
+  if (!allOk) {
+    return {
+      ok: true,
+      source: "sample",
+      ...sampleVesselOutlierAnalytics(),
+      fallbackReason: results.find((r) => !r.ok)?.error,
+    };
+  }
+  return { ok: true, source, panels };
+}
+
 const BUOY_ANALYTICS_KEYS = [
   ["recent", "buoyAnalyticsRecent"],
   ["typeMix", "buoyAnalyticsTypeMix"],

@@ -33,6 +33,7 @@ const TABS = [
   { id: "buoys", label: "Buoys" },
   { id: "rus", label: "RUS Fleet" },
   { id: "ais", label: "AIS" },
+  { id: "outliers", label: "AIS Outliers" },
   { id: "sanctions", label: "Sanctions" },
   { id: "restricted", label: "Restricted Areas" },
 ] as const;
@@ -97,6 +98,20 @@ type RestrictedAnalyticsPayload = {
   };
 };
 
+type VesselOutlierAnalyticsPayload = {
+  ok?: boolean;
+  source?: string;
+  fallbackReason?: string;
+  panels?: {
+    kpi?: AnalyticsPanel;
+    byType?: AnalyticsPanel;
+    bySeverity?: AnalyticsPanel;
+    topMmsi?: AnalyticsPanel;
+    recent?: AnalyticsPanel;
+    hourly?: AnalyticsPanel;
+  };
+};
+
 type SanctionedAnalyticsPayload = {
   ok?: boolean;
   source?: string;
@@ -134,6 +149,20 @@ function chartRows(rows: Record<string, unknown>[] | undefined) {
   }));
 }
 
+function hourlyBars(rows: Record<string, unknown>[] | undefined) {
+  if (!rows?.length) return [];
+  return rows.map((r) => {
+    const raw = r.hour_bucket ?? r.Hour_Bucket;
+    const label =
+      raw == null
+        ? "—"
+        : typeof raw === "string"
+          ? raw.replace("T", " ").replace(/\+.*/, "").slice(0, 16)
+          : String(raw);
+    return { name: label, value: Number(r.event_count ?? 0) };
+  });
+}
+
 function provocateurBars(rows: Record<string, unknown>[] | undefined) {
   if (!rows?.length) return [];
   return rows.map((r) => ({
@@ -154,15 +183,17 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [observationAreas, setObservationAreas] = useState<ObservationArea[]>([]);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
+  const [outlierAnalytics, setOutlierAnalytics] = useState<VesselOutlierAnalyticsPayload | null>(null);
 
   const filterQs = aisAnalyticsQuery(filters);
 
   useEffect(() => {
     void (async () => {
-      const [fa, bu, ru, s, rz, areas] = await Promise.all([
+      const [fa, bu, ru, vo, s, rz, areas] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
+        fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
         fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
         fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
         fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
@@ -170,6 +201,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
       setFleetAnalytics(fa);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
+      setOutlierAnalytics(vo);
       setSanctionedAnalytics(s);
       setRestrictedAnalytics(rz);
       setObservationAreas((areas.rows ?? []) as ObservationArea[]);
@@ -203,6 +235,8 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
     inRestricted: rp?.restrictedUnits?.rows?.length ?? 0,
     transit: rusUnits.filter((u) => String(u.activity) === "Transit").length,
   };
+  const op = outlierAnalytics?.panels;
+  const outlierKpi = op?.kpi?.rows?.[0];
   const ap = aisAnalytics?.panels;
   const aisKpi = ap?.kpi?.rows?.[0];
   const filterSummary = [
@@ -469,6 +503,89 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             <h2 className="panel-title">AIS Snapshot (gefiltert)</h2>
             <p className="panel-subtitle">Entspricht Filter Rail — max. 500 Zeilen</p>
             <DataTable columns={ais?.columns ?? []} rows={(ais?.rows ?? []).slice(0, 120)} />
+          </section>
+        </div>
+      )}
+
+      {tab === "outliers" && (
+        <div className="analyses-outliers">
+          <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
+            Trino-Pipeline <code>vessel_outliers</code> (24h, Ostsee-BBox, MMSI &gt; 0) — gleiche Basis wie
+            Lagebild-Layer „Outliers“ (severity ≥ 70 in KPI-Alerts). Job:{" "}
+            <code>cdw-analyse/outlier_detection_trino.sql</code>. Quelle: {outlierAnalytics?.source ?? "…"}
+            {outlierAnalytics?.fallbackReason
+              ? ` — fallback (${outlierAnalytics.fallbackReason})`
+              : ""}
+          </p>
+          <div className="kpi-row">
+            <div className="kpi">
+              <div className="kpi-value">{Number(outlierKpi?.total_events ?? 0)}</div>
+              <div className="kpi-label">Ereignisse (24h)</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value">{Number(outlierKpi?.unique_mmsi ?? 0)}</div>
+              <div className="kpi-label">Betroffene MMSI</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value status-alert mono">{Number(outlierKpi?.high_severity ?? 0)}</div>
+              <div className="kpi-label">Severity ≥ 70</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-value mono">{Number(outlierKpi?.distinct_types ?? 0)}</div>
+              <div className="kpi-label">Outlier-Typen</div>
+            </div>
+          </div>
+          <div className="analyses-grid analyses-ais-grid">
+            <section className="panel">
+              <h2 className="panel-title">Nach Outlier-Typ</h2>
+              <p className="panel-subtitle">Rendezvous, Teleportation, Pipeline …</p>
+              <ChartPie data={chartRows(op?.byType?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Severity</h2>
+              <p className="panel-subtitle">Bänder 0–100</p>
+              <ChartBars data={chartRows(op?.bySeverity?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Ereignisse pro Stunde</h2>
+              <p className="panel-subtitle">Letzte 24h (Trino date_trunc)</p>
+              <ChartBars data={hourlyBars(op?.hourly?.rows)} />
+            </section>
+            <section className="panel">
+              <h2 className="panel-title">Top MMSI</h2>
+              <p className="panel-subtitle">Häufigkeit & max. Severity</p>
+              <ChartBars
+                data={(op?.topMmsi?.rows ?? []).slice(0, 12).map((r) => ({
+                  name: String(r.ship_name ?? r.mmsi ?? "—"),
+                  value: Number(r.event_count ?? 0),
+                }))}
+              />
+            </section>
+          </div>
+          <section className="panel" style={{ marginTop: 8 }}>
+            <h2 className="panel-title">Letzte Outlier (24h)</h2>
+            <p className="panel-subtitle">
+              Spalte <code>reason</code> — voller Regeltext aus der Trino-Detection
+            </p>
+            <DataTable
+              columns={[
+                "mmsi",
+                "ship_name",
+                "outlier_type",
+                "severity_level",
+                "event_timestamp",
+                "latitude",
+                "longitude",
+                "speed",
+                "status",
+                "reason",
+              ]}
+              rows={op?.recent?.rows ?? []}
+            />
+          </section>
+          <section className="panel" style={{ marginTop: 8 }}>
+            <h2 className="panel-title">Top-MMSI — Detail</h2>
+            <DataTable columns={op?.topMmsi?.columns ?? []} rows={op?.topMmsi?.rows ?? []} />
           </section>
         </div>
       )}
