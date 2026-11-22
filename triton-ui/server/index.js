@@ -65,7 +65,7 @@ import {
   runWithDataMode,
   shouldUseSampleData,
 } from "./data-mode.js";
-import { runTrino, trinoConfigured } from "./trino-client.js";
+import { runTrino, trinoConfigured, trinoEnvDiagnostics } from "./trino-client.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
@@ -201,6 +201,10 @@ app.get("/api/health", async (req, res) => {
     },
     sitrep: {
       configured: sitrepConfigured(),
+    },
+    trino: {
+      configured: trinoConfigured(),
+      ...trinoEnvDiagnostics(),
     },
   });
 });

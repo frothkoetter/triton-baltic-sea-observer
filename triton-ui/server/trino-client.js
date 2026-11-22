@@ -22,6 +22,28 @@ export function trinoConfigured() {
   );
 }
 
+/** Surface JDBC/host mistakes (cdw-triton vs triton-trino) in /api/health. */
+export function trinoEnvDiagnostics() {
+  const jdbc = String(process.env.TRINO_JDBC_URL ?? "").trim();
+  const jdbcMatch = jdbc.match(/^jdbc:trino:\/\/([^:/?#]+)/i);
+  const jdbcHost = jdbcMatch?.[1] ?? null;
+  const lagHost = String(process.env.LAGEBILD_TRINO_HOST ?? "").trim();
+  const host = String(process.env.TRINO_HOST ?? "").trim() || jdbcHost || lagHost || null;
+  const wrong =
+    /^cdw-triton\./i.test(host ?? "") ||
+    /^cdw-triton\./i.test(jdbcHost ?? "") ||
+    /^cdw-triton\./i.test(lagHost);
+  return {
+    jdbcHost,
+    lagHost: lagHost || null,
+    resolvedHost: host,
+    likelyWrongCoordinator: wrong,
+    fixHint: wrong
+      ? "Set TRINO_JDBC_URL and LAGEBILD_TRINO_HOST to triton-trino.* (CDW Copy Trino URL), not cdw-triton.*, then restart Application."
+      : null,
+  };
+}
+
 export function getTrinoState() {
   return { ...trinoState, configured: trinoConfigured() };
 }
