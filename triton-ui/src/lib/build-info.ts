@@ -1,2 +1,5 @@
-/** Bump when CML must run `npm run build` after git pull. */
-export const TRITON_UI_BUILD = "0.2.1-das-preview";
+import stamp from "../../build-stamp.json";
+
+/** Bump `build-stamp.json` when CML must run `npm run build` after git pull. */
+export const TRITON_UI_VERSION = stamp.version;
+export const TRITON_UI_BUILD = stamp.build;

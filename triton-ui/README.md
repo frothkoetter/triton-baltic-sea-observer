@@ -129,9 +129,9 @@ bash cdsw-build.sh
 NODE_ENV=production npm start
 ```
 
-**Verify deploy:** Footer shows **Daten: Trino live | Demo** and **`Build 0.2.0-data-mode`**.  
-If you still see **`Alerts: 2`** and no toggle, `dist/` is an old bundle — run `bash cdsw-build.sh` or set `TRITON_FORCE_UI_REBUILD=1` and restart.
+**Verify deploy:** Footer shows **Daten: Trino live | Demo** and **`Build 0.2.2-das-preview`** (`build-stamp.json`).  
+If you still see **`0.2.0-data-mode`**, `dist/` is stale — run `bash cdsw-build.sh` or set `TRITON_FORCE_UI_REBUILD=1` and restart.
 
-API check: `curl -sS http://127.0.0.1:$CDSW_APP_PORT/api/version` → `"build":"0.2.0-data-mode"`.
+API check: `curl -sS http://127.0.0.1:$CDSW_APP_PORT/api/version` → `"build":"0.2.2-das-preview"`.
 
 Serves the built SPA from `dist/` on `API_PORT`.

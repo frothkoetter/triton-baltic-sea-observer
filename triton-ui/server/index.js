@@ -52,6 +52,7 @@ import {
   listSitrepReports,
   sitrepConfigured,
 } from "./sitrep.js";
+import { loadBuildStamp } from "./build-stamp.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 import {
   AGENT_APPS,
@@ -150,12 +151,13 @@ app.get("/api/map-config", (_req, res) => {
 });
 
 app.get("/api/version", (_req, res) => {
+  const stamp = loadBuildStamp();
   res.json({
     ok: true,
     app: "triton-ui",
-    version: "0.2.0",
-    build: "0.2.0-data-mode",
-    features: { dataModeFooterToggle: true, agentConsole: true },
+    version: stamp.version,
+    build: stamp.build,
+    features: stamp.features ?? { dataModeFooterToggle: true, agentConsole: true },
   });
 });
 
