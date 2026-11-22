@@ -9,7 +9,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
-| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.0.0**) |
+| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.2.1**) |
 | `das_acoustic_engine.py` | Multi-channel series + STFT along cable corridor |
 | `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
 | `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
@@ -37,7 +37,7 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 
 ## DAS cable acoustic (EMODnet corridors)
 
-**DasCableAcousticSimulator** **1.2.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
+**DasCableAcousticSimulator** **1.2.1** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
 
 | Cable Asset | Typ | EMODnet id |
 |-------------|-----|------------|
@@ -47,6 +47,8 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 | `PCABLE_BSH_1` … `PCABLE_BSH_4` | Seekabel | EMODNET_PCABLE_BSH_* |
 
 Output **HDF5** (`triton/das-cable/v1`). FlowFile attributes include **`latitude` / `longitude`** (batch centroid), **`das.segment.lat` / `das.segment.lon`** (primary threat segment), **`das.chainage_m`**, **`das.window.seconds`** — map to `das_cable_spectrogram_metadata` via UpdateAttribute / AttributesToJSON (`ontology/mappings/das_cable_spectrogram_metadata.yaml`). CML: `cai-workbench/das-cable-classifier/`.
+
+**PutCDPObjectStore:** `filename` is unique per batch (`das_{asset}_{n}seg_{UTC}_{batch12}.h5`) so repeated schedules do not fail with “file with same name already exists”.
 
 | Property | Default |
 |----------|---------|
