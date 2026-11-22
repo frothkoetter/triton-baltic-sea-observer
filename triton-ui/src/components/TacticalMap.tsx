@@ -1,7 +1,12 @@
 import { Fragment, useMemo } from "react";
 import { CircleMarker, MapContainer, Polygon, Polyline, Tooltip } from "react-leaflet";
 import type { AisRow } from "../pages/Lagebild";
-import { wktToLineStrings, wktToPolygonRings, type LatLng } from "../lib/wkt-geo";
+import {
+  buildOstseeInfraMapLines,
+  type OstseeInfraRow,
+  type OstseePipelineRow,
+} from "../lib/ostsee-infra-map";
+import { wktToPolygonRings, type LatLng } from "../lib/wkt-geo";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 
 export type ObservationArea = {
@@ -22,23 +27,7 @@ function areaStyle(area: ObservationArea): { color: string; fillColor: string } 
     : { color: "#1565C0", fillColor: "#42A5F5" };
 }
 
-export type OstseeInfraRow = {
-  id: string;
-  name: string;
-  typ: string;
-  geometrie_wkt: string;
-  status?: string;
-  medium?: string;
-};
-
-export type OstseePipelineRow = {
-  pipeline_name: string;
-  medium?: string;
-  status?: string;
-  geo_typ?: string;
-  geometrie_wkt: string;
-  quelle?: string;
-};
+export type { OstseeInfraRow, OstseePipelineRow } from "../lib/ostsee-infra-map";
 
 export type FleetPosition = {
   mmsi: string;
@@ -108,21 +97,6 @@ type Props = {
   showInfrastructure: boolean;
 };
 
-function infraLineStyle(row: OstseeInfraRow | OstseePipelineRow) {
-  const medium = String(
-    "medium" in row ? row.medium : (row as OstseeInfraRow).typ ?? ""
-  ).toLowerCase();
-  const isCable =
-    medium.includes("telecom") ||
-    medium.includes("power") ||
-    medium.includes("kabel") ||
-    String((row as OstseeInfraRow).typ ?? "").toLowerCase().includes("seekabel");
-  if (isCable) {
-    return { color: "#26C6DA", weight: 3, dashArray: "6 4", opacity: 0.88 };
-  }
-  return { color: "#FF6F00", weight: 4, dashArray: "10 6", opacity: 0.9 };
-}
-
 export function TacticalMap({
   ships,
   areas,
@@ -152,38 +126,7 @@ export function TacticalMap({
 
   const infraLines = useMemo(() => {
     if (!showInfrastructure) return [];
-    const out: {
-      key: string;
-      lines: LatLng[][];
-      label: string;
-      meta: string;
-      style: ReturnType<typeof infraLineStyle>;
-    }[] = [];
-    for (const row of infrastruktur) {
-      const lines = wktToLineStrings(row.geometrie_wkt);
-      if (lines.length === 0) continue;
-      out.push({
-        key: `infra-${row.id}`,
-        lines,
-        label: row.name,
-        meta: `${row.typ} · ${row.medium ?? "—"} · ${row.status ?? "—"}`,
-        style: infraLineStyle(row),
-      });
-    }
-    const seenWkt = new Set(infrastruktur.map((r) => r.geometrie_wkt.trim()));
-    for (const row of pipelines) {
-      if (seenWkt.has(row.geometrie_wkt.trim())) continue;
-      const lines = wktToLineStrings(row.geometrie_wkt);
-      if (lines.length === 0) continue;
-      out.push({
-        key: `pipe-${row.pipeline_name}-${row.quelle ?? "wkt"}`,
-        lines,
-        label: row.pipeline_name,
-        meta: `${row.medium ?? "—"} · ${row.status ?? "—"} · ${row.quelle ?? ""}`,
-        style: infraLineStyle(row),
-      });
-    }
-    return out;
+    return buildOstseeInfraMapLines(infrastruktur, pipelines);
   }, [infrastruktur, pipelines, showInfrastructure]);
 
   return (
