@@ -49,6 +49,16 @@ Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — **alter** `predict.py` 
 }
 ```
 
+Oder HDF5 aus S3 (CML data connection **S3 Object Store**, oder `DAS_S3_CONNECTION_NAME`):
+
+```json
+{
+  "uri": "s3a://triton-buk-…/data/user/…/das/das_balticconnector_6seg.h5"
+}
+```
+
+(`s3_uri`, `s3a_uri`, `hadoop_file_url` werden ebenfalls akzeptiert.)
+
 Antwort: `threat_type`, `confidence`, `probabilities`, optional `ground_truth` wenn im HDF5.
 
 ## Klassen
