@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """Transform Impala-style create_db_tables_trino.sql and execute on CDW Trino (iceberg catalog)."""
 
-# Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2025-11-22-use-skip-qualify"
-
 from __future__ import annotations
 
 import os
@@ -13,6 +10,9 @@ from typing import List, Tuple
 
 import trino
 from trino.auth import BasicAuthentication
+
+# Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
+DDL_RUNNER_REV = "2025-11-22-use-skip-qualify"
 
 
 def transform_sql(text: str) -> str:
