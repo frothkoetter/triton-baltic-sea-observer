@@ -74,8 +74,22 @@ def _orient_spectrogram(spec) -> "np.ndarray":
     # Tame DC leakage so global scaling is not dominated by row 0
     if a.shape[0] > 1:
         a = a.copy()
-        a[0, :] *= 0.12
+        n_dc = min(3, a.shape[0])
+        a[:n_dc, :] *= 0.03
     return a
+
+
+def _display_spectrogram_matrix(spec) -> "np.ndarray":
+    """Row-wise dynamics so low-Hz tones are visible without a single DC strip."""
+    import numpy as np
+
+    a = np.asarray(spec, dtype=np.float32)
+    if a.ndim != 2 or a.size == 0:
+        return a
+    row_peak = np.maximum(a.max(axis=1, keepdims=True), 1e-8)
+    col_med = np.median(a, axis=0, keepdims=True) + 1e-8
+    vis = a / np.maximum(row_peak, col_med * 2.0)
+    return np.clip(vis, 0.0, 1.5).astype(np.float32)
 
 
 def _mono_from_channels(channels):
@@ -127,12 +141,14 @@ def _mono_wav_b64(channels, fs_hz: float, play_max_sec: float) -> tuple[str, flo
     duration_s = len(mono) / fs if fs > 0 else 0.0
 
     target_fs = int(os.environ.get("DAS_AUDIO_TARGET_FS", "8000"))
-    if fs > target_fs and len(mono) > 1:
-        step = max(1, int(round(fs / target_fs)))
-        mono = mono[::step]
-        out_fs = int(round(fs / step))
-    else:
-        out_fs = int(round(fs))
+    out_fs = target_fs if target_fs > 0 else 8000
+    if len(mono) > 1 and int(round(fs)) != out_fs:
+        src_len = len(mono)
+        dst_len = max(8, int(round(src_len * out_fs / fs)))
+        x_old = np.linspace(0.0, 1.0, src_len)
+        x_new = np.linspace(0.0, 1.0, dst_len)
+        mono = np.interp(x_new, x_old, mono)
+        duration_s = dst_len / out_fs
 
     peak = float(np.max(np.abs(mono))) or 1.0
     mono = np.clip(mono / peak, -1.0, 1.0)
@@ -169,8 +185,9 @@ def segment_preview(payload: bytes, segment_index: int, play_max_sec: float = 10
         threat = str(sg.attrs.get("threat_class", "ambient"))
         chainage_m = float(sg.attrs.get("chainage_m", 0.0))
 
-    small, n_f, n_t = _downsample_2d(spec, 160, 120)
-    p_lo, p_hi = np.percentile(small, [4, 99.5])
+    vis = _display_spectrogram_matrix(spec)
+    small, n_f, n_t = _downsample_2d(vis, 160, 120)
+    p_lo, p_hi = np.percentile(small, [8, 99.0])
     denom = max(float(p_hi - p_lo), 1e-9)
     norm = np.clip((small - p_lo) / denom, 0.0, 1.0)
     log_spec = (np.log1p(norm * 12.0)).tolist()

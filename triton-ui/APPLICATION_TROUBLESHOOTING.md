@@ -24,7 +24,7 @@ Verify:
 curl -sS "http://127.0.0.1:${CDSW_APP_PORT}/api/version" | python3 -m json.tool
 ```
 
-Expect `"build":"0.2.3-das-preview"` and **`"distDasPreview":true`**. If `distDasPreview` is **false**, run `bash cdsw-build.sh`. Footer must not show `0.2.0-data-mode`.
+Expect `"build":"0.2.4-das-s3-cml"` or newer and **`"distDasPreview":true`**. If `distDasPreview` is **false**, run `bash cdsw-build.sh`. Footer must not show `0.2.0-data-mode`.
 
 Application script must be **`triton-ui/entry.py`** (not an old `triton-nato-ui` path).
 

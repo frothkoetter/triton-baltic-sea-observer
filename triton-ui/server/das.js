@@ -13,12 +13,40 @@ export function validateDasUri(uri) {
   return validateLidarUri(uri);
 }
 
+const previewCache = new Map();
+const CACHE_TTL_MS = 90_000;
+const CACHE_MAX = 24;
+
+function cacheGet(key) {
+  const hit = previewCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    previewCache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function cacheSet(key, value) {
+  if (previewCache.size >= CACHE_MAX) {
+    const oldest = previewCache.keys().next().value;
+    if (oldest) previewCache.delete(oldest);
+  }
+  previewCache.set(key, { at: Date.now(), value });
+}
+
 export function fetchDasSegmentPreview(hadoopFileUrl, segmentIndex = 0) {
   const check = validateDasUri(hadoopFileUrl);
   if (!check.ok) {
     return Promise.resolve(check);
   }
-  const seg = Number.isFinite(Number(segmentIndex)) ? String(Math.max(0, Math.floor(Number(segmentIndex)))) : "0";
+  const segIdx = Math.max(0, Math.floor(Number(segmentIndex)) || 0);
+  const seg = String(segIdx);
+  const cacheKey = `${check.uri}|${seg}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
   return new Promise((resolve) => {
     const child = spawn("python3", [BRIDGE, check.uri, seg], {
       env: { ...process.env },
@@ -38,10 +66,30 @@ export function fetchDasSegmentPreview(hadoopFileUrl, segmentIndex = 0) {
         if (!parsed.ok && !parsed.error) {
           parsed.error = err || "DAS HDF5 bridge failed";
         }
+        if (parsed.ok) {
+          cacheSet(cacheKey, parsed);
+        }
         resolve(parsed);
       } catch {
         resolve({ ok: false, error: err || out || "Invalid DAS bridge response" });
       }
     });
   });
+}
+
+export async function fetchDasSegmentWav(hadoopFileUrl, segmentIndex = 0) {
+  const preview = await fetchDasSegmentPreview(hadoopFileUrl, segmentIndex);
+  if (!preview.ok) {
+    return preview;
+  }
+  const b64 = preview.audio?.wav_base64;
+  if (!b64) {
+    return { ok: false, error: "HDF5 segment has no audio waveform" };
+  }
+  return {
+    ok: true,
+    wav: Buffer.from(b64, "base64"),
+    duration_sec: preview.audio?.duration_sec,
+    sample_rate_hz: preview.audio?.sample_rate_hz,
+  };
 }

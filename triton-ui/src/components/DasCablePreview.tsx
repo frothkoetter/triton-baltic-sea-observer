@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import type { DasCableSegment } from "../lib/das-cable";
 import { resolveDasHdfsUrl } from "../lib/das-cable";
@@ -26,33 +26,15 @@ export function DasCablePreview({ segment }: Props) {
   const [specValues, setSpecValues] = useState<number[][] | null>(null);
   const [freqs, setFreqs] = useState<number[] | undefined>();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioFallback, setAudioFallback] = useState<string | null>(null);
   const [audioCaption, setAudioCaption] = useState<string>("");
-  const audioObjectUrl = useRef<string | null>(null);
 
-  const setPlaybackUrl = useCallback((b64: string | null, fallback?: string | null) => {
-    if (audioObjectUrl.current) {
-      URL.revokeObjectURL(audioObjectUrl.current);
-      audioObjectUrl.current = null;
-    }
-    if (b64) {
-      try {
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
-        audioObjectUrl.current = url;
-        setAudioUrl(url);
-        return;
-      } catch {
-        /* fall through */
-      }
-    }
-    setAudioUrl(fallback ?? null);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (audioObjectUrl.current) URL.revokeObjectURL(audioObjectUrl.current);
+  const demoAudioForSegment = useCallback(
+    (seg: DasCableSegment) => {
+      const idx = Number(seg.segment_index ?? 0);
+      const fs = Number(seg.fs_hz ?? 2000);
+      const win = Number(seg.window_seconds ?? 4);
+      return pseudoDasDemoAudioDataUrl(idx, fs, win);
     },
     []
   );
@@ -75,22 +57,23 @@ export function DasCablePreview({ segment }: Props) {
       setFreqs(pseudo.frequencies_hz);
       setSource("pseudo");
       const idx = Number(segment.segment_index ?? 0);
-      const fs = Number(segment.fs_hz ?? 2000);
-      const win = Number(segment.window_seconds ?? 4);
-      setPlaybackUrl(null, pseudoDasDemoAudioDataUrl(idx, fs, win));
+      const demo = demoAudioForSegment(segment);
+      setAudioUrl(demo);
+      setAudioFallback(demo);
       setAudioCaption(`Demo strain-rate tone · seg ${idx} (not from HDF5)`);
       if (reason) {
         setError(reason);
         setHint(null);
       }
     },
-    [pseudo, segment]
+    [pseudo, segment, demoAudioForSegment]
   );
 
   useEffect(() => {
     setSpecValues(null);
     setFreqs(undefined);
-    setPlaybackUrl(null, null);
+    setAudioUrl(null);
+    setAudioFallback(null);
     setError(null);
     setHint(null);
     setSource(null);
@@ -121,27 +104,14 @@ export function DasCablePreview({ segment }: Props) {
         setSource("s3");
         setError(null);
         setHint(null);
-        const b64 = res.audio?.wav_base64;
-        const dur = Number(res.audio?.duration_sec ?? 0);
-        const idx = Number(segment.segment_index ?? 0);
-        const fs = Number(segment.fs_hz ?? 2000);
-        const win = Number(segment.window_seconds ?? 4);
-        const demo = pseudoDasDemoAudioDataUrl(idx, fs, win);
-        if (b64 && dur >= 0.2) {
-          setPlaybackUrl(b64);
-          setAudioCaption(
-            res.audio?.caption ??
-              `HDF5 · ${res.audio?.duration_sec ?? "?"} s @ ${res.audio?.sample_rate_hz ?? "?"} Hz`
-          );
-        } else if (b64) {
-          setPlaybackUrl(b64, demo);
-          setAudioCaption(
-            `${res.audio?.caption ?? "HDF5"} · short waveform — demo tone mixed for playback`
-          );
-        } else {
-          setPlaybackUrl(null, demo);
-          setAudioCaption("HDF5 spectrogram only — demo audio (no WAV in segment)");
-        }
+        const demo = demoAudioForSegment(segment);
+        setAudioFallback(demo);
+        const wavApi = `/api/das-cable/wav?hadoop_file_url=${uri}&segment_index=${idx}`;
+        setAudioUrl(wavApi);
+        setAudioCaption(
+          res.audio?.caption ??
+            `HDF5 · ${res.audio?.duration_sec ?? "?"} s @ ${res.audio?.sample_rate_hz ?? 8000} Hz`
+        );
       } else {
         applyPseudo(res.error ?? "Could not load HDF5 from object store");
         if (res.hint) setHint(res.hint);
@@ -151,7 +121,7 @@ export function DasCablePreview({ segment }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [hdfsUrl, segment, applyPseudo, setPlaybackUrl]);
+  }, [hdfsUrl, segment, applyPseudo, demoAudioForSegment]);
 
   if (!segment) return null;
 
@@ -183,8 +153,14 @@ export function DasCablePreview({ segment }: Props) {
             key={audioUrl}
             className="das-audio-player"
             controls
-            preload="metadata"
+            preload="auto"
             src={audioUrl}
+            onError={() => {
+              if (audioFallback && audioUrl !== audioFallback) {
+                setAudioUrl(audioFallback);
+                setAudioCaption((c) => `${c} · demo tone (WAV fetch failed)`);
+              }
+            }}
           >
             DAS audio preview
           </audio>

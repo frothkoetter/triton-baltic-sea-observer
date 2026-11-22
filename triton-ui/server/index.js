@@ -46,7 +46,11 @@ import {
   loadSemanticaRecord,
 } from "./nba-artifacts.js";
 import { fetchLidarPointsFromS3, s3Configured, s3ConfigHint } from "./lidar.js";
-import { fetchDasSegmentPreview, dasS3Configured } from "./das.js";
+import {
+  fetchDasSegmentPreview,
+  fetchDasSegmentWav,
+  dasS3Configured,
+} from "./das.js";
 import {
   fetchSitrepPdfBase64,
   listSitrepReports,
@@ -452,6 +456,26 @@ app.get("/api/das-cable/preview", async (req, res) => {
     return res.status(status).json(result);
   }
   res.json(result);
+});
+
+app.get("/api/das-cable/wav", async (req, res) => {
+  const uri = String(req.query.hadoop_file_url ?? req.query.uri ?? "").trim();
+  const segmentIndex = Number(req.query.segment_index ?? 0);
+  if (!uri) {
+    return res.status(400).json({ ok: false, error: "hadoop_file_url query param required" });
+  }
+  const result = await fetchDasSegmentWav(uri, segmentIndex);
+  if (!result.ok || !result.wav) {
+    const err = String(result.error ?? "WAV unavailable");
+    const status = err.includes("not configured") ? 503 : 502;
+    return res.status(status).json(result);
+  }
+  res.setHeader("Content-Type", "audio/wav");
+  res.setHeader("Cache-Control", "private, max-age=120");
+  if (result.duration_sec != null) {
+    res.setHeader("X-Das-Duration-Sec", String(result.duration_sec));
+  }
+  res.send(result.wav);
 });
 
 app.get("/api/proximity-alerts", async (_req, res) => {
