@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import sys
 import unittest
 from pathlib import Path
@@ -11,11 +12,14 @@ _UPLOAD = _ROOT / "upload"
 sys.path.insert(0, _UPLOAD.as_posix())
 
 from cable_corridor_registry import (  # noqa: E402
+    RANDOM_CABLE_ASSET,
+    cable_asset_allowable_values,
     cable_asset_keys,
     cable_length_m,
     cable_meta,
-    interpolate_chainage,
     cable_vertices,
+    interpolate_chainage,
+    resolve_cable_asset,
 )
 from das_acoustic_engine import (  # noqa: E402
     batch_geolocation_attributes,
@@ -45,6 +49,18 @@ class TestDasCableAcoustic(unittest.TestCase):
         self.assertEqual(len(keys), 7)
         self.assertIn("NORD_STREAM_2", keys)
         self.assertIn("PCABLE_BSH_4", keys)
+        allowable = cable_asset_allowable_values()
+        self.assertEqual(len(allowable), 8)
+        self.assertIn(RANDOM_CABLE_ASSET, allowable)
+
+    def test_resolve_cable_asset_random_and_fixed(self):
+        self.assertEqual(resolve_cable_asset("BALTICCONNECTOR"), "BALTICCONNECTOR")
+        rng = random.Random(99)
+        picked = {resolve_cable_asset(RANDOM_CABLE_ASSET, rng=rng) for _ in range(30)}
+        self.assertTrue(picked.issubset(set(cable_asset_keys())))
+        self.assertGreater(len(picked), 1)
+        self.assertEqual(resolve_cable_asset(RANDOM_CABLE_ASSET, rng=random.Random(99)),
+                         resolve_cable_asset(RANDOM_CABLE_ASSET, rng=random.Random(99)))
 
     def test_each_cable_generates_batch(self):
         for key in cable_asset_keys():
