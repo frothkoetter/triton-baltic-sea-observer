@@ -163,7 +163,7 @@ export default function App() {
               ["lagebild", "Lagebild"],
               ["analysen", "Analysen"],
               ["lidar", "LiDAR"],
-              ["das", "Distributed Acoustic Sensing"],
+              ["das", "Acoustic Sensors"],
               ["sitrep", "SITREP"],
               ["agents", "Agenten"],
               ["nba", "NBA HITL"],
