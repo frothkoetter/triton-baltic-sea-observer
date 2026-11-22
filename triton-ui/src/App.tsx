@@ -8,15 +8,17 @@ import { ProximityPage } from "./pages/Proximity";
 import { NbaHitlPage } from "./pages/NbaHitl";
 import { AgentConsolePage } from "./pages/AgentConsole";
 import { LidarPage } from "./pages/Lidar";
+import { DasCablePage } from "./pages/DasCable";
 import { SitrepPage } from "./pages/Sitrep";
 
-type Zone = "lagebild" | "analysen" | "proximity" | "lidar" | "sitrep" | "agents" | "nba";
+type Zone = "lagebild" | "analysen" | "proximity" | "lidar" | "das" | "sitrep" | "agents" | "nba";
 
 const ZONE_HASH: Record<Zone, string> = {
   lagebild: "",
   analysen: "analysen",
   proximity: "proximity",
   lidar: "lidar",
+  das: "das",
   sitrep: "sitrep",
   agents: "agents",
   nba: "nba",
@@ -28,6 +30,7 @@ function zoneFromHash(): Zone {
     h === "analysen" ||
     h === "proximity" ||
     h === "lidar" ||
+    h === "das" ||
     h === "sitrep" ||
     h === "agents" ||
     h === "sql" /* legacy hash → agents */ ||
@@ -149,6 +152,7 @@ export default function App() {
               ["analysen", "Analysen"],
               ["proximity", "Schiffsnähe"],
               ["lidar", "LiDAR"],
+              ["das", "DAS Kabel"],
               ["sitrep", "SITREP"],
               ["agents", "Agenten"],
               ["nba", "NBA HITL"],
@@ -188,6 +192,7 @@ export default function App() {
           )}
           {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}
+          {zone === "das" && <DasCablePage />}
           {zone === "sitrep" && <SitrepPage />}
           {zone === "agents" && <AgentConsolePage />}
           {zone === "nba" && <NbaHitlPage />}

@@ -11,6 +11,7 @@
 --   4. Case 2b: Dark vessel (MAD buoy echo, no AIS within radius)
 --   5. Case 3: Ship-to-ship rendezvous (STS)
 --   6. Case 4: Pipeline/cable AIS blackout & corridor (spatial-lab 08 + 07)
+--   7. Case 5: DAS cable acoustic threats (das_cable_spectrogram_metadata)
 --
 -- Run: cd cdw-analyse && ./run_outlier_detection_trino.sh
 -- Doc:  cdw-analyse/README_outlier_detection_trino.md
@@ -810,6 +811,51 @@ SELECT
     severity_level,
     current_timestamp
 FROM korridor_rows;
+
+-- =========================================================================================
+-- STEP 8: CASE 5 — DAS CABLE ACOUSTIC THREATS (DasCableAcousticSimulator metadata)
+-- =========================================================================================
+
+INSERT INTO vessel_outliers (
+    MMSI, Event_Timestamp, Latitude, Longitude, Speed, Course, Status, Destination,
+    Outlier_Type, Reason, Recommendation, Severity_Level
+)
+SELECT
+    0 AS mmsi,
+    CAST(d.ingested_at AS varchar),
+    d.segment_lat,
+    d.segment_lon,
+    CAST(NULL AS double),
+    CAST(NULL AS double),
+    'DAS',
+    d.cable_asset,
+    'DAS Cable Threat',
+    format(
+        'threat=%s; ml=%s (conf=%.2f); cable=%s; chainage=%.0f m; batch=%s#%s',
+        d.threat_class,
+        COALESCE(d.predicted_threat_type, '—'),
+        COALESCE(d.model_confidence, 0),
+        COALESCE(d.cable_name, d.cable_asset),
+        d.chainage_m,
+        COALESCE(d.filename, d.hadoop_file_url),
+        CAST(d.segment_index AS varchar)
+    ),
+    'Correlate AIS blackout / patrol assets; dispatch ROV or guard vessel',
+    CASE COALESCE(d.predicted_threat_type, d.threat_class)
+        WHEN 'cui_sabotage_tap' THEN 95
+        WHEN 'anchor_drag' THEN 88
+        WHEN 'cable_strain_anomaly' THEN 80
+        WHEN 'trawler_scrape' THEN 65
+        ELSE 55
+    END
+FROM defense.das_cable_spectrogram_metadata d
+WHERE d.ingested_at >= current_timestamp - interval '24' hour
+  AND d.segment_lat IS NOT NULL
+  AND d.segment_lon IS NOT NULL
+  AND (
+      d.threat_class IN ('cui_sabotage_tap', 'anchor_drag', 'cable_strain_anomaly', 'trawler_scrape')
+      OR d.predicted_threat_type IN ('cui_sabotage_tap', 'anchor_drag', 'cable_strain_anomaly', 'trawler_scrape')
+  );
 
 -- Promote infrastructure hits into vessel_outliers for lagebild (AIS_Outlier)
 INSERT INTO vessel_outliers (

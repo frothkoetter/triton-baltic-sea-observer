@@ -16,6 +16,7 @@ import {
   getFleetPositions,
   getKpis,
   getLidarScans,
+  getDasCableSegments,
   getObservationAreas,
   getOstseeInfrastructure,
   getPositionTracks,
@@ -374,6 +375,10 @@ app.get("/api/ostsee-infrastructure", async (_req, res) => {
 
 app.get("/api/lidar/scans", async (_req, res) => {
   res.json(await getLidarScans());
+});
+
+app.get("/api/das-cable/segments", async (_req, res) => {
+  res.json(await getDasCableSegments());
 });
 
 app.get("/api/sitrep/reports", async (_req, res) => {

@@ -783,6 +783,10 @@ export async function getLidarScans() {
   return runQueryOrSample(PREDEFINED.lidarScans, () => sample.lidarScans);
 }
 
+export async function getDasCableSegments() {
+  return runQueryOrSample(PREDEFINED.dasCableSegments, () => sample.dasCableSegments);
+}
+
 export async function getKpis() {
   if (forceSample()) {
     return {

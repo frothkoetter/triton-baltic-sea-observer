@@ -23,6 +23,11 @@
       "label": "AIS blackout near pipeline CUI segment",
       "business_rule_ids": ["BR-OPSEC-AIS-001", "BR-CUI-PIPE-002"]
     },
+    "das_cable_threat": {
+      "iri": "triton:DASCableAcousticThreat",
+      "label": "DAS cable acoustic threat (anchor / CUI tap)",
+      "business_rule_ids": ["BR-CUI-PIPE-002", "BR-OPSEC-AIS-001"]
+    },
     "rus_fleet_proximity": {
       "iri": "triton:AdversaryFleetProximity",
       "label": "Russian Federation naval unit proximity",

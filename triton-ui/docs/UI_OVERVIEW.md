@@ -12,6 +12,7 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | `#analysen` | **Analysen** | Aggregated analytics (fleet, buoys, RUS, AIS, sanctions, restricted) |
 | `#proximity` | **Schiffsnähe** | Live proximity alerts (SSB MVE API proxy) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
+| `#das` | **DAS Kabel** | Cable segment catalog from `das_cable_spectrogram_metadata` (HDF5 metadata only) |
 | `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
 | `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
@@ -96,6 +97,7 @@ Other **Analysen** tabs (same page, for context):
 | UI block | API | Backend |
 |--------|-----|---------|
 | Scan table | `GET /api/lidar/scans` | Metadata from warehouse + sample fallback |
+| DAS segments | `GET /api/das-cable/segments` | `das_cable_spectrogram_metadata` + sample fallback |
 | Point preview | `GET /api/lidar/points?...` | `lidar-las-bridge.py` reads LAS/LAZ from **S3** (`S3_WORKLOAD_*`, optional prefix allowlist) |
 | Map | `LidarMap` | Scan footprint / bbox |
 

@@ -490,6 +490,30 @@ CREATE TABLE lidar_simulation_metadata (
 PARTITIONED BY SPEC (day(ingested_at))
 STORED BY ICEBERG;
 
+DROP TABLE IF EXISTS das_cable_spectrogram_metadata;
+CREATE TABLE das_cable_spectrogram_metadata (
+  hadoop_file_url STRING COMMENT 'HDF5 batch URI.',
+  segment_index INT COMMENT 'Segment index in batch.',
+  cable_asset STRING,
+  cable_id STRING,
+  cable_name STRING,
+  chainage_m DOUBLE,
+  segment_lat DOUBLE,
+  segment_lon DOUBLE,
+  threat_class STRING,
+  predicted_threat_type STRING,
+  model_confidence DOUBLE,
+  channel_count INT,
+  window_seconds DOUBLE,
+  fs_hz DOUBLE,
+  spectral_peak_hz DOUBLE,
+  energy_rms DOUBLE,
+  filename STRING,
+  ingested_at TIMESTAMP
+)
+PARTITIONED BY SPEC (day(ingested_at))
+STORED BY ICEBERG;
+
 DROP TABLE IF EXISTS gps_jammer_events;
 CREATE TABLE gps_jammer_events (
     geohash STRING COMMENT '6-character geohash identifying the tile',
@@ -887,6 +911,46 @@ FilteredLidarSimulations AS (
       AND distance_m <= 50000
 ),
 
+LatestDasCableSegments AS (
+    SELECT
+        d.hadoop_file_url,
+        d.segment_index,
+        d.filename,
+        d.cable_asset,
+        d.cable_name,
+        d.chainage_m,
+        d.ingested_at AS das_time,
+        d.segment_lat AS das_lat,
+        d.segment_lon AS das_lon,
+        d.threat_class,
+        d.predicted_threat_type,
+        d.model_confidence,
+        d.channel_count,
+        h.harbour_name AS harbour_name,
+        h.Proximity_Meters AS Proximity_Meters,
+        ST_GeodesicLengthWGS84(
+            ST_SetSRID(
+                ST_LineString(d.segment_lon, d.segment_lat, h.Harbour_Lon, h.Harbour_Lat),
+                4326
+            )
+        ) AS distance_m,
+        ROW_NUMBER() OVER (
+            PARTITION BY d.hadoop_file_url, d.segment_index, h.harbour_name
+            ORDER BY d.ingested_at DESC
+        ) AS rn
+    FROM defense.das_cable_spectrogram_metadata d
+    CROSS JOIN Harbour_Ref h
+    WHERE d.ingested_at >= current_timestamp() - interval 24 hours
+      AND d.segment_lat IS NOT NULL
+      AND d.segment_lon IS NOT NULL
+),
+FilteredDasCableSegments AS (
+    SELECT *
+    FROM LatestDasCableSegments
+    WHERE rn = 1
+      AND distance_m <= 50000
+),
+
 LatestRusNavalPositions AS (
     SELECT
         p.mmsi,
@@ -1097,6 +1161,28 @@ SELECT
     ) AS details
 FROM
     FilteredLidarSimulations l
+
+UNION ALL
+
+SELECT
+    'DAS_Cable' AS Data_Source,
+    CONCAT(COALESCE(l.filename, l.hadoop_file_url), '#', CAST(l.segment_index AS STRING)) AS ID,
+    l.das_time AS "timestamp",
+    l.das_lat AS latitude,
+    l.das_lon AS longitude,
+    l.harbour_name AS harbour_name,
+    l.distance_m AS dist_m_raw,
+    CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
+    CONCAT(
+        'Distance: ', CAST(ROUND(l.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
+        'Cable: ', COALESCE(l.cable_name, l.cable_asset, 'unknown'),
+        ' | Chainage: ', CAST(ROUND(l.chainage_m, 0) AS STRING), ' m',
+        ' | Threat: ', COALESCE(l.threat_class, 'ambient'),
+        COALESCE(CONCAT(' | ML: ', l.predicted_threat_type, ' (conf ', CAST(l.model_confidence AS STRING), ')'), ''),
+        ' | Ch: ', CAST(COALESCE(l.channel_count, 0) AS STRING),
+        COALESCE(CONCAT(' | HDF5: ', l.hadoop_file_url), '')
+    ) AS details
+FROM FilteredDasCableSegments l
 
 UNION ALL
 
