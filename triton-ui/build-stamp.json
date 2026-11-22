@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.9-gps-jammer-ui",
+  "build": "0.2.10-das-nav-label",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
