@@ -127,10 +127,13 @@ On CML, use **defense** session + qualified names (scripts set this automaticall
 
 ```bash
 cd ~/cdw-analyse
-set -a && source .env.trino.local && set +a
-export TRINO_CONNECT_SCHEMA=defense TRINO_QUALIFY_SCHEMA=1 TRINO_SKIP_CREATE_SCHEMA=1 TRINO_SKIP_DROP=1
+git pull origin main
+# Optional file; otherwise CML project TRINO_USER / TRINO_PASSWORD:
+[[ -f .env.trino.local ]] && set -a && source .env.trino.local && set +a
 bash sql/nba_apply_all_ddl.sh
 ```
+
+`TABLE_ALREADY_EXISTS` on `nba_incidents` means the base table is already there — with latest `run_trino_ddl.py`, the bundle continues and applies phase 4–5 **columns** and sibling tables (`nba_coa_runs`, …). Do not run phase SQL files one-by-one without `--continue`.
 
 NBA job (not in `cdw-analyse`):
 
