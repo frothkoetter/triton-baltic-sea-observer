@@ -37,7 +37,7 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 
 ## DAS cable acoustic (EMODnet corridors)
 
-**DasCableAcousticSimulator** **1.1.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
+**DasCableAcousticSimulator** **1.2.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
 
 | Cable Asset | Typ | EMODnet id |
 |-------------|-----|------------|
@@ -46,7 +46,7 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 | `NORD_STREAM_2` | Gaspipeline | EMODNET_NS2 |
 | `PCABLE_BSH_1` … `PCABLE_BSH_4` | Seekabel | EMODNET_PCABLE_BSH_* |
 
-Output **HDF5** (`triton/das-cable/v1`). CML: `cai-workbench/das-cable-classifier/`.
+Output **HDF5** (`triton/das-cable/v1`). FlowFile attributes include **`latitude` / `longitude`** (batch centroid), **`das.segment.lat` / `das.segment.lon`** (primary threat segment), **`das.chainage_m`**, **`das.window.seconds`** — map to `das_cable_spectrogram_metadata` via UpdateAttribute / AttributesToJSON (`ontology/mappings/das_cable_spectrogram_metadata.yaml`). CML: `cai-workbench/das-cable-classifier/`.
 
 | Property | Default |
 |----------|---------|

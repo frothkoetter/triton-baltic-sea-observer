@@ -251,6 +251,41 @@ def generate_das_batch(
     return segments, batch_meta
 
 
+def batch_geolocation_attributes(segments: Sequence[DasSegment]) -> Dict[str, str]:
+    """
+  NiFi FlowFile geolocation (WGS84) for enrichment / CDW metadata mapping.
+
+  - ``latitude`` / ``longitude``: centroid of all segments in the batch.
+  - ``das.segment.lat`` / ``das.segment.lon``: primary event segment (first non-ambient
+    threat, else first segment) per ``ontology/mappings/das_cable_spectrogram_metadata.yaml``.
+  """
+    if not segments:
+        return {}
+    lats = [s.latitude for s in segments]
+    lons = [s.longitude for s in segments]
+    centroid_lat = sum(lats) / len(lats)
+    centroid_lon = sum(lons) / len(lons)
+    primary = next(
+        (
+            s
+            for s in segments
+            if s.threat_class not in ("ambient", "vessel_passage")
+        ),
+        segments[0],
+    )
+    return {
+        "latitude": f"{centroid_lat:.6f}",
+        "longitude": f"{centroid_lon:.6f}",
+        "das.centroid.lat": f"{centroid_lat:.6f}",
+        "das.centroid.lon": f"{centroid_lon:.6f}",
+        "das.segment.lat": f"{primary.latitude:.6f}",
+        "das.segment.lon": f"{primary.longitude:.6f}",
+        "das.segment.index": str(primary.segment_index),
+        "das.chainage_m": f"{primary.chainage_m:.2f}",
+        "das.threat_class": primary.threat_class,
+    }
+
+
 def write_hdf5_batch(segments: Sequence[DasSegment], batch_meta: Dict[str, Any]) -> bytes:
     import h5py
 
