@@ -17,21 +17,32 @@ DDL_RUNNER_REV = "2025-11-22-use-skip-qualify"
 
 def transform_sql(text: str) -> str:
     """Convert Hive/Impala DDL in create_db_tables_trino.sql to CDW Trino Iceberg syntax."""
+    # Session catalog is iceberg — schema name is ``defense`` (not ``iceberg.defense``).
     text = re.sub(
         r"(?im)^create database defense;\s*",
-        "CREATE SCHEMA IF NOT EXISTS iceberg.defense;\n",
+        "CREATE SCHEMA IF NOT EXISTS defense;\n",
         text,
         count=1,
     )
     text = re.sub(
         r"(?im)^CREATE SCHEMA IF NOT EXISTS defense\s*;",
-        "CREATE SCHEMA IF NOT EXISTS iceberg.defense;",
+        "CREATE SCHEMA IF NOT EXISTS defense;",
         text,
     )
-    text = re.sub(r"(?im)^use defense;\s*", "USE iceberg.defense;\n", text, count=1)
+    text = re.sub(
+        r"(?im)^CREATE SCHEMA IF NOT EXISTS iceberg\.defense\s*;",
+        "CREATE SCHEMA IF NOT EXISTS defense;",
+        text,
+    )
+    text = re.sub(r"(?im)^use defense;\s*", "USE defense;\n", text, count=1)
     text = re.sub(
         r"(?im)^USE defense\s*;",
-        "USE iceberg.defense;",
+        "USE defense;",
+        text,
+    )
+    text = re.sub(
+        r"(?im)^USE iceberg\.defense\s*;",
+        "USE defense;",
         text,
     )
     text = re.sub(r"`([a-zA-Z_][a-zA-Z0-9_]*)`", r"\1", text)
@@ -108,10 +119,9 @@ def _should_qualify_schema() -> bool:
 
 
 def _qualify_defense_objects(text: str) -> str:
-    """Session on iceberg.default — objects live in iceberg.defense.* (no USE)."""
-    cat = os.environ.get("TRINO_CATALOG", "iceberg")
+    """Session catalog iceberg + schema default — objects in defense.* (no USE)."""
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    prefix = f"{cat}.{sch}."
+    prefix = f"{sch}."
 
     def _qualify_table_refs(body: str) -> str:
         # View bodies: FROM ships / JOIN ships without catalog (DDL file convention).
@@ -229,6 +239,47 @@ def session_schema(for_ddl: bool = True) -> str:
     return os.environ.get("TRINO_SCHEMA", "defense")
 
 
+def list_iceberg_schemas(conn) -> List[str]:
+    cur = conn.cursor()
+    cur.execute("SHOW SCHEMAS FROM iceberg")
+    names = [str(r[0]) for r in cur.fetchall()]
+    return names
+
+
+def ensure_defense_schema(conn) -> Tuple[bool, str | None]:
+    """
+    Return (ready, error_message). Creates ``defense`` when allowed and missing.
+    """
+    sch = os.environ.get("TRINO_SCHEMA", "defense")
+    if sch in list_iceberg_schemas(conn):
+        return True, None
+    if os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return False, (
+            f"Schema iceberg.{sch} does not exist (Trino SHOW SCHEMAS). "
+            "On CDW: Data Hub → your Virtual Warehouse → **Databases** (or Hive "
+            "metastore): create database/schema **defense** on catalog **iceberg**, "
+            "then re-run with TRINO_SKIP_CREATE_SCHEMA=1.\n"
+            "Or set TRINO_SKIP_CREATE_SCHEMA=0 to let this script run "
+            "CREATE SCHEMA IF NOT EXISTS defense (may still 404 on some CDW builds)."
+        )
+    cur = conn.cursor()
+    try:
+        cur.execute(f"CREATE SCHEMA IF NOT EXISTS {sch}")
+    except Exception as exc:
+        return False, (
+            f"CREATE SCHEMA IF NOT EXISTS {sch} failed: {exc}\n"
+            "Create **defense** in the DW UI, then use TRINO_SKIP_CREATE_SCHEMA=1."
+        )
+    if sch in list_iceberg_schemas(conn):
+        print(f"Created / verified schema iceberg.{sch}")
+        return True, None
+    return False, f"Schema iceberg.{sch} still missing after CREATE SCHEMA."
+
+
 def connect(*, for_ddl: bool = True, schema: str | None = None):
     apply_jdbc_url_env()
     host = os.environ.get(
@@ -255,6 +306,12 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     transformed = transform_sql(raw)
     stmts = _skip_schema_setup(split_statements(transformed))
     conn = connect(for_ddl=True)
+    ready, pre_err = ensure_defense_schema(conn)
+    if not ready:
+        conn.close()
+        return 0, [pre_err or "iceberg.defense not ready"]
+    sch = os.environ.get("TRINO_SCHEMA", "defense")
+    print(f"Preflight: schema iceberg.{sch} is visible to Trino")
     cur = conn.cursor()
     errors: List[str] = []
     ok = 0
@@ -266,11 +323,16 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
             ok += 1
         except Exception as exc:
             msg = f"#{i} {preview}\n  {exc}"
-            if re.match(r"(?is)^CREATE\s+SCHEMA", stmt.strip()) and "404" in str(exc):
+            if "404" in str(exc) and sch in stmt:
                 msg += (
-                    "\n  Hint: On CDW, schema defense may already exist or must be "
-                    "created in the Data Warehouse / metastore UI — not via Trino. "
-                    "Re-run with TRINO_SKIP_CREATE_SCHEMA=1 if iceberg.defense exists."
+                    f"\n  Hint: HTTP 404 on iceberg.{sch} usually means the schema "
+                    "is missing in the metastore (not just the table). Create "
+                    "**defense** in the CDW DW UI, or TRINO_SKIP_CREATE_SCHEMA=0 "
+                    "to attempt CREATE SCHEMA IF NOT EXISTS defense."
+                )
+            elif re.match(r"(?is)^CREATE\s+SCHEMA", stmt.strip()) and "404" in str(exc):
+                msg += (
+                    "\n  Hint: Create schema **defense** in the Data Warehouse UI."
                 )
             errors.append(msg)
             if stop_on_error:
