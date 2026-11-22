@@ -46,6 +46,7 @@ import {
   loadSemanticaRecord,
 } from "./nba-artifacts.js";
 import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
+import { fetchDasSegmentPreview, dasS3Configured } from "./das.js";
 import {
   fetchSitrepPdfBase64,
   listSitrepReports,
@@ -198,6 +199,10 @@ app.get("/api/health", async (req, res) => {
     },
     lidar: {
       s3Configured: s3Configured(),
+    },
+    das: {
+      s3Configured: dasS3Configured(),
+      playMaxSec: Number(process.env.DAS_PLAY_MAX_SEC || 10),
     },
     sitrep: {
       configured: sitrepConfigured(),
@@ -413,6 +418,22 @@ app.get("/api/lidar/points", async (req, res) => {
   const result = await fetchLidarPointsFromS3(uri);
   if (!result.ok) {
     return res.status(result.error?.includes("not configured") ? 503 : 502).json(result);
+  }
+  res.json(result);
+});
+
+app.get("/api/das-cable/preview", async (req, res) => {
+  const uri = String(req.query.hadoop_file_url ?? req.query.uri ?? "").trim();
+  const segmentIndex = Number(req.query.segment_index ?? 0);
+  if (!uri) {
+    return res.status(400).json({ ok: false, error: "hadoop_file_url query param required" });
+  }
+  if (!dasS3Configured()) {
+    return res.status(503).json({ ok: false, error: "S3 not configured for DAS HDF5 preview" });
+  }
+  const result = await fetchDasSegmentPreview(uri, segmentIndex);
+  if (!result.ok) {
+    return res.status(502).json(result);
   }
   res.json(result);
 });

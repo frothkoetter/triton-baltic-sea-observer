@@ -1,5 +1,6 @@
 import type { DasCableSegment } from "../lib/das-cable";
 import { dasThreatColor } from "../lib/das-cable";
+import { DasCablePreview } from "./DasCablePreview";
 
 type Props = { segment: DasCableSegment | null };
 
@@ -15,6 +16,7 @@ export function DasCableDetail({ segment }: Props) {
       <span className="type-pill" style={{ borderColor: color, color }}>
         {threat}
       </span>
+      <DasCablePreview segment={segment} />
       <table className="lidar-meta-table">
         <tbody>
           <tr>
@@ -50,7 +52,7 @@ export function DasCableDetail({ segment }: Props) {
         </tbody>
       </table>
       <p className="lidar-hint">
-        Spectrogram blob stays in object store; this view reads Iceberg metadata only (wie LiDAR LAS).
+        Spectrogram + audio (≤10 s) load from HDF5 via S3 when credentials are configured; otherwise a stylized preview is shown.
       </p>
     </div>
   );
