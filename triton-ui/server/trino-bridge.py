@@ -99,6 +99,48 @@ def _hint_404(exc: BaseException) -> str:
     return msg
 
 
+def _sql_limit(sql: str) -> int | None:
+    found = re.findall(r"\bLIMIT\s+(\d+)\b", sql, re.IGNORECASE)
+    if not found:
+        return None
+    return int(found[-1])
+
+
+def _resolve_fetch_limit(sql: str, argv_limit: str | None) -> int:
+    hard_cap = max(500, int(os.environ.get("TRINO_MAX_ROWS", "25000")))
+    if argv_limit and str(argv_limit).strip().isdigit():
+        return min(int(argv_limit), hard_cap)
+    sql_lim = _sql_limit(sql)
+    if sql_lim is not None:
+        return min(sql_lim, hard_cap)
+    return min(5000, hard_cap)
+
+
+def _fetch_rows(cur, limit: int) -> tuple[list[dict], list[str], bool]:
+    batch = min(2000, limit)
+    data: list[dict] = []
+    columns = [d[0] for d in cur.description] if cur.description else []
+
+    while len(data) < limit:
+        chunk = cur.fetchmany(min(batch, limit - len(data)))
+        if not chunk:
+            break
+        for row in chunk:
+            item = {}
+            for col, val in zip(columns, row):
+                if hasattr(val, "isoformat"):
+                    item[col] = val.isoformat()
+                else:
+                    item[col] = val
+            data.append(item)
+
+    truncated = False
+    if len(data) >= limit:
+        extra = cur.fetchmany(1)
+        truncated = len(extra) > 0
+    return data, columns, truncated
+
+
 def env_check_json() -> dict:
     apply_trino_env()
     host = resolved_host()
@@ -125,13 +167,14 @@ def main() -> None:
             json.dumps(
                 {
                     "ok": False,
-                    "error": "Usage: trino-bridge.py <sql> [query|execute] | --env-check",
+                    "error": "Usage: trino-bridge.py <sql> [query|execute] [max_rows] | --env-check",
                 }
             )
         )
         sys.exit(1)
     sql = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else "query"
+    argv_limit = sys.argv[3] if len(sys.argv) > 3 else None
     try:
         conn = connect()
         cur = conn.cursor()
@@ -140,24 +183,18 @@ def main() -> None:
             conn.close()
             print(json.dumps({"ok": True, "source": "trino", "rows_affected": cur.rowcount}))
             return
-        columns = [d[0] for d in cur.description] if cur.description else []
-        rows = cur.fetchmany(500)
+        fetch_limit = _resolve_fetch_limit(sql, argv_limit)
+        data, columns, truncated = _fetch_rows(cur, fetch_limit)
         conn.close()
-        data = []
-        for row in rows:
-            item = {}
-            for col, val in zip(columns, row):
-                if hasattr(val, "isoformat"):
-                    item[col] = val.isoformat()
-                else:
-                    item[col] = val
-            data.append(item)
         print(
             json.dumps(
                 {
                     "ok": True,
                     "columns": columns,
                     "rows": data,
+                    "rowCount": len(data),
+                    "fetchLimit": fetch_limit,
+                    "truncated": truncated,
                     "source": "trino",
                     "trinoHost": os.environ.get("TRINO_HOST"),
                 },

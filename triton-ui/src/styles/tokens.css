@@ -695,6 +695,16 @@ a {
   color: var(--text-muted);
 }
 
+.route-track-truncate-warn {
+  font-size: 12px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 176, 32, 0.45);
+  background: rgba(255, 176, 32, 0.1);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .proximity-map-wrap {
   height: 100%;
   min-height: 360px;

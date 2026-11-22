@@ -118,6 +118,8 @@ export function LagebildPage({ filters }: Props) {
   const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
   const [tracks, setTracks] = useState<PositionTrack[]>([]);
   const [tracksLoading, setTracksLoading] = useState(false);
+  const [tracksTruncated, setTracksTruncated] = useState(false);
+  const [tracksRowCount, setTracksRowCount] = useState<number | null>(null);
   const [nbaIncidents, setNbaIncidents] = useState<NbaIncident[]>([]);
   const [nbaSource, setNbaSource] = useState("…");
   const [layers, setLayers] = useState({
@@ -241,10 +243,15 @@ export function LagebildPage({ filters }: Props) {
       const res = await fetchJson<{
         rows?: Record<string, unknown>[];
         source?: string;
+        truncated?: boolean;
+        rowCount?: number;
+        fetchLimit?: number;
       }>(`/api/position-tracks?${qs}`);
       if (cancelled) return;
       setTracks(rowsToTracks(res.rows ?? []));
       setTrackSource(res.source ?? "unknown");
+      setTracksTruncated(Boolean(res.truncated));
+      setTracksRowCount(typeof res.rowCount === "number" ? res.rowCount : (res.rows ?? []).length);
       setTracksLoading(false);
     })();
     return () => {
@@ -410,8 +417,18 @@ export function LagebildPage({ filters }: Props) {
             "Enable “Route tracks 24h” to load histories from ais_events_ice, marine_vessel_status, rus_naval_fleet_positions."
           )}
         </p>
+        {layers.routeTracks && tracksTruncated && (
+          <p className="route-track-truncate-warn" role="status">
+            Trino lieferte nur einen Teil der 24h-Punkte
+            {tracksRowCount != null ? ` (${tracksRowCount.toLocaleString("de-DE")} Zeilen)` : ""}
+            — die Brücke stoppt am SQL-
+            <code>LIMIT</code> bzw. <code>TRINO_MAX_ROWS</code>. Es können weniger Schiffe/Routen erscheinen
+            als in der Filter Rail gewählt. RUS: ohne frische{" "}
+            <span className="mono">rus_naval_fleet_positions</span> (NiFi) bleibt RUS 0.
+          </p>
+        )}
         {layers.routeTracks && (
-          <RouteTrackTimeline tracks={tracks} loading={tracksLoading} />
+          <RouteTrackTimeline tracks={tracks} loading={tracksLoading} truncated={tracksTruncated} />
         )}
       </section>
 
