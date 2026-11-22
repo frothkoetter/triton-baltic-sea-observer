@@ -98,14 +98,16 @@ def _skip_create_schema(stmts: List[str]) -> List[str]:
         "yes",
     ):
         return stmts
-    return [
-        s
-        for s in stmts
-        if not re.match(
-            r"(?is)^CREATE\s+SCHEMA\s+IF\s+NOT\s+EXISTS\s+",
-            s.strip(),
-        )
-    ]
+    kept: List[str] = []
+    skipped = 0
+    for s in stmts:
+        if re.match(r"(?is)^CREATE\s+SCHEMA\b", s.strip()):
+            skipped += 1
+            continue
+        kept.append(s)
+    if skipped:
+        print(f"Skipped {skipped} CREATE SCHEMA statement(s) (TRINO_SKIP_CREATE_SCHEMA)")
+    return kept
 
 
 def split_statements(text: str) -> List[str]:

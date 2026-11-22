@@ -29,6 +29,8 @@ export TRINO_USER="${TRINO_USER:-frothkoetter}"
 export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
 export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
 export TRINO_PORT="${TRINO_PORT:-443}"
+export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-default}"
+export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
 
 if [[ -z "${TRINO_PASSWORD:-}" ]]; then
   echo "Set TRINO_PASSWORD in .env.trino.local or the environment." >&2
@@ -42,8 +44,9 @@ if [[ -z "${TRINO_HOST:-}" && -n "${TRINO_JDBC_URL}" ]]; then
 fi
 
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
-echo "    Session schema for DDL: \${TRINO_CONNECT_SCHEMA:-default} (target: \${TRINO_SCHEMA:-defense})"
-echo "    (If CREATE SCHEMA returns 404: TRINO_SKIP_CREATE_SCHEMA=1 when defense already exists)"
+echo "    Session schema for DDL: ${TRINO_CONNECT_SCHEMA} (target: ${TRINO_SCHEMA})"
+echo "    TRINO_SKIP_CREATE_SCHEMA=${TRINO_SKIP_CREATE_SCHEMA}"
+echo "    (CREATE SCHEMA via Trino often 404 on CDW — create iceberg.defense in DW UI, keep skip=1)"
 
 VENV="${ROOT}/.venv"
 PY="python3"
