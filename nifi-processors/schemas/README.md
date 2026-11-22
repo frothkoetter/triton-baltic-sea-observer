@@ -31,6 +31,22 @@ Optional: `spectral_peak_hz`, `energy_rms` (already in Avro schema).
 
 If merged content is a **JSON array** `[{...},{...}]`, use **SplitJson** on `$.*` before the reader, or configure the reader for array (schema root `array` of the record type) per your NiFi version.
 
+## `ingested_at` and PutIceberg
+
+Iceberg column `ingested_at` is **TIMESTAMP**. PutIceberg fails if the record field is a plain **string** like `2026-11-22 17:08:54`:
+
+```text
+FieldConversionException: … ingested_at … to LocalDateTime … NumberFormatException
+```
+
+**Fix:**
+
+1. **UpdateAttribute:** `ingested_at` = `${now():toNumber()}` (UTC epoch millis; not `format("yyyy-MM-dd HH:mm:ss")`).
+2. **Avro / JsonTreeReader:** `ingested_at` as `long` with logical type `timestamp-millis` (see `.avsc` files).
+3. Restart **JsonTreeReader** after pasting the updated schema.
+
+AttributesToJSON may still emit millis as a JSON string (`"1732296534000"`); JsonTreeReader coerces that into `long` for this schema.
+
 ## Validate locally
 
 ```bash

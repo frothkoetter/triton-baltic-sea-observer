@@ -61,8 +61,9 @@
     },
     {
       "name": "ingested_at",
-      "type": ["null", "string"],
-      "default": null
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null,
+      "doc": "Epoch millis (${now():toNumber()}) for PutIceberg TIMESTAMP."
     }
   ]
 }

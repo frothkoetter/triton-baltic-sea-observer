@@ -35,7 +35,7 @@ Configure **UpdateAttribute**: “Delete attributes” = `false`, “Store state
 | `window_seconds` | `${das.window.seconds}` | Simulator |
 | `fs_hz` | `${das.fs_hz}` | Simulator |
 | `filename` | `${filename}` | Simulator (use **v1.2.1+** for unique names on Put) |
-| `ingested_at` | `${now():format("yyyy-MM-dd HH:mm:ss", "UTC")}` | NiFi (partition key) |
+| `ingested_at` | `${now():toNumber()}` | NiFi — **epoch millis** for PutIceberg TIMESTAMP (not `yyyy-MM-dd HH:mm:ss`) |
 | `predicted_threat_type` | `${das.predicted.threat_type}` | Optional — classifier leg |
 | `model_confidence` | `${das.model.confidence}` | Optional — classifier leg |
 | `spectral_peak_hz` | *(leave empty or `${das.spectral.peak_hz}`)* | Optional ML features |
@@ -83,7 +83,7 @@ channel_count       ${das.channel.count}
 window_seconds      ${das.window.seconds}
 fs_hz               ${das.fs_hz}
 filename            ${filename}
-ingested_at         ${now():format("yyyy-MM-dd HH:mm:ss", "UTC")}
+ingested_at         ${now():toNumber()}
 ```
 
 Run this **after** PutCDPObjectStore so `hadoop.file.url` exists. If Put fails, route to failure — do not insert metadata without `hadoop_file_url`.
