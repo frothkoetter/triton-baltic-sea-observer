@@ -16,6 +16,8 @@ This writes `.nvm`, `node_modules/`, and `dist/` **into the project tree** (pers
 
 Then create/restart the Application.
 
+After **`git pull`**, restart the Application once (or set `TRITON_FORCE_UI_REBUILD=1` on the Application) so `#das` shows spectrogram + audio. Footer build should read **`0.2.1-das-preview`** or newer — if you still see *“reads Iceberg metadata only (wie LiDAR LAS)”*, the `dist/` bundle is stale.
+
 ## Application wizard
 
 | Field | Value |

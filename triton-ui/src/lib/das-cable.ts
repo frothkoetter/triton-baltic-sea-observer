@@ -16,6 +16,16 @@ export type DasCableSegment = {
   ingested_at?: string;
 };
 
+/** Client-side S3 URI for HDF5 preview (matches server das-segment.js). */
+export function resolveDasHdfsUrl(seg: DasCableSegment | null | undefined): string | null {
+  if (!seg) return null;
+  const hadoop = String(seg.hadoop_file_url ?? "").trim();
+  if (/^s3a?:\/\//i.test(hadoop)) return hadoop;
+  const filename = String(seg.filename ?? "").trim();
+  if (/^s3a?:\/\//i.test(filename)) return filename;
+  return hadoop || null;
+}
+
 export function segmentKey(seg: DasCableSegment): string {
   return `${seg.hadoop_file_url ?? seg.filename ?? "?" }#${seg.segment_index ?? 0}`;
 }

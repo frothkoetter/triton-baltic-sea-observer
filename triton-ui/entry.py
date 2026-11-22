@@ -68,7 +68,7 @@ if not port:
         flush=True,
     )
 
-_BRIDGE_PYTHON_MODULES = ("trino", "boto3", "laspy", "numpy")
+_BRIDGE_PYTHON_MODULES = ("trino", "boto3", "laspy", "numpy", "h5py")
 
 
 def _import_missing(module: str) -> bool:
