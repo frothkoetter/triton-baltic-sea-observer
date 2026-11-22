@@ -158,6 +158,24 @@ Outputs: `artifacts/reports/nato_sitrep_*.pdf`; with S3 upload, same prefix as *
 
 ## 6. Job C — UC2 Next Best Action (NBA)
 
+### One-time — NBA Iceberg DDL on Trino
+
+Before **`NBA_PERSIST_TRINO=1`** (scheduled job or `--persist-trino`), create the `nba_*` tables in **`iceberg.defense`**. Otherwise the job fails with `TABLE_NOT_FOUND` on `nba_incidents`.
+
+```bash
+cd /home/cdsw/cdw-analyse   # repo root: cdw-analyse
+set -a && source .env.trino.local && set +a
+bash sql/nba_apply_all_ddl.sh
+```
+
+Verify:
+
+```sql
+SHOW TABLES FROM iceberg.defense LIKE 'nba%';
+```
+
+See also [`cai-workbench/next-best-action/README.md`](next-best-action/README.md) and `cdw-analyse/sql/nba_schema_trino.sql`.
+
 | Field | Value |
 |-------|--------|
 | Type | **Scheduled Job** |
@@ -223,6 +241,7 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | UC1 `missing … fpdf2` | Session: `cd cai-workbench/situation-awareness && pip install -r requirements.txt`; or `LAGEBILD_AUTO_PIP=1` (default) on job — `cml_job.py` auto-installs once |
 | Log shows `Cell In[` | Use **Scheduled Job** script `cml_job.py`, not notebook cells |
 | Trino `error 404` | Host `triton-trino.*`; VW **Running** |
+| `nba_incidents` does not exist | Run **`nba_apply_all_ddl.sh`** once (§6); Trino VW **Running** |
 | UC2 job “failed” but no alert | Set `NBA_EXIT_IF_QUIET=1` on the job |
 | SITREP empty in UI | UC1 S3 upload + matching prefix; check object store credentials |
 | `l agebild_views` 0/2 statements | `git pull main`; run from full repo with current `run_lagebild_views.py` |

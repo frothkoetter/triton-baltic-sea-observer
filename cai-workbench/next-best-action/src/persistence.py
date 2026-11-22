@@ -135,6 +135,36 @@ def update_decision_artifacts(
         trino_client.execute_sql(sql)
 
 
+_DDL_HINT = (
+    "One-time Trino DDL (CML session with TRINO_USER/TRINO_PASSWORD, e.g. .env.trino.local):\n"
+    "  cd cdw-analyse && set -a && source .env.trino.local && set +a\n"
+    "  bash sql/nba_apply_all_ddl.sh\n"
+    "Phase 0 only: python3 run_trino_ddl.py sql/nba_schema_trino.sql"
+)
+
+
+def nba_core_tables_ready(settings: Settings) -> bool:
+    """Return False when base NBA Iceberg tables were never created."""
+    fq = f"{settings.trino_catalog}.{settings.trino_schema}"
+    try:
+        trino_client.fetch_all(f"SELECT flow_uuid FROM {fq}.nba_incidents LIMIT 1")
+        return True
+    except Exception as exc:  # noqa: BLE001 — Trino table missing
+        msg = str(exc)
+        if "TABLE_NOT_FOUND" in msg or "does not exist" in msg.lower():
+            return False
+        raise
+
+
+def require_nba_core_tables(settings: Settings) -> None:
+    """Fail fast before a long pipeline run when persist is enabled."""
+    if not nba_core_tables_ready(settings):
+        fq = f"{settings.trino_catalog}.{settings.trino_schema}"
+        raise RuntimeError(
+            f"Trino table {fq}.nba_incidents does not exist.\n{_DDL_HINT}"
+        )
+
+
 def materialized_registry_ready(settings: Settings) -> bool:
     """Return False when Phase 6 DDL was not applied on Trino."""
     fq = f"{settings.trino_catalog}.{settings.trino_schema}"
@@ -162,7 +192,7 @@ def insert_materialized_tables(
 
         print(
             "NBA: skipping nba_materialized_tables INSERT — table missing. "
-            "Apply cdw-analyse/sql/nba_schema_phase6_materialize.sql (or nba_apply_all_ddl.sh).",
+            f"Apply cdw-analyse/sql/nba_schema_phase6_materialize.sql (or nba_apply_all_ddl.sh).\n{_DDL_HINT}",
             file=sys.stderr,
         )
         return
