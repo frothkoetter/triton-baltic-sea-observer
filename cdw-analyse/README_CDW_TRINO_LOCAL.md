@@ -1,5 +1,7 @@
 # Local CDW Trino DDL (`setup_cdw_trino_local.sh`)
 
+One shot: **all defense Iceberg tables**, **NBA tables**, and **views** (`lagebild`, `vessel_ais_route_geojson`, …). Supplemental manifest: `sql/trino_supplemental_ddl.order`.
+
 **Full day-one checklist (CDW DDL + CML UI):** [TRINO_SETUP_RUNBOOK.md](./TRINO_SETUP_RUNBOOK.md)
 
 ## Symptom: every query returns `error 404` (even `SELECT version()`)

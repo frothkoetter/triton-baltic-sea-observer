@@ -15,7 +15,7 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2026-11-22-view-qualify-fix"
+DDL_RUNNER_REV = "2026-11-22-additive-ddl-fix"
 
 
 def transform_sql(text: str) -> str:
@@ -105,7 +105,19 @@ def transform_sql(text: str) -> str:
     text = re.sub(r"(?im)^drop table if exists\b", "DROP TABLE IF EXISTS", text)
     text = re.sub(r"(?im)^drop table\b(?! if)", "DROP TABLE IF EXISTS", text)
 
-    known_tables = set(re.findall(r"(?im)^CREATE TABLE\s+(\w+)", text))
+    known_tables = set(
+        re.findall(r"(?im)^CREATE TABLE(?:\s+IF NOT EXISTS)?\s+(\w+)", text)
+    )
+    known_tables.update(re.findall(r"(?im)^ALTER TABLE\s+(\w+)", text))
+    known_tables.update(
+        {
+            "nba_incidents",
+            "nba_coa_runs",
+            "nba_incident_snapshots",
+            "nba_materialized_tables",
+            "sap_readiness_staging",
+        }
+    )
     if _should_qualify_schema():
         text = _qualify_defense_objects(text, known_tables)
         text = re.sub(
@@ -169,7 +181,7 @@ def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
         return f"{kw} {prefix}{name}"
 
     text = re.sub(
-        r"(?im)^(CREATE TABLE|DROP TABLE IF EXISTS|INSERT INTO)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|ALTER TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
         _qualify_stmt_head,
         text,
     )
@@ -398,6 +410,56 @@ def connect(*, for_ddl: bool = True, schema: str | None = None):
     )
 
 
+def _forgive_additive_ddl(stmt: str, exc_s: str) -> bool:
+    """Skip errors when applying missing-only DDL (tables/columns already present)."""
+    if os.environ.get("TRINO_FORGIVE_TABLE_EXISTS", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+    ) and os.environ.get("TRINO_SKIP_DROP", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return False
+    st = stmt.strip()
+    if re.match(r"(?is)^CREATE\s+TABLE", st) and (
+        "TABLE_ALREADY_EXISTS" in exc_s
+        or ("already exists" in exc_s.lower() and "TABLE" in exc_s.upper())
+    ):
+        return True
+    if re.match(r"(?is)^ALTER\s+TABLE", st) and (
+        "COLUMN_ALREADY_EXISTS" in exc_s
+        or "already exists" in exc_s.lower()
+    ):
+        return True
+    return False
+
+
+def _should_continue_on_error(cli_continue: bool) -> bool:
+    if cli_continue:
+        return True
+    if os.environ.get("TRINO_CONTINUE_ON_ERROR", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return True
+    if os.environ.get("TRINO_ADDITIVE_DDL", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return True
+    if os.environ.get("TRINO_SKIP_DROP", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return True
+    return False
+
+
 def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
@@ -431,6 +493,9 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
         except Exception as exc:
             msg = f"#{i} {preview}\n  {exc}"
             exc_s = str(exc)
+            if _forgive_additive_ddl(stmt, exc_s):
+                ok += 1
+                continue
             if not stop_on_error and re.match(r"(?is)^CREATE\s+TABLE\b", stmt):
                 if "TABLE_ALREADY_EXISTS" in exc_s or (
                     "already exists" in exc_s.lower() and "TABLE" in exc_s.upper()
@@ -470,7 +535,8 @@ def main() -> int:
     if not os.environ.get("TRINO_USER") or not os.environ.get("TRINO_PASSWORD"):
         print("Set TRINO_USER and TRINO_PASSWORD", file=sys.stderr)
         return 2
-    continue_on_error = len(sys.argv) > 2 or os.environ.get("TRINO_CONTINUE_ON_ERROR") == "1"
+    cli_cont = len(sys.argv) > 2 and sys.argv[2] in ("--continue", "-c")
+    continue_on_error = _should_continue_on_error(cli_cont)
     print(f"DDL runner rev={DDL_RUNNER_REV} continue={continue_on_error}")
     ok, errors = run_file(path, stop_on_error=not continue_on_error)
     print(f"OK statements: {ok}")

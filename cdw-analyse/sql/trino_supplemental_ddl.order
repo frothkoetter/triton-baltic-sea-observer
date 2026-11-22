@@ -1,0 +1,9 @@
+# One path per line (relative to cdw-analyse/). Applied by apply_supplemental_trino_ddl.sh
+# after create_db_tables_trino.sql (tables + defense views).
+sql/nba_schema_trino.sql
+sql/nba_schema_phase4_hitl.sql
+sql/nba_schema_phase5_decision.sql
+sql/nba_schema_phase6_materialize.sql
+sql/nba_schema_mp0_readiness.sql
+sql/nba_schema_mp1_mission.sql
+vessel_route_geojson.sql

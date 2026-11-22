@@ -19,11 +19,9 @@ Configure **CML Scheduled Jobs** for **UC1** (Situation awareness / SITREP) and 
 
 1. CML project with repo at e.g. `/home/cdsw` (`git pull origin main`).
 2. Trino coordinator **`triton-trino.*`** (not `cdw-triton`), catalog **`iceberg`**, schema **`defense`**.
-3. Base DDL applied: `cdw-analyse/setup_cdw_trino_local.sh` (or equivalent).
-4. **NBA** tables (if UC2 persists to Iceberg):  
-   `cd cdw-analyse && bash sql/nba_apply_all_ddl.sh`  
-   Required when `NBA_PERSIST_TRINO=1` and/or `NBA_MATERIALIZE=1`.
-5. **Once per module** in a Session (persists on project Python env):  
+3. Base + NBA DDL applied: `cdw-analyse/setup_cdw_trino_local.sh` (creates all `defense` tables/views including `nba_*`).  
+   NBA-only re-apply: `bash sql/nba_apply_all_ddl.sh`.
+4. **Once per module** in a Session (persists on project Python env):  
    `bash cai-workbench/situation-awareness/cdsw-build.sh`  
    (installs **fpdf2** — import name `fpdf` — required for NATO SITREP PDFs)
    `bash cai-workbench/next-best-action/cdsw-build.sh`  
@@ -158,6 +156,10 @@ Outputs: `artifacts/reports/nato_sitrep_*.pdf`; with S3 upload, same prefix as *
 
 ## 6. Job C — UC2 Next Best Action (NBA)
 
+### Trino DDL (included in setup)
+
+`setup_cdw_trino_local.sh` creates **`nba_incidents`**, **`nba_coa_runs`**, and related objects (see `cdw-analyse/sql/trino_supplemental_ddl.order`). If UC2 still reports `TABLE_NOT_FOUND`, re-run setup or `bash sql/nba_apply_all_ddl.sh` on the CML session.
+
 | Field | Value |
 |-------|--------|
 | Type | **Scheduled Job** |
@@ -220,9 +222,11 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | Symptom | Action |
 |---------|--------|
 | Job log shows `Cell In[` | Job must use `cml_job.py`, not notebook |
+| Outliers `SystemExit: 0` + `OK statements: N` | Trino OK — Jupyter false failure; Scheduled Job + latest `trino-jobs/cml_job.py` |
 | UC1 `missing … fpdf2` | Session: `cd cai-workbench/situation-awareness && pip install -r requirements.txt`; or `LAGEBILD_AUTO_PIP=1` (default) on job — `cml_job.py` auto-installs once |
 | Log shows `Cell In[` | Use **Scheduled Job** script `cml_job.py`, not notebook cells |
 | Trino `error 404` | Host `triton-trino.*`; VW **Running** |
+| `nba_incidents` does not exist | Run **`nba_apply_all_ddl.sh`** once (§6); Trino VW **Running** |
 | UC2 job “failed” but no alert | Set `NBA_EXIT_IF_QUIET=1` on the job |
 | SITREP empty in UI | UC1 S3 upload + matching prefix; check object store credentials |
 | `l agebild_views` 0/2 statements | `git pull main`; run from full repo with current `run_lagebild_views.py` |

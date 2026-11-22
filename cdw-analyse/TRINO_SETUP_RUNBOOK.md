@@ -116,17 +116,37 @@ What it does:
 
 - Sources `.env.trino.local`
 - Runs **doctor** (aborts on 401 / connectivity failure)
-- Applies `create_db_tables_trino.sql` via `run_trino_ddl.py`
+- Applies `create_db_tables_trino.sql` via `run_trino_ddl.py` (defense **tables** + **views**: `lagebild`, `lagebild_all_events`, `ais_daten`, …)
+- Runs **`apply_supplemental_trino_ddl.sh`**: NBA `nba_*` / `sap_readiness_staging`, `vessel_ais_route_geojson`, then idempotent **view refresh** (`TRINO_ONLY_VIEWS`)
 - Optionally reloads NSB ship rows from `ships_nsb_trade_1000.sql`
-- Smoke `COUNT(*)` on key tables
+- Smoke `COUNT(*)` on key tables including `nba_incidents`
 
-**Views only** (after base tables exist):
+Manifest: `sql/trino_supplemental_ddl.order`. **NBA only (additive, no DROP):** `./apply_nba_tables_only.sh` or `bash sql/nba_apply_all_ddl.sh`.
+
+On CML, use **defense** session + qualified names (scripts set this automatically):
+
+```bash
+cd ~/cdw-analyse
+git pull origin main
+# Optional file; otherwise CML project TRINO_USER / TRINO_PASSWORD:
+[[ -f .env.trino.local ]] && set -a && source .env.trino.local && set +a
+bash sql/nba_apply_all_ddl.sh
+```
+
+`TABLE_ALREADY_EXISTS` on `nba_incidents` means the base table is already there — with latest `run_trino_ddl.py`, the bundle continues and applies phase 4–5 **columns** and sibling tables (`nba_coa_runs`, …). Do not run phase SQL files one-by-one without `--continue`.
+
+NBA job (not in `cdw-analyse`):
+
+```bash
+cd ~/cai-workbench/next-best-action
+python3 run_nba.py --demo-greifswald --phase 7 --persist-trino
+```
+
+**Views only** (repair without full setup):
 
 ```bash
 ./apply_views_trino.sh
 ```
-
-Expect **8/8** view statements OK when qualification and host are correct.
 
 ### Issues fixed in the DDL runner (pull latest `main`)
 

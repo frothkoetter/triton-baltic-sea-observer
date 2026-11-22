@@ -3,9 +3,7 @@
 
 USE iceberg.defense;
 
-DROP TABLE IF EXISTS nba_materialized_tables;
-
-CREATE TABLE nba_materialized_tables (
+CREATE TABLE IF NOT EXISTS nba_materialized_tables (
     flow_uuid varchar COMMENT 'Incident id',
     source_table varchar COMMENT 'Origin Iceberg table',
     mat_table varchar COMMENT 'nba_mat_<flow>_<table> copy',

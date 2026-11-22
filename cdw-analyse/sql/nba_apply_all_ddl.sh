@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-# Apply NBA Trino DDL phases 0–6 (run from cdw-analyse with .env.trino.local)
+# Apply NBA + supplemental Trino DDL (same bundle as setup_cdw_trino_local.sh).
+# Run from cdw-analyse with .env.trino.local sourced.
 set -euo pipefail
-cd "$(dirname "$0")/.."
-for sql in \
-  sql/nba_schema_trino.sql \
-  sql/nba_schema_phase4_hitl.sql \
-  sql/nba_schema_phase5_decision.sql \
-  sql/nba_schema_phase6_materialize.sql \
-  sql/nba_schema_mp0_readiness.sql \
-  sql/nba_schema_mp1_mission.sql
-do
-  echo "Applying $sql …"
-  python3 run_trino_ddl.py "$sql"
-done
-echo "NBA DDL complete."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+ORDER="${ROOT}/sql/trino_supplemental_ddl.order"
+PY="${PY:-python3}"
+export PY
+exec "${ROOT}/apply_supplemental_trino_ddl.sh"

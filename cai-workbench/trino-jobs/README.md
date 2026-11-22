@@ -33,6 +33,10 @@ SELECT Outlier_Type, COUNT(*) FROM iceberg.defense.vessel_outliers GROUP BY 1;
 
 Build step (session or project): `bash cai-workbench/trino-jobs/cdsw-build.sh`
 
+## `SystemExit: 0` / Engine exited with status 1 (job was OK)
+
+If the log shows **`OK statements: N`** and **`SystemExit: 0`**, Trino finished successfully; the CML **Jupyter kernel** still reports a failed engine. Use a **Scheduled Job** pointing at `cml_job.py` (not a notebook cell), or `git pull` for the kernel-safe exit path in `cml_job.py` (success does not raise `SystemExit` in ipykernel).
+
 ## `OK statements: 0/2` / syntax error at line 501 (`;`)
 
 The job reads `~/cdw-analyse/run_lagebild_views.py` from the **full git repo**, not only `cai-workbench`. A feature-branch checkout often leaves that file old while `git pull` says "Already up to date".

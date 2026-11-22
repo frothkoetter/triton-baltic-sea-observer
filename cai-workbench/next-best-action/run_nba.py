@@ -87,6 +87,7 @@ def _filter_kernel_argv(argv: list[str] | None = None) -> list[str]:
 
 from src.alert_rules import NoAlertFound
 from src.config import Settings
+from src.persistence import require_nba_core_tables
 from src.pipeline import run_pipeline
 
 
@@ -171,6 +172,9 @@ def main() -> int:
     if args.phase is not None:
         os.environ["NBA_PHASE"] = str(args.phase)
         settings = Settings()
+
+    if settings.persist_trino and not settings.offline_snapshots:
+        require_nba_core_tables(settings)
 
     try:
         result = run_pipeline(settings)

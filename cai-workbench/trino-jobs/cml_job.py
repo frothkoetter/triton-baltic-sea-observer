@@ -54,6 +54,21 @@ def _sync_trino_env_from_lagebild() -> None:
             os.environ[dst] = val
 
 
+def _in_jupyter_kernel() -> bool:
+    return (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+
+
+def _exit_job(rc: int) -> None:
+    """CML Jupyter kernel marks Engine failed on any SystemExit, even rc=0."""
+    if _in_jupyter_kernel() and rc == 0:
+        return
+    raise SystemExit(rc)
+
+
 def _run() -> int:
     root = _package_root()
     os.chdir(root)
@@ -63,4 +78,4 @@ def _run() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(_run())
+    _exit_job(_run())
