@@ -108,6 +108,7 @@ Defined in `das_acoustic_engine.THREAT_CLASSES`:
 | `cui_sabotage_tap` | ~340 Hz impulse |
 | `cable_strain_anomaly` | ~1.2 Hz step strain |
 | `anchor_slip` | Staccato anchor slip bursts on cable |
+| `anchor_drop_tow` | Local +42 dB impulse, broadband to 1 kHz (Ankerwurf/Schlepp) |
 | `uboat_acoustic` | Low tonal cavitation / machinery (~14–38 Hz) |
 | `whale_vocalization` | Chirped call sequences (~52 Hz band) |
 | `hard_beep` | Sharp periodic beep (~620 Hz) |

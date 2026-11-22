@@ -6,6 +6,7 @@ THREAT_CLASSES = [
     "trawler_scrape",
     "anchor_drag",
     "anchor_slip",
+    "anchor_drop_tow",
     "cui_sabotage_tap",
     "cable_strain_anomaly",
     "uboat_acoustic",

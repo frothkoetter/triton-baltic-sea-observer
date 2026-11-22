@@ -42,6 +42,11 @@ Configure **UpdateAttribute**: “Delete attributes” = `false`, “Store state
 | `model_confidence` | `${das.model.confidence}` | Optional — classifier leg |
 | `spectral_peak_hz` | *(leave empty or `${das.spectral.peak_hz}`)* | Optional ML features |
 | `energy_rms` | *(leave empty or `${das.energy.rms}`)* | Optional ML features |
+| `das.monitor.name` | `DAS-Seekabel Akustik-Monitor` | Simulator **Monitor Signal** `SEEKABEL_ANKERWURF_KM42` |
+| `das.signal.profile` | Impuls +42 dB / BB bis 1 kHz | same |
+| `das.alarm.level` | `ALARM` | same |
+| `das.alarm.message` | `ALARM — Ankerwurf / Schleppvorgang (km 42)` | same |
+| `das.alarm.chainage_km` | `42` | same |
 
 ### Attributes you have today — direct mapping
 

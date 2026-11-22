@@ -24,6 +24,7 @@ THREAT_CLASSES = (
     "trawler_scrape",
     "anchor_drag",
     "anchor_slip",
+    "anchor_drop_tow",
     "cui_sabotage_tap",
     "cable_strain_anomaly",
     "uboat_acoustic",
@@ -36,6 +37,20 @@ DEFAULT_WINDOW_S = 4.0
 MAX_WINDOW_S = 30.0
 DEFAULT_CHANNELS = 48
 DEFAULT_SEGMENTS = 6
+
+# Preset monitor scenarios (NiFi property ``Monitor Signal``).
+DAS_MONITOR_SIGNALS: Dict[str, Dict[str, Any]] = {
+    "SEEKABEL_ANKERWURF_KM42": {
+        "monitor_name": "DAS-Seekabel Akustik-Monitor",
+        "signal_profile": (
+            "Scharfer lokaler Impuls (+42 dB) mit energiereichem Breitbandspektrum bis 1.000 Hz."
+        ),
+        "alarm_level": "ALARM",
+        "alarm_message": "ALARM — Ankerwurf / Schleppvorgang (km 42)",
+        "chainage_km": 42.0,
+        "threat_class": "anchor_drop_tow",
+    },
+}
 
 
 @dataclass
@@ -117,6 +132,7 @@ _THREAT_TONE_HZ: Dict[str, float] = {
     "trawler_scrape": 88.0,
     "anchor_drag": 5.5,
     "anchor_slip": 4.8,
+    "anchor_drop_tow": 120.0,
     "cui_sabotage_tap": 340.0,
     "cable_strain_anomaly": 1.2,
     "uboat_acoustic": 14.0,
@@ -179,6 +195,37 @@ def _synthesize_waveform(
             data[ch] += slip * rng.uniform(-0.12, 0.12)
         return data.astype(np.float32)
 
+    if threat == "anchor_drop_tow":
+        # Localized anchor drop / tow: sharp impulse (+42 dB rel. noise) + broadband to 1 kHz.
+        center_ch = n_channels // 2
+        local_chs = range(max(0, center_ch - 2), min(n_channels, center_ch + 3))
+        baseline = 0.03
+        peak_amp = baseline * (10.0 ** (42.0 / 20.0))
+        t0 = max(8, n_samples // 3)
+        impulse_len = max(6, int(fs * 0.003))
+        env = np.zeros(n_samples)
+        env[t0 : min(n_samples, t0 + impulse_len)] = 1.0
+        decay_len = int(min(n_samples - t0, fs * 0.45))
+        if decay_len > impulse_len:
+            decay_t = np.arange(decay_len - impulse_len) / fs
+            env[t0 + impulse_len : t0 + decay_len] = np.exp(-decay_t / 0.12)
+        max_hz = min(1000.0, fs / 2.0 - 1.0)
+        rng_local = np.random.default_rng(rng.randint(0, 2**31 - 1))
+        broadband = np.zeros(n_samples)
+        n_modes = 48
+        for k in range(1, n_modes + 1):
+            freq = 25.0 + (max_hz - 25.0) * (k / n_modes)
+            phase = rng_local.uniform(0, 2 * np.pi)
+            broadband += (1.0 / np.sqrt(k)) * np.sin(2 * np.pi * freq * t + phase)
+        broadband /= np.max(np.abs(broadband)) + 1e-12
+        rng_noise = rng_local.standard_normal(n_samples)
+        event = env * (0.7 * broadband + 0.3 * rng_noise / (np.std(rng_noise) + 1e-12))
+        event[t0 : min(n_samples, t0 + impulse_len)] += peak_amp
+        for ch in local_chs:
+            taper = 1.0 - 0.18 * abs(ch - center_ch)
+            data[ch] += taper * event
+        return data.astype(np.float32)
+
     if threat == "uboat_acoustic":
         cav = 0.45 + 0.55 * np.sin(2 * np.pi * 0.35 * t)
         for ch in range(n_channels):
@@ -239,11 +286,12 @@ def _synthesize_waveform(
 def _pick_threat_mix(rng: random.Random, segments: int) -> List[str]:
     """Realistic mix along a cable patrol window."""
     weights = {
-        "ambient": 0.14,
+        "ambient": 0.08,
         "vessel_passage": 0.18,
         "trawler_scrape": 0.08,
         "anchor_drag": 0.1,
         "anchor_slip": 0.08,
+        "anchor_drop_tow": 0.06,
         "cui_sabotage_tap": 0.06,
         "cable_strain_anomaly": 0.08,
         "uboat_acoustic": 0.1,
@@ -264,6 +312,7 @@ def generate_das_batch(
     fs_hz: float = DEFAULT_FS_HZ,
     seed: Optional[int] = None,
     threat_labels: Optional[Sequence[str]] = None,
+    monitor_signal: Optional[str] = None,
 ) -> Tuple[List[DasSegment], Dict[str, Any]]:
     rng = random.Random(seed)
     asset = cable_asset.upper()
@@ -275,12 +324,27 @@ def generate_das_batch(
     if len(labels) < n_segments:
         labels.extend(_pick_threat_mix(rng, n_segments - len(labels)))
 
+    inject_chainage_m: Optional[float] = None
+    inject_threat: Optional[str] = None
+    monitor_meta: Optional[Dict[str, Any]] = None
+    if monitor_signal and monitor_signal in DAS_MONITOR_SIGNALS:
+        monitor_meta = dict(DAS_MONITOR_SIGNALS[monitor_signal])
+        inject_threat = str(monitor_meta["threat_class"])
+        inject_chainage_m = float(monitor_meta["chainage_km"]) * 1000.0
+        inject_chainage_m = min(max(0.0, inject_chainage_m), length_m)
+        labels[0] = inject_threat
+
     n_samples = int(window_s * fs_hz)
     segments: List[DasSegment] = []
     for i in range(n_segments):
-        chainage = (i + 0.5) / n_segments * length_m * rng.uniform(0.92, 1.0)
+        if i == 0 and inject_chainage_m is not None:
+            chainage = inject_chainage_m
+        else:
+            chainage = (i + 0.5) / n_segments * length_m * rng.uniform(0.92, 1.0)
         pos = interpolate_chainage(verts, chainage)
         threat = labels[i % len(labels)]
+        if i == 0 and inject_threat:
+            threat = inject_threat
         channels = _synthesize_waveform(threat, n_samples, fs_hz, n_channels, rng)
         # Collapse to virtual single-mode average + dominant channel STFT for storage
         avg = channels.mean(axis=0)
@@ -311,6 +375,8 @@ def generate_das_batch(
         "window_s": window_s,
         "fs_hz": fs_hz,
         "threat_classes": list(THREAT_CLASSES),
+        "monitor_signal": monitor_signal,
+        "monitor": monitor_meta,
         "segments": [
             {
                 "index": s.segment_index,
@@ -323,6 +389,24 @@ def generate_das_batch(
         ],
     }
     return segments, batch_meta
+
+
+def monitor_signal_attributes(batch_meta: Dict[str, Any]) -> Dict[str, str]:
+    """FlowFile attrs for preset DAS-Seekabel Akustik-Monitor scenarios."""
+    mon = batch_meta.get("monitor")
+    if not isinstance(mon, dict):
+        return {}
+    out = {
+        "das.monitor.name": str(mon.get("monitor_name", "")),
+        "das.signal.profile": str(mon.get("signal_profile", "")),
+        "das.alarm.level": str(mon.get("alarm_level", "")),
+        "das.alarm.message": str(mon.get("alarm_message", "")),
+    }
+    if mon.get("chainage_km") is not None:
+        out["das.alarm.chainage_km"] = str(mon["chainage_km"])
+    if batch_meta.get("monitor_signal"):
+        out["das.monitor.signal"] = str(batch_meta["monitor_signal"])
+    return out
 
 
 def batch_geolocation_attributes(segments: Sequence[DasSegment]) -> Dict[str, str]:
@@ -339,14 +423,24 @@ def batch_geolocation_attributes(segments: Sequence[DasSegment]) -> Dict[str, st
     lons = [s.longitude for s in segments]
     centroid_lat = sum(lats) / len(lats)
     centroid_lon = sum(lons) / len(lons)
-    primary = next(
-        (
-            s
-            for s in segments
-            if s.threat_class not in ("ambient", "vessel_passage")
-        ),
-        segments[0],
+    priority = (
+        "anchor_drop_tow",
+        "cui_sabotage_tap",
+        "anchor_slip",
+        "anchor_drag",
+        "hard_beep",
+        "uboat_acoustic",
     )
+    primary = None
+    for p in priority:
+        primary = next((s for s in segments if s.threat_class == p), None)
+        if primary:
+            break
+    if primary is None:
+        primary = next(
+            (s for s in segments if s.threat_class not in ("ambient", "vessel_passage")),
+            segments[0],
+        )
     return {
         "latitude": f"{centroid_lat:.6f}",
         "longitude": f"{centroid_lon:.6f}",

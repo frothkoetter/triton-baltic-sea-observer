@@ -36,6 +36,7 @@ const THREAT_COLORS: Record<string, string> = {
   trawler_scrape: "#ffb74d",
   anchor_drag: "#ff7043",
   anchor_slip: "#f4511e",
+  anchor_drop_tow: "#c62828",
   cui_sabotage_tap: "#e53935",
   cable_strain_anomaly: "#ab47bc",
   uboat_acoustic: "#5e35b1",

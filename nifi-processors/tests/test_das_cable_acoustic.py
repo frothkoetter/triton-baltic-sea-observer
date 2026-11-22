@@ -7,6 +7,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 _ROOT = Path(__file__).resolve().parent.parent
 _UPLOAD = _ROOT / "upload"
 sys.path.insert(0, _UPLOAD.as_posix())
@@ -22,9 +24,11 @@ from cable_corridor_registry import (  # noqa: E402
     resolve_cable_asset,
 )
 from das_acoustic_engine import (  # noqa: E402
+    DAS_MONITOR_SIGNALS,
     MAX_WINDOW_S,
     batch_geolocation_attributes,
     generate_das_batch,
+    monitor_signal_attributes,
     read_hdf5_features_from_bytes,
     write_hdf5_batch,
     THREAT_CLASSES,
@@ -92,11 +96,49 @@ class TestDasCableAcoustic(unittest.TestCase):
         self.assertAlmostEqual(meta["window_s"], 30.0)
         self.assertEqual(int(segments[0].channels.shape[1]), int(30.0 * meta["fs_hz"]))
 
+    def test_seekabel_monitor_signal_km42(self):
+        segments, batch_meta = generate_das_batch(
+            "BALTICCONNECTOR",
+            n_segments=4,
+            n_channels=16,
+            window_s=6.0,
+            seed=11,
+            monitor_signal="SEEKABEL_ANKERWURF_KM42",
+        )
+        self.assertEqual(segments[0].threat_class, "anchor_drop_tow")
+        self.assertAlmostEqual(segments[0].chainage_m, 42_000.0, delta=1.0)
+        self.assertIn("monitor", batch_meta)
+        attrs = monitor_signal_attributes(batch_meta)
+        self.assertEqual(attrs["das.monitor.name"], "DAS-Seekabel Akustik-Monitor")
+        self.assertIn("+42 dB", attrs["das.signal.profile"])
+        self.assertEqual(attrs["das.alarm.level"], "ALARM")
+        self.assertIn("Ankerwurf", attrs["das.alarm.message"])
+        geo = batch_geolocation_attributes(segments)
+        self.assertEqual(geo["das.threat_class"], "anchor_drop_tow")
+        self.assertIn("anchor_drop_tow", THREAT_CLASSES)
+        self.assertIn("SEEKABEL_ANKERWURF_KM42", DAS_MONITOR_SIGNALS)
+
+    def test_anchor_drop_tow_has_local_peak(self):
+        segs, _ = generate_das_batch(
+            "BALTICCONNECTOR",
+            n_segments=1,
+            threat_labels=["anchor_drop_tow"],
+            n_channels=24,
+            window_s=4.0,
+            seed=7,
+        )
+        ch = segs[0].channels
+        center = ch.shape[0] // 2
+        edge_peak = max(float(np.max(np.abs(ch[0]))), float(np.max(np.abs(ch[-1]))))
+        center_peak = float(np.max(np.abs(ch[center])))
+        self.assertGreater(center_peak, edge_peak * 1.5)
+
     def test_underwater_threat_synthesis(self):
         for threat in (
             "uboat_acoustic",
             "whale_vocalization",
             "anchor_slip",
+            "anchor_drop_tow",
             "hard_beep",
         ):
             segs, _ = generate_das_batch(
