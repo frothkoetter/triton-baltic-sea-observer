@@ -18,6 +18,7 @@ from cable_corridor_registry import (  # noqa: E402
     cable_vertices,
 )
 from das_acoustic_engine import (  # noqa: E402
+    batch_geolocation_attributes,
     generate_das_batch,
     read_hdf5_features_from_bytes,
     write_hdf5_batch,
@@ -50,6 +51,18 @@ class TestDasCableAcoustic(unittest.TestCase):
             segments, meta = generate_das_batch(key, n_segments=2, n_channels=8, seed=0)
             self.assertEqual(len(segments), 2, msg=key)
             self.assertEqual(meta["cable_id"], cable_meta(key)["id"])
+
+    def test_batch_geolocation_attributes(self):
+        segments, _ = generate_das_batch("BALTICCONNECTOR", n_segments=4, n_channels=8, seed=2)
+        geo = batch_geolocation_attributes(segments)
+        self.assertIn("latitude", geo)
+        self.assertIn("longitude", geo)
+        self.assertIn("das.segment.lat", geo)
+        self.assertIn("das.segment.lon", geo)
+        lat = float(geo["latitude"])
+        lon = float(geo["longitude"])
+        self.assertTrue(59.0 < lat < 60.5)
+        self.assertTrue(23.0 < lon < 25.5)
 
     def test_hdf5_roundtrip(self):
         segments, meta = generate_das_batch("BALTICCONNECTOR", n_segments=4, n_channels=16, seed=1)

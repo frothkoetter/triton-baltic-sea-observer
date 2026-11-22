@@ -15,6 +15,7 @@ from das_acoustic_engine import (
     DEFAULT_FS_HZ,
     DEFAULT_SEGMENTS,
     DEFAULT_WINDOW_S,
+    batch_geolocation_attributes,
     generate_das_batch,
     write_hdf5_batch,
 )
@@ -30,7 +31,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.1.0'
+        version = '1.2.0'
         description = (
             'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
             'EMODnet Baltic cables/pipelines (7 assets) — anchor drag & CUI scenarios.'
@@ -153,10 +154,12 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 "das.cable.name": meta["name"],
                 "das.segment.count": str(len(segments)),
                 "das.channel.count": str(n_ch),
+                "das.window.seconds": str(win_s),
                 "das.fs_hz": str(int(fs)),
                 "das.threat.classes": threats,
                 "filename": f"das_{asset.lower()}_{len(segments)}seg.h5" if fmt == "hdf5" else f"das_{asset.lower()}_preview.json",
             }
+            attrs.update(batch_geolocation_attributes(segments))
             return FlowFileTransformResult(contents=body, attributes=attrs, relationship="success")
         except Exception as e:
             self.logger.error(f"DAS simulation failed: {e}")
