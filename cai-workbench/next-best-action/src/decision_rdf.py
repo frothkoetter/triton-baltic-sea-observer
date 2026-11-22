@@ -57,6 +57,9 @@ def decision_record_to_ttl(
             if row.get("gates_passed"):
                 best = row.get("coa_id") or row.get("coa", {}).get("coa_id")
                 break
+        if not best:
+            row0 = ranked[0]
+            best = row0.get("coa_id") or row0.get("coa", {}).get("coa_id")
     playbook_best = (sections.get("3_ranked_coas") or {}).get("playbook_best_coa_id")
     g = grounding or (sections.get("4_rules_and_ontology") or {}).get("grounding") or {}
 

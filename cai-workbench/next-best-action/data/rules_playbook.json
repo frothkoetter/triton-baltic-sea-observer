@@ -34,6 +34,19 @@
       "required_notes": ["pipeline_sovereignty"]
     },
     {
+      "id": "LAGEBILD_BASELINE",
+      "alert_types": [
+        "lagebild_signal",
+        "reference_vessel",
+        "sitrep_escalation",
+        "demo_greifswald"
+      ],
+      "message": "Default Baltic HITL: passive/multidomain first (COA D/A), MC 362/2 disclosure discipline.",
+      "full_text": "Generic lagebild or training cue — apply MC 362/2–compatible first response and passive ISR unless FLASH priority dictates otherwise.",
+      "ontology_term": "triton:LagebildSignal",
+      "rulebook_ref": "NATO:MC362-2§collective-opsec"
+    },
+    {
       "id": "RUS_FLEET_DEESCALATION",
       "alert_types": ["rus_fleet_proximity"],
       "message": "Russian fleet proximity: passive ISR first; surface escalation requires explicit ROE gate.",

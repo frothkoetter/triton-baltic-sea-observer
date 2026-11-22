@@ -42,6 +42,21 @@
       "iri": "triton:TrainingScenarioGreifswald",
       "label": "Training scenario — Greifswald / Adlergrund",
       "business_rule_ids": ["BR-SANCTIONS-005", "BR-NBA-HITL-006"]
+    },
+    "lagebild_signal": {
+      "iri": "triton:LagebildSignal",
+      "label": "Lagebild priority signal",
+      "business_rule_ids": ["BR-NBA-HITL-006"]
+    },
+    "reference_vessel": {
+      "iri": "triton:ReferenceVesselCue",
+      "label": "NATO reference vessel cue",
+      "business_rule_ids": ["BR-NBA-HITL-006"]
+    },
+    "pipeline_blackout": {
+      "iri": "triton:AISBlackoutNearCriticalInfrastructure",
+      "label": "AIS blackout near pipeline (detector alias)",
+      "business_rule_ids": ["BR-CUI-PIPE-002", "BR-OPSEC-AIS-001"]
     }
   },
   "rulebook_refs": {

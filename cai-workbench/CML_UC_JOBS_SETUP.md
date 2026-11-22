@@ -180,6 +180,7 @@ Outputs: `artifacts/reports/nato_sitrep_*.pdf`; with S3 upload, same prefix as *
 | `NBA_EXIT_IF_QUIET` | **`1` on scheduled job** |
 | `NBA_MATERIALIZE` | `1` if Phase 6 materialized tables |
 | `NBA_SHACL_GATE` | `1` block persist on SHACL failure |
+| `NBA_AUTO_PIP` | `1` (default) install `requirements.txt` on missing `pyshacl`/`rdflib` |
 | `NBA_SIM_TICKS` | `6` when simulation runs |
 | `NBA_PIPELINE_BLACKOUT` | `1` |
 | `NBA_DAS_CABLE_THREAT` | `1` |
@@ -230,7 +231,7 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | UC2 job “failed” but no alert | Set `NBA_EXIT_IF_QUIET=1` on the job |
 | SITREP empty in UI | UC1 S3 upload + matching prefix; check object store credentials |
 | `l agebild_views` 0/2 statements | `git pull main`; run from full repo with current `run_lagebild_views.py` |
-| SHACL blocks persist | Fix `decision_record.ttl` or set `NBA_SHACL_GATE=0` in lab |
+| SHACL blocks persist | Log shows `shacl_engine=dependency-error` → `pip install 'pyparsing>=3.1.0' -r requirements.txt` or `NBA_AUTO_PIP=1` on job; else read `artifacts/nba/<uuid>/shacl_report.json` or set `NBA_SHACL_GATE=0` in lab |
 | UC2 `cannot import name 'apply_jdbc_url_env' from run_trino_ddl` | `git pull origin main` (full repo including `cdw-analyse/trino_endpoint.py`); NBA imports `apply_all_trino_env` from there |
 | UC2 log shows `Cell In[` | Scheduled Job script `next-best-action/cml_job.py`, not notebook |
 

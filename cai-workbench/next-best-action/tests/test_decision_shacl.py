@@ -91,6 +91,43 @@ class TestDecisionShacl(unittest.TestCase):
             )
         execute.assert_called_once()
 
+    def test_lagebild_signal_ttl_conforms(self):
+        from datetime import datetime, timezone
+        import uuid
+
+        from src.alert_types import NbaAlert
+
+        alert = NbaAlert(
+            flow_uuid=str(uuid.uuid4()),
+            alert_type="lagebild_signal",
+            priority="PRIORITY",
+            latitude=54.5,
+            longitude=14.0,
+            theatre="Baltic",
+            created_at=datetime.now(timezone.utc),
+            payload={},
+        )
+        env = EnvironmentContext.from_alert_payload({})
+        ranked = rank_coas(env)
+        legal = evaluate_playbook(alert, ranked)
+        grounding = build_grounding(
+            alert, legal, ranked, playbook_best="A", best_coa_id="A"
+        )
+        decision = {
+            "flow_uuid": alert.flow_uuid,
+            "generated_at": "2026-11-18T12:00:00+00:00",
+            "sections": {
+                "3_ranked_coas": {
+                    "best_coa_id": "A",
+                    "coa_scores": [s.to_dict() for s in ranked],
+                },
+                "4_rules_and_ontology": {"grounding": grounding.to_dict()},
+            },
+        }
+        _, report = validate_decision_artifacts(decision, grounding.to_dict())
+        if report.engine == "pyshacl":
+            self.assertTrue(report.conforms, report.report_text[:800])
+
     def test_phase1_writes_ttl_and_shacl_report(self):
         settings = Settings()
         settings.demo_mode = True

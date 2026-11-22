@@ -147,11 +147,21 @@ def build_grounding(
             }
         )
 
+    ontology_version = str(onto.get("version") or "unknown")
+    incident_concept = at.get("iri")
+    incident_concept_label = at.get("label")
+    if not incident_concept:
+        slug = alert.alert_type.replace("-", "_")
+        incident_concept = f"triton:{''.join(p.capitalize() for p in slug.split('_'))}Event"
+        incident_concept_label = incident_concept_label or (
+            f"NBA alert type `{alert.alert_type}` (ontology fallback)"
+        )
+
     return IncidentGrounding(
-        ontology_version=str(onto.get("version", "")),
-        incident_concept=at.get("iri"),
-        incident_concept_label=at.get("label"),
-        alert_type_iri=at.get("iri"),
+        ontology_version=ontology_version,
+        incident_concept=incident_concept,
+        incident_concept_label=incident_concept_label,
+        alert_type_iri=at.get("iri") or incident_concept,
         rulebook_refs=rulebook_refs,
         rule_citations=citations,
         business_rule_bindings=_business_rule_bindings(alert.alert_type),
