@@ -90,7 +90,10 @@ run_ddl() {
 if [[ -x "$PY" ]] || command -v python3 >/dev/null; then
   echo ""
   echo "==> CDW Trino doctor (optional connectivity checks)"
-  "$PY" "${ROOT}/trino_cdw_doctor.py" || true
+  "$PY" "${ROOT}/trino_cdw_doctor.py" || {
+    echo "Doctor failed — fix TRINO_SERVER / warehouse Running before DDL." >&2
+    exit 1
+  }
 fi
 
 run_ddl "$DDL" 0
