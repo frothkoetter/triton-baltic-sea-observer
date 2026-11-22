@@ -227,6 +227,8 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | SITREP empty in UI | UC1 S3 upload + matching prefix; check object store credentials |
 | `l agebild_views` 0/2 statements | `git pull main`; run from full repo with current `run_lagebild_views.py` |
 | SHACL blocks persist | Fix `decision_record.ttl` or set `NBA_SHACL_GATE=0` in lab |
+| UC2 `cannot import name 'apply_jdbc_url_env' from run_trino_ddl` | `git pull origin main` (full repo including `cdw-analyse/trino_endpoint.py`); NBA imports `apply_all_trino_env` from there |
+| UC2 log shows `Cell In[` | Scheduled Job script `next-best-action/cml_job.py`, not notebook |
 
 ---
 
