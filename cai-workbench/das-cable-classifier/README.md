@@ -31,7 +31,13 @@ python3 scripts/validate_nifi_ml.py
 |----------|--------|
 | `fit.py` | Experiment — Training |
 | `predict.py` | Model Deployment — `predict({ "hdf5_bytes_base64": "..." })` |
-| `model.pkl` | Gesynct von Training |
+| `model.pkl` | Gesynct von Training oder Build (`bundled/model.pkl` → Root) |
+| `cdsw-build.sh` | Engine Build — `pip install` + Kopie `bundled/model.pkl` |
+| `bundled/model.pkl` | Vorgefertigtes Modell im Repo (Deploy ohne Experiment) |
+
+**Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`**, Input function **`predict`**. Build engine = `cdsw-build.sh`.
+
+Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — CML setzt `CDSW_WORKING_DIRECTORY` oft auf `/home/cdsw`; `predict.py` lädt relativ zu `predict.py` bzw. `bundled/model.pkl` (nach `git pull` + Redeploy).
 
 ### predict API
 
