@@ -84,6 +84,9 @@ class Settings:
     enable_pipeline_blackout: bool = field(
         default_factory=lambda: _env_bool("NBA_PIPELINE_BLACKOUT", True)
     )
+    enable_das_cable_threat: bool = field(
+        default_factory=lambda: _env_bool("NBA_DAS_CABLE_THREAT", True)
+    )
     lagebild_artifacts_dir: Path | None = field(default=None)
     skip_llm: bool = field(
         default_factory=lambda: _env_bool("NBA_SKIP_LLM", False)

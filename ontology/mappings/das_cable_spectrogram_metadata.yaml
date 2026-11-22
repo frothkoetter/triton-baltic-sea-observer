@@ -1,0 +1,121 @@
+# Datasource mapping: defense.das_cable_spectrogram_metadata → DasCableSpectrogramMetadata
+# Import with ontology/triton_defense_ontology.yaml (object type + linkTypes).
+
+apiVersion: triton/ontology-mapping/v1
+objectType: DasCableSpectrogramMetadata
+
+backingDatasource:
+  catalog: Hive
+  database: defense
+  table: das_cable_spectrogram_metadata
+  qualifiedName: defense.das_cable_spectrogram_metadata
+  storage: iceberg
+  primaryKey:
+    - hadoop_file_url
+    - segment_index
+
+columnMappings:
+  - column: hadoop_file_url
+    property: hadoopFileUrl
+    type: string
+    nifiAttribute: hadoop.file.url
+    cdvField: hadoop_file_url
+    cdvParameter: das_hadoop_file_url
+
+  - column: segment_index
+    property: segmentIndex
+    type: integer
+    nifiAttribute: das.segment.index
+    cdvField: segment_index
+    cdvParameter: das_segment_index
+
+  - column: cable_asset
+    property: cableAsset
+    type: string
+    nifiAttribute: das.cable.asset
+    cdvField: cable_asset
+    cdvParameter: das_cable_asset
+
+  - column: cable_id
+    property: cableId
+    type: string
+    nifiAttribute: das.cable.id
+    cdvField: cable_id
+    cdvParameter: das_cable_id
+
+  - column: cable_name
+    property: cableName
+    type: string
+    nifiAttribute: das.cable.name
+    cdvField: cable_name
+    cdvParameter: das_cable_name
+
+  - column: chainage_m
+    property: chainageMeters
+    type: double
+    nifiAttribute: das.chainage_m
+    cdvField: chainage_m
+    cdvParameter: das_chainage_m
+
+  - column: segment_lat
+    property: segmentLatitude
+    type: double
+    nifiAttribute: das.segment.lat
+    cdvField: segment_lat
+    cdvParameter: das_segment_lat
+
+  - column: segment_lon
+    property: segmentLongitude
+    type: double
+    nifiAttribute: das.segment.lon
+    cdvField: segment_lon
+    cdvParameter: das_segment_lon
+
+  - column: threat_class
+    property: threatClass
+    type: string
+    nifiAttribute: das.threat_class
+    cdvField: threat_class
+    cdvParameter: das_threat_class
+
+  - column: predicted_threat_type
+    property: predictedThreatType
+    type: string
+    cdvField: predicted_threat_type
+    cdvParameter: das_predicted_threat_type
+
+  - column: model_confidence
+    property: modelConfidence
+    type: double
+    cdvField: model_confidence
+    cdvParameter: das_model_confidence
+
+  - column: channel_count
+    property: channelCount
+    type: integer
+    nifiAttribute: das.channel.count
+    cdvField: channel_count
+
+  - column: window_seconds
+    property: windowSeconds
+    type: double
+    nifiAttribute: das.window.seconds
+    cdvField: window_seconds
+
+  - column: fs_hz
+    property: sampleRateHz
+    type: double
+    nifiAttribute: das.fs_hz
+    cdvField: fs_hz
+
+  - column: filename
+    property: filename
+    type: string
+    nifiAttribute: filename
+    cdvField: filename
+
+  - column: ingested_at
+    property: ingestedAt
+    type: timestamp
+    cdvField: ingested_at
+    cdvParameter: das_ingested_at

@@ -84,6 +84,7 @@ flowchart TB
 | **Trino batch jobs** | [`cai-workbench/trino-jobs/`](./cai-workbench/trino-jobs/) | CML utilities to refresh Lagebild-oriented Trino views. |
 | **LiDAR classifier** | [`cai-workbench/lidar-vessel-classifier/`](./cai-workbench/lidar-vessel-classifier/) | Train/deploy RandomForest on LAS features; S3-backed fit/predict for CML model serving. |
 | **DAS cable classifier** | [`cai-workbench/das-cable-classifier/`](./cai-workbench/das-cable-classifier/) | Spectrogram/HDF5 threat typing (anchor drag, CUI) — pairs with `DasCableAcousticSimulator` NiFi output. |
+| **DAS CDW / Lagebild** | `defense.das_cable_spectrogram_metadata`, `analytics_das_cable.trino.sql`, Lagebild `DAS_Cable`, NBA `das_cable_threat`, UI `#das` | Iceberg metadata per spectrogram segment (parallel to LiDAR LAS catalog). |
 | **Agent console bridge** | [`cai-workbench/agent-console/`](./cai-workbench/agent-console/) | Python chat bridge wired from `triton-ui` **Agenten** tab. |
 | **CML agent tools** | [`cai-agent/`](./cai-agent/) | Reusable CrewAI tools: CDW SQL query, schema introspection, weather. |
 | **RAG corpus** | [`cai-rag/`](./cai-rag/) | Static reference corpora (maritime operations notes, sample airspace bulletins) for retrieval-augmented prompts. |
@@ -117,6 +118,7 @@ Simulation-backed **Next Best Action** on the same `defense` schema and NiFi sim
 | Implementation plan | [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) |
 | Mission Planning + SAP D&S | [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) |
 | NiFi Simulator-Steuerung | [`docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md`](./docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md) |
+| C2SIM (SISO-STD-019) + Triton | [`docs/IMPLEMENTIERUNGSPLAN_C2SIM_TRITON.md`](./docs/IMPLEMENTIERUNGSPLAN_C2SIM_TRITON.md) |
 | Business rules + Trino | [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md) |
 | Iceberg snapshots (Trino) | [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md) |
 

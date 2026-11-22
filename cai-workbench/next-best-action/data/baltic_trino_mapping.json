@@ -58,9 +58,14 @@
           "table": "ostsee_infrastruktur",
           "role": "Cables, landing points, offshore assets",
           "key_columns": ["name", "typ", "geometry"]
+        },
+        {
+          "table": "das_cable_spectrogram_metadata",
+          "role": "DAS cable segment spectrogram metadata (HDF5 catalog)",
+          "key_columns": ["hadoop_file_url", "segment_index", "cable_asset", "threat_class", "segment_lat", "segment_lon"]
         }
       ],
-      "api_routes": ["/api/ostsee-infrastructure"]
+      "api_routes": ["/api/ostsee-infrastructure", "/api/das-cable/segments"]
     },
     {
       "entity_id": "MaritimeAnomaly",
@@ -80,7 +85,8 @@
         "Loitering",
         "Misreported Status",
         "Inconsistent Maneuvering",
-        "MMSI Teleportation"
+        "MMSI Teleportation",
+        "DAS Cable Threat"
       ]
     },
     {
@@ -162,6 +168,11 @@
       "primary_tables": ["vessel_outliers", "ais_events_ice", "ostsee_pipelines"],
       "outlier_types": ["Dark Vessel"],
       "detection_sql": "cdw-analyse/sql/alerts/pipeline_blackout_top1.sql"
+    },
+    "das_cable_threat": {
+      "primary_tables": ["das_cable_spectrogram_metadata", "lagebild", "vessel_outliers"],
+      "outlier_types": ["DAS Cable Threat"],
+      "detection_sql": "cai-workbench/next-best-action/sql/alerts/das_cable_threat_top1.sql"
     },
     "gps_jammer": {
       "primary_tables": ["vessel_outliers", "ais_events_ice", "marine_messages"],

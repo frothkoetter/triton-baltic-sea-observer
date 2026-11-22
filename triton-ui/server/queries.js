@@ -635,6 +635,14 @@ export const PREDEFINED = {
     ORDER BY ingested_at DESC
     LIMIT 200
   `,
+  dasCableSegments: `
+    SELECT hadoop_file_url, segment_index, cable_asset, cable_name, chainage_m,
+           segment_lat, segment_lon, threat_class, predicted_threat_type, model_confidence,
+           channel_count, window_seconds, fs_hz, filename, ingested_at
+    FROM defense.das_cable_spectrogram_metadata
+    ORDER BY ingested_at DESC
+    LIMIT 300
+  `,
   fleetKpi: `SELECT COUNT(*) AS cnt FROM defense.german_navy_fleet`,
   personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM defense.german_navy_fleet`,
   surveillanceKpi: `SELECT COUNT(*) AS cnt FROM defense.maritime_surveillance_reports`,

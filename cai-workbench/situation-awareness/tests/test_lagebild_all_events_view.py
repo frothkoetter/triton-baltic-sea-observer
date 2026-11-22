@@ -45,6 +45,8 @@ class TestLagebildAllEventsDdl(unittest.TestCase):
         self.assertIn("GpsJammerLatestPerTile", snapshot)
         self.assertIn("FilteredVesselOutliers", snapshot)
         self.assertIn("'AIS_Outlier'", snapshot)
+        self.assertIn("FilteredDasCableSegments", snapshot)
+        self.assertIn("'DAS_Cable'", snapshot)
 
     def test_all_events_drops_latest_dedupe(self) -> None:
         section = _trino_all_events_section()

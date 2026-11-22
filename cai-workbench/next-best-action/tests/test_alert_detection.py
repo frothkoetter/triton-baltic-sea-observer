@@ -8,7 +8,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from src.alert_detector import alert_from_lagebild_row, alert_from_pipeline_row
+from src.alert_detector import (
+    alert_from_das_cable_row,
+    alert_from_lagebild_row,
+    alert_from_pipeline_row,
+)
 from src.alert_rules import NoAlertFound, demo_greifswald_alert, next_alert
 from src.config import Settings
 from src import sitrep_bridge
@@ -28,6 +32,36 @@ class TestAlertMapping(unittest.TestCase):
             }
         )
         self.assertEqual(alert.alert_type, "ais_pipeline_blackout")
+        self.assertEqual(alert.priority, "FLASH")
+
+    def test_das_cable_row_cui_flash(self):
+        alert = alert_from_das_cable_row(
+            {
+                "cable_asset": "BALTICCONNECTOR",
+                "cable_name": "Balticconnector",
+                "threat_class": "cui_sabotage_tap",
+                "predicted_threat_type": "cui_sabotage_tap",
+                "chainage_m": 12000,
+                "segment_lat": 59.7,
+                "segment_lon": 21.1,
+                "model_confidence": 0.9,
+            }
+        )
+        self.assertEqual(alert.alert_type, "das_cable_threat")
+        self.assertEqual(alert.priority, "FLASH")
+
+    def test_lagebild_das_cable_branch(self):
+        alert = alert_from_lagebild_row(
+            {
+                "Data_Source": "DAS_Cable",
+                "ID": "das_bc.h5#2",
+                "harbour_name": "Kiel",
+                "latitude": 54.32,
+                "longitude": 10.12,
+                "details": "Cable: Balticconnector | Threat: anchor_drag",
+            }
+        )
+        self.assertEqual(alert.alert_type, "das_cable_threat")
         self.assertEqual(alert.priority, "FLASH")
 
     def test_lagebild_gps_jammer(self):
