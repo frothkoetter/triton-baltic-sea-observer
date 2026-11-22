@@ -1,5 +1,7 @@
 # Local CDW Trino DDL (`setup_cdw_trino_local.sh`)
 
+**Full day-one checklist (CDW DDL + CML UI):** [TRINO_SETUP_RUNBOOK.md](./TRINO_SETUP_RUNBOOK.md)
+
 ## Symptom: every query returns `error 404` (even `SELECT version()`)
 
 That is **not** missing table/schema metadata. The Python client never reached a live Trino coordinator.
