@@ -88,10 +88,70 @@ def transform_sql(text: str) -> str:
     text = re.sub(r"(?im)^drop table if exists\b", "DROP TABLE IF EXISTS", text)
     text = re.sub(r"(?im)^drop table\b(?! if)", "DROP TABLE IF EXISTS", text)
 
+    if _should_qualify_schema():
+        text = _qualify_defense_objects(text)
+
     return text
 
 
-def _skip_create_schema(stmts: List[str]) -> List[str]:
+def _should_qualify_schema() -> bool:
+    if os.environ.get("TRINO_QUALIFY_SCHEMA", "").strip().lower() in ("1", "true", "yes"):
+        return True
+    return os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
+def _qualify_defense_objects(text: str) -> str:
+    """Session on iceberg.default — objects live in iceberg.defense.* (no USE)."""
+    cat = os.environ.get("TRINO_CATALOG", "iceberg")
+    sch = os.environ.get("TRINO_SCHEMA", "defense")
+    prefix = f"{cat}.{sch}."
+
+    def _qualify_table_refs(body: str) -> str:
+        # View bodies: FROM ships / JOIN ships without catalog (DDL file convention).
+        return re.sub(
+            r"(?i)\b(FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)\b",
+            lambda m: f"{m.group(1)} {prefix}{m.group(2)}"
+            if "." not in m.group(2) and m.group(2).lower() not in ("select", "lateral")
+            else m.group(0),
+            body,
+        )
+
+    def _qualify_stmt_head(m: re.Match[str]) -> str:
+        kw = m.group(1)
+        name = m.group(2)
+        if "." in name:
+            return m.group(0)
+        return f"{kw} {prefix}{name}"
+
+    text = re.sub(
+        r"(?im)^(CREATE TABLE|DROP TABLE IF EXISTS|INSERT INTO)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        _qualify_stmt_head,
+        text,
+    )
+    text = re.sub(
+        r"(?im)^(CREATE OR REPLACE VIEW)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+",
+        lambda m: f"{m.group(1)} {prefix}{m.group(2)} AS "
+        if "." not in m.group(2)
+        else m.group(0),
+        text,
+    )
+    # Qualify view SELECT bodies (statement-local; multi-line views in one stmt).
+    parts = re.split(r"(?im)^(CREATE OR REPLACE VIEW)", text)
+    if len(parts) > 1:
+        out = [parts[0]]
+        for i in range(1, len(parts), 2):
+            header = "CREATE OR REPLACE VIEW" + parts[i]
+            rest = parts[i + 1] if i + 1 < len(parts) else ""
+            out.append(_qualify_table_refs(header + rest))
+        text = "".join(out)
+    return text
+
+
+def _skip_schema_setup(stmts: List[str]) -> List[str]:
     if os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() not in (
         "1",
         "true",
@@ -101,12 +161,18 @@ def _skip_create_schema(stmts: List[str]) -> List[str]:
     kept: List[str] = []
     skipped = 0
     for s in stmts:
-        if re.match(r"(?is)^CREATE\s+SCHEMA\b", s.strip()):
+        st = s.strip()
+        if re.match(r"(?is)^CREATE\s+SCHEMA\b", st):
+            skipped += 1
+            continue
+        if re.match(r"(?is)^USE\s+", st):
             skipped += 1
             continue
         kept.append(s)
     if skipped:
-        print(f"Skipped {skipped} CREATE SCHEMA statement(s) (TRINO_SKIP_CREATE_SCHEMA)")
+        print(
+            f"Skipped {skipped} CREATE SCHEMA / USE statement(s) (TRINO_SKIP_CREATE_SCHEMA)"
+        )
     return kept
 
 
@@ -184,7 +250,7 @@ def connect(*, for_ddl: bool = True, schema: str | None = None):
 def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
-    stmts = _skip_create_schema(split_statements(transformed))
+    stmts = _skip_schema_setup(split_statements(transformed))
     conn = connect(for_ddl=True)
     cur = conn.cursor()
     errors: List[str] = []

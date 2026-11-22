@@ -31,6 +31,7 @@ export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
 export TRINO_PORT="${TRINO_PORT:-443}"
 export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-default}"
 export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
+export TRINO_QUALIFY_SCHEMA="${TRINO_QUALIFY_SCHEMA:-1}"
 
 if [[ -z "${TRINO_PASSWORD:-}" ]]; then
   echo "Set TRINO_PASSWORD in .env.trino.local or the environment." >&2
