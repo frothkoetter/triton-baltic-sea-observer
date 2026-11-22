@@ -50,6 +50,8 @@ Output **HDF5** (`triton/das-cable/v1`). FlowFile attributes include **`latitude
 
 **PutCDPObjectStore:** `filename` is unique per batch (`das_{asset}_{n}seg_{UTC}_{batch12}.h5`) so repeated schedules do not fail with “file with same name already exists”.
 
+**Metadata → Iceberg:** UpdateAttribute column map for `das_cable_spectrogram_metadata`: [`../docs/DAS_NIFI_METADATA_MAP.md`](../docs/DAS_NIFI_METADATA_MAP.md).
+
 | Property | Default |
 |----------|---------|
 | Cable Asset | `BALTICCONNECTOR` (dropdown, 7 values) |
