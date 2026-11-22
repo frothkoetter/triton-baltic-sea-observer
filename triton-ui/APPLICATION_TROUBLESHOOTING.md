@@ -16,7 +16,17 @@ This writes `.nvm`, `node_modules/`, and `dist/` **into the project tree** (pers
 
 Then create/restart the Application.
 
-After **`git pull origin main`**, restart the Application. **`dist/` is in git** (from `0.2.3-das-preview`) so you do **not** need `npm run build` on CML unless you edit `src/`.
+After **`git pull origin main`**, restart the Application. **`dist/` is in git** so you usually **do not** need `npm run build` on CML unless you edit `src/`.
+
+If **`git pull`** aborts with *local changes would be overwritten by merge* on **`triton-ui/dist/index.html`**, you ran **`cdsw-build.sh`** (or a local `npm run build`) before pulling — discard **only** the built assets, then pull:
+
+```bash
+cd "${CDSW_WORKING_DIRECTORY:-$HOME}"
+git restore triton-ui/dist/    # or: git checkout -- triton-ui/dist/
+git pull origin main
+```
+
+Then **restart** the Application. Re-run `bash triton-ui/cdsw-build.sh` only if `/api/version` shows a stale `build` stamp or `distDasPreview: false`.
 
 Verify:
 
