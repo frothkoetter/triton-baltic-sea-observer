@@ -16,7 +16,7 @@ This writes `.nvm`, `node_modules/`, and `dist/` **into the project tree** (pers
 
 Then create/restart the Application.
 
-After **`git pull`**, restart the Application once (or set `TRITON_FORCE_UI_REBUILD=1` on the Application) so `#das` shows spectrogram + audio. Footer build should read **`0.2.1-das-preview`** or newer — if you still see *“reads Iceberg metadata only (wie LiDAR LAS)”*, the `dist/` bundle is stale.
+After **`git pull`**, restart the Application once (or set `TRITON_FORCE_UI_REBUILD=1` on the Application) so `#das` shows spectrogram + audio. Footer and `GET /api/version` → **`build":"0.2.2-das-preview"`** (from `build-stamp.json`). If you still see **`0.2.0-data-mode`**, run `bash cdsw-build.sh` and restart the Application.
 
 ## Application wizard
 
@@ -82,7 +82,7 @@ Open **Application logs** and check:
 | `dist/ missing` | Same |
 | `UI bundle is stale` | Normal after `git pull` — wait for `cdsw-build.sh`, or run it in a Session |
 | Footer **`Alerts: 2`** (no **Trino live \| Demo**) | Stale `dist/` from before PR #130 — `bash cdsw-build.sh` or restart with `TRITON_FORCE_UI_REBUILD=1` |
-| Footer missing **`Build 0.2.0-data-mode`** | Same — old Vite bundle; check `/api/version` |
+| Footer shows **`Build 0.2.0-data-mode`** | Stale `dist/` — `bash cdsw-build.sh`; `curl …/api/version` should show `0.2.2-das-preview` |
 | `Cannot find module` | Run `bash cdsw-build.sh` |
 | Footer **Trino live** / bridge **`error 404`** | Wrong host: use **`triton-trino.…`** (Copy Trino URL), not `cdw-triton.…`. Run `python3 triton-ui/server/trino-bridge.py --env-check`, fix CML Project env, restart Application |
 | Python `trino` errors on API only | OK at startup; set `TRINO_*` env |

@@ -119,7 +119,7 @@ def _ui_bundle_stale() -> bool:
         print("TRITON_FORCE_UI_REBUILD set — rebuilding UI bundle", flush=True)
         return True
     dist_mtime = dist_index.stat().st_mtime
-    markers = [ROOT / "package.json", ROOT / "vite.config.ts", ROOT / "index.html"]
+    markers = [ROOT / "package.json", ROOT / "vite.config.ts", ROOT / "index.html", ROOT / "build-stamp.json"]
     src_dir = ROOT / "src"
     if src_dir.is_dir():
         for path in src_dir.rglob("*"):

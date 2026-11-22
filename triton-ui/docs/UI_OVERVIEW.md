@@ -11,7 +11,7 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | *(default)* | **Lagebild** | Operational map + KPIs + 24h tracks |
 | `#analysen` | **Analysen** | Aggregated analytics (fleet, buoys, RUS, AIS, sanctions, restricted) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
-| `#das` | **DAS Kabel** | Segment catalog + spectrogram/audio preview (S3 HDF5 or demo); footer build ≥ `0.2.1-das-preview` |
+| `#das` | **DAS Kabel** | Segment catalog + spectrogram/audio preview (S3 HDF5 or demo); footer build `0.2.2-das-preview` |
 | `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
 | `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
