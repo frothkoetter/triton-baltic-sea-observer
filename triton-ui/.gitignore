@@ -1,5 +1,5 @@
 node_modules/
-dist/
+# dist/ is committed so CML Applications get DAS UI after git pull without npm build
 .nvm/
 .node-runtime/
 .node-bin

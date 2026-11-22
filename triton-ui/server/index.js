@@ -53,6 +53,7 @@ import {
   sitrepConfigured,
 } from "./sitrep.js";
 import { loadBuildStamp } from "./build-stamp.js";
+import { distDasPreviewBundled } from "./ui-dist-check.js";
 import { validateReadOnlySql } from "./sql-validator.js";
 import {
   AGENT_APPS,
@@ -152,12 +153,17 @@ app.get("/api/map-config", (_req, res) => {
 
 app.get("/api/version", (_req, res) => {
   const stamp = loadBuildStamp();
+  const distPath = path.join(__dirname, "..", "dist");
+  const distUi = distDasPreviewBundled(distPath);
   res.json({
     ok: true,
     app: "triton-ui",
     version: stamp.version,
     build: stamp.build,
     features: stamp.features ?? { dataModeFooterToggle: true, agentConsole: true },
+    distDasPreview: distUi.ok,
+    distAsset: distUi.asset ?? null,
+    distError: distUi.ok ? null : distUi.error,
   });
 });
 
@@ -205,6 +211,7 @@ app.get("/api/health", async (req, res) => {
     das: {
       s3Configured: dasS3Configured(),
       playMaxSec: Number(process.env.DAS_PLAY_MAX_SEC || 10),
+      distPreviewBundled: distDasPreviewBundled(path.join(__dirname, "..", "dist")).ok,
     },
     sitrep: {
       configured: sitrepConfigured(),
