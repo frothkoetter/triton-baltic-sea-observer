@@ -19,11 +19,9 @@ Configure **CML Scheduled Jobs** for **UC1** (Situation awareness / SITREP) and 
 
 1. CML project with repo at e.g. `/home/cdsw` (`git pull origin main`).
 2. Trino coordinator **`triton-trino.*`** (not `cdw-triton`), catalog **`iceberg`**, schema **`defense`**.
-3. Base DDL applied: `cdw-analyse/setup_cdw_trino_local.sh` (or equivalent).
-4. **NBA** tables (if UC2 persists to Iceberg):  
-   `cd cdw-analyse && bash sql/nba_apply_all_ddl.sh`  
-   Required when `NBA_PERSIST_TRINO=1` and/or `NBA_MATERIALIZE=1`.
-5. **Once per module** in a Session (persists on project Python env):  
+3. Base + NBA DDL applied: `cdw-analyse/setup_cdw_trino_local.sh` (creates all `defense` tables/views including `nba_*`).  
+   NBA-only re-apply: `bash sql/nba_apply_all_ddl.sh`.
+4. **Once per module** in a Session (persists on project Python env):  
    `bash cai-workbench/situation-awareness/cdsw-build.sh`  
    (installs **fpdf2** — import name `fpdf` — required for NATO SITREP PDFs)
    `bash cai-workbench/next-best-action/cdsw-build.sh`  
@@ -158,23 +156,9 @@ Outputs: `artifacts/reports/nato_sitrep_*.pdf`; with S3 upload, same prefix as *
 
 ## 6. Job C — UC2 Next Best Action (NBA)
 
-### One-time — NBA Iceberg DDL on Trino
+### Trino DDL (included in setup)
 
-Before **`NBA_PERSIST_TRINO=1`** (scheduled job or `--persist-trino`), create the `nba_*` tables in **`iceberg.defense`**. Otherwise the job fails with `TABLE_NOT_FOUND` on `nba_incidents`.
-
-```bash
-cd /home/cdsw/cdw-analyse   # repo root: cdw-analyse
-set -a && source .env.trino.local && set +a
-bash sql/nba_apply_all_ddl.sh
-```
-
-Verify:
-
-```sql
-SHOW TABLES FROM iceberg.defense LIKE 'nba%';
-```
-
-See also [`cai-workbench/next-best-action/README.md`](next-best-action/README.md) and `cdw-analyse/sql/nba_schema_trino.sql`.
+`setup_cdw_trino_local.sh` creates **`nba_incidents`**, **`nba_coa_runs`**, and related objects (see `cdw-analyse/sql/trino_supplemental_ddl.order`). If UC2 still reports `TABLE_NOT_FOUND`, re-run setup or `bash sql/nba_apply_all_ddl.sh` on the CML session.
 
 | Field | Value |
 |-------|--------|

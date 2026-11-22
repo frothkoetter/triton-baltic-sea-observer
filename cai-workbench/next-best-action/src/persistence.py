@@ -138,8 +138,8 @@ def update_decision_artifacts(
 _DDL_HINT = (
     "One-time Trino DDL (CML session with TRINO_USER/TRINO_PASSWORD, e.g. .env.trino.local):\n"
     "  cd cdw-analyse && set -a && source .env.trino.local && set +a\n"
-    "  bash sql/nba_apply_all_ddl.sh\n"
-    "Phase 0 only: python3 run_trino_ddl.py sql/nba_schema_trino.sql"
+    "  ./setup_cdw_trino_local.sh\n"
+    "NBA-only: bash sql/nba_apply_all_ddl.sh"
 )
 
 

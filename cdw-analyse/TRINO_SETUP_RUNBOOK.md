@@ -116,17 +116,18 @@ What it does:
 
 - Sources `.env.trino.local`
 - Runs **doctor** (aborts on 401 / connectivity failure)
-- Applies `create_db_tables_trino.sql` via `run_trino_ddl.py`
+- Applies `create_db_tables_trino.sql` via `run_trino_ddl.py` (defense **tables** + **views**: `lagebild`, `lagebild_all_events`, `ais_daten`, …)
+- Runs **`apply_supplemental_trino_ddl.sh`**: NBA `nba_*` / `sap_readiness_staging`, `vessel_ais_route_geojson`, then idempotent **view refresh** (`TRINO_ONLY_VIEWS`)
 - Optionally reloads NSB ship rows from `ships_nsb_trade_1000.sql`
-- Smoke `COUNT(*)` on key tables
+- Smoke `COUNT(*)` on key tables including `nba_incidents`
 
-**Views only** (after base tables exist):
+Manifest: `sql/trino_supplemental_ddl.order`. NBA-only re-apply: `bash sql/nba_apply_all_ddl.sh` (same bundle).
+
+**Views only** (repair without full setup):
 
 ```bash
 ./apply_views_trino.sh
 ```
-
-Expect **8/8** view statements OK when qualification and host are correct.
 
 ### Issues fixed in the DDL runner (pull latest `main`)
 

@@ -103,6 +103,11 @@ fi
 
 run_ddl "$DDL" 0
 
+echo ""
+echo "==> Supplemental DDL (NBA tables, vessel route view, view refresh)"
+export PY
+"${ROOT}/apply_supplemental_trino_ddl.sh"
+
 if [[ -f "$NSB" ]]; then
   echo ""
   echo "==> Refresh NSB trade ship rows (311040001–311041000)"
@@ -133,6 +138,7 @@ for q in (
     "SELECT COUNT(*) FROM iceberg.defense.ships",
     "SELECT COUNT(*) FROM iceberg.defense.ais_events_ice",
     "SELECT COUNT(*) FROM iceberg.defense.ships WHERE mmsi >= 311040001",
+    "SELECT COUNT(*) FROM iceberg.defense.nba_incidents",
 ):
     cur.execute(q)
     row = cur.fetchone()
@@ -142,6 +148,6 @@ PY
 
 echo ""
 echo ""
-echo "Optional: ./run_outlier_detection_trino.sh (see README_outlier_detection_trino.md)"
+echo "Optional data jobs (not DDL): ./run_outlier_detection_trino.sh, run_lagebild_views.py"
 echo "Done. JDBC: ${TRINO_JDBC_URL}"
 echo "CLI: trino --server https://${TRINO_HOST}:${TRINO_PORT} --user ${TRINO_USER} --password --catalog ${TRINO_CATALOG} --schema ${TRINO_SCHEMA}"
