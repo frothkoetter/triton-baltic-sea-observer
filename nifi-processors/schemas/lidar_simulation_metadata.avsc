@@ -1,0 +1,69 @@
+{
+  "type": "record",
+  "name": "LidarSimulationMetadata",
+  "namespace": "defense.triton",
+  "doc": "One row for iceberg.defense.lidar_simulation_metadata. Matches LiDar Simulation AttributesToJSON attribute list in proj_triton_showcase.",
+  "fields": [
+    {
+      "name": "hadoop_file_url",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "center_lat",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "center_lon",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "classification",
+      "type": ["null", "int"],
+      "default": null
+    },
+    {
+      "name": "filename",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "heading_deg",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "point_count",
+      "type": ["null", "long"],
+      "default": null
+    },
+    {
+      "name": "vessel_name",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "vessel_type",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "predicted_vessel_type",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "model_confidence",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "ingested_at",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Showcase flow: ${now():toNumber():toDate():format(\"yyyy-MM-dd HH:mm:ss.SSS\")}."
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "type": "record",
+  "name": "DasCableSpectrogramMetadata",
+  "namespace": "defense.triton",
+  "doc": "One row for iceberg.defense.das_cable_spectrogram_metadata. Field names match NiFi UpdateAttribute / AttributesToJSON (see docs/DAS_NIFI_METADATA_MAP.md).",
+  "fields": [
+    {
+      "name": "hadoop_file_url",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "S3 URI of HDF5 batch (hadoop.file.url)."
+    },
+    {
+      "name": "segment_index",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Zero-based segment index (das.segment.index)."
+    },
+    {
+      "name": "cable_asset",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "cable_id",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "cable_name",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "chainage_m",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "segment_lat",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "segment_lon",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "threat_class",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Simulator ground-truth label."
+    },
+    {
+      "name": "predicted_threat_type",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "ML threat_type from das-cable-classifier."
+    },
+    {
+      "name": "model_confidence",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "channel_count",
+      "type": ["null", "int"],
+      "default": null
+    },
+    {
+      "name": "window_seconds",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "fs_hz",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "spectral_peak_hz",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "energy_rms",
+      "type": ["null", "double"],
+      "default": null
+    },
+    {
+      "name": "filename",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "ingested_at",
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "default": null,
+      "doc": "Use with Schema Text Property: UpdateAttribute ingested_at = ${now():toNumber()}. (Formatted strings need Infer Schema — see README.)"
+    }
+  ]
+}

@@ -35,7 +35,7 @@ Configure **UpdateAttribute**: “Delete attributes” = `false`, “Store state
 | `window_seconds` | `${das.window.seconds}` | Simulator |
 | `fs_hz` | `${das.fs_hz}` | Simulator |
 | `filename` | `${filename}` | Simulator (use **v1.2.1+** for unique names on Put) |
-| `ingested_at` | `${now():format("yyyy-MM-dd HH:mm:ss", "UTC")}` | NiFi (partition key) |
+| `ingested_at` | See **JsonTreeReader** mode below | LiDAR **infer-schema**: `…format("yyyy-MM-dd HH:mm:ss.SSS")`; **Schema Text** `.avsc`: `${now():toNumber()}` |
 | `predicted_threat_type` | `${das.predicted.threat_type}` | Optional — classifier leg |
 | `model_confidence` | `${das.model.confidence}` | Optional — classifier leg |
 | `spectral_peak_hz` | *(leave empty or `${das.spectral.peak_hz}`)* | Optional ML features |
@@ -83,7 +83,8 @@ channel_count       ${das.channel.count}
 window_seconds      ${das.window.seconds}
 fs_hz               ${das.fs_hz}
 filename            ${filename}
-ingested_at         ${now():format("yyyy-MM-dd HH:mm:ss", "UTC")}
+ingested_at         ${now():toNumber()}
+# infer-schema (LiDAR): ${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}
 ```
 
 Run this **after** PutCDPObjectStore so `hadoop.file.url` exists. If Put fails, route to failure — do not insert metadata without `hadoop_file_url`.
@@ -203,6 +204,22 @@ threat_class             ${ground_truth}
 | `segment_index` | `das.segment.index` or split + `segment_index` |
 
 See also: [`cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md`](../../cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md).
+
+---
+
+## JsonTreeReader Avro schema
+
+**Option A — LiDAR parity:** **Infer Schema**, **Timestamp Format** `yyyy-MM-dd HH:mm:ss.SSS`, `ingested_at` = `${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}` (no `.avsc` required).
+
+**Option B — Schema Text** ([`../schemas/das_cable_spectrogram_metadata.avsc`](../schemas/das_cable_spectrogram_metadata.avsc)): **Use 'Schema Text' Property**, `ingested_at` = `${now():toNumber()}`. Do **not** declare `ingested_at` as `string` in the schema — PutIceberg will fail with `NumberFormatException`.
+
+See [`../schemas/README.md`](../schemas/README.md).
+
+**AttributesToJSON** list (must match Avro field names):
+
+```
+hadoop_file_url,segment_index,cable_asset,cable_id,cable_name,chainage_m,segment_lat,segment_lon,threat_class,predicted_threat_type,model_confidence,channel_count,window_seconds,fs_hz,filename,ingested_at
+```
 
 ---
 
