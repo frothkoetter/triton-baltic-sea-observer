@@ -239,19 +239,69 @@ def session_schema(for_ddl: bool = True) -> str:
     return os.environ.get("TRINO_SCHEMA", "defense")
 
 
-def list_iceberg_schemas(conn) -> List[str]:
+def _schema_preflight_mode() -> str:
+    mode = os.environ.get("TRINO_SCHEMA_PREFLIGHT", "auto").strip().lower()
+    if mode in ("0", "off", "false", "no", "skip"):
+        return "off"
+    if mode in ("1", "force", "required", "strict"):
+        return "force"
+    return "auto"
+
+
+def list_schemas(conn) -> Tuple[List[str] | None, str | None]:
+    """Return (schema names, list_error). names is None when CDW cannot list schemas."""
+    catalog = os.environ.get("TRINO_CATALOG", "iceberg")
     cur = conn.cursor()
-    cur.execute("SHOW SCHEMAS FROM iceberg")
-    names = [str(r[0]) for r in cur.fetchall()]
-    return names
+    last_err = "unknown"
+    for sql in (
+        "SHOW SCHEMAS",
+        f"SHOW SCHEMAS IN {catalog}",
+        f"SHOW SCHEMAS FROM {catalog}",
+    ):
+        try:
+            cur.execute(sql)
+            return [str(r[0]) for r in cur.fetchall()], None
+        except Exception as exc:
+            last_err = str(exc)
+    try:
+        cur.execute(
+            "SELECT schema_name FROM information_schema.schemata "
+            "WHERE catalog_name = ?",
+            (catalog,),
+        )
+        return [str(r[0]) for r in cur.fetchall()], None
+    except Exception as exc:
+        last_err = str(exc)
+    return None, last_err
 
 
 def ensure_defense_schema(conn) -> Tuple[bool, str | None]:
     """
     Return (ready, error_message). Creates ``defense`` when allowed and missing.
     """
+    mode = _schema_preflight_mode()
+    if mode == "off":
+        print("Preflight: skipped (TRINO_SCHEMA_PREFLIGHT=off)")
+        return True, None
+
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    if sch in list_iceberg_schemas(conn):
+    names, list_err = list_schemas(conn)
+    if names is None:
+        if mode == "force":
+            return False, (
+                "Could not list schemas on Trino (CDW often returns HTTP 404 for "
+                "SHOW SCHEMAS). Create **defense** in the DW UI, or set "
+                "TRINO_SCHEMA_PREFLIGHT=auto to continue without listing.\n"
+                f"  Detail: {list_err}"
+            )
+        print(
+            "Preflight: could not list schemas on CDW (HTTP 404 is common) — "
+            "continuing DDL."
+        )
+        return True, None
+
+    if sch in names:
+        print(f"Preflight: schema iceberg.{sch} is visible to Trino")
         return True, None
     if os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
         "1",
@@ -259,12 +309,11 @@ def ensure_defense_schema(conn) -> Tuple[bool, str | None]:
         "yes",
     ):
         return False, (
-            f"Schema iceberg.{sch} does not exist (Trino SHOW SCHEMAS). "
-            "On CDW: Data Hub → your Virtual Warehouse → **Databases** (or Hive "
-            "metastore): create database/schema **defense** on catalog **iceberg**, "
-            "then re-run with TRINO_SKIP_CREATE_SCHEMA=1.\n"
-            "Or set TRINO_SKIP_CREATE_SCHEMA=0 to let this script run "
-            "CREATE SCHEMA IF NOT EXISTS defense (may still 404 on some CDW builds)."
+            f"Schema iceberg.{sch} is not listed by Trino (found: {', '.join(names[:12])}"
+            f"{'…' if len(names) > 12 else ''}). "
+            "On CDW: Data Hub → Virtual Warehouse → create schema **defense** on "
+            "catalog **iceberg**, then re-run with TRINO_SKIP_CREATE_SCHEMA=1.\n"
+            "Or set TRINO_SKIP_CREATE_SCHEMA=0 to run CREATE SCHEMA IF NOT EXISTS defense."
         )
     cur = conn.cursor()
     try:
@@ -274,8 +323,12 @@ def ensure_defense_schema(conn) -> Tuple[bool, str | None]:
             f"CREATE SCHEMA IF NOT EXISTS {sch} failed: {exc}\n"
             "Create **defense** in the DW UI, then use TRINO_SKIP_CREATE_SCHEMA=1."
         )
-    if sch in list_iceberg_schemas(conn):
+    names2, _ = list_schemas(conn)
+    if names2 is not None and sch in names2:
         print(f"Created / verified schema iceberg.{sch}")
+        return True, None
+    if names2 is None:
+        print(f"Ran CREATE SCHEMA IF NOT EXISTS {sch}; could not re-list schemas (CDW 404)")
         return True, None
     return False, f"Schema iceberg.{sch} still missing after CREATE SCHEMA."
 
@@ -311,7 +364,6 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
         conn.close()
         return 0, [pre_err or "iceberg.defense not ready"]
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    print(f"Preflight: schema iceberg.{sch} is visible to Trino")
     cur = conn.cursor()
     errors: List[str] = []
     ok = 0
