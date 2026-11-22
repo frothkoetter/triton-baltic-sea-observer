@@ -8,8 +8,10 @@ import {
   type ObservationArea,
   type OstseeInfraRow,
   type OstseePipelineRow,
+  type GpsJammerMapEvent,
   type OutlierRow,
 } from "../components/TacticalMap";
+import { normalizeGpsJammerRow } from "../lib/gps-jammer";
 import {
   filterAisRows,
   filterFleetBySelection,
@@ -141,6 +143,8 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
   const [source, setSource] = useState("…");
   const [trackSource, setTrackSource] = useState("…");
   const [outliers, setOutliers] = useState<OutlierRow[]>([]);
+  const [gpsJammerEvents, setGpsJammerEvents] = useState<GpsJammerMapEvent[]>([]);
+  const [gpsJammerSource, setGpsJammerSource] = useState("…");
   const [germanFleet, setGermanFleet] = useState<FleetPosition[]>([]);
   const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
   const [tracks, setTracks] = useState<PositionTrack[]>([]);
@@ -153,6 +157,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
     infrastructure: true,
     sanctions: true,
     outliers: true,
+    gpsJammer: true,
     germanFleet: true,
     russianFleet: true,
     nba: true,
@@ -189,7 +194,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
 
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, infraRes, outlierRes, fleetRes, kpiRes, nbaRes] = await Promise.all([
+      const [aisRes, areaRes, infraRes, outlierRes, gpsJamRes, fleetRes, kpiRes, nbaRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
         fetchJson<{ rows?: ObservationArea[]; source?: string }>("/api/observation-areas"),
         fetchJson<{
@@ -198,6 +203,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
           source?: string;
         }>("/api/ostsee-infrastructure"),
         fetchJson<{ rows?: OutlierRow[]; source?: string }>("/api/vessel-outliers"),
+        fetchJson<{ rows?: Record<string, unknown>[]; source?: string }>("/api/gps-jammer-events"),
         fetchJson<{
           german?: Record<string, unknown>[];
           russian?: Record<string, unknown>[];
@@ -226,6 +232,12 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         (outlierRes.rows ?? [])
           .map((r) => normalizeOutlier(r as Record<string, unknown>))
           .filter((r): r is OutlierRow => r != null)
+      );
+      setGpsJammerSource(gpsJamRes.source ?? "…");
+      setGpsJammerEvents(
+        (gpsJamRes.rows ?? [])
+          .map((r) => normalizeGpsJammerRow(r))
+          .filter((r): r is GpsJammerMapEvent => r != null)
       );
       setGermanFleet(
         (fleetRes.german ?? [])
@@ -355,6 +367,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
             "germanFleet",
             "russianFleet",
             "outliers",
+            "gpsJammer",
             "routeTracks",
             "areas",
             "infrastructure",
@@ -376,7 +389,9 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
                   ? `RUS Fleet (${filteredRussian.length})`
                   : key === "outliers"
                     ? `AIS Outliers (${filteredOutliers.length})`
-                    : key === "routeTracks"
+                    : key === "gpsJammer"
+                      ? `GPS jammer (${gpsJammerEvents.length})`
+                      : key === "routeTracks"
                       ? `Route tracks 24h (${trackLegend.total})`
                       : key === "areas"
                         ? `Restricted Areas (${areas.length})`
@@ -389,6 +404,7 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
           Data: {source}
+          {layers.gpsJammer ? ` · GPS jammer: ${gpsJammerSource}` : ""}
           {layers.nba ? ` · NBA: ${nbaSource}` : ""}
         </span>
       </div>
@@ -401,6 +417,8 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
           infrastruktur={ostseeInfra}
           pipelines={ostseePipelines}
           outliers={layers.outliers ? filteredOutliers : []}
+          gpsJammerEvents={layers.gpsJammer ? gpsJammerEvents : []}
+          showGpsJammer={layers.gpsJammer}
           germanFleet={layers.germanFleet ? filteredGerman : []}
           russianFleet={layers.russianFleet ? filteredRussian : []}
           nbaIncidents={nbaOnMap}
@@ -432,6 +450,29 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
         {layers.routeTracks && (
           <RouteTrackTimeline tracks={tracks} loading={tracksLoading} />
         )}
+      </section>
+
+      <section className="panel" style={{ marginTop: 8 }}>
+        <h2 className="panel-title">GPS jammer events (defense.gps_jammer_events)</h2>
+        <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
+          Geohash tiles · ADSB NIC / signal integrity · source {gpsJammerSource}
+        </p>
+        <DataTable
+          columns={[
+            "geohash",
+            "event_timestamp",
+            "latitude",
+            "longitude",
+            "adsb_nic",
+            "signal_integrity",
+            "jamming_indicator",
+            "harbour_name",
+            "reason",
+          ]}
+          rows={
+            gpsJammerEvents.slice(0, 50) as unknown as Record<string, unknown>[]
+          }
+        />
       </section>
 
       <section className="panel" style={{ marginTop: 8 }}>

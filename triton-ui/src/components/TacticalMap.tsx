@@ -78,12 +78,26 @@ export type OutlierRow = {
   harbour_name?: string;
 };
 
+export type GpsJammerMapEvent = {
+  geohash: string;
+  latitude: number;
+  longitude: number;
+  event_timestamp?: string;
+  adsb_nic?: number | null;
+  signal_integrity?: number | null;
+  jamming_indicator?: boolean;
+  reason?: string;
+  harbour_name?: string;
+};
+
 type Props = {
   ships: AisRow[];
   areas: ObservationArea[];
   infrastruktur: OstseeInfraRow[];
   pipelines: OstseePipelineRow[];
   outliers: OutlierRow[];
+  gpsJammerEvents?: GpsJammerMapEvent[];
+  showGpsJammer?: boolean;
   germanFleet: FleetPosition[];
   russianFleet: FleetPosition[];
   nbaIncidents?: NbaIncidentMarker[];
@@ -115,6 +129,8 @@ export function TacticalMap({
   infrastruktur,
   pipelines,
   outliers,
+  gpsJammerEvents = [],
+  showGpsJammer = false,
   germanFleet,
   russianFleet,
   nbaIncidents = [],
@@ -353,6 +369,39 @@ export function TacticalMap({
               </CircleMarker>
             );
           })}
+        {showGpsJammer &&
+          gpsJammerEvents.map((j) => {
+            const jamming = j.jamming_indicator !== false;
+            const color = jamming ? "#E040FB" : "#BA68C8";
+            const nic = j.adsb_nic;
+            return (
+              <CircleMarker
+                key={`gpsjam-${j.geohash}-${j.event_timestamp}`}
+                center={[j.latitude, j.longitude]}
+                radius={jamming ? 12 : 9}
+                pathOptions={{
+                  color: "#4A148C",
+                  fillColor: color,
+                  fillOpacity: 0.93,
+                  weight: 2,
+                }}
+              >
+                <Tooltip>
+                  <span className="mono">
+                    <strong>GPS jammer · {j.geohash || "tile"}</strong>
+                    <br />
+                    {nic != null && Number.isFinite(nic) ? `NIC ${nic}` : "NIC —"}
+                    {j.signal_integrity != null && Number.isFinite(j.signal_integrity)
+                      ? ` · integrity ${j.signal_integrity.toFixed(2)}`
+                      : ""}
+                    {j.harbour_name ? ` · ${j.harbour_name}` : ""}
+                    <br />
+                    {(j.reason ?? (jamming ? "Probable jamming (NIC<5)" : "Monitor")).slice(0, 140)}
+                  </span>
+                </Tooltip>
+              </CircleMarker>
+            );
+          })}
         {outliers.map((o) => {
           const sev = Number(o.severity_level ?? 50);
           const color = sev >= 75 ? "#FF5252" : sev >= 55 ? "#FF9800" : "#FFB74D";
@@ -382,7 +431,7 @@ export function TacticalMap({
           );
         })}
       </MapContainer>
-      {(showInfrastructure || showAreas) && (
+      {(showInfrastructure || showAreas || showGpsJammer) && (
         <div className="map-legend map-legend-infra" aria-hidden>
           <span className="map-legend-item">
             <i className="map-legend-swatch" style={{ background: "#FF6F00" }} /> Pipeline / Gas
@@ -390,6 +439,11 @@ export function TacticalMap({
           <span className="map-legend-item">
             <i className="map-legend-swatch" style={{ background: "#26C6DA" }} /> Seekabel
           </span>
+          {showGpsJammer ? (
+            <span className="map-legend-item">
+              <i className="map-legend-swatch" style={{ background: "#E040FB" }} /> GPS jammer (NIC)
+            </span>
+          ) : null}
           <span className="map-legend-item">
             <i
               className="map-legend-swatch map-legend-swatch-area"

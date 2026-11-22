@@ -230,6 +230,53 @@ export const russianFleetPositions = [
   },
 ];
 
+export const gpsJammerEvents = [
+  {
+    geohash: "u4pruy",
+    event_timestamp: "2026-11-22T15:12:00Z",
+    latitude: 54.71,
+    longitude: 20.48,
+    adsb_nic: 2,
+    signal_integrity: 0.18,
+    jamming_indicator: true,
+    event_type: "gps_jammer_event",
+    reason: "Kaliningrad sector · NIC<5",
+  },
+  {
+    geohash: "ud9k8h",
+    event_timestamp: "2026-11-22T14:40:00Z",
+    latitude: 59.93,
+    longitude: 30.25,
+    adsb_nic: 3,
+    signal_integrity: 0.25,
+    jamming_indicator: true,
+    event_type: "gps_jammer_event",
+    reason: "St Petersburg EW envelope",
+  },
+  {
+    geohash: "u6tme5",
+    event_timestamp: "2026-11-22T13:05:00Z",
+    latitude: 57.18,
+    longitude: 18.52,
+    adsb_nic: 4,
+    signal_integrity: 0.31,
+    jamming_indicator: true,
+    event_type: "gps_jammer_event",
+    reason: "Gotland mobile jammer pattern",
+  },
+  {
+    geohash: "u37q8m",
+    event_timestamp: "2026-11-22T12:22:00Z",
+    latitude: 54.35,
+    longitude: 13.08,
+    adsb_nic: 5,
+    signal_integrity: 0.42,
+    jamming_indicator: false,
+    event_type: "gps_jammer_event",
+    reason: "Marginal integrity — monitor",
+  },
+];
+
 export const vesselOutliers = [
   {
     mmsi: 211234567,
@@ -883,4 +930,5 @@ export const datasets = [
   { name: "AIS Vessel Tracker", tables: ["ais_events_ice", "ships"], badge: "multipletables" },
   { name: "LiDARSimulationMetadata", tables: ["lidar_simulation_metadata"], badge: "singletable" },
   { name: "DasCableSpectrogramMetadata", tables: ["das_cable_spectrogram_metadata"], badge: "singletable" },
+  { name: "GpsJammerEvents", tables: ["gps_jammer_events", "lagebild"], badge: "multipletables" },
 ];

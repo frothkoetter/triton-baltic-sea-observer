@@ -1,9 +1,10 @@
 {
   "version": "0.2.4",
-  "build": "0.2.8-das-threat-palette",
+  "build": "0.2.9-gps-jammer-ui",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
-    "dasSpectrogramAudio": true
+    "dasSpectrogramAudio": true,
+    "gpsJammerLagebild": true
   }
 }

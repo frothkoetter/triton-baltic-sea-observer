@@ -788,6 +788,19 @@ export async function getVesselOutliers() {
   return runQueryOrSample(PREDEFINED.vesselOutliersMap, () => sample.vesselOutliers);
 }
 
+/** GPS jamming tiles (gps_jammer_events or lagebild GPS_Jammer). */
+export async function getGpsJammerEvents() {
+  const live = await queryWarehouse(PREDEFINED.gpsJammerEvents);
+  if (live.ok && (live.rows?.length ?? 0) > 0) {
+    return live;
+  }
+  const lagebild = await queryWarehouse(PREDEFINED.lagebildGpsJammer);
+  if (lagebild.ok && (lagebild.rows?.length ?? 0) > 0) {
+    return lagebild;
+  }
+  return runQueryOrSample(PREDEFINED.gpsJammerEvents, () => sample.gpsJammerEvents);
+}
+
 export async function getLidarScans() {
   return runQueryOrSample(PREDEFINED.lidarScans, () => sample.lidarScans);
 }
