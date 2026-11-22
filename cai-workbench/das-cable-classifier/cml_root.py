@@ -9,9 +9,12 @@ from pathlib import Path
 def resolve_model_root() -> Path:
     mod = globals().get("__file__")
     if mod:
-        root = Path(mod).resolve().parent
-        if _has_model(root):
-            return root
+        try:
+            root = Path(mod).resolve().parent
+            if _has_model(root):
+                return root
+        except (OSError, TypeError):
+            pass
 
     work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
     candidates: list[Path] = []

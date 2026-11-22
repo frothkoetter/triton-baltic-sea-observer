@@ -17,8 +17,9 @@ def _model_pkl_path() -> Path:
 
     tried: list[str] = []
     roots: list[Path] = []
-    here = Path(__file__).resolve().parent
-    roots.append(here)
+    mod_file = globals().get("__file__")
+    if mod_file:
+        roots.append(Path(mod_file).resolve().parent)
 
     work = os.environ.get("CDSW_WORKING_DIRECTORY", "").strip()
     if work and work not in ("", "/"):
