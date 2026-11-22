@@ -142,4 +142,13 @@ def predict(args: dict) -> dict:
         )
     if len(results) == 1:
         return results[0]
-    return {"predictions": results, "count": len(results)}
+    top = max(results, key=lambda r: r["confidence"])
+    # NiFi EvaluateJsonPath: $.response.threat_type / $.response.confidence (headline)
+    # Per-segment: $.response.predictions[${das.segment.index}].*
+    return {
+        "predictions": results,
+        "count": len(results),
+        "threat_type": top["threat_type"],
+        "confidence": top["confidence"],
+        "primary_segment": top["segment"],
+    }

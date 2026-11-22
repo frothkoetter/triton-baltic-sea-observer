@@ -9,8 +9,8 @@ Ontology reference: [`ontology/mappings/das_cable_spectrogram_metadata.yaml`](..
 1. **DasCableAcousticSimulator** → HDF5 + `das.*` / `filename` / `latitude` / `longitude`
 2. **PutCDPObjectStore** → sets **`hadoop.file.url`** (or `s3.fullpath`) on success
 3. **UpdateAttribute** (this table) → rename / add columns
-4. Optional: **InvokeHTTP** → CML `das-cable-classifier` → `predicted_threat_type`, `model_confidence`
-5. **PutDatabaseRecord** / Trino sink → one metadata row
+4. Optional: **InvokeHTTP** → CML `das-cable-classifier` → **EvaluateJsonPath** → Iceberg columns as attributes → **UpdateAttribute**
+5. **PutDatabaseRecord** / Trino sink → one metadata row (or **SplitJson** → six rows per HDF5 batch)
 
 **Note:** The simulator emits **one FlowFile per HDF5 batch** with **one primary** `das.segment.*` (highest-priority threat segment). For **six rows per batch** (one per segment inside the HDF5), add a **Split** / custom processor that reads `json_meta` from HDF5 or explodes `batch_meta["segments"]` — not covered here.
 
@@ -87,6 +87,123 @@ ingested_at         ${now():format("yyyy-MM-dd HH:mm:ss", "UTC")}
 ```
 
 Run this **after** PutCDPObjectStore so `hadoop.file.url` exists. If Put fails, route to failure — do not insert metadata without `hadoop_file_url`.
+
+**After classifier (EvaluateJsonPath):** map ML into the same attribute names the Iceberg table uses:
+
+```
+predicted_threat_type   ${predicted_threat_type}
+model_confidence        ${model_confidence}
+```
+
+(or keep `das.predicted.threat_type` / `das.model.confidence` from JsonPath and reference those in UpdateAttribute — see below.)
+
+---
+
+## EvaluateJsonPath (after InvokeHTTP → `response` relationship)
+
+Wire **InvokeHTTP** `response` → **EvaluateJsonPath** → **UpdateAttribute** → metadata JSON.
+
+**Processor settings** (defaults are fine):
+
+| Setting | Value |
+|---------|--------|
+| **Destination** | `flowfile-attribute` |
+| **Return Type** | `auto-detect` |
+| **Path Not Found Behavior** | `ignore` |
+| **Null Value Representation** | `empty string` |
+
+**Remove LiDAR property names** (`predicted_vessel_type`, `$.response.vessel_type`, `$.response.confidence` on a vessel field).
+
+### CML Model Service body shape (6 segments)
+
+InvokeHTTP response content (attributes on the same FlowFile as `das.segment.index`, `hadoop.file.url`, …):
+
+```json
+{
+  "success": true,
+  "StatusCode": 200,
+  "response": {
+    "count": 6,
+    "predictions": [
+      {
+        "segment": "seg_000",
+        "threat_type": "cable_strain_anomaly",
+        "confidence": 0.578125,
+        "ground_truth": "vessel_passage",
+        "probabilities": { "…": 0.0 }
+      }
+    ],
+    "threat_type": "cable_strain_anomaly",
+    "confidence": 0.578125,
+    "primary_segment": "seg_000"
+  }
+}
+```
+
+`response.threat_type` / `response.confidence` are the **highest-confidence** segment (rollup for a single metadata row). Prefer **index-aligned** ML when `das.segment.index` is the simulator’s primary segment.
+
+### Mode A — one Iceberg row per batch (primary segment)
+
+**EvaluateJsonPath** — Property = **attribute name** (match SQL column), Value = **JsonPath** (Expression Language allowed in the path):
+
+| Property (attribute) | JsonPath |
+|----------------------|----------|
+| `model_status_code` | `$.StatusCode` |
+| `predicted_threat_type` | `$.response.predictions[${das.segment.index}].threat_type` |
+| `model_confidence` | `$.response.predictions[${das.segment.index}].confidence` |
+
+Fallback if the path is missing (single-segment deploy returns a flat object inside `response`):
+
+| Property | JsonPath |
+|----------|----------|
+| `predicted_threat_type` | `$.response.threat_type` |
+| `model_confidence` | `$.response.confidence` |
+
+Use a second EvaluateJsonPath on a failure path, or rely on rollup fields after redeploying `predict.py` with `primary_segment` / headline `threat_type`.
+
+**UpdateAttribute** before `AttributesToJSON` — add or confirm:
+
+```
+predicted_threat_type    ${predicted_threat_type}
+model_confidence         ${model_confidence}
+```
+
+(Plus the simulator / PutCDP columns from the table above.)
+
+### Mode B — one Iceberg row **per segment** (full batch)
+
+1. **InvokeHTTP** `response` → **EvaluateJsonPath** (optional): `model_status_code` → `$.StatusCode`
+2. **SplitJson** — **JsonPath Expression** = `$.response.predictions`
+3. On each split child, **EvaluateJsonPath** (content is one prediction object):
+
+| Property | JsonPath |
+|----------|----------|
+| `predicted_threat_type` | `$.threat_type` |
+| `model_confidence` | `$.confidence` |
+
+4. **UpdateAttribute** on each child:
+
+```
+segment_index            ${segment:substring(4):toNumber()}
+threat_class             ${ground_truth}
+```
+
+(`ground_truth` only if you add it via JsonPath: Property `threat_class` ← `$.ground_truth`, or keep simulator `threat_class` from parent via attribute copy.)
+
+5. Copy parent attributes (`hadoop_file_url`, `cable_asset`, `filename`, …) — **SplitJson** retains parent attributes by default.
+
+6. **AttributesToJSON** / **MergeContent** / **PutIceberg** as for LiDAR metadata.
+
+### Iceberg column cheat sheet (classifier leg)
+
+| Iceberg column | Source after JsonPath |
+|----------------|------------------------|
+| `predicted_threat_type` | attribute `predicted_threat_type` |
+| `model_confidence` | attribute `model_confidence` (double) |
+| `threat_class` | simulator `das.threat_class` or per-segment `ground_truth` |
+| `segment_index` | `das.segment.index` or split + `segment_index` |
+
+See also: [`cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md`](../../cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md).
 
 ---
 
