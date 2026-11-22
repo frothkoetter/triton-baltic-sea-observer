@@ -5,16 +5,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "lidar-las-bridge.py");
 
-const S3_URI = /^s3a?:\/\//i;
+import { s3Configured, s3ConfigHint } from "./s3-config.js";
 
-export function s3Configured() {
-  return Boolean(
-    (process.env.S3_WORKLOAD_USER && process.env.S3_WORKLOAD_PASSWORD) ||
-      (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY) ||
-      (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
-      process.env.LIDAR_USE_CML_S3 === "true"
-  );
-}
+export { s3Configured, s3ConfigHint };
+
+const S3_URI = /^s3a?:\/\//i;
 
 export function validateLidarUri(uri) {
   const s = String(uri ?? "").trim();
