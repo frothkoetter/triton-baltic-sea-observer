@@ -95,9 +95,9 @@
     },
     {
       "name": "ingested_at",
-      "type": ["null", "string"],
+      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
       "default": null,
-      "doc": "Same as LiDar Simulation: ${now():toNumber():toDate():format(\"yyyy-MM-dd HH:mm:ss.SSS\")}. JsonTreeReader Timestamp Format must match."
+      "doc": "Use with Schema Text Property: UpdateAttribute ingested_at = ${now():toNumber()}. (Formatted strings need Infer Schema — see README.)"
     }
   ]
 }

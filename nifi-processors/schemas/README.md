@@ -10,15 +10,35 @@ Field names match **UpdateAttribute** column names and **AttributesToJSON** list
 
 ## JsonTreeReader (controller service)
 
-Match **`LiDar Simulation`** controller **`JsonTreeReader-lidar`** in `proj_triton_showcase-version-2.json`:
+### Path A — same as LiDAR (formatted timestamp string)
 
-| Property | LiDAR showcase | DAS (recommended) |
-|----------|----------------|-------------------|
-| **Timestamp Format** | `yyyy-MM-dd HH:mm:ss.SSS` | **same** |
-| **Schema Access Strategy** | `infer-schema` | `infer-schema` or `schema-text-property` (paste DAS `.avsc`) |
-| **Schema Text** | `${avro.schema}` | `${das.avro.schema}` or paste `.avsc` |
-| **Schema Application Strategy** | `SELECTED_PART` | `SELECTED_PART` |
-| **Allow Comments** | `false` | `false` |
+From **`JsonTreeReader-lidar`** in `proj_triton_showcase-version-2.json`:
+
+| Property | Value |
+|----------|--------|
+| **Schema Access Strategy** | **`infer-schema`** (not “Use Schema Text Property”) |
+| **Timestamp Format** | `yyyy-MM-dd HH:mm:ss.SSS` |
+| **Schema Application Strategy** | `SELECTED_PART` |
+
+**UpdateAttribute:** `ingested_at` = `${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}`
+
+Inference + Timestamp Format produce a **Record TIMESTAMP** field; PutIceberg can write Iceberg `TIMESTAMP`.
+
+### Path B — explicit Schema Text (your DAS `.avsc`)
+
+| Property | Value |
+|----------|--------|
+| **Schema Access Strategy** | **Use 'Schema Text' Property** |
+| **Schema Text** | Paste `das_cable_spectrogram_metadata.avsc` |
+| **Timestamp Format** | optional (not used for `long` millis) |
+
+**UpdateAttribute:** `ingested_at` = `${now():toNumber()}` (UTC epoch **milliseconds** as attribute text).
+
+The `.avsc` declares `ingested_at` as **`long`** + `timestamp-millis`. AttributesToJSON may emit `"1732296534967"` in quotes; JsonTreeReader coerces that to `long`.
+
+### Why explicit `string` + format fails PutIceberg
+
+With **Schema Text** and `"ingested_at": ["null", "string"]`, the Record field stays **STRING**. PutIceberg maps Iceberg `TIMESTAMP` using a converter that tries **numeric** parsing first → `NumberFormatException` on `"2026-11-22 17:16:53.967"` even when **Timestamp Format** is set on the reader. That format only applies when the **schema type** is Timestamp (infer-schema or `long` millis), not plain string.
 
 ## DAS AttributesToJSON (suggested list)
 
@@ -32,19 +52,12 @@ Optional: `spectral_peak_hz`, `energy_rms` (already in Avro schema).
 
 If merged content is a **JSON array** `[{...},{...}]`, use **SplitJson** on `$.*` before the reader, or configure the reader for array (schema root `array` of the record type) per your NiFi version.
 
-## `ingested_at` and PutIceberg (LiDAR parity)
+## `ingested_at` quick pick
 
-**LiDar Simulation** `UpdateAttribute`:
-
-```text
-ingested_at = ${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}
-```
-
-Use the **same expression** on DAS. Do **not** use `yyyy-MM-dd HH:mm:ss` without `.SSS` — PutIceberg → `LocalDateTime` fails unless the string matches **JsonTreeReader → Timestamp Format**.
-
-**JsonTreeReader** must set **Timestamp Format** = `yyyy-MM-dd HH:mm:ss.SSS` (showcase `JsonTreeReader-lidar`).
-
-Avro field type is **`string`** for `ingested_at` (not `long` / `timestamp-millis`), same as inferred LiDAR metadata JSON.
+| You use | UpdateAttribute `ingested_at` | JsonTreeReader |
+|---------|-------------------------------|----------------|
+| **Infer schema** (LiDAR-like) | `${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}` | **Infer Schema**, Timestamp Format `yyyy-MM-dd HH:mm:ss.SSS` |
+| **Schema Text** (`.avsc` file) | `${now():toNumber()}` | **Use Schema Text**, `ingested_at` = `long` + `timestamp-millis` in schema |
 
 ## Validate locally
 
