@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import unittest
 
-from run_trino_ddl import transform_sql
+from run_trino_ddl import _forgive_additive_ddl, _should_continue_on_error, transform_sql
 
 
 class TestTrinoDdlQualify(unittest.TestCase):
@@ -46,6 +46,21 @@ class TestTrinoDdlQualify(unittest.TestCase):
         raw = "CREATE TABLE IF NOT EXISTS nba_incidents (flow_uuid varchar);"
         out = transform_sql(raw)
         self.assertIn("CREATE TABLE IF NOT EXISTS iceberg.defense.nba_incidents", out)
+
+
+    def test_forgive_table_already_exists_when_skip_drop(self) -> None:
+        os.environ["TRINO_SKIP_DROP"] = "1"
+        self.assertTrue(
+            _forgive_additive_ddl(
+                "CREATE TABLE iceberg.defense.nba_incidents (x varchar)",
+                "TrinoUserError: TABLE_ALREADY_EXISTS",
+            )
+        )
+
+    def test_continue_when_additive_or_skip_drop(self) -> None:
+        os.environ.pop("TRINO_CONTINUE_ON_ERROR", None)
+        os.environ["TRINO_SKIP_DROP"] = "1"
+        self.assertTrue(_should_continue_on_error(False))
 
 
 if __name__ == "__main__":

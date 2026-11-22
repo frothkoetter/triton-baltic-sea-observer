@@ -19,8 +19,11 @@ if [[ -f "$ENV_FILE" ]]; then
   set -a
   source "$ENV_FILE"
   set +a
+elif [[ -n "${TRINO_PASSWORD:-}" && -n "${TRINO_USER:-}" ]]; then
+  echo "Using TRINO_* from environment (no .env.trino.local)"
 elif [[ -f "${ROOT}/.env.trino.local.example" ]]; then
-  echo "Missing ${ENV_FILE} — copy .env.trino.local.example and set TRINO_PASSWORD." >&2
+  echo "Missing ${ENV_FILE} — copy .env.trino.local.example and set TRINO_PASSWORD," >&2
+  echo "or export TRINO_USER/TRINO_PASSWORD (CML project environment)." >&2
   exit 1
 fi
 

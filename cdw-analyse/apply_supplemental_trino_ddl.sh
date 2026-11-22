@@ -9,12 +9,26 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+ENV_FILE="${ROOT}/.env.trino.local"
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  set -a && source "$ENV_FILE" && set +a
+elif [[ -z "${TRINO_PASSWORD:-}" || -z "${TRINO_USER:-}" ]]; then
+  echo "No ${ENV_FILE}; set TRINO_USER and TRINO_PASSWORD (CML project env), or:" >&2
+  echo "  cp .env.trino.local.example .env.trino.local  # then edit password" >&2
+  exit 1
+else
+  echo "Using TRINO_* from environment (no .env.trino.local)"
+fi
+
 export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
 export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
 export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-defense}"
 export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
 export TRINO_QUALIFY_SCHEMA="${TRINO_QUALIFY_SCHEMA:-1}"
 export TRINO_SKIP_DROP="${TRINO_SKIP_DROP:-1}"
+export TRINO_ADDITIVE_DDL="${TRINO_ADDITIVE_DDL:-1}"
+export TRINO_FORGIVE_TABLE_EXISTS="${TRINO_FORGIVE_TABLE_EXISTS:-1}"
 
 ORDER="${ROOT}/sql/trino_supplemental_ddl.order"
 PY="${PY:-python3}"
