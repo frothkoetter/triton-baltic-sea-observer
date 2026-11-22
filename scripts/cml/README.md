@@ -2,6 +2,8 @@
 
 Set **Project → Settings → Environment variables** programmatically ([API v2](https://docs.cloudera.com/machine-learning/cloud/api/topics/ml-api-v2.html)).
 
+Trino host, DDL, and UI **Trino live** checklist: [`cdw-analyse/TRINO_SETUP_RUNBOOK.md`](../../cdw-analyse/TRINO_SETUP_RUNBOOK.md).
+
 ## Prerequisites
 
 1. **API key:** Cloudera AI → User Settings → **API Keys** → Create (Audience: **API**).
