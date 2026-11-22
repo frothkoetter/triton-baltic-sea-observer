@@ -22,5 +22,6 @@ Standalone web app (Lagebild · Analysen · **Agenten**/CrewAI) with Impala `def
 
 - Plan: [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md)
 - Mission Planning + SAP D&S: [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md)
+- NiFi Simulator-Steuerung (Szenarien): [`docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md`](./docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md)
 - NATO Business Rules + Trino mapping: [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md)
 - Trino Iceberg snapshots (live matrix): [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md)
