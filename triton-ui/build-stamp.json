@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.6-das-spec-audio",
+  "build": "0.2.7-das-wav-api",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
