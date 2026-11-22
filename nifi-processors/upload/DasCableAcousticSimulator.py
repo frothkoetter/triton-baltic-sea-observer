@@ -18,6 +18,7 @@ from cable_corridor_registry import (
     resolve_cable_asset,
 )
 from das_acoustic_engine import (
+    DAS_MONITOR_SIGNALS,
     DEFAULT_CHANNELS,
     DEFAULT_FS_HZ,
     DEFAULT_SEGMENTS,
@@ -26,6 +27,7 @@ from das_acoustic_engine import (
     THREAT_CLASSES,
     batch_geolocation_attributes,
     generate_das_batch,
+    monitor_signal_attributes,
     write_hdf5_batch,
 )
 
@@ -40,11 +42,12 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.3.0'
+        version = '1.3.1'
         description = (
             'Synthetic underwater DAS strain-rate + STFT spectrograms (HDF5) along '
-            'Baltic cables/pipelines — vessel, anchor slip, U-boat tonal, whale calls, '
-            'hard beep, CUI tap (window up to 30 s).'
+            'Baltic cables/pipelines — vessel, anchor slip, anchor drop/tow alarm, '
+            'U-boat tonal, whale calls, hard beep, CUI tap (window up to 30 s). '
+            'Optional DAS-Seekabel Akustik-Monitor presets (km 42 Ankerwurf/Schlepp).'
         )
         dependencies = ['numpy', 'h5py']
 
@@ -108,6 +111,18 @@ class DasCableAcousticSimulator(FlowFileTransform):
         required=True,
     )
 
+    MONITOR_SIGNAL = PropertyDescriptor(
+        name="Monitor Signal",
+        description=(
+            "Optional DAS-Seekabel Akustik-Monitor scenario. "
+            "SEEKABEL_ANKERWURF_KM42: sharp +42 dB impulse, broadband to 1 kHz "
+            "at chainage km 42 — ALARM Ankerwurf/Schleppvorgang."
+        ),
+        allowable_values=["OFF"] + list(DAS_MONITOR_SIGNALS.keys()),
+        default_value="OFF",
+        required=True,
+    )
+
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
@@ -119,6 +134,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
             self.SAMPLE_RATE_HZ,
             self.RANDOM_SEED,
             self.OUTPUT_FORMAT,
+            self.MONITOR_SIGNAL,
         ]
 
     def getPropertyDescriptors(self):
@@ -135,6 +151,8 @@ class DasCableAcousticSimulator(FlowFileTransform):
             seed_raw = (context.getProperty(self.RANDOM_SEED.name).getValue() or "").strip()
             seed = int(seed_raw) if seed_raw.isdigit() else None
             fmt = context.getProperty(self.OUTPUT_FORMAT.name).getValue() or "hdf5"
+            monitor_raw = (context.getProperty(self.MONITOR_SIGNAL.name).getValue() or "OFF").strip()
+            monitor_signal = None if monitor_raw in ("", "OFF") else monitor_raw
 
             rng = random.Random(seed) if seed is not None else None
             asset = resolve_cable_asset(asset_sel, rng=rng)
@@ -146,6 +164,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 window_s=win_s,
                 fs_hz=fs,
                 seed=seed,
+                monitor_signal=monitor_signal,
             )
             meta = cable_meta(asset)
 
@@ -182,6 +201,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 "filename": file_name,
             }
             attrs.update(batch_geolocation_attributes(segments))
+            attrs.update(monitor_signal_attributes(batch_meta))
             return FlowFileTransformResult(contents=body, attributes=attrs, relationship="success")
         except Exception as e:
             self.logger.error(f"DAS simulation failed: {e}")

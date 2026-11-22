@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.10-das-nav-label",
+  "build": "0.2.11-das-anchor-alarm",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

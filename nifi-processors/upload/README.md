@@ -9,7 +9,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
-| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.2.2**) |
+| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.3.1**) |
 | `das_acoustic_engine.py` | Multi-channel series + STFT along cable corridor |
 | `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
 | `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
@@ -37,7 +37,7 @@ Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `
 
 ## DAS cable acoustic (EMODnet corridors)
 
-**DasCableAcousticSimulator** **1.2.2** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
+**DasCableAcousticSimulator** **1.3.1** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`). Property **`Monitor Signal`** = `SEEKABEL_ANKERWURF_KM42` emits the **DAS-Seekabel Akustik-Monitor** ALARM (Ankerwurf/Schlepp km 42):
 
 | Cable Asset | Typ | EMODnet id |
 |-------------|-----|------------|
