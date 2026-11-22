@@ -39,13 +39,13 @@ def _mcp_import_error() -> str | None:
 @contextmanager
 def _trino_env_for_mcp(settings: Settings) -> Iterator[None]:
     """Align MCP Trino env with NBA Settings (catalog/schema + JDBC credentials)."""
-    from run_trino_ddl import apply_jdbc_url_env  # noqa: WPS433
+    from trino_endpoint import apply_all_trino_env  # noqa: WPS433
 
     previous = {
         "TRINO_CATALOG": os.environ.get("TRINO_CATALOG"),
         "TRINO_SCHEMA": os.environ.get("TRINO_SCHEMA"),
     }
-    apply_jdbc_url_env()
+    apply_all_trino_env()
     os.environ["TRINO_CATALOG"] = settings.trino_catalog
     os.environ["TRINO_SCHEMA"] = settings.trino_schema
     try:

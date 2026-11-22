@@ -28,8 +28,8 @@ echo "==> Sample route MMSI=${MMSI}"
 "$PY" <<'PY'
 import os, json, trino
 from trino.auth import BasicAuthentication
-from run_trino_ddl import apply_jdbc_url_env
-apply_jdbc_url_env()
+from trino_endpoint import apply_all_trino_env
+apply_all_trino_env()
 mmsi = int(os.environ["SAMPLE_MMSI"])
 conn = trino.dbapi.connect(
     host=os.environ["TRINO_HOST"], port=int(os.environ.get("TRINO_PORT", "443")),
