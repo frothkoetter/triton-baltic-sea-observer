@@ -66,5 +66,19 @@ def main() -> int:
     return 1 if errors else 0
 
 
+def _in_jupyter_kernel() -> bool:
+    return (
+        "ipykernel" in sys.modules
+        or "IPython" in sys.modules
+        or (bool(sys.argv) and "ipykernel" in sys.argv[0])
+    )
+
+
+def _exit_job(rc: int) -> None:
+    if _in_jupyter_kernel() and rc == 0:
+        return
+    raise SystemExit(rc)
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    _exit_job(main())

@@ -222,6 +222,7 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | Symptom | Action |
 |---------|--------|
 | Job log shows `Cell In[` | Job must use `cml_job.py`, not notebook |
+| Outliers `SystemExit: 0` + `OK statements: N` | Trino OK — Jupyter false failure; Scheduled Job + latest `trino-jobs/cml_job.py` |
 | UC1 `missing … fpdf2` | Session: `cd cai-workbench/situation-awareness && pip install -r requirements.txt`; or `LAGEBILD_AUTO_PIP=1` (default) on job — `cml_job.py` auto-installs once |
 | Log shows `Cell In[` | Use **Scheduled Job** script `cml_job.py`, not notebook cells |
 | Trino `error 404` | Host `triton-trino.*`; VW **Running** |
