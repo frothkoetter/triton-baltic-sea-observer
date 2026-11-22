@@ -1,11 +1,10 @@
 # CML Model — input function ``predict``
 import base64
-import os
 import sys
 
-_root = os.environ.get("CDSW_WORKING_DIRECTORY") or os.getcwd()
-if _root not in sys.path:
-    sys.path.insert(0, _root)
+from cml_root import install_root, model_pkl_path
+
+_root = install_root()
 
 import joblib
 import numpy as np
@@ -14,7 +13,7 @@ import cml.models_v1 as models
 from src.features import features_from_hdf5_bytes, features_from_summary
 from src.labels import FEATURE_NAMES
 
-_MODEL = joblib.load(os.path.join(_root, "model.pkl"))
+_MODEL = joblib.load(model_pkl_path())
 
 
 def _rows_from_args(args: dict) -> list[dict]:
