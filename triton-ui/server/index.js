@@ -446,7 +446,7 @@ app.get("/api/das-cable/preview", async (req, res) => {
       : err.includes("not allowed") || err.includes("URI not allowed")
         ? 403
         : 502;
-    if (status === 503 && !dasS3Configured()) {
+    if (!result.hint && (!dasS3Configured() || status === 503)) {
       result.hint = s3ConfigHint();
     }
     return res.status(status).json(result);
