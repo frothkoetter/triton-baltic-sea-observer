@@ -2,7 +2,7 @@
 
 Simulationsgestützte **Next Best Action** auf dem bestehenden Baltic Sea Observer-Stack (Trino/Iceberg, NiFi-Simulatoren, optional CrewAI).
 
-**Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · Mission Planning + SAP: [`../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) · UC1: [`../situation-awareness/`](../situation-awareness/)
+**Plan:** [`IMPLEMENTIERUNGSPLAN.md`](./IMPLEMENTIERUNGSPLAN.md) · Mission Planning + SAP: [`../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](../../docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) · UC1: [`../situation-awareness/`](../situation-awareness/) · **CML jobs (UC1/UC2):** [`../CML_UC_JOBS_SETUP.md`](../CML_UC_JOBS_SETUP.md)
 
 ## Mission Planning + SAP (MP-0 / MP-1)
 

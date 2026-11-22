@@ -14,6 +14,7 @@ End-to-end steps used to bring **Iceberg `defense`** on Cloudera Data Warehouse 
 | CML project env example | `scripts/cml/triton-project.env.example` |
 | CML env API | `scripts/cml/set_project_environment.py` |
 | UI on CML | `triton-ui/APPLICATION_TROUBLESHOOTING.md` |
+| UC1 / UC2 CML jobs | `cai-workbench/CML_UC_JOBS_SETUP.md` |
 
 ---
 
@@ -270,6 +271,16 @@ See `triton-ui/APPLICATION_TROUBLESHOOTING.md` for **Starting** / port mismatch 
 | UI **error 404** on Trino live | Update CML `TRINO_JDBC_URL` / `LAGEBILD_TRINO_HOST` to `triton-trino` |
 | UI no Trino toggle | `bash cdsw-build.sh` (stale `dist/`) |
 | Merge conflict on `create_db_tables_trino.sql` | Resolve or stash local SQL, pull, re-run DDL |
+
+---
+
+## 11. UC1 & UC2 CML scheduled jobs
+
+After Trino and DDL are green, configure hourly **Situation awareness (UC1)** and **Next Best Action (UC2)** jobs:
+
+**[cai-workbench/CML_UC_JOBS_SETUP.md](../cai-workbench/CML_UC_JOBS_SETUP.md)**
+
+Includes cron order (outliers → UC1 → UC2), wizard fields, environment tables, and UI alignment.
 
 ---
 
