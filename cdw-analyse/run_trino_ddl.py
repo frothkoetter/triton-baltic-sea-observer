@@ -15,7 +15,7 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2026-11-22-view-split-fix"
+DDL_RUNNER_REV = "2026-11-22-view-qualify-fix"
 
 
 def transform_sql(text: str) -> str:
@@ -105,8 +105,9 @@ def transform_sql(text: str) -> str:
     text = re.sub(r"(?im)^drop table if exists\b", "DROP TABLE IF EXISTS", text)
     text = re.sub(r"(?im)^drop table\b(?! if)", "DROP TABLE IF EXISTS", text)
 
+    known_tables = set(re.findall(r"(?im)^CREATE TABLE\s+(\w+)", text))
     if _should_qualify_schema():
-        text = _qualify_defense_objects(text)
+        text = _qualify_defense_objects(text, known_tables)
         text = re.sub(
             r"(?i)(?:CREATE OR REPLACE VIEW\s+){2,}",
             "CREATE OR REPLACE VIEW ",
@@ -132,20 +133,31 @@ def _qualify_prefix() -> str:
     return f"{cat}.{sch}."
 
 
-def _qualify_defense_objects(text: str) -> str:
+def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
     """Fully qualified iceberg.defense.* (matches probe_iceberg_snapshots / UI JDBC)."""
     prefix = _qualify_prefix()
+    cat = os.environ.get("TRINO_CATALOG", "iceberg")
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    # View DDL in the SQL file often uses defense.table — expand to catalog.schema.table.
-    text = re.sub(rf"(?<![\w.]){re.escape(sch)}\.", prefix, text)
+    # defense.ships → iceberg.defense.ships (skip if already catalog-qualified).
+    text = re.sub(
+        rf"(?<!{re.escape(cat)}\.)(?<![\w.]){re.escape(sch)}\.",
+        prefix,
+        text,
+    )
 
     def _qualify_table_refs(body: str) -> str:
-        # View bodies: FROM ships / JOIN ships without catalog (DDL file convention).
+        # Only bare physical table names — not CTEs (LatestAISData) or catalog tokens (iceberg).
+        def repl(m: re.Match[str]) -> str:
+            kw, name = m.group(1), m.group(2)
+            if name.lower() in (cat.lower(), sch.lower(), "select", "lateral"):
+                return m.group(0)
+            if name not in known_tables:
+                return m.group(0)
+            return f"{kw} {prefix}{name}"
+
         return re.sub(
-            r"(?i)\b(FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)\b",
-            lambda m: f"{m.group(1)} {prefix}{m.group(2)}"
-            if "." not in m.group(2) and m.group(2).lower() not in ("select", "lateral")
-            else m.group(0),
+            r"(?i)\b(FROM|JOIN)\s+([a-z][a-z0-9_]*)\b(?!\.)",
+            repl,
             body,
         )
 
