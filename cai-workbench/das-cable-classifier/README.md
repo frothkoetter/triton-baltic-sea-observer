@@ -12,7 +12,7 @@ Spiegelbild von [`lidar-vessel-classifier`](../lidar-vessel-classifier/): `fit.p
 | Engine + HDF5 | `nifi-processors/upload/das_acoustic_engine.py` |
 | Kabel (NiFi Property **Cable Asset**) | `BALTICCONNECTOR` (Default), `NORD_STREAM_1`, `NORD_STREAM_2`, `PCABLE_BSH_1`–`4` — WKT aus `ostsee_infrastruktur` |
 
-Schema: `triton/das-cable/v1` — Gruppe `segments/seg_XXX` mit `channels`, `spectrogram`, `frequencies_hz`, `threat_class` (Ground Truth für Training).
+Schema: `triton/das-cable/v1` — Gruppe `segments/seg_XXX` mit `channels`, `spectrogram`, `frequencies_hz`, `threat_class` (Ground Truth für Training). Vollständige NiFi- und UI-Doku: [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md).
 
 ## Schnellstart (Session / lokal)
 

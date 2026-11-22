@@ -30,6 +30,8 @@ Application script must be **`triton-ui/entry.py`** (not an old `triton-nato-ui`
 
 ### DAS HDF5 preview — “S3 not configured”
 
+NiFi HDF5 layout, Iceberg columns, and UI APIs: [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../docs/DAS_NIFI_AND_UI_FORMAT.md).
+
 The preview bridge uses the same boto path as LiDAR (`server/s3_boto.py`):
 
 1. **CML (recommended):** Project → **Data Connections** → **S3 Object Store** (name matches `S3_CONNECTION_NAME` if set). On the Application: `S3_PREFER_CML_CONNECTION=auto`, `LIDAR_USE_CML_S3=auto` (defaults).

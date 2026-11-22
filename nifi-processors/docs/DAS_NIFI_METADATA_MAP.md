@@ -2,6 +2,8 @@
 
 Map **FlowFile attributes** from `DasCableAcousticSimulator` (+ object store + optional classifier) to **Iceberg column names** in **UpdateAttribute** before `AttributesToJSON` / `PutDatabaseRecord` / JDBC.
 
+**HDF5 file layout + UI preview:** [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md).
+
 Ontology reference: [`ontology/mappings/das_cable_spectrogram_metadata.yaml`](../../ontology/mappings/das_cable_spectrogram_metadata.yaml).
 
 ## Flow order (typical)

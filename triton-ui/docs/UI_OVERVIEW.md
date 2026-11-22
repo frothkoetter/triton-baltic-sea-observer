@@ -11,7 +11,7 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | *(default)* | **Lagebild** | Operational map + KPIs + 24h tracks |
 | `#analysen` | **Analysen** | Aggregated analytics (fleet, buoys, RUS, AIS, sanctions, restricted) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
-| `#das` | **DAS Kabel** | Segment catalog + spectrogram/audio preview (S3 HDF5 or demo); footer build `0.2.2-das-preview` |
+| `#das` | **DAS Kabel** | Segment catalog + spectrogram/audio preview (S3 HDF5 or demo); see [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md) |
 | `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
 | `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
@@ -97,7 +97,7 @@ Other **Analysen** tabs (same page, for context):
 |--------|-----|---------|
 | Scan table | `GET /api/lidar/scans` | Metadata from warehouse + sample fallback |
 | DAS segments | `GET /api/das-cable/segments` | `das_cable_spectrogram_metadata` + sample fallback |
-| DAS spectrogram + audio | `GET /api/das-cable/preview?hadoop_file_url=&segment_index=` | `das-h5-bridge.py` (HDF5 in S3; **≤10 s** WAV + downsampled spectrogram) |
+| DAS spectrogram + audio | `GET /api/das-cable/preview?…` · **`GET /api/das-cable/wav?…`** | `das-h5-bridge.py` (HDF5 in S3; **≤10 s** WAV + downsampled spectrogram) |
 | Point preview | `GET /api/lidar/points?...` | `lidar-las-bridge.py` reads LAS/LAZ from **S3** (`S3_WORKLOAD_*`, optional prefix allowlist) |
 | Map | `LidarMap` | Scan footprint / bbox |
 
