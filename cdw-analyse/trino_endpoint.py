@@ -12,6 +12,13 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
+def normalize_trino_coordinator_host(host: str) -> str:
+    """DW overview host ``cdw-triton.*`` is not the Trino coordinator (``triton-trino.*``)."""
+    if re.match(r"^cdw-triton\.", host, re.I):
+        return re.sub(r"^cdw-triton\.", "triton-trino.", host, count=1, flags=re.I)
+    return host
+
+
 def apply_jdbc_url_env() -> None:
     """Populate TRINO_HOST/PORT/CATALOG/SCHEMA from TRINO_JDBC_URL when set."""
     url = os.environ.get("TRINO_JDBC_URL", "").strip()
@@ -25,7 +32,8 @@ def apply_jdbc_url_env() -> None:
     if not m:
         raise ValueError(f"Invalid TRINO_JDBC_URL: {url}")
     host, port, catalog, schema = m.groups()
-    os.environ.setdefault("TRINO_HOST", host)
+    host = normalize_trino_coordinator_host(host)
+    os.environ["TRINO_HOST"] = host
     if port:
         os.environ.setdefault("TRINO_PORT", port)
     if catalog:
@@ -46,7 +54,7 @@ def apply_trino_server_env() -> None:
         server = "https://" + server
     parsed = urlparse(server)
     if parsed.hostname:
-        os.environ["TRINO_HOST"] = parsed.hostname
+        os.environ["TRINO_HOST"] = normalize_trino_coordinator_host(parsed.hostname)
     if parsed.port:
         os.environ["TRINO_PORT"] = str(parsed.port)
     elif parsed.scheme == "https":
@@ -59,6 +67,18 @@ def apply_trino_server_env() -> None:
 def apply_all_trino_env() -> None:
     apply_jdbc_url_env()
     apply_trino_server_env()
+    raw = os.environ.get("TRINO_HOST", "").strip()
+    if raw:
+        os.environ["TRINO_HOST"] = normalize_trino_coordinator_host(raw)
+
+
+def apply_statement_path_to_client() -> None:
+    """Mirror run_trino_ddl._apply_statement_path_override for dbapi clients."""
+    path = os.environ.get("TRINO_STATEMENT_PATH", "").strip()
+    if path:
+        import trino.constants as trino_constants
+
+        trino_constants.URL_STATEMENT_PATH = path
 
 
 def statement_paths_to_try() -> List[str]:

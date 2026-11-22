@@ -82,7 +82,7 @@ Open **Application logs** and check:
 | Footer **`Alerts: 2`** (no **Trino live \| Demo**) | Stale `dist/` from before PR #130 — `bash cdsw-build.sh` or restart with `TRITON_FORCE_UI_REBUILD=1` |
 | Footer missing **`Build 0.2.0-data-mode`** | Same — old Vite bundle; check `/api/version` |
 | `Cannot find module` | Run `bash cdsw-build.sh` |
-| Footer **Trino live** shows **`error 404`** | `TRINO_JDBC_URL` / `LAGEBILD_TRINO_HOST` point at **DW** host `cdw-triton.…` — use coordinator **`triton-trino.…`** (CDW **Copy Trino URL**). Apply `scripts/cml/triton-project.env.example`, restart Application |
+| Footer **Trino live** / bridge **`error 404`** | Wrong host: use **`triton-trino.…`** (Copy Trino URL), not `cdw-triton.…`. Run `python3 triton-ui/server/trino-bridge.py --env-check`, fix CML Project env, restart Application |
 | Python `trino` errors on API only | OK at startup; set `TRINO_*` env |
 | LiDAR: `No module named 'laspy'` | Run once in Session: `python3 -m pip install -r requirements-cml-app.txt`; **Restart Application** (`entry.py` installs laspy when trino is present but laspy is not) |
 | Startup: `Installing Python bridge deps (laspy)` | Normal on first restart after `git pull` |
