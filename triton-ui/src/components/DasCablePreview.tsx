@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import type { DasCableSegment } from "../lib/das-cable";
-import { pseudoDasSpectrogram } from "../lib/das-preview";
+import { resolveDasHdfsUrl } from "../lib/das-cable";
+import { pseudoDasDemoAudioDataUrl, pseudoDasSpectrogram } from "../lib/das-preview";
 import { DasSpectrogramCanvas } from "./DasSpectrogramCanvas";
 
 type PreviewPayload = {
@@ -25,6 +26,8 @@ export function DasCablePreview({ segment }: Props) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioCaption, setAudioCaption] = useState<string>("");
 
+  const hdfsUrl = useMemo(() => resolveDasHdfsUrl(segment), [segment]);
+
   const pseudo = useMemo(() => {
     if (!segment) return null;
     return pseudoDasSpectrogram(
@@ -34,18 +37,40 @@ export function DasCablePreview({ segment }: Props) {
     );
   }, [segment]);
 
+  const applyPseudo = useCallback(
+    (reason?: string) => {
+      if (!pseudo || !segment) return;
+      setSpecValues(pseudo.values);
+      setFreqs(pseudo.frequencies_hz);
+      setSource("pseudo");
+      const idx = Number(segment.segment_index ?? 0);
+      const fs = Number(segment.fs_hz ?? 2000);
+      const win = Number(segment.window_seconds ?? 4);
+      setAudioUrl(pseudoDasDemoAudioDataUrl(idx, fs, win));
+      setAudioCaption(`Demo strain-rate tone · seg ${idx} (not from HDF5)`);
+      if (reason) setError(reason);
+    },
+    [pseudo, segment]
+  );
+
   useEffect(() => {
     setSpecValues(null);
     setFreqs(undefined);
     setAudioUrl(null);
     setError(null);
     setSource(null);
-    if (!segment?.hadoop_file_url) return;
+    if (!segment) return;
 
-    const uri = encodeURIComponent(segment.hadoop_file_url);
+    if (!hdfsUrl) {
+      applyPseudo("No hadoop_file_url on segment — set NiFi PutCDPObjectStore → hadoop.file.url");
+      return;
+    }
+
+    const uri = encodeURIComponent(hdfsUrl);
     const idx = Number(segment.segment_index ?? 0);
     let cancelled = false;
     setLoading(true);
+    applyPseudo();
 
     void (async () => {
       const res = await fetchJson<PreviewPayload>(
@@ -59,34 +84,28 @@ export function DasCablePreview({ segment }: Props) {
         setSpecValues(values);
         setFreqs(res.spectrogram?.frequencies_hz);
         setSource("s3");
+        setError(null);
         const b64 = res.audio?.wav_base64;
         if (b64) {
           setAudioUrl(`data:audio/wav;base64,${b64}`);
           setAudioCaption(
             res.audio?.caption ??
-              `Preview · ${res.audio?.duration_sec ?? "?"} s @ ${res.audio?.sample_rate_hz ?? "?"} Hz`
+              `HDF5 · ${res.audio?.duration_sec ?? "?"} s @ ${res.audio?.sample_rate_hz ?? "?"} Hz`
           );
         }
-        setError(null);
       } else {
-        setError(res.error ?? "Could not load HDF5 from object store");
-        setSource("pseudo");
-        if (pseudo) {
-          setSpecValues(pseudo.values);
-          setFreqs(pseudo.frequencies_hz);
-        }
+        applyPseudo(res.error ?? "Could not load HDF5 from object store");
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [segment?.hadoop_file_url, segment?.segment_index, pseudo]);
+  }, [hdfsUrl, segment, applyPseudo]);
 
   if (!segment) return null;
 
   const grid = specValues ?? pseudo?.values ?? [];
-  const freqAxis = freqs ?? pseudo?.frequencies_hz;
 
   return (
     <div className="das-preview-block">
@@ -96,27 +115,32 @@ export function DasCablePreview({ segment }: Props) {
             ? "Loading HDF5…"
             : source === "s3"
               ? `S3 · seg ${segment.segment_index ?? 0}`
-              : "Spectrogram preview"}
+              : "Spectrogram + audio (demo until S3 HDF5 loads)"}
         </span>
       </div>
-      <DasSpectrogramCanvas
-        values={grid}
-        frequenciesHz={freqAxis}
-        label={segment.threat_class ?? "segment"}
-      />
+      {grid.length > 0 ? (
+        <DasSpectrogramCanvas
+          values={grid}
+          frequenciesHz={freqs ?? pseudo?.frequencies_hz}
+          label={segment.threat_class ?? "segment"}
+        />
+      ) : (
+        <p className="lidar-hint">No spectrogram data for this segment.</p>
+      )}
       {audioUrl ? (
         <div className="das-audio-row">
-          <audio className="das-audio-player" controls preload="none" src={audioUrl}>
+          <audio className="das-audio-player" controls preload="metadata" src={audioUrl}>
             DAS audio preview
           </audio>
-          <p className="lidar-hint">{audioCaption} (max 10 s)</p>
+          <p className="lidar-hint">
+            {audioCaption}
+            {source === "s3" ? " (max 10 s from HDF5)" : " · configure S3 for live HDF5 audio"}
+          </p>
         </div>
-      ) : !loading && source !== "s3" ? (
-        <p className="lidar-hint">Audio requires S3 HDF5 preview.</p>
       ) : null}
       {error && source !== "s3" ? (
         <p className="lidar-hint" style={{ color: "var(--status-unknown)" }}>
-          S3: {error} — showing stylized spectrogram.
+          {error}
         </p>
       ) : null}
     </div>

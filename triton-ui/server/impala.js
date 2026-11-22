@@ -15,6 +15,7 @@ import {
 } from "./queries.js";
 import { shortenSanctionReason } from "./sanction-text.js";
 import { getEffectiveDataMode, shouldUseSampleData } from "./data-mode.js";
+import { normalizeDasSegment } from "./das-segment.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
@@ -792,7 +793,10 @@ export async function getLidarScans() {
 }
 
 export async function getDasCableSegments() {
-  return runQueryOrSample(PREDEFINED.dasCableSegments, () => sample.dasCableSegments);
+  const raw = await runQueryOrSample(PREDEFINED.dasCableSegments, () => sample.dasCableSegments);
+  const rows = raw.rows ?? raw.samples ?? [];
+  const normalized = Array.isArray(rows) ? rows.map((r) => normalizeDasSegment(r)) : rows;
+  return { ...raw, rows: normalized };
 }
 
 export async function getKpis() {
