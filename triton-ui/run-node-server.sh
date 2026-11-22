@@ -55,5 +55,10 @@ if [[ ! -f "$ROOT/dist/index.html" ]]; then
   exit 1
 fi
 
+if ! grep -rq "das-spectrogram-canvas" "$ROOT/dist/assets/"*.js 2>/dev/null; then
+  echo "WARN: dist/ is an old bundle (no DAS spectrogram/audio). Run: bash cdsw-build.sh" >&2
+  echo "      Or: git pull origin main (dist/ is committed on main from 0.2.3+)" >&2
+fi
+
 echo "Node $("$NODE_BIN" -v) starting on CDSW port ${PORT} (bin=$NODE_BIN)"
 exec "$NODE_BIN" "$ROOT/server/index.js"

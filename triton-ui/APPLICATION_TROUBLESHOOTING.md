@@ -16,7 +16,17 @@ This writes `.nvm`, `node_modules/`, and `dist/` **into the project tree** (pers
 
 Then create/restart the Application.
 
-After **`git pull`**, restart the Application once (or set `TRITON_FORCE_UI_REBUILD=1` on the Application) so `#das` shows spectrogram + audio. Footer and `GET /api/version` → **`build":"0.2.2-das-preview"`** (from `build-stamp.json`). If you still see **`0.2.0-data-mode`**, run `bash cdsw-build.sh` and restart the Application.
+After **`git pull origin main`**, restart the Application. **`dist/` is in git** (from `0.2.3-das-preview`) so you do **not** need `npm run build` on CML unless you edit `src/`.
+
+Verify:
+
+```bash
+curl -sS "http://127.0.0.1:${CDSW_APP_PORT}/api/version" | python3 -m json.tool
+```
+
+Expect `"build":"0.2.3-das-preview"` and **`"distDasPreview":true`**. If `distDasPreview` is **false**, run `bash cdsw-build.sh`. Footer must not show `0.2.0-data-mode`.
+
+Application script must be **`triton-ui/entry.py`** (not an old `triton-nato-ui` path).
 
 ## Application wizard
 
