@@ -14,9 +14,11 @@ const KIND_GROUP: Record<TrackKind, string> = {
 type Props = {
   tracks: PositionTrack[];
   loading?: boolean;
+  /** True when Trino bridge hit fetch/SQL limit (not all 24h points returned). */
+  truncated?: boolean;
 };
 
-export function RouteTrackTimeline({ tracks, loading }: Props) {
+export function RouteTrackTimeline({ tracks, loading, truncated }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
   const [cursorMs, setCursorMs] = useState<number | null>(null);
@@ -100,6 +102,13 @@ export function RouteTrackTimeline({ tracks, loading }: Props) {
       <p className="route-track-timeline-hint">
         Bis zu {MAX_OBJECTS} Objekte aus AIS, DEU Fleet und RUS Fleet wählen. Mit dem Regler die Zeit
         verschieben — die Route wird dynamisch bis zum gewählten Zeitpunkt gezeichnet.
+        {truncated ? (
+          <>
+            {" "}
+            <strong>Hinweis:</strong> Daten gekürzt — hohe <span className="mono">pts</span>-Zahlen bei
+            wenigen Schiffen entstehen, wenn Trino nur einen Teil der Historie liefert.
+          </>
+        ) : null}
       </p>
 
       <div className="route-track-picker">

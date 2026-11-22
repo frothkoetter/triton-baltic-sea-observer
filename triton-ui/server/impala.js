@@ -354,10 +354,18 @@ export async function getPositionTracks(opts = {}) {
   const source = parts.every((p) => p.source === "sample")
     ? "sample"
     : parts.find((p) => p.source && p.source !== "sample")?.source ?? "live";
+  const truncated = parts.some((p) => p.truncated);
+  const rowCount = rows.length;
+  const fetchLimits = parts
+    .map((p) => p.fetchLimit)
+    .filter((n) => typeof n === "number" && n > 0);
   return {
     ok: parts.some((p) => p.ok),
     source,
     rows,
+    rowCount,
+    truncated,
+    fetchLimit: fetchLimits.length ? Math.max(...fetchLimits) : undefined,
     hours,
     filters: filterArgs,
   };
