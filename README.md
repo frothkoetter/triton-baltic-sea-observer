@@ -72,7 +72,7 @@ flowchart TB
 
 | Module | Path | Role |
 |--------|------|------|
-| **Web UI (MVP)** | [`triton-ui/`](./triton-ui/) | React + Vite SPA; Express API; Python bridges for Trino, Impala, S3 LAS, SITREP, NBA, and CrewAI agent chat. Hash routes: Lagebild, Analysen, Schiffsnähe, LiDAR, SITREP, Agenten, NBA HITL. |
+| **Web UI (MVP)** | [`triton-ui/`](./triton-ui/) | React + Vite SPA; Express API; Python bridges for Trino, Impala, S3 LAS, SITREP, NBA, and CrewAI agent chat. Hash routes: Lagebild, Analysen, LiDAR, DAS Kabel, SITREP, Agenten, NBA HITL. |
 | **CDW analytics & DDL** | [`cdw-analyse/`](./cdw-analyse/) | Hive/Impala/Trino table creation, sample and production analytics, outlier detection, vessel route GeoJSON, NBA SQL phases, Iceberg snapshot probes, Trino spatial AIS experiments. |
 | **NiFi processors** | [`nifi-processors/`](./nifi-processors/) | Python extension bundle (`upload/`) for LAS simulation, Baltic ship routing, multi-fleet naval simulators, fishing/trade routes, buoys, messengers, STANAG generators; tests in `tests/`. |
 | **NiFi flows** | [`nifi-flow/`](./nifi-flow/) | Exported Data Hub flow JSON (e.g. `proj_triton`, Triton Data Simulator), parameter groups, deployment shell helpers. |

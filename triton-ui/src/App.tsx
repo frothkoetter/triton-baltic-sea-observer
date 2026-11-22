@@ -4,19 +4,17 @@ import { TRITON_UI_BUILD } from "./lib/build-info";
 import { FilterRail } from "./components/FilterRail";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
-import { ProximityPage } from "./pages/Proximity";
 import { NbaHitlPage } from "./pages/NbaHitl";
 import { AgentConsolePage } from "./pages/AgentConsole";
 import { LidarPage } from "./pages/Lidar";
 import { DasCablePage } from "./pages/DasCable";
 import { SitrepPage } from "./pages/Sitrep";
 
-type Zone = "lagebild" | "analysen" | "proximity" | "lidar" | "das" | "sitrep" | "agents" | "nba";
+type Zone = "lagebild" | "analysen" | "lidar" | "das" | "sitrep" | "agents" | "nba";
 
 const ZONE_HASH: Record<Zone, string> = {
   lagebild: "",
   analysen: "analysen",
-  proximity: "proximity",
   lidar: "lidar",
   das: "das",
   sitrep: "sitrep",
@@ -26,9 +24,9 @@ const ZONE_HASH: Record<Zone, string> = {
 
 function zoneFromHash(): Zone {
   const h = window.location.hash.replace(/^#/, "");
+  if (h === "proximity") return "lagebild";
   if (
     h === "analysen" ||
-    h === "proximity" ||
     h === "lidar" ||
     h === "das" ||
     h === "sitrep" ||
@@ -150,7 +148,6 @@ export default function App() {
             [
               ["lagebild", "Lagebild"],
               ["analysen", "Analysen"],
-              ["proximity", "Schiffsnähe"],
               ["lidar", "LiDAR"],
               ["das", "DAS Kabel"],
               ["sitrep", "SITREP"],
@@ -190,7 +187,6 @@ export default function App() {
           {zone === "analysen" && (
             <AnalysenPage flag={flag} vesselType={vesselType} shipName={shipName} />
           )}
-          {zone === "proximity" && <ProximityPage />}
           {zone === "lidar" && <LidarPage />}
           {zone === "das" && <DasCablePage />}
           {zone === "sitrep" && <SitrepPage />}

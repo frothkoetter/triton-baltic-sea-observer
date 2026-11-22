@@ -10,7 +10,6 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 |-------------|-------|-----------------|
 | *(default)* | **Lagebild** | Operational map + KPIs + 24h tracks |
 | `#analysen` | **Analysen** | Aggregated analytics (fleet, buoys, RUS, AIS, sanctions, restricted) |
-| `#proximity` | **Schiffsnähe** | Live proximity alerts (SSB MVE API proxy) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
 | `#das` | **DAS Kabel** | Cable segment catalog from `das_cable_spectrogram_metadata` (HDF5 metadata only) |
 | `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
@@ -145,7 +144,6 @@ flowchart TB
   end
   subgraph ext [External]
     S3[S3 LAS / SITREP PDF]
-    MVE[Proximity MVE API]
   end
   LB --> Q
   AN --> Q
@@ -157,7 +155,6 @@ flowchart TB
   Q --> BU
   Q --> NI
   LD --> S3
-  Proximity[Schiffsnähe] --> MVE
 ```
 
 ---
