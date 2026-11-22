@@ -42,7 +42,8 @@ if [[ -z "${TRINO_HOST:-}" && -n "${TRINO_JDBC_URL}" ]]; then
 fi
 
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
-echo "    (If CREATE SCHEMA returns 404: git pull create_db_tables_trino.sql, or TRINO_SKIP_CREATE_SCHEMA=1)"
+echo "    Session schema for DDL: \${TRINO_CONNECT_SCHEMA:-default} (target: \${TRINO_SCHEMA:-defense})"
+echo "    (If CREATE SCHEMA returns 404: TRINO_SKIP_CREATE_SCHEMA=1 when defense already exists)"
 
 VENV="${ROOT}/.venv"
 PY="python3"
@@ -80,25 +81,12 @@ if [[ -f "$NSB" ]]; then
   echo "==> Refresh NSB trade ship rows (311040001–311041000)"
   "$PY" - <<'PY'
 import os
-import trino
-from trino.auth import BasicAuthentication
-from run_trino_ddl import apply_jdbc_url_env
+from run_trino_ddl import connect
 
-apply_jdbc_url_env()
-user = os.environ["TRINO_USER"]
-password = os.environ["TRINO_PASSWORD"]
-conn = trino.dbapi.connect(
-    host=os.environ["TRINO_HOST"],
-    port=int(os.environ.get("TRINO_PORT", "443")),
-    user=user,
-    catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
-    schema=os.environ.get("TRINO_SCHEMA", "defense"),
-    http_scheme="https",
-    auth=BasicAuthentication(user, password),
-)
+conn = connect(for_ddl=False, schema=os.environ.get("TRINO_SCHEMA", "defense"))
 cur = conn.cursor()
 cur.execute(
-    "DELETE FROM ships WHERE mmsi >= 311040001 AND mmsi <= 311041000"
+    "DELETE FROM iceberg.defense.ships WHERE mmsi >= 311040001 AND mmsi <= 311041000"
 )
 conn.close()
 print("DELETE NSB MMSI range: ok")
@@ -110,27 +98,14 @@ echo ""
 echo "==> Smoke checks"
 "$PY" - <<'PY'
 import os
-import trino
-from trino.auth import BasicAuthentication
-from run_trino_ddl import apply_jdbc_url_env
+from run_trino_ddl import connect
 
-apply_jdbc_url_env()
-user = os.environ["TRINO_USER"]
-password = os.environ["TRINO_PASSWORD"]
-conn = trino.dbapi.connect(
-    host=os.environ["TRINO_HOST"],
-    port=int(os.environ.get("TRINO_PORT", "443")),
-    user=user,
-    catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
-    schema=os.environ.get("TRINO_SCHEMA", "defense"),
-    http_scheme="https",
-    auth=BasicAuthentication(user, password),
-)
+conn = connect(for_ddl=False, schema=os.environ.get("TRINO_SCHEMA", "defense"))
 cur = conn.cursor()
 for q in (
-    "SELECT COUNT(*) FROM ships",
-    "SELECT COUNT(*) FROM ais_events_ice",
-    "SELECT COUNT(*) FROM ships WHERE mmsi >= 311040001",
+    "SELECT COUNT(*) FROM iceberg.defense.ships",
+    "SELECT COUNT(*) FROM iceberg.defense.ais_events_ice",
+    "SELECT COUNT(*) FROM iceberg.defense.ships WHERE mmsi >= 311040001",
 ):
     cur.execute(q)
     row = cur.fetchone()

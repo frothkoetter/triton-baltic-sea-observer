@@ -141,7 +141,24 @@ def apply_jdbc_url_env() -> None:
         os.environ.setdefault("TRINO_SCHEMA", schema)
 
 
-def connect():
+def session_schema(for_ddl: bool = True) -> str:
+    """
+    JDBC session schema. For greenfield DDL, connect to an existing schema
+    (iceberg.default) — not TRINO_SCHEMA=defense before CREATE SCHEMA runs.
+    """
+    explicit = os.environ.get("TRINO_CONNECT_SCHEMA", "").strip()
+    if explicit:
+        return explicit
+    if for_ddl and os.environ.get("TRINO_DDL_USE_TARGET_SCHEMA", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return "default"
+    return os.environ.get("TRINO_SCHEMA", "defense")
+
+
+def connect(*, for_ddl: bool = True, schema: str | None = None):
     apply_jdbc_url_env()
     host = os.environ.get(
         "TRINO_HOST",
@@ -149,12 +166,14 @@ def connect():
     )
     user = os.environ["TRINO_USER"]
     password = os.environ["TRINO_PASSWORD"]
+    catalog = os.environ.get("TRINO_CATALOG", "iceberg")
+    session = schema if schema is not None else session_schema(for_ddl=for_ddl)
     return trino.dbapi.connect(
         host=host,
         port=int(os.environ.get("TRINO_PORT", "443")),
         user=user,
-        catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
-        schema=os.environ.get("TRINO_SCHEMA", "defense"),
+        catalog=catalog,
+        schema=session,
         http_scheme="https",
         auth=BasicAuthentication(user, password),
     )
@@ -164,7 +183,7 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
     stmts = _skip_create_schema(split_statements(transformed))
-    conn = connect()
+    conn = connect(for_ddl=True)
     cur = conn.cursor()
     errors: List[str] = []
     ok = 0
