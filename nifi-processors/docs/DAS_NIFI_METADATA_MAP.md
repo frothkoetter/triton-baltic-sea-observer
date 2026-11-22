@@ -144,22 +144,21 @@ InvokeHTTP response content (attributes on the same FlowFile as `das.segment.ind
 
 ### Mode A — one Iceberg row per batch (primary segment)
 
-**EvaluateJsonPath** — Property = **attribute name** (match SQL column), Value = **JsonPath** (Expression Language allowed in the path):
+**InvokeHTTP** request body must include the primary segment index (matches `das.segment.index` on the FlowFile):
+
+```json
+{"request":{"uri":"${hadoop.file.url}","segment_index":"${das.segment.index}"}}
+```
+
+The model copies that segment’s ML result onto `response.threat_type` and `response.confidence` so NiFi can use **literal** JsonPaths (EvaluateJsonPath does **not** accept Expression Language inside paths such as `$.response.predictions[${das.segment.index}].confidence` — you will get “expression was not valid”).
+
+**EvaluateJsonPath** — Property = attribute name (Iceberg column), Value = JsonPath:
 
 | Property (attribute) | JsonPath |
 |----------------------|----------|
 | `model_status_code` | `$.StatusCode` |
-| `predicted_threat_type` | `$.response.predictions[${das.segment.index}].threat_type` |
-| `model_confidence` | `$.response.predictions[${das.segment.index}].confidence` |
-
-Fallback if the path is missing (single-segment deploy returns a flat object inside `response`):
-
-| Property | JsonPath |
-|----------|----------|
 | `predicted_threat_type` | `$.response.threat_type` |
 | `model_confidence` | `$.response.confidence` |
-
-Use a second EvaluateJsonPath on a failure path, or rely on rollup fields after redeploying `predict.py` with `primary_segment` / headline `threat_type`.
 
 **UpdateAttribute** before `AttributesToJSON` — add or confirm:
 

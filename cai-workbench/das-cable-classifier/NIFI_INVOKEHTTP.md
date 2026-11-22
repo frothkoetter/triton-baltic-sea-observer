@@ -4,30 +4,29 @@ Same gateway pattern as [lidar-vessel-classifier/NIFI_INVOKEHTTP.md](../lidar-ve
 
 ## Request body (after PutCDPObjectStore)
 
+Pass the simulator primary segment so the model returns **flat** fields for EvaluateJsonPath (no array index in JsonPath):
+
 ```json
-{"request":{"uri":"${hadoop.file.url}"}}
+{"request":{"uri":"${hadoop.file.url}","segment_index":"${das.segment.index}"}}
 ```
 
 (`s3_uri` / `s3a://…` are accepted; model normalizes `s3a` → `s3`.)
 
 ## EvaluateJsonPath (replace LiDAR paths)
 
-**Do not use** `$.response.vessel_type` or `$.response.confidence` copied from the LiDAR group.
+**Do not use** `$.response.vessel_type` or LiDAR-style single-segment paths on a multi-segment DAS response.
+
+**Do not put Expression Language inside JsonPath** — paths like `$.response.predictions[${das.segment.index}].confidence` are **rejected** by EvaluateJsonPath (invalid expression). Array indices must be literals if you use `predictions[n]` at all.
+
+Use **static** paths on rollup fields inside `response` (model sets these from `segment_index` in the request body):
 
 | Property (attribute = Iceberg column) | JsonPath |
 |--------------------------------------|----------|
 | `model_status_code` | `$.StatusCode` |
-| `predicted_threat_type` | `$.response.predictions[${das.segment.index}].threat_type` |
-| `model_confidence` | `$.response.predictions[${das.segment.index}].confidence` |
-
-**Single-segment or headline rollup** (if indexed path is empty):
-
-| Property | JsonPath |
-|----------|----------|
 | `predicted_threat_type` | `$.response.threat_type` |
 | `model_confidence` | `$.response.confidence` |
 
-Redeploy `predict.py` **after** pull — multi-segment batches include rollup `threat_type` / `confidence` on `response`.
+Redeploy `predict.py` after pull so multi-segment batches always include `threat_type` / `confidence` on `response` (not only `predictions[]`).
 
 ## UpdateAttribute → `das_cable_spectrogram_metadata`
 

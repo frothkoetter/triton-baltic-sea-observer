@@ -83,6 +83,27 @@ from src.s3_client import get_s3_client
 _MODEL = joblib.load(_MODEL_PKL)
 
 
+def _flatten_model_args(args: dict) -> dict:
+    """NiFi Model Service sends ``{\"request\": {uri, segment_index, …}}``."""
+    if isinstance(args.get("request"), dict):
+        merged = {k: v for k, v in args.items() if k != "request"}
+        merged.update(args["request"])
+        return merged
+    return args
+
+
+def _segment_index_from_args(args: dict) -> int | None:
+    for key in ("segment_index", "primary_segment_index", "das_segment_index"):
+        val = args.get(key)
+        if val is None or val == "":
+            continue
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def _s3_uri_from_args(args: dict) -> str | None:
     for key in ("s3_uri", "uri", "s3a_uri", "hadoop_file_url"):
         val = args.get(key)
@@ -118,8 +139,16 @@ def _rows_from_args(args: dict) -> list[dict]:
     )
 
 
+def _headline_prediction(results: list[dict], primary_index: int | None) -> dict:
+    if primary_index is not None and 0 <= primary_index < len(results):
+        return results[primary_index]
+    return max(results, key=lambda r: r["confidence"])
+
+
 @models.cml_model
 def predict(args: dict) -> dict:
+    args = _flatten_model_args(args)
+    primary_index = _segment_index_from_args(args)
     rows = _rows_from_args(args)
     clf = _MODEL.named_steps["clf"]
     results = []
@@ -142,13 +171,16 @@ def predict(args: dict) -> dict:
         )
     if len(results) == 1:
         return results[0]
-    top = max(results, key=lambda r: r["confidence"])
-    # NiFi EvaluateJsonPath: $.response.threat_type / $.response.confidence (headline)
-    # Per-segment: $.response.predictions[${das.segment.index}].*
-    return {
+    head = _headline_prediction(results, primary_index)
+    # NiFi EvaluateJsonPath — static paths only (no EL inside JsonPath):
+    # $.response.threat_type / $.response.confidence
+    out: dict = {
         "predictions": results,
         "count": len(results),
-        "threat_type": top["threat_type"],
-        "confidence": top["confidence"],
-        "primary_segment": top["segment"],
+        "threat_type": head["threat_type"],
+        "confidence": head["confidence"],
+        "primary_segment": head["segment"],
     }
+    if primary_index is not None:
+        out["segment_index"] = primary_index
+    return out
