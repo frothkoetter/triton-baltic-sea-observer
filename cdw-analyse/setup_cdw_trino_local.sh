@@ -24,11 +24,16 @@ elif [[ -f "${ROOT}/.env.trino.local.example" ]]; then
   exit 1
 fi
 
-export TRINO_JDBC_URL="${TRINO_JDBC_URL:-jdbc:trino://cdw-triton.dw-triton-cdp-env.a465-9q4k.cloudera.site:443/iceberg/defense}"
+export TRINO_JDBC_URL="${TRINO_JDBC_URL:-jdbc:trino://triton-trino.dw-triton-cdp-env.a465-9q4k.cloudera.site:443/iceberg/defense}"
 export TRINO_USER="${TRINO_USER:-frothkoetter}"
 export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
 export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
 export TRINO_PORT="${TRINO_PORT:-443}"
+export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-defense}"
+export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
+export TRINO_QUALIFY_SCHEMA="${TRINO_QUALIFY_SCHEMA:-1}"
+export TRINO_SKIP_DROP="${TRINO_SKIP_DROP:-1}"
+export TRINO_FORGIVE_DROP_404="${TRINO_FORGIVE_DROP_404:-1}"
 
 if [[ -z "${TRINO_PASSWORD:-}" ]]; then
   echo "Set TRINO_PASSWORD in .env.trino.local or the environment." >&2
@@ -41,7 +46,17 @@ if [[ -z "${TRINO_HOST:-}" && -n "${TRINO_JDBC_URL}" ]]; then
   export TRINO_HOST
 fi
 
+if grep -q '_skip_create_schema' "${ROOT}/run_trino_ddl.py" 2>/dev/null; then
+  echo "ERROR: cdw-analyse/run_trino_ddl.py is outdated (USE iceberg.defense still runs → 404)." >&2
+  echo "       From repo root: git pull origin main   (need fix >= 873d677; skips USE + qualifies defense.*)" >&2
+  exit 1
+fi
+
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
+echo "    Session schema for DDL: ${TRINO_CONNECT_SCHEMA} (target: ${TRINO_SCHEMA})"
+echo "    TRINO_SKIP_CREATE_SCHEMA=${TRINO_SKIP_CREATE_SCHEMA}  TRINO_QUALIFY_SCHEMA=${TRINO_QUALIFY_SCHEMA}"
+echo "    TRINO_SKIP_DROP=${TRINO_SKIP_DROP}  (set 0 for full DROP+CREATE re-apply)"
+echo "    (CREATE SCHEMA / USE via Trino often 404 on CDW — create iceberg.defense in DW UI, keep skip=1)"
 
 VENV="${ROOT}/.venv"
 PY="python3"
@@ -72,6 +87,20 @@ run_ddl() {
   fi
 }
 
+if [[ -x "$PY" ]] || command -v python3 >/dev/null; then
+  echo ""
+  echo "==> CDW Trino doctor (optional connectivity checks)"
+  doctor_rc=0
+  "$PY" "${ROOT}/trino_cdw_doctor.py" || doctor_rc=$?
+  if [[ "$doctor_rc" -eq 3 ]]; then
+    echo "Doctor: invalid Trino credentials (HTTP 401) — fix TRINO_USER/TRINO_PASSWORD." >&2
+    exit 1
+  elif [[ "$doctor_rc" -ne 0 ]]; then
+    echo "Doctor failed — fix TRINO_SERVER / warehouse Running before DDL." >&2
+    exit 1
+  fi
+fi
+
 run_ddl "$DDL" 0
 
 if [[ -f "$NSB" ]]; then
@@ -79,25 +108,12 @@ if [[ -f "$NSB" ]]; then
   echo "==> Refresh NSB trade ship rows (311040001–311041000)"
   "$PY" - <<'PY'
 import os
-import trino
-from trino.auth import BasicAuthentication
-from run_trino_ddl import apply_jdbc_url_env
+from run_trino_ddl import connect
 
-apply_jdbc_url_env()
-user = os.environ["TRINO_USER"]
-password = os.environ["TRINO_PASSWORD"]
-conn = trino.dbapi.connect(
-    host=os.environ["TRINO_HOST"],
-    port=int(os.environ.get("TRINO_PORT", "443")),
-    user=user,
-    catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
-    schema=os.environ.get("TRINO_SCHEMA", "defense"),
-    http_scheme="https",
-    auth=BasicAuthentication(user, password),
-)
+conn = connect(for_ddl=False, schema=os.environ.get("TRINO_SCHEMA", "defense"))
 cur = conn.cursor()
 cur.execute(
-    "DELETE FROM ships WHERE mmsi >= 311040001 AND mmsi <= 311041000"
+    "DELETE FROM iceberg.defense.ships WHERE mmsi >= 311040001 AND mmsi <= 311041000"
 )
 conn.close()
 print("DELETE NSB MMSI range: ok")
@@ -109,27 +125,14 @@ echo ""
 echo "==> Smoke checks"
 "$PY" - <<'PY'
 import os
-import trino
-from trino.auth import BasicAuthentication
-from run_trino_ddl import apply_jdbc_url_env
+from run_trino_ddl import connect
 
-apply_jdbc_url_env()
-user = os.environ["TRINO_USER"]
-password = os.environ["TRINO_PASSWORD"]
-conn = trino.dbapi.connect(
-    host=os.environ["TRINO_HOST"],
-    port=int(os.environ.get("TRINO_PORT", "443")),
-    user=user,
-    catalog=os.environ.get("TRINO_CATALOG", "iceberg"),
-    schema=os.environ.get("TRINO_SCHEMA", "defense"),
-    http_scheme="https",
-    auth=BasicAuthentication(user, password),
-)
+conn = connect(for_ddl=False, schema=os.environ.get("TRINO_SCHEMA", "defense"))
 cur = conn.cursor()
 for q in (
-    "SELECT COUNT(*) FROM ships",
-    "SELECT COUNT(*) FROM ais_events_ice",
-    "SELECT COUNT(*) FROM ships WHERE mmsi >= 311040001",
+    "SELECT COUNT(*) FROM iceberg.defense.ships",
+    "SELECT COUNT(*) FROM iceberg.defense.ais_events_ice",
+    "SELECT COUNT(*) FROM iceberg.defense.ships WHERE mmsi >= 311040001",
 ):
     cur.execute(q)
     row = cur.fetchone()

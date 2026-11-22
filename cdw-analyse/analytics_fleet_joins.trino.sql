@@ -9,6 +9,6 @@
 
 -- 3–5) Latest status per MMSI → operational_status / system_status / destination
 
--- 6) Unit picture: fleet + message counts + latest status (see triton-nato-ui/server/queries.js fleetAnalyticsUnitStatus)
+-- 6) Unit picture: fleet + message counts + latest status (see triton-ui/server/queries.js fleetAnalyticsUnitStatus)
 
 -- 7) Recent messages from fleet units

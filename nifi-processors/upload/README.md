@@ -9,7 +9,11 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
-| `STANAGSimulator.py` | STANAG messages (**1.7.0** — POSITION = MarineShipSimulator) |
+| `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.0.0**) |
+| `das_acoustic_engine.py` | Multi-channel series + STFT along cable corridor |
+| `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
+| `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
+| `stanag_message_engine.py` | Message templates, traffic profiles, NDJSON render |
 | `MessengerSimulator.py` | Messenger sim |
 | `gpsjammer.py` | GPS jamming sim |
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
@@ -31,15 +35,45 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 
 Per-processor extras (`pyproj`, `laspy`, `faker`, …) come from each file’s `ProcessorDetails.dependencies`.
 
+## DAS cable acoustic (EMODnet corridors)
+
+**DasCableAcousticSimulator** **1.1.0** — synthetic **48-channel** DAS along any registered **`Cable Asset`** (WKT = `defense.ostsee_infrastruktur`):
+
+| Cable Asset | Typ | EMODnet id |
+|-------------|-----|------------|
+| `BALTICCONNECTOR` | Gaspipeline | EMODNET_BALTICCONNECTOR |
+| `NORD_STREAM_1` | Gaspipeline | EMODNET_NS1 |
+| `NORD_STREAM_2` | Gaspipeline | EMODNET_NS2 |
+| `PCABLE_BSH_1` … `PCABLE_BSH_4` | Seekabel | EMODNET_PCABLE_BSH_* |
+
+Output **HDF5** (`triton/das-cable/v1`). CML: `cai-workbench/das-cable-classifier/`.
+
+| Property | Default |
+|----------|---------|
+| Cable Asset | `BALTICCONNECTOR` (dropdown, 7 values) |
+| Segment Count | 6 |
+| Output Format | `hdf5` |
+
 ## STANAG / marine position alignment
 
-**StanagMessageGenerator** (`STANAGSimulator.py` **1.7.0**) uses the same coordinates as **MarineShipSimulator** for each `FROM/` unit:
+**StanagMessageGenerator** (`STANAGSimulator.py` **2.0.0**) uses MarineShipSimulator coordinates and simulates **NATO-style operational traffic**:
 
-1. Preferred: connect **MarineShipSimulator → success → StanagMessageGenerator** (use marine NDJSON on the FlowFile).
-2. Fallback: read **`/tmp/marineship_state.json`** written on the same NiFi node (5 decimal places, same as `marine_vessel_status`).
-3. Property **Require Marine Ship Positions** = `true` (default) avoids random Baltic coordinates when marine data is missing.
+- **Unit → HQ:** SITREP, POSREP, SPOT, MEDREP  
+- **HQ → unit:** FRAGO, WMSG (MOC / TFHQ / LOGCELL …)  
+- **Unit → unit:** INTSNO (PIM / escort handover), LOGREQ rendezvous  
 
-Disable the standalone **GenerateFlowFile** in *Surveillance Report Simulator* when marine output feeds STANAG.
+| Property | Typical value |
+|----------|----------------|
+| Traffic Profile | `watch_section` (14–22 msgs), `major_exercise` (42–58), `custom` + Number of Messages |
+| Exercise Designation | `BALTOPS` (or empty → random) |
+| Output Format | `text_bundle` (CDV) or `ndjson` (Kafka / SplitRecord) |
+| Include Inter-Unit / HQ Traffic | `true` |
+
+1. Connect **MarineShipSimulator → success → StanagMessageGenerator** (NDJSON preferred).  
+2. Fallback: **`/tmp/marineship_state.json`** on the NiFi node.  
+3. **Require Marine Ship Positions** = `true` avoids random coordinates.
+
+FlowFile attributes include `message_id`, `message_dtg`, `message_from`, `message_to`, `stanag.traffic.*` counts for **AttributesToJSON**.
 
 ## Russian Baltic Fleet route
 

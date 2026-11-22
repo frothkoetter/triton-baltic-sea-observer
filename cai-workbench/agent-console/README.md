@@ -19,7 +19,7 @@ Replaces the NATO UI **SQL workspace** with three conversational agent apps grou
 | `llm` | Skip CrewAI, use OpenAI-compatible API |
 | `offline` | Deterministic ontology-aware replies |
 
-## Bridge (used by `triton-nato-ui` API)
+## Bridge (used by `triton-ui` API)
 
 ```bash
 echo '{"action":"chat","app_id":"lage-analyst","messages":[{"role":"user","content":"ais_pipeline_blackout"}]}' \

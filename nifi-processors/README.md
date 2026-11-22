@@ -56,6 +56,10 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 
 **TwitterMessageGenerator not loading:** Check `nifi-app.log` for `Failed to install requirements for TwitterMessageGenerator`. Common cause: **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
 
+**DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.0.0** — Balticconnector HDF5 spectrograms; CML `das-cable-classifier`.
+
+**STANAG:** **`upload/STANAGSimulator.py` 2.0.0** — exercise traffic profiles (`watch_section`, `major_exercise`, …), HQ ↔ unit ↔ unit mixes, `text_bundle` or `ndjson`. Engine: **`stanag_message_engine.py`**. Tests: `tests/test_stanag_message_engine.py`.
+
 **Ship AIS:** **`upload/ShipSimulationRoutesGemini.py`** — civilian `ShipSimulationProcessor`. **`MarineShipSimulator` 1.7.0** — German Navy mission pattern (`ship.simulation.route` = `german_navy_missions`): home bases Kiel / Wilhelmshaven / Eckernförde / Warnemünde, Baltic or coastal patrol 1–4 weeks, ~7 days moored after return. Delete `/tmp/marineship_state.json` after upgrading from harbor-hopping 1.6.x.
 
 **Route state reset:** Include **`upload/BalticShipRouteStateReset.py`** (**1.2.0**) in the sync bundle (with `baltic_ship_sim_state.py`, `marine_fleet_registry.py`). With **Dump State To Payload** = true (default), each run embeds pre-reset `/tmp` JSON under `snapshots` in the outgoing FlowFile, then deletes or clears routes—useful when the NiFi pod `/tmp` is not reachable.
