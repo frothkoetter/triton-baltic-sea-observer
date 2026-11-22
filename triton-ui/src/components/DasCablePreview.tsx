@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchJson } from "../api";
 import type { DasCableSegment } from "../lib/das-cable";
 import { resolveDasHdfsUrl } from "../lib/das-cable";
@@ -27,6 +27,35 @@ export function DasCablePreview({ segment }: Props) {
   const [freqs, setFreqs] = useState<number[] | undefined>();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioCaption, setAudioCaption] = useState<string>("");
+  const audioObjectUrl = useRef<string | null>(null);
+
+  const setPlaybackUrl = useCallback((b64: string | null, fallback?: string | null) => {
+    if (audioObjectUrl.current) {
+      URL.revokeObjectURL(audioObjectUrl.current);
+      audioObjectUrl.current = null;
+    }
+    if (b64) {
+      try {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+        audioObjectUrl.current = url;
+        setAudioUrl(url);
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
+    setAudioUrl(fallback ?? null);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (audioObjectUrl.current) URL.revokeObjectURL(audioObjectUrl.current);
+    },
+    []
+  );
 
   const hdfsUrl = useMemo(() => resolveDasHdfsUrl(segment), [segment]);
 
@@ -48,7 +77,7 @@ export function DasCablePreview({ segment }: Props) {
       const idx = Number(segment.segment_index ?? 0);
       const fs = Number(segment.fs_hz ?? 2000);
       const win = Number(segment.window_seconds ?? 4);
-      setAudioUrl(pseudoDasDemoAudioDataUrl(idx, fs, win));
+      setPlaybackUrl(null, pseudoDasDemoAudioDataUrl(idx, fs, win));
       setAudioCaption(`Demo strain-rate tone · seg ${idx} (not from HDF5)`);
       if (reason) {
         setError(reason);
@@ -61,7 +90,7 @@ export function DasCablePreview({ segment }: Props) {
   useEffect(() => {
     setSpecValues(null);
     setFreqs(undefined);
-    setAudioUrl(null);
+    setPlaybackUrl(null, null);
     setError(null);
     setHint(null);
     setSource(null);
@@ -93,12 +122,25 @@ export function DasCablePreview({ segment }: Props) {
         setError(null);
         setHint(null);
         const b64 = res.audio?.wav_base64;
-        if (b64) {
-          setAudioUrl(`data:audio/wav;base64,${b64}`);
+        const dur = Number(res.audio?.duration_sec ?? 0);
+        const idx = Number(segment.segment_index ?? 0);
+        const fs = Number(segment.fs_hz ?? 2000);
+        const win = Number(segment.window_seconds ?? 4);
+        const demo = pseudoDasDemoAudioDataUrl(idx, fs, win);
+        if (b64 && dur >= 0.2) {
+          setPlaybackUrl(b64);
           setAudioCaption(
             res.audio?.caption ??
               `HDF5 · ${res.audio?.duration_sec ?? "?"} s @ ${res.audio?.sample_rate_hz ?? "?"} Hz`
           );
+        } else if (b64) {
+          setPlaybackUrl(b64, demo);
+          setAudioCaption(
+            `${res.audio?.caption ?? "HDF5"} · short waveform — demo tone mixed for playback`
+          );
+        } else {
+          setPlaybackUrl(null, demo);
+          setAudioCaption("HDF5 spectrogram only — demo audio (no WAV in segment)");
         }
       } else {
         applyPseudo(res.error ?? "Could not load HDF5 from object store");
@@ -109,7 +151,7 @@ export function DasCablePreview({ segment }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [hdfsUrl, segment, applyPseudo]);
+  }, [hdfsUrl, segment, applyPseudo, setPlaybackUrl]);
 
   if (!segment) return null;
 
@@ -137,7 +179,13 @@ export function DasCablePreview({ segment }: Props) {
       )}
       {audioUrl ? (
         <div className="das-audio-row">
-          <audio className="das-audio-player" controls preload="metadata" src={audioUrl}>
+          <audio
+            key={audioUrl}
+            className="das-audio-player"
+            controls
+            preload="metadata"
+            src={audioUrl}
+          >
             DAS audio preview
           </audio>
           <p className="lidar-hint">
