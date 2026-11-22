@@ -37,6 +37,8 @@ python3 scripts/validate_nifi_ml.py
 
 **Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`**, Input function **`predict`**. Build engine = `cdsw-build.sh`.
 
+CML kopiert oft **kein** `bundled/` ins Model-Image (Build-Log `transferring context: 3kB`). Dann erzeugt `cdsw-build.sh` per `scripts/build_model_for_deploy.py` ein **`model.pkl`** (synthetisch, ~1 Min). Besser: unter Model **Files** auch `bundled/model.pkl` + `bundled/label_names.json` + `src/` mit aufnehmen, oder vor Deploy `python3 train.py` laufen lassen und **`model.pkl`** im Projekt root belassen (nicht gitignored im Workspace — wird mit ins Image genommen, wenn die Datei im Projekt liegt).
+
 Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — **alter** `predict.py` (ohne `bundled/`-Fallback). Im Projekt prüfen: `head -3 predict.py` enthält `_model_pkl_path`. Dann **Engine neu bauen** (`cdsw-build.sh`) und **Model neu deployen** (nicht nur Session). `model.pkl` ist gitignored — Build kopiert `bundled/model.pkl`. Logs zeigen `das-cable-classifier: loading …` bei Erfolg.
 
 ### predict API
