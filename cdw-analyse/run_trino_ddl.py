@@ -15,7 +15,7 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2026-11-22-view-qualify-fix"
+DDL_RUNNER_REV = "2026-11-22-alter-qualify-fix"
 
 
 def transform_sql(text: str) -> str:
@@ -105,7 +105,19 @@ def transform_sql(text: str) -> str:
     text = re.sub(r"(?im)^drop table if exists\b", "DROP TABLE IF EXISTS", text)
     text = re.sub(r"(?im)^drop table\b(?! if)", "DROP TABLE IF EXISTS", text)
 
-    known_tables = set(re.findall(r"(?im)^CREATE TABLE\s+(\w+)", text))
+    known_tables = set(
+        re.findall(r"(?im)^CREATE TABLE(?:\s+IF NOT EXISTS)?\s+(\w+)", text)
+    )
+    known_tables.update(re.findall(r"(?im)^ALTER TABLE\s+(\w+)", text))
+    known_tables.update(
+        {
+            "nba_incidents",
+            "nba_coa_runs",
+            "nba_incident_snapshots",
+            "nba_materialized_tables",
+            "sap_readiness_staging",
+        }
+    )
     if _should_qualify_schema():
         text = _qualify_defense_objects(text, known_tables)
         text = re.sub(
@@ -169,7 +181,7 @@ def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
         return f"{kw} {prefix}{name}"
 
     text = re.sub(
-        r"(?im)^(CREATE TABLE|DROP TABLE IF EXISTS|INSERT INTO)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|ALTER TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
         _qualify_stmt_head,
         text,
     )

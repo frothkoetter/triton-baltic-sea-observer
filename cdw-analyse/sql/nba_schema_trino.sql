@@ -1,14 +1,10 @@
--- NBA Phase 0 — Iceberg tables in iceberg.defense
--- Apply: set -a && source ../.env.trino.local && set +a
---       python3 ../run_trino_ddl.py nba_schema_trino.sql
+-- NBA Phase 0 — Iceberg tables in iceberg.defense (additive; no DROP)
+-- Apply: python3 run_trino_ddl.py sql/nba_schema_trino.sql --continue
+-- Env: TRINO_SKIP_CREATE_SCHEMA=1 TRINO_QUALIFY_SCHEMA=1 TRINO_CONNECT_SCHEMA=defense
 
 USE iceberg.defense;
 
-DROP TABLE IF EXISTS nba_coa_runs;
-DROP TABLE IF EXISTS nba_incident_snapshots;
-DROP TABLE IF EXISTS nba_incidents;
-
-CREATE TABLE nba_incidents (
+CREATE TABLE IF NOT EXISTS nba_incidents (
     flow_uuid varchar COMMENT 'Unique incident / workflow id',
     status varchar COMMENT 'NEW, SNAPSHOT_READY, SCORED, CLOSED',
     alert_type varchar COMMENT 'e.g. demo_greifswald, ais_blackout',
@@ -27,7 +23,7 @@ CREATE TABLE nba_incidents (
     notes varchar COMMENT 'Optional operator notes'
 );
 
-CREATE TABLE nba_incident_snapshots (
+CREATE TABLE IF NOT EXISTS nba_incident_snapshots (
     flow_uuid varchar,
     table_name varchar COMMENT 'Iceberg fact table name',
     snapshot_id bigint COMMENT 'Iceberg snapshot id at incident time',
@@ -35,7 +31,7 @@ CREATE TABLE nba_incident_snapshots (
     captured_at timestamp(6) COMMENT 'UTC capture time in NBA pipeline'
 );
 
-CREATE TABLE nba_coa_runs (
+CREATE TABLE IF NOT EXISTS nba_coa_runs (
     flow_uuid varchar,
     coa_id varchar COMMENT 'A, B, C, D, …',
     rank integer COMMENT '1 = best after scoring',

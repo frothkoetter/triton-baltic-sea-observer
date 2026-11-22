@@ -121,7 +121,23 @@ What it does:
 - Optionally reloads NSB ship rows from `ships_nsb_trade_1000.sql`
 - Smoke `COUNT(*)` on key tables including `nba_incidents`
 
-Manifest: `sql/trino_supplemental_ddl.order`. NBA-only re-apply: `bash sql/nba_apply_all_ddl.sh` (same bundle).
+Manifest: `sql/trino_supplemental_ddl.order`. **NBA only (additive, no DROP):** `./apply_nba_tables_only.sh` or `bash sql/nba_apply_all_ddl.sh`.
+
+On CML, use **defense** session + qualified names (scripts set this automatically):
+
+```bash
+cd ~/cdw-analyse
+set -a && source .env.trino.local && set +a
+export TRINO_CONNECT_SCHEMA=defense TRINO_QUALIFY_SCHEMA=1 TRINO_SKIP_CREATE_SCHEMA=1 TRINO_SKIP_DROP=1
+bash sql/nba_apply_all_ddl.sh
+```
+
+NBA job (not in `cdw-analyse`):
+
+```bash
+cd ~/cai-workbench/next-best-action
+python3 run_nba.py --demo-greifswald --phase 7 --persist-trino
+```
 
 **Views only** (repair without full setup):
 

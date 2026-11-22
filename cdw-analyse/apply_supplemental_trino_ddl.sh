@@ -9,6 +9,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
+export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
+export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-defense}"
+export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
+export TRINO_QUALIFY_SCHEMA="${TRINO_QUALIFY_SCHEMA:-1}"
+export TRINO_SKIP_DROP="${TRINO_SKIP_DROP:-1}"
+
 ORDER="${ROOT}/sql/trino_supplemental_ddl.order"
 PY="${PY:-python3}"
 if [[ ! -f "$ORDER" ]]; then
