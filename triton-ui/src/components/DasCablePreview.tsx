@@ -8,6 +8,7 @@ import { DasSpectrogramCanvas } from "./DasSpectrogramCanvas";
 type PreviewPayload = {
   ok?: boolean;
   error?: string;
+  hint?: string;
   spectrogram?: { values?: number[][]; frequencies_hz?: number[] };
   audio?: { wav_base64?: string; duration_sec?: number; sample_rate_hz?: number; caption?: string };
   segment_id?: string;
@@ -21,6 +22,7 @@ export function DasCablePreview({ segment }: Props) {
   const [loading, setLoading] = useState(false);
   const [source, setSource] = useState<"s3" | "pseudo" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [specValues, setSpecValues] = useState<number[][] | null>(null);
   const [freqs, setFreqs] = useState<number[] | undefined>();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -48,7 +50,10 @@ export function DasCablePreview({ segment }: Props) {
       const win = Number(segment.window_seconds ?? 4);
       setAudioUrl(pseudoDasDemoAudioDataUrl(idx, fs, win));
       setAudioCaption(`Demo strain-rate tone · seg ${idx} (not from HDF5)`);
-      if (reason) setError(reason);
+      if (reason) {
+        setError(reason);
+        setHint(null);
+      }
     },
     [pseudo, segment]
   );
@@ -58,6 +63,7 @@ export function DasCablePreview({ segment }: Props) {
     setFreqs(undefined);
     setAudioUrl(null);
     setError(null);
+    setHint(null);
     setSource(null);
     if (!segment) return;
 
@@ -85,6 +91,7 @@ export function DasCablePreview({ segment }: Props) {
         setFreqs(res.spectrogram?.frequencies_hz);
         setSource("s3");
         setError(null);
+        setHint(null);
         const b64 = res.audio?.wav_base64;
         if (b64) {
           setAudioUrl(`data:audio/wav;base64,${b64}`);
@@ -95,6 +102,7 @@ export function DasCablePreview({ segment }: Props) {
         }
       } else {
         applyPseudo(res.error ?? "Could not load HDF5 from object store");
+        if (res.hint) setHint(res.hint);
       }
     })();
 
@@ -141,6 +149,7 @@ export function DasCablePreview({ segment }: Props) {
       {error && source !== "s3" ? (
         <p className="lidar-hint" style={{ color: "var(--status-unknown)" }}>
           {error}
+          {hint ? ` — ${hint}` : null}
         </p>
       ) : null}
     </div>
