@@ -1224,6 +1224,30 @@ a {
   font-size: 10px;
 }
 
+.das-spectrogram-canvas {
+  width: 100%;
+  height: 220px;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  margin: 8px 0;
+  background: #0b1220;
+}
+
+.das-preview-block {
+  margin-bottom: 8px;
+}
+
+.das-audio-row {
+  margin: 6px 0 4px;
+}
+
+.das-audio-player {
+  width: 100%;
+  max-width: 420px;
+  height: 32px;
+}
+
 .lidar-hint {
   font-size: 11px;
   color: var(--text-muted);

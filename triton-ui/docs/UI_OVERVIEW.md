@@ -97,6 +97,7 @@ Other **Analysen** tabs (same page, for context):
 |--------|-----|---------|
 | Scan table | `GET /api/lidar/scans` | Metadata from warehouse + sample fallback |
 | DAS segments | `GET /api/das-cable/segments` | `das_cable_spectrogram_metadata` + sample fallback |
+| DAS spectrogram + audio | `GET /api/das-cable/preview?hadoop_file_url=&segment_index=` | `das-h5-bridge.py` (HDF5 in S3; **≤10 s** WAV + downsampled spectrogram) |
 | Point preview | `GET /api/lidar/points?...` | `lidar-las-bridge.py` reads LAS/LAZ from **S3** (`S3_WORKLOAD_*`, optional prefix allowlist) |
 | Map | `LidarMap` | Scan footprint / bbox |
 
