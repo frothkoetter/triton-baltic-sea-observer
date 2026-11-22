@@ -1,4 +1,5 @@
 import json
+import random
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -11,7 +12,11 @@ if _EXTENSIONS_DIR.as_posix() not in sys.path:
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 
-from cable_corridor_registry import cable_asset_keys, cable_meta
+from cable_corridor_registry import (
+    cable_asset_allowable_values,
+    cable_meta,
+    resolve_cable_asset,
+)
 from das_acoustic_engine import (
     DEFAULT_CHANNELS,
     DEFAULT_FS_HZ,
@@ -33,10 +38,10 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.1'
+        version = '1.2.2'
         description = (
             'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
-            'EMODnet Baltic cables/pipelines (7 assets) — anchor drag & CUI scenarios.'
+            'EMODnet Baltic cables/pipelines (7 assets + RANDOM) — anchor drag & CUI scenarios.'
         )
         dependencies = ['numpy', 'h5py']
 
@@ -45,9 +50,10 @@ class DasCableAcousticSimulator(FlowFileTransform):
         description=(
             "Submarine cable or pipeline corridor (WKT from defense.ostsee_infrastruktur). "
             "Gaspipelines: BALTICCONNECTOR, NORD_STREAM_1/2. "
-            "Seekabel BSH/CONTIS: PCABLE_BSH_1 … PCABLE_BSH_4."
+            "Seekabel BSH/CONTIS: PCABLE_BSH_1 … PCABLE_BSH_4. "
+            "RANDOM: pick one of the seven corridors per FlowFile."
         ),
-        allowable_values=cable_asset_keys(),
+        allowable_values=cable_asset_allowable_values(),
         default_value="BALTICCONNECTOR",
         required=True,
     )
@@ -117,7 +123,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
 
     def transform(self, context, flowFile):
         try:
-            asset = context.getProperty(self.CABLE_ASSET.name).getValue() or "BALTICCONNECTOR"
+            asset_sel = context.getProperty(self.CABLE_ASSET.name).getValue() or "BALTICCONNECTOR"
             n_seg = int(context.getProperty(self.SEGMENT_COUNT.name).getValue() or DEFAULT_SEGMENTS)
             n_ch = int(context.getProperty(self.CHANNEL_COUNT.name).getValue() or DEFAULT_CHANNELS)
             win_s = float(context.getProperty(self.WINDOW_SECONDS.name).getValue() or DEFAULT_WINDOW_S)
@@ -125,6 +131,9 @@ class DasCableAcousticSimulator(FlowFileTransform):
             seed_raw = (context.getProperty(self.RANDOM_SEED.name).getValue() or "").strip()
             seed = int(seed_raw) if seed_raw.isdigit() else None
             fmt = context.getProperty(self.OUTPUT_FORMAT.name).getValue() or "hdf5"
+
+            rng = random.Random(seed) if seed is not None else None
+            asset = resolve_cable_asset(asset_sel, rng=rng)
 
             segments, batch_meta = generate_das_batch(
                 asset,
@@ -156,6 +165,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 "mime.type": mime,
                 "das.schema": "triton/das-cable/v1",
                 "das.batch.id": batch_id,
+                "das.cable.asset.selection": asset_sel,
                 "das.cable.asset": asset,
                 "das.cable.id": meta["id"],
                 "das.cable.name": meta["name"],

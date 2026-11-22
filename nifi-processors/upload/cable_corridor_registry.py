@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import math
+import random
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+RANDOM_CABLE_ASSET = "RANDOM"
 
 Coord = Tuple[float, float]  # lon, lat
 
@@ -198,8 +201,31 @@ CABLE_ASSETS: Dict[str, Dict[str, Any]] = {
 
 
 def cable_asset_keys() -> List[str]:
-    """Sorted keys for NiFi ``allowable_values`` on Cable Asset."""
+    """Sorted keys for real corridors (excludes ``RANDOM``)."""
     return sorted(CABLE_ASSETS.keys())
+
+
+def cable_asset_allowable_values() -> List[str]:
+    """NiFi ``Cable Asset`` dropdown: all corridors + ``RANDOM``."""
+    return cable_asset_keys() + [RANDOM_CABLE_ASSET]
+
+
+def resolve_cable_asset(
+    selection: str,
+    rng: Optional[random.Random] = None,
+) -> str:
+    """
+    Map NiFi property value to a concrete asset key.
+    ``RANDOM`` picks uniformly from ``cable_asset_keys()`` for this run.
+    """
+    key = (selection or "BALTICCONNECTOR").strip().upper()
+    if key == RANDOM_CABLE_ASSET:
+        keys = cable_asset_keys()
+        picker = rng if rng is not None else random
+        return picker.choice(keys)
+    if key not in CABLE_ASSETS:
+        raise KeyError(f"Unknown cable asset: {selection}")
+    return key
 
 
 def cable_vertices(asset_key: str) -> List[Coord]:
