@@ -29,9 +29,11 @@ export TRINO_USER="${TRINO_USER:-frothkoetter}"
 export TRINO_CATALOG="${TRINO_CATALOG:-iceberg}"
 export TRINO_SCHEMA="${TRINO_SCHEMA:-defense}"
 export TRINO_PORT="${TRINO_PORT:-443}"
-export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-default}"
+export TRINO_CONNECT_SCHEMA="${TRINO_CONNECT_SCHEMA:-defense}"
 export TRINO_SKIP_CREATE_SCHEMA="${TRINO_SKIP_CREATE_SCHEMA:-1}"
 export TRINO_QUALIFY_SCHEMA="${TRINO_QUALIFY_SCHEMA:-1}"
+export TRINO_SKIP_DROP="${TRINO_SKIP_DROP:-1}"
+export TRINO_FORGIVE_DROP_404="${TRINO_FORGIVE_DROP_404:-1}"
 
 if [[ -z "${TRINO_PASSWORD:-}" ]]; then
   echo "Set TRINO_PASSWORD in .env.trino.local or the environment." >&2
@@ -53,6 +55,7 @@ fi
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
 echo "    Session schema for DDL: ${TRINO_CONNECT_SCHEMA} (target: ${TRINO_SCHEMA})"
 echo "    TRINO_SKIP_CREATE_SCHEMA=${TRINO_SKIP_CREATE_SCHEMA}  TRINO_QUALIFY_SCHEMA=${TRINO_QUALIFY_SCHEMA}"
+echo "    TRINO_SKIP_DROP=${TRINO_SKIP_DROP}  (set 0 for full DROP+CREATE re-apply)"
 echo "    (CREATE SCHEMA / USE via Trino often 404 on CDW — create iceberg.defense in DW UI, keep skip=1)"
 
 VENV="${ROOT}/.venv"
@@ -83,6 +86,12 @@ run_ddl() {
     "$PY" "${ROOT}/run_trino_ddl.py" "$file"
   fi
 }
+
+if [[ -x "$PY" ]] || command -v python3 >/dev/null; then
+  echo ""
+  echo "==> CDW Trino doctor (optional connectivity checks)"
+  "$PY" "${ROOT}/trino_cdw_doctor.py" || true
+fi
 
 run_ddl "$DDL" 0
 

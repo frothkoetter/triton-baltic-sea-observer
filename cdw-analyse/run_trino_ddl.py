@@ -118,10 +118,18 @@ def _should_qualify_schema() -> bool:
     )
 
 
-def _qualify_defense_objects(text: str) -> str:
-    """Session catalog iceberg + schema default — objects in defense.* (no USE)."""
+def _qualify_prefix() -> str:
+    cat = os.environ.get("TRINO_CATALOG", "iceberg")
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    prefix = f"{sch}."
+    return f"{cat}.{sch}."
+
+
+def _qualify_defense_objects(text: str) -> str:
+    """Fully qualified iceberg.defense.* (matches probe_iceberg_snapshots / UI JDBC)."""
+    prefix = _qualify_prefix()
+    sch = os.environ.get("TRINO_SCHEMA", "defense")
+    # View DDL in the SQL file often uses defense.table — expand to catalog.schema.table.
+    text = re.sub(rf"(?<![\w.]){re.escape(sch)}\.", prefix, text)
 
     def _qualify_table_refs(body: str) -> str:
         # View bodies: FROM ships / JOIN ships without catalog (DDL file convention).
@@ -189,6 +197,26 @@ def _skip_schema_setup(stmts: List[str]) -> List[str]:
     return kept
 
 
+def _skip_drop_statements(stmts: List[str]) -> List[str]:
+    if os.environ.get("TRINO_SKIP_DROP", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return stmts
+    kept: List[str] = []
+    skipped = 0
+    for s in stmts:
+        st = s.strip()
+        if re.match(r"(?is)^DROP\s+(TABLE|VIEW)\s+", st):
+            skipped += 1
+            continue
+        kept.append(s)
+    if skipped:
+        print(f"Skipped {skipped} DROP statement(s) (TRINO_SKIP_DROP=1)")
+    return kept
+
+
 def split_statements(text: str) -> List[str]:
     lines: List[str] = []
     for line in text.splitlines():
@@ -224,12 +252,19 @@ def apply_jdbc_url_env() -> None:
 
 def session_schema(for_ddl: bool = True) -> str:
     """
-    JDBC session schema. For greenfield DDL, connect to an existing schema
-    (iceberg.default) — not TRINO_SCHEMA=defense before CREATE SCHEMA runs.
+    JDBC session schema. On CDW, DDL against iceberg.defense must use session schema
+    ``defense`` (same as probe_iceberg_snapshots / trino-bridge), not ``default``.
     """
     explicit = os.environ.get("TRINO_CONNECT_SCHEMA", "").strip()
     if explicit:
         return explicit
+    skip_boot = os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if skip_boot:
+        return os.environ.get("TRINO_SCHEMA", "defense")
     if for_ddl and os.environ.get("TRINO_DDL_USE_TARGET_SCHEMA", "").strip().lower() not in (
         "1",
         "true",
@@ -343,6 +378,11 @@ def connect(*, for_ddl: bool = True, schema: str | None = None):
     password = os.environ["TRINO_PASSWORD"]
     catalog = os.environ.get("TRINO_CATALOG", "iceberg")
     session = schema if schema is not None else session_schema(for_ddl=for_ddl)
+    legacy_prep = os.environ.get("TRINO_LEGACY_PREPARED_STATEMENTS", "true").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     return trino.dbapi.connect(
         host=host,
         port=int(os.environ.get("TRINO_PORT", "443")),
@@ -351,13 +391,14 @@ def connect(*, for_ddl: bool = True, schema: str | None = None):
         schema=session,
         http_scheme="https",
         auth=BasicAuthentication(user, password),
+        legacy_prepared_statements=legacy_prep,
     )
 
 
 def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
-    stmts = _skip_schema_setup(split_statements(transformed))
+    stmts = _skip_drop_statements(_skip_schema_setup(split_statements(transformed)))
     conn = connect(for_ddl=True)
     ready, pre_err = ensure_defense_schema(conn)
     if not ready:
@@ -375,6 +416,14 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
             ok += 1
         except Exception as exc:
             msg = f"#{i} {preview}\n  {exc}"
+            if (
+                "404" in str(exc)
+                and re.match(r"(?is)^DROP\s+TABLE\s+IF\s+EXISTS\b", stmt)
+                and os.environ.get("TRINO_FORGIVE_DROP_404", "1").strip().lower()
+                in ("1", "true", "yes")
+            ):
+                ok += 1
+                continue
             if "404" in str(exc) and sch in stmt:
                 msg += (
                     f"\n  Hint: HTTP 404 on iceberg.{sch} usually means the schema "
