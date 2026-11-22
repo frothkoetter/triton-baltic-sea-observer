@@ -163,14 +163,12 @@ def _qualify_defense_objects(text: str) -> str:
         else m.group(0),
         text,
     )
-    # Qualify view SELECT bodies (statement-local; multi-line views in one stmt).
-    parts = re.split(r"(?im)^(CREATE OR REPLACE VIEW)", text)
+    # Qualify unqualified FROM/JOIN in view bodies (split without capturing — avoids VIEWCREATE).
+    parts = re.split(r"(?im)^CREATE OR REPLACE VIEW", text)
     if len(parts) > 1:
         out = [parts[0]]
-        for i in range(1, len(parts), 2):
-            header = "CREATE OR REPLACE VIEW" + parts[i]
-            rest = parts[i + 1] if i + 1 < len(parts) else ""
-            out.append(_qualify_table_refs(header + rest))
+        for body in parts[1:]:
+            out.append("CREATE OR REPLACE VIEW" + _qualify_table_refs(body))
         text = "".join(out)
     return text
 
