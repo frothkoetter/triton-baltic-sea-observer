@@ -10,14 +10,15 @@ Field names match **UpdateAttribute** column names and **AttributesToJSON** list
 
 ## JsonTreeReader (controller service)
 
-| Property | Value |
-|----------|--------|
-| **Schema Access Strategy** | `schema-text-property` (or `Use 'Schema Text' Property`) |
-| **Schema Text** | Paste contents of the `.avsc` file, or Parameter `${das.avro.schema}` / `${avro.schema}` |
-| **Schema Application Strategy** | `SELECTED_PART` (one JSON object per FlowFile) |
-| **Allow Comments** | `false` if you paste raw JSON; Avro schema is JSON without comments |
+Match **`LiDar Simulation`** controller **`JsonTreeReader-lidar`** in `proj_triton_showcase-version-2.json`:
 
-For **LiDar Simulation**, the showcase flow uses **Infer Schema** with `${avro.schema}` — put the **lidar** `.avsc` body in that parameter.
+| Property | LiDAR showcase | DAS (recommended) |
+|----------|----------------|-------------------|
+| **Timestamp Format** | `yyyy-MM-dd HH:mm:ss.SSS` | **same** |
+| **Schema Access Strategy** | `infer-schema` | `infer-schema` or `schema-text-property` (paste DAS `.avsc`) |
+| **Schema Text** | `${avro.schema}` | `${das.avro.schema}` or paste `.avsc` |
+| **Schema Application Strategy** | `SELECTED_PART` | `SELECTED_PART` |
+| **Allow Comments** | `false` | `false` |
 
 ## DAS AttributesToJSON (suggested list)
 
@@ -31,21 +32,19 @@ Optional: `spectral_peak_hz`, `energy_rms` (already in Avro schema).
 
 If merged content is a **JSON array** `[{...},{...}]`, use **SplitJson** on `$.*` before the reader, or configure the reader for array (schema root `array` of the record type) per your NiFi version.
 
-## `ingested_at` and PutIceberg
+## `ingested_at` and PutIceberg (LiDAR parity)
 
-Iceberg column `ingested_at` is **TIMESTAMP**. PutIceberg fails if the record field is a plain **string** like `2026-11-22 17:08:54`:
+**LiDar Simulation** `UpdateAttribute`:
 
 ```text
-FieldConversionException: … ingested_at … to LocalDateTime … NumberFormatException
+ingested_at = ${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}
 ```
 
-**Fix:**
+Use the **same expression** on DAS. Do **not** use `yyyy-MM-dd HH:mm:ss` without `.SSS` — PutIceberg → `LocalDateTime` fails unless the string matches **JsonTreeReader → Timestamp Format**.
 
-1. **UpdateAttribute:** `ingested_at` = `${now():toNumber()}` (UTC epoch millis; not `format("yyyy-MM-dd HH:mm:ss")`).
-2. **Avro / JsonTreeReader:** `ingested_at` as `long` with logical type `timestamp-millis` (see `.avsc` files).
-3. Restart **JsonTreeReader** after pasting the updated schema.
+**JsonTreeReader** must set **Timestamp Format** = `yyyy-MM-dd HH:mm:ss.SSS` (showcase `JsonTreeReader-lidar`).
 
-AttributesToJSON may still emit millis as a JSON string (`"1732296534000"`); JsonTreeReader coerces that into `long` for this schema.
+Avro field type is **`string`** for `ingested_at` (not `long` / `timestamp-millis`), same as inferred LiDAR metadata JSON.
 
 ## Validate locally
 

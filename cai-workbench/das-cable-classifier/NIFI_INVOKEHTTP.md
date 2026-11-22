@@ -39,7 +39,7 @@ cable_asset            ${das.cable.asset}
 …
 predicted_threat_type  ${predicted_threat_type}
 model_confidence       ${model_confidence}
-ingested_at            ${now():toNumber()}
+ingested_at            ${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}
 ```
 
 Full map: [`nifi-processors/docs/DAS_NIFI_METADATA_MAP.md`](../../nifi-processors/docs/DAS_NIFI_METADATA_MAP.md).

@@ -35,7 +35,7 @@ Configure **UpdateAttribute**: “Delete attributes” = `false`, “Store state
 | `window_seconds` | `${das.window.seconds}` | Simulator |
 | `fs_hz` | `${das.fs_hz}` | Simulator |
 | `filename` | `${filename}` | Simulator (use **v1.2.1+** for unique names on Put) |
-| `ingested_at` | `${now():toNumber()}` | NiFi — **epoch millis** for PutIceberg TIMESTAMP (not `yyyy-MM-dd HH:mm:ss`) |
+| `ingested_at` | `${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}` | Same as **LiDar Simulation** + JsonTreeReader **Timestamp Format** |
 | `predicted_threat_type` | `${das.predicted.threat_type}` | Optional — classifier leg |
 | `model_confidence` | `${das.model.confidence}` | Optional — classifier leg |
 | `spectral_peak_hz` | *(leave empty or `${das.spectral.peak_hz}`)* | Optional ML features |
@@ -83,7 +83,7 @@ channel_count       ${das.channel.count}
 window_seconds      ${das.window.seconds}
 fs_hz               ${das.fs_hz}
 filename            ${filename}
-ingested_at         ${now():toNumber()}
+ingested_at         ${now():toNumber():toDate():format("yyyy-MM-dd HH:mm:ss.SSS")}
 ```
 
 Run this **after** PutCDPObjectStore so `hadoop.file.url` exists. If Put fails, route to failure — do not insert metadata without `hadoop_file_url`.
@@ -208,7 +208,12 @@ See also: [`cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md`](../../cai-wo
 
 ## JsonTreeReader Avro schema
 
-Paste into **JSONTreeReader** → **Schema Text** (or parameter e.g. `${das.avro.schema}`):
+Paste into **JSONTreeReader** → **Schema Text** (or parameter e.g. `${das.avro.schema}`), and mirror LiDAR reader settings:
+
+| Setting | Value (same as `JsonTreeReader-lidar`) |
+|---------|----------------------------------------|
+| **Timestamp Format** | `yyyy-MM-dd HH:mm:ss.SSS` |
+| **Schema Application Strategy** | `SELECTED_PART` |
 
 [`../schemas/das_cable_spectrogram_metadata.avsc`](../schemas/das_cable_spectrogram_metadata.avsc) — see [`../schemas/README.md`](../schemas/README.md).
 

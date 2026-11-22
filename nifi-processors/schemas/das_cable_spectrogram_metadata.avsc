@@ -95,9 +95,9 @@
     },
     {
       "name": "ingested_at",
-      "type": ["null", {"type": "long", "logicalType": "timestamp-millis"}],
+      "type": ["null", "string"],
       "default": null,
-      "doc": "UTC ingest as epoch millis (UpdateAttribute: ${now():toNumber()}). Required for PutIceberg TIMESTAMP."
+      "doc": "Same as LiDar Simulation: ${now():toNumber():toDate():format(\"yyyy-MM-dd HH:mm:ss.SSS\")}. JsonTreeReader Timestamp Format must match."
     }
   ]
 }
