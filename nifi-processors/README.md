@@ -56,7 +56,7 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 
 **TwitterMessageGenerator not loading:** Check `nifi-app.log` for `Failed to install requirements for TwitterMessageGenerator`. Common cause: **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
 
-**DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.2.0** — Balticconnector HDF5 spectrograms + WGS84 FlowFile attrs; CML `das-cable-classifier`.
+**DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.2.1** — unique `filename` for PutCDPObjectStore; WGS84 attrs; CML `das-cable-classifier`.
 
 **STANAG:** **`upload/STANAGSimulator.py` 2.0.0** — exercise traffic profiles (`watch_section`, `major_exercise`, …), HQ ↔ unit ↔ unit mixes, `text_bundle` or `ndjson`. Engine: **`stanag_message_engine.py`**. Tests: `tests/test_stanag_message_engine.py`.
 

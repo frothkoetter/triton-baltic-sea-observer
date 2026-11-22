@@ -1,5 +1,7 @@
 import json
 import sys
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 _EXTENSIONS_DIR = Path(__file__).resolve().parent
@@ -31,7 +33,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.0'
+        version = '1.2.1'
         description = (
             'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
             'EMODnet Baltic cables/pipelines (7 assets) — anchor drag & CUI scenarios.'
@@ -146,9 +148,14 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 mime = "application/x-hdf5"
 
             threats = ",".join(sorted({s.threat_class for s in segments}))
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            batch_id = uuid.uuid4().hex[:12]
+            base = f"das_{asset.lower()}_{len(segments)}seg_{stamp}_{batch_id}"
+            file_name = f"{base}.h5" if fmt == "hdf5" else f"{base}_preview.json"
             attrs = {
                 "mime.type": mime,
                 "das.schema": "triton/das-cable/v1",
+                "das.batch.id": batch_id,
                 "das.cable.asset": asset,
                 "das.cable.id": meta["id"],
                 "das.cable.name": meta["name"],
@@ -157,7 +164,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 "das.window.seconds": str(win_s),
                 "das.fs_hz": str(int(fs)),
                 "das.threat.classes": threats,
-                "filename": f"das_{asset.lower()}_{len(segments)}seg.h5" if fmt == "hdf5" else f"das_{asset.lower()}_preview.json",
+                "filename": file_name,
             }
             attrs.update(batch_geolocation_attributes(segments))
             return FlowFileTransformResult(contents=body, attributes=attrs, relationship="success")
