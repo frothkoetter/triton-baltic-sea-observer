@@ -119,6 +119,11 @@ def probe_trino_http(
         except HTTPError as exc:
             body = exc.read(300).decode("utf-8", errors="replace")
             logs.append(f"HTTP {exc.code} POST {url} body[:120]={body[:120]!r}")
+            if exc.code == 401 and path == "/v1/statement":
+                logs.append(
+                    "Coordinator reachable; HTTP 401 = invalid user/password (not a DDL issue)."
+                )
+                return False, url, logs
         except URLError as exc:
             logs.append(f"URL error POST {url}: {exc}")
 

@@ -30,6 +30,25 @@ That is **not** missing table/schema metadata. The Python client never reached a
 
 If HTTP probe finds a non-default path, doctor sets `TRINO_STATEMENT_PATH` automatically.
 
+## Symptom: `error 401` / `Access Denied: Invalid credentials`
+
+The coordinator host is correct. Fix **CDP / Data Warehouse login** in `.env.trino.local`:
+
+- Same password as the Cloudera UI (not CML API token, not S3 keys).
+- No stray quotes or spaces in `TRINO_PASSWORD`.
+- Try corporate email as `TRINO_USER` if short names fail.
+- Confirm DW query role on the virtual warehouse.
+
+`python3 trino_cdw_doctor.py` exit code **3** = auth failure.
+
+## Git pull blocked
+
+```bash
+git stash push -m local -p scripts/cml/triton-project.env.example
+# or: git checkout -- scripts/cml/triton-project.env.example
+git pull origin main
+```
+
 ### After connectivity works
 
 - `TRINO_CONNECT_SCHEMA=defense`

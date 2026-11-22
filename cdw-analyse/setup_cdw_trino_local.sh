@@ -90,10 +90,15 @@ run_ddl() {
 if [[ -x "$PY" ]] || command -v python3 >/dev/null; then
   echo ""
   echo "==> CDW Trino doctor (optional connectivity checks)"
-  "$PY" "${ROOT}/trino_cdw_doctor.py" || {
+  doctor_rc=0
+  "$PY" "${ROOT}/trino_cdw_doctor.py" || doctor_rc=$?
+  if [[ "$doctor_rc" -eq 3 ]]; then
+    echo "Doctor: invalid Trino credentials (HTTP 401) — fix TRINO_USER/TRINO_PASSWORD." >&2
+    exit 1
+  elif [[ "$doctor_rc" -ne 0 ]]; then
     echo "Doctor failed — fix TRINO_SERVER / warehouse Running before DDL." >&2
     exit 1
-  }
+  fi
 fi
 
 run_ddl "$DDL" 0
