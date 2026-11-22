@@ -73,3 +73,5 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 **German fishing boats:** `upload/FishingBoatSimulator.py` (**1.0.0**) with `fishing_fleet_registry.py` / `fishing_boat_mission_engine.py`. Route attribute `ship.simulation.route` = `german_fishing_tours`. NiFi property **Number of Fishing Boats** (default **10**, max 20). State `/tmp/fishing_boat_state.json`. Reset via **Reset Fishing Boat State** on `BalticShipRouteStateReset` **1.2.0**. LiDAR type **`fishing_boat`** (LAS class **11**; class **10** is sea surface only) in `LidarSimulator` **4.5.0** — property **Target Vessel Type** = `fishing_boat` to force every file.
 
 **Ghost processor:** If the flow references an old bundle (e.g. **1.2.9**), set **`ShipSimulationProcessor`** to **1.3.0** and remove obsolete extension files from the node.
+
+**Simulation Control (geplant):** Szenarien Standard / Vollstopp / Anker / Heimathafen per Command Store — [`../docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md`](../docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md).
