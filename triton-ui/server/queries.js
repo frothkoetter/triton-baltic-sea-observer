@@ -508,6 +508,52 @@ export const PREDEFINED = {
     FROM defense.ostsee_pipelines
     WHERE geometrie_wkt IS NOT NULL
   `,
+  /** NiFi GpsJammerSimulator → Iceberg gps_jammer_events (last 48h). */
+  gpsJammerEvents: `
+    SELECT
+      geohash,
+      ts AS event_timestamp,
+      latitude,
+      longitude,
+      adsb_nic,
+      signal_integrity,
+      jamming_indicator,
+      event_type
+    FROM defense.gps_jammer_events
+    WHERE latitude BETWEEN 53.0 AND 61.0
+      AND longitude BETWEEN 10.0 AND 30.0
+      AND coalesce(
+        try(from_iso8601_timestamp(ts)),
+        try(from_iso8601_timestamp(replace(ts, 'Z', '+00:00'))),
+        try_cast(replace(ts, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '48' hour
+    ORDER BY coalesce(
+      try(from_iso8601_timestamp(ts)),
+      try(from_iso8601_timestamp(replace(ts, 'Z', '+00:00'))),
+      try_cast(replace(ts, 'Z', '') AS timestamp)
+    ) DESC
+    LIMIT 300
+  `,
+  /** UC1 / defence.lagebild rows sourced from GPS jammer pipeline. */
+  lagebildGpsJammer: `
+    SELECT
+      id AS geohash,
+      "timestamp" AS event_timestamp,
+      latitude,
+      longitude,
+      CAST(NULL AS integer) AS adsb_nic,
+      CAST(NULL AS double) AS signal_integrity,
+      true AS jamming_indicator,
+      COALESCE(CAST(details AS varchar), 'GPS jamming (lagebild)') AS reason,
+      harbour_name,
+      'gps_jammer_event' AS event_type
+    FROM defense.lagebild
+    WHERE Data_Source = 'GPS_Jammer'
+      AND latitude IS NOT NULL
+      AND longitude IS NOT NULL
+    ORDER BY "timestamp" DESC
+    LIMIT 200
+  `,
   /** Latest maritime anomalies for Lagebild map (Trino pipeline + legacy NiFi rows). */
   vesselOutliersMap: `
     SELECT
