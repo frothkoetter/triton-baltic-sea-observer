@@ -44,10 +44,16 @@ if [[ -z "${TRINO_HOST:-}" && -n "${TRINO_JDBC_URL}" ]]; then
   export TRINO_HOST
 fi
 
+if grep -q '_skip_create_schema' "${ROOT}/run_trino_ddl.py" 2>/dev/null; then
+  echo "ERROR: cdw-analyse/run_trino_ddl.py is outdated (USE iceberg.defense still runs → 404)." >&2
+  echo "       From repo root: git pull origin main   (need fix >= 873d677; skips USE + qualifies defense.*)" >&2
+  exit 1
+fi
+
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
 echo "    Session schema for DDL: ${TRINO_CONNECT_SCHEMA} (target: ${TRINO_SCHEMA})"
-echo "    TRINO_SKIP_CREATE_SCHEMA=${TRINO_SKIP_CREATE_SCHEMA}"
-echo "    (CREATE SCHEMA via Trino often 404 on CDW — create iceberg.defense in DW UI, keep skip=1)"
+echo "    TRINO_SKIP_CREATE_SCHEMA=${TRINO_SKIP_CREATE_SCHEMA}  TRINO_QUALIFY_SCHEMA=${TRINO_QUALIFY_SCHEMA}"
+echo "    (CREATE SCHEMA / USE via Trino often 404 on CDW — create iceberg.defense in DW UI, keep skip=1)"
 
 VENV="${ROOT}/.venv"
 PY="python3"
