@@ -28,6 +28,21 @@ Expect `"build":"0.2.3-das-preview"` and **`"distDasPreview":true`**. If `distDa
 
 Application script must be **`triton-ui/entry.py`** (not an old `triton-nato-ui` path).
 
+### DAS HDF5 preview — “S3 not configured”
+
+The preview bridge uses the same boto path as LiDAR (`server/s3_boto.py`):
+
+1. **CML (recommended):** Project → **Data Connections** → **S3 Object Store** (name matches `S3_CONNECTION_NAME` if set). On the Application: `S3_PREFER_CML_CONNECTION=auto`, `LIDAR_USE_CML_S3=auto` (defaults).
+2. **Or** workload keys: `S3_ACCESS_KEY_ID` + `S3_SECRET_ACCESS_KEY` + `S3_ENDPOINT_URL` (not Trino/LDAP passwords).
+3. Optional prefix gate: `S3_DAS_ALLOWED_PREFIX=s3a://triton-buk-…/data/user/you/das/` — must match `hadoop_file_url` from Iceberg.
+
+Session smoke:
+
+```bash
+python3 triton-ui/server/s3_boto.py "s3a://triton-buk-ab3b8c81/data/user/frothkoetter/das/"
+python3 triton-ui/server/das-h5-bridge.py "s3a://…/das_pcable_bsh_1….h5" 0
+```
+
 ## Application wizard
 
 | Field | Value |

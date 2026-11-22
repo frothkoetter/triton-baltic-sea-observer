@@ -1,6 +1,6 @@
 {
-  "version": "0.2.3",
-  "build": "0.2.3-das-preview",
+  "version": "0.2.4",
+  "build": "0.2.4-das-s3-cml",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

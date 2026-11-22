@@ -45,7 +45,7 @@ import {
   loadPlaybook,
   loadSemanticaRecord,
 } from "./nba-artifacts.js";
-import { fetchLidarPointsFromS3, s3Configured } from "./lidar.js";
+import { fetchLidarPointsFromS3, s3Configured, s3ConfigHint } from "./lidar.js";
 import { fetchDasSegmentPreview, dasS3Configured } from "./das.js";
 import {
   fetchSitrepPdfBase64,
@@ -210,6 +210,7 @@ app.get("/api/health", async (req, res) => {
     },
     das: {
       s3Configured: dasS3Configured(),
+      s3Hint: s3ConfigHint(),
       playMaxSec: Number(process.env.DAS_PLAY_MAX_SEC || 10),
       distPreviewBundled: distDasPreviewBundled(path.join(__dirname, "..", "dist")).ok,
     },
@@ -437,12 +438,18 @@ app.get("/api/das-cable/preview", async (req, res) => {
   if (!uri) {
     return res.status(400).json({ ok: false, error: "hadoop_file_url query param required" });
   }
-  if (!dasS3Configured()) {
-    return res.status(503).json({ ok: false, error: "S3 not configured for DAS HDF5 preview" });
-  }
   const result = await fetchDasSegmentPreview(uri, segmentIndex);
   if (!result.ok) {
-    return res.status(502).json(result);
+    const err = String(result.error ?? "");
+    const status = err.includes("not configured") || err.includes("Configure project")
+      ? 503
+      : err.includes("not allowed") || err.includes("URI not allowed")
+        ? 403
+        : 502;
+    if (status === 503 && !dasS3Configured()) {
+      result.hint = s3ConfigHint();
+    }
+    return res.status(status).json(result);
   }
   res.json(result);
 });
