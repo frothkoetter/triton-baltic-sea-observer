@@ -114,7 +114,7 @@ a {
 .app-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 248px 1fr;
   min-height: 0;
 }
 
@@ -149,6 +149,60 @@ a {
   color: var(--text-primary);
   padding: 6px 8px;
   border-radius: 2px;
+}
+
+.filter-multi {
+  max-height: 140px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  padding: 4px 6px;
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-multi-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.25;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.filter-multi-item input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.filter-multi-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.filter-clear-link {
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--link);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-rail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-hint {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
 .main-pane {
@@ -1031,7 +1085,7 @@ a {
 
 .sql-layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 248px 1fr;
   gap: 8px;
   min-height: 520px;
 }

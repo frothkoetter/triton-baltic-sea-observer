@@ -16,7 +16,7 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
 
-Shared **Filter Rail** (flag, vessel type, ship name) applies to **Lagebild** and **Analysen** where noted.
+Shared **Filter Rail** (multi-select: AIS flag, vessel type, ship name; **DEU / RUS fleet** units) applies to **Lagebild** map, 24h tracks, and **Analysen** AIS panels.
 
 ---
 

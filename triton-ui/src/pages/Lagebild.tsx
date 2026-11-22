@@ -14,9 +14,9 @@ import {
 import { normalizeGpsJammerRow } from "../lib/gps-jammer";
 import {
   filterAisRows,
-  filterFleetBySelection,
+  filterFleetUnits,
   filterOutliersByAis,
-  fleetLayersAllowed,
+  filtersActive,
   type LagebildFilters,
 } from "../lib/lagebild-filters";
 import { LAGEBILD_KPI_DEFS } from "../lib/lagebild-kpis";
@@ -44,7 +44,7 @@ type Kpis = {
   source?: string;
 };
 
-type Props = LagebildFilters;
+type Props = { filters: LagebildFilters };
 
 function normalizeFleet(row: Record<string, unknown>): FleetPosition | null {
   const lat = Number(row.latitude ?? row.Latitude);
@@ -127,13 +127,7 @@ function normalizeOutlier(row: Record<string, unknown>): OutlierRow | null {
   };
 }
 
-const filtersActive = (f: LagebildFilters) => Boolean(f.flag || f.vesselType || f.shipName);
-
-export function LagebildPage({ flag, vesselType, shipName }: Props) {
-  const filters = useMemo(
-    () => ({ flag, vesselType, shipName }),
-    [flag, vesselType, shipName]
-  );
+export function LagebildPage({ filters }: Props) {
 
   const [ais, setAis] = useState<AisRow[]>([]);
   const [areas, setAreas] = useState<ObservationArea[]>([]);
@@ -263,10 +257,8 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
     setTracksLoading(true);
     void (async () => {
       const qs = buildTracksQueryString({
+        ...filters,
         hours: 24,
-        flag: filters.flag,
-        vesselType: filters.vesselType,
-        shipName: filters.shipName,
         ais: layers.ais,
         german: layers.germanFleet,
         russian: layers.russianFleet,
@@ -292,18 +284,14 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
     [outliers, filteredAis, filters]
   );
 
-  const fleetAllow = useMemo(() => fleetLayersAllowed(filters), [filters]);
-
   const filteredGerman = useMemo(
-    () =>
-      fleetAllow.german ? filterFleetBySelection(germanFleet, filters, ais) : [],
-    [germanFleet, filters, ais, fleetAllow.german]
+    () => filterFleetUnits(germanFleet, filters.germanUnits),
+    [germanFleet, filters.germanUnits]
   );
 
   const filteredRussian = useMemo(
-    () =>
-      fleetAllow.russian ? filterFleetBySelection(russianFleet, filters, ais) : [],
-    [russianFleet, filters, ais, fleetAllow.russian]
+    () => filterFleetUnits(russianFleet, filters.russianUnits),
+    [russianFleet, filters.russianUnits]
   );
 
   const trackLegend = useMemo(() => {
@@ -317,8 +305,8 @@ export function LagebildPage({ flag, vesselType, shipName }: Props) {
     <div>
       {filtersActive(filters) && (
         <div className="filter-active-banner" role="status">
-          Filter Rail active — map, table, and tracks respect flag / type / ship (
-          {filteredAis.length} AIS matches)
+          Filter Rail aktiv — Karte, Tabelle und 24h-Tracks (
+          {filteredAis.length} AIS · {filteredGerman.length} DEU · {filteredRussian.length} RUS)
         </div>
       )}
 

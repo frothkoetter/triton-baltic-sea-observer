@@ -31,6 +31,7 @@ import {
   runQueryOrSample,
 } from "./impala.js";
 import { DATASET_STARTER_SQL } from "./queries.js";
+import { parseAisFiltersFromQuery } from "./ais-filters.js";
 import { fetchProximityAlertsLive } from "./proximity-alerts.js";
 import { demoMeta } from "./demo-fallback.js";
 import {
@@ -309,25 +310,11 @@ app.get("/api/kpis", async (_req, res) => {
 });
 
 app.get("/api/ais", async (req, res) => {
-  const q = req.query ?? {};
-  res.json(
-    await getAis({
-      flag: String(q.flag ?? "").trim(),
-      vesselType: String(q.vessel_type ?? q.vesselType ?? "").trim(),
-      shipName: String(q.ship_name ?? q.shipName ?? "").trim(),
-    })
-  );
+  res.json(await getAis(parseAisFiltersFromQuery(req.query ?? {})));
 });
 
 app.get("/api/analyses/ais-analytics", async (req, res) => {
-  const q = req.query ?? {};
-  res.json(
-    await getAisAnalytics({
-      flag: String(q.flag ?? "").trim(),
-      vesselType: String(q.vessel_type ?? q.vesselType ?? "").trim(),
-      shipName: String(q.ship_name ?? q.shipName ?? "").trim(),
-    })
-  );
+  res.json(await getAisAnalytics(parseAisFiltersFromQuery(req.query ?? {})));
 });
 
 app.get("/api/vessel-outliers", async (_req, res) => {
@@ -346,10 +333,8 @@ app.get("/api/position-tracks", async (req, res) => {
   const q = req.query ?? {};
   res.json(
     await getPositionTracks({
+      ...parseAisFiltersFromQuery(q),
       hours: q.hours,
-      flag: q.flag,
-      vesselType: q.vessel_type,
-      shipName: q.ship_name,
       ais: q.ais !== "0" && q.ais !== "false",
       german: q.german !== "0" && q.german !== "false",
       russian: q.russian !== "0" && q.russian !== "false",

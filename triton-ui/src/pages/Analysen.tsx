@@ -142,9 +142,9 @@ function provocateurBars(rows: Record<string, unknown>[] | undefined) {
   }));
 }
 
-type AnalysenPageProps = LagebildFilters;
+type AnalysenPageProps = { filters: LagebildFilters };
 
-export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) {
+export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [tab, setTab] = useState<TabId>("fleet");
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
@@ -155,7 +155,7 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
 
-  const filterQs = aisAnalyticsQuery({ flag, vesselType, shipName });
+  const filterQs = aisAnalyticsQuery(filters);
 
   useEffect(() => {
     void (async () => {
@@ -205,7 +205,13 @@ export function AnalysenPage({ flag, vesselType, shipName }: AnalysenPageProps) 
   };
   const ap = aisAnalytics?.panels;
   const aisKpi = ap?.kpi?.rows?.[0];
-  const filterSummary = [flag && `Flag: ${flag}`, vesselType && `Typ: ${vesselType}`, shipName && `Schiff: ${shipName}`]
+  const filterSummary = [
+    filters.flags.length ? `Flag: ${filters.flags.join(", ")}` : "",
+    filters.vesselTypes.length ? `Typ: ${filters.vesselTypes.join(", ")}` : "",
+    filters.shipNames.length ? `AIS: ${filters.shipNames.join(", ")}` : "",
+    filters.germanUnits.length ? `DEU: ${filters.germanUnits.join(", ")}` : "",
+    filters.russianUnits.length ? `RUS: ${filters.russianUnits.join(", ")}` : "",
+  ]
     .filter(Boolean)
     .join(" · ");
   const sp = sanctionedAnalytics?.panels;

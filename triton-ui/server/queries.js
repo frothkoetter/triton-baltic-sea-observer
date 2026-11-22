@@ -1,5 +1,7 @@
 /** Read-only SQL templates aligned with CDV dataset names (defense schema). */
 
+import { normalizeAisFilterObject, sqlInLiterals } from "./ais-filters.js";
+
 function sqlLiteral(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
@@ -11,11 +13,15 @@ const tsParse = (alias) => `coalesce(
 )`;
 
 /** Latest AIS row per MMSI (Filter Rail predicates on `ships`). */
-export function buildAisLatestSnapshotCte({ flag = "", vesselType = "", shipName = "" } = {}) {
+export function buildAisLatestSnapshotCte(filters = {}) {
+  const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
   const predicates = ["a.latitude IS NOT NULL", "a.longitude IS NOT NULL"];
-  if (flag) predicates.push(`s.flag = ${sqlLiteral(flag)}`);
-  if (vesselType) predicates.push(`s.vessel_type = ${sqlLiteral(vesselType)}`);
-  if (shipName) predicates.push(`s.ship_name = ${sqlLiteral(shipName)}`);
+  const flagIn = sqlInLiterals("s.flag", flags);
+  if (flagIn) predicates.push(flagIn);
+  const typeIn = sqlInLiterals("s.vessel_type", vesselTypes);
+  if (typeIn) predicates.push(typeIn);
+  const nameIn = sqlInLiterals("s.ship_name", shipNames);
+  if (nameIn) predicates.push(nameIn);
   return `
     WITH latest AS (
       SELECT
@@ -379,15 +385,20 @@ export function buildRestrictedAnalyticsQueries() {
 }
 
 /** AIS position history for route map (optional Filter Rail predicates on ships). */
-export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipName = "" } = {}) {
+export function buildAisTrackSql(filters = {}) {
+  const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
+  const hours = Math.min(72, Math.max(1, Number(filters.hours) || 24));
   const predicates = [
     "a.latitude IS NOT NULL",
     "a.longitude IS NOT NULL",
     `${tsParse("a.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
   ];
-  if (flag) predicates.push(`s.flag = ${sqlLiteral(flag)}`);
-  if (vesselType) predicates.push(`s.vessel_type = ${sqlLiteral(vesselType)}`);
-  if (shipName) predicates.push(`s.ship_name = ${sqlLiteral(shipName)}`);
+  const flagIn = sqlInLiterals("s.flag", flags);
+  if (flagIn) predicates.push(flagIn);
+  const typeIn = sqlInLiterals("s.vessel_type", vesselTypes);
+  if (typeIn) predicates.push(typeIn);
+  const nameIn = sqlInLiterals("s.ship_name", shipNames);
+  if (nameIn) predicates.push(nameIn);
   return `
     SELECT
       CAST(a.mmsi AS varchar) AS mmsi,
@@ -408,13 +419,20 @@ export function buildAisTrackSql({ hours = 24, flag = "", vesselType = "", shipN
   `;
 }
 
-export function buildGermanFleetTrackSql({ hours = 24, shipName = "" } = {}) {
+export function buildGermanFleetTrackSql(filters = {}) {
+  const { shipNames, germanUnits } = normalizeAisFilterObject(filters);
+  const hours = Math.min(72, Math.max(1, Number(filters.hours) || 24));
   const predicates = [
     "m.latitude IS NOT NULL",
     "m.longitude IS NOT NULL",
     `${tsParse("m.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
   ];
-  if (shipName) predicates.push(`g.name = ${sqlLiteral(shipName)}`);
+  const unitsIn = sqlInLiterals("g.name", germanUnits);
+  if (unitsIn) predicates.push(unitsIn);
+  else {
+    const nameIn = sqlInLiterals("g.name", shipNames);
+    if (nameIn) predicates.push(nameIn);
+  }
   return `
     SELECT
       CAST(m.mmsi AS varchar) AS mmsi,
@@ -435,13 +453,20 @@ export function buildGermanFleetTrackSql({ hours = 24, shipName = "" } = {}) {
   `;
 }
 
-export function buildRussianFleetTrackSql({ hours = 24, shipName = "" } = {}) {
+export function buildRussianFleetTrackSql(filters = {}) {
+  const { shipNames, russianUnits } = normalizeAisFilterObject(filters);
+  const hours = Math.min(72, Math.max(1, Number(filters.hours) || 24));
   const predicates = [
     "p.latitude IS NOT NULL",
     "p.longitude IS NOT NULL",
     `${tsParse("p.event_timestamp")} >= current_timestamp - interval '${hours}' hour`,
   ];
-  if (shipName) predicates.push(`rf.name = ${sqlLiteral(shipName)}`);
+  const unitsIn = sqlInLiterals("rf.name", russianUnits);
+  if (unitsIn) predicates.push(unitsIn);
+  else {
+    const nameIn = sqlInLiterals("rf.name", shipNames);
+    if (nameIn) predicates.push(nameIn);
+  }
   return `
     SELECT
       p.mmsi AS mmsi,

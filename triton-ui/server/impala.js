@@ -16,6 +16,7 @@ import {
 import { shortenSanctionReason } from "./sanction-text.js";
 import { getEffectiveDataMode, shouldUseSampleData } from "./data-mode.js";
 import { normalizeDasSegment } from "./das-segment.js";
+import { normalizeAisFilterObject } from "./ais-filters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
@@ -177,13 +178,16 @@ export async function listTables() {
   return { ...res, rows };
 }
 
-function filterSampleAisRows(rows, { flag = "", vesselType = "", shipName = "" } = {}) {
-  return rows.filter((r) => {
-    if (flag && r.flag !== flag) return false;
-    if (vesselType && r.vessel_type !== vesselType) return false;
-    if (shipName && r.ship_name !== shipName) return false;
-    return true;
-  });
+function matchesSampleAisFilters(r, filters = {}) {
+  const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
+  if (flags.length && !flags.includes(String(r.flag ?? ""))) return false;
+  if (vesselTypes.length && !vesselTypes.includes(String(r.vessel_type ?? ""))) return false;
+  if (shipNames.length && !shipNames.includes(String(r.ship_name ?? ""))) return false;
+  return true;
+}
+
+function filterSampleAisRows(rows, filters = {}) {
+  return rows.filter((r) => matchesSampleAisFilters(r, filters));
 }
 
 function aggregateNameValue(rows, key) {
@@ -293,11 +297,14 @@ export async function getAis(filters = {}) {
   return runQueryOrSample(sql, () => filterSampleAisRows(sample.aisShips, filters));
 }
 
-function filterSampleTrackRows(rows, { flag, vesselType, shipName } = {}) {
+function filterSampleFleetTrackRows(rows, filters = {}) {
+  const { germanUnits, russianUnits } = normalizeAisFilterObject(filters);
   return rows.filter((r) => {
-    if (flag && r.flag !== flag) return false;
-    if (vesselType && r.vessel_type !== vesselType) return false;
-    if (shipName && r.ship_name !== shipName) return false;
+    const kind = String(r.track_kind ?? "");
+    const name = String(r.ship_name ?? r.unit_name ?? "");
+    if (kind === "deu_fleet" && germanUnits.length && !germanUnits.includes(name)) return false;
+    if (kind === "rus_fleet" && russianUnits.length && !russianUnits.includes(name)) return false;
+  if (kind === "ais" && !matchesSampleAisFilters(r, filters)) return false;
     return true;
   });
 }
@@ -305,41 +312,38 @@ function filterSampleTrackRows(rows, { flag, vesselType, shipName } = {}) {
 /** Time-ordered positions for route map (AIS + DEU + RUS). */
 export async function getPositionTracks(opts = {}) {
   const hours = Math.min(72, Math.max(1, Number(opts.hours) || 24));
-  const flag = String(opts.flag ?? "").trim();
-  const vesselType = String(opts.vesselType ?? "").trim();
-  const shipName = String(opts.shipName ?? "").trim();
   const includeAis = opts.ais !== false;
   const includeGerman = opts.german !== false;
   const includeRussian = opts.russian !== false;
+  const filterArgs = { hours, ...normalizeAisFilterObject(opts) };
 
-  const filterArgs = { hours, flag, vesselType, shipName };
   const jobs = [];
   if (includeAis) {
     jobs.push(
       runQueryOrSample(buildAisTrackSql(filterArgs), () =>
-        filterSampleTrackRows(
+        filterSampleFleetTrackRows(
           sample.samplePositionTrackRows().filter((r) => r.track_kind === "ais"),
-          { flag, vesselType, shipName }
+          filterArgs
         )
       )
     );
   }
   if (includeGerman) {
     jobs.push(
-      runQueryOrSample(buildGermanFleetTrackSql({ hours, shipName }), () =>
-        filterSampleTrackRows(
+      runQueryOrSample(buildGermanFleetTrackSql(filterArgs), () =>
+        filterSampleFleetTrackRows(
           sample.samplePositionTrackRows().filter((r) => r.track_kind === "deu_fleet"),
-          { shipName }
+          filterArgs
         )
       )
     );
   }
   if (includeRussian) {
     jobs.push(
-      runQueryOrSample(buildRussianFleetTrackSql({ hours, shipName }), () =>
-        filterSampleTrackRows(
+      runQueryOrSample(buildRussianFleetTrackSql(filterArgs), () =>
+        filterSampleFleetTrackRows(
           sample.samplePositionTrackRows().filter((r) => r.track_kind === "rus_fleet"),
-          { shipName }
+          filterArgs
         )
       )
     );
@@ -355,7 +359,7 @@ export async function getPositionTracks(opts = {}) {
     source,
     rows,
     hours,
-    filters: { flag, vesselType, shipName },
+    filters: filterArgs,
   };
 }
 
