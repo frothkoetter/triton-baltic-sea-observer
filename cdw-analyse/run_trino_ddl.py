@@ -15,7 +15,7 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2025-11-22-use-skip-qualify"
+DDL_RUNNER_REV = "2026-11-22-view-split-fix"
 
 
 def transform_sql(text: str) -> str:
@@ -107,6 +107,11 @@ def transform_sql(text: str) -> str:
 
     if _should_qualify_schema():
         text = _qualify_defense_objects(text)
+        text = re.sub(
+            r"(?i)(?:CREATE OR REPLACE VIEW\s+){2,}",
+            "CREATE OR REPLACE VIEW ",
+            text,
+        )
 
     return text
 
@@ -402,6 +407,13 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
             ok += 1
         except Exception as exc:
             msg = f"#{i} {preview}\n  {exc}"
+            exc_s = str(exc)
+            if not stop_on_error and re.match(r"(?is)^CREATE\s+TABLE\b", stmt):
+                if "TABLE_ALREADY_EXISTS" in exc_s or (
+                    "already exists" in exc_s.lower() and "TABLE" in exc_s.upper()
+                ):
+                    ok += 1
+                    continue
             if (
                 "404" in str(exc)
                 and re.match(r"(?is)^DROP\s+TABLE\s+IF\s+EXISTS\b", stmt)
@@ -436,6 +448,7 @@ def main() -> int:
         print("Set TRINO_USER and TRINO_PASSWORD", file=sys.stderr)
         return 2
     continue_on_error = len(sys.argv) > 2 or os.environ.get("TRINO_CONTINUE_ON_ERROR") == "1"
+    print(f"DDL runner rev={DDL_RUNNER_REV} continue={continue_on_error}")
     ok, errors = run_file(path, stop_on_error=not continue_on_error)
     print(f"OK statements: {ok}")
     for e in errors:
