@@ -206,6 +206,20 @@ See also: [`cai-workbench/das-cable-classifier/NIFI_INVOKEHTTP.md`](../../cai-wo
 
 ---
 
+## JsonTreeReader Avro schema
+
+Paste into **JSONTreeReader** → **Schema Text** (or parameter e.g. `${das.avro.schema}`):
+
+[`../schemas/das_cable_spectrogram_metadata.avsc`](../schemas/das_cable_spectrogram_metadata.avsc) — see [`../schemas/README.md`](../schemas/README.md).
+
+**AttributesToJSON** list (must match Avro field names):
+
+```
+hadoop_file_url,segment_index,cable_asset,cable_id,cable_name,chainage_m,segment_lat,segment_lon,threat_class,predicted_threat_type,model_confidence,channel_count,window_seconds,fs_hz,filename,ingested_at
+```
+
+---
+
 ## Unique `filename` (PutCDPObjectStore)
 
 If Put fails with *“file with same name already exists”*, deploy **`DasCableAcousticSimulator` 1.2.1+** (`das_*_{UTC}_{batch_id}.h5`) or prepend in UpdateAttribute:
