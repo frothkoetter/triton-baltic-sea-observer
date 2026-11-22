@@ -1,13 +1,20 @@
-import { useEffect } from "react";
-import { CircleMarker, MapContainer, Tooltip, useMap } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { CircleMarker, MapContainer, Polyline, Tooltip, useMap } from "react-leaflet";
 import type { DasCableSegment } from "../lib/das-cable";
 import { dasThreatColor, segmentKey } from "../lib/das-cable";
+import {
+  buildOstseeInfraMapLines,
+  type OstseeInfraRow,
+  type OstseePipelineRow,
+} from "../lib/ostsee-infra-map";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 
 type MapProps = {
   segments: DasCableSegment[];
   selectedKey: string | null;
   onSelect: (seg: DasCableSegment) => void;
+  infrastruktur?: OstseeInfraRow[];
+  pipelines?: OstseePipelineRow[];
 };
 
 function FlyToSelected({ segments, selectedKey }: Pick<MapProps, "segments" | "selectedKey">) {
@@ -21,20 +28,45 @@ function FlyToSelected({ segments, selectedKey }: Pick<MapProps, "segments" | "s
   return null;
 }
 
-export function DasCableMap({ segments, selectedKey, onSelect }: MapProps) {
+export function DasCableMap({
+  segments,
+  selectedKey,
+  onSelect,
+  infrastruktur = [],
+  pipelines = [],
+}: MapProps) {
   const center: [number, number] = [57, 18];
+  const infraLines = useMemo(
+    () => buildOstseeInfraMapLines(infrastruktur, pipelines),
+    [infrastruktur, pipelines]
+  );
+
   return (
     <div className="map-wrap lidar-map-wrap">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
         <BasemapTileLayer />
+        {infraLines.map((item) =>
+          item.lines.map((positions, idx) => (
+            <Polyline key={`${item.key}-${idx}`} positions={positions} pathOptions={item.style}>
+              {idx === 0 && (
+                <Tooltip sticky>
+                  <span className="mono">
+                    <strong>{item.label}</strong>
+                    <br />
+                    {item.meta}
+                  </span>
+                </Tooltip>
+              )}
+            </Polyline>
+          ))
+        )}
         <FlyToSelected segments={segments} selectedKey={selectedKey} />
         {segments.map((seg) => {
           const key = segmentKey(seg);
           const selected = key === selectedKey;
           const label = seg.predicted_threat_type ?? seg.threat_class ?? "ambient";
           const color = dasThreatColor(label);
-          const severity =
-            label === "cui_sabotage_tap" || label === "anchor_drag" ? 11 : 8;
+          const severity = label === "cui_sabotage_tap" || label === "anchor_drag" ? 11 : 8;
           return (
             <CircleMarker
               key={key}
@@ -63,6 +95,12 @@ export function DasCableMap({ segments, selectedKey, onSelect }: MapProps) {
           );
         })}
       </MapContainer>
+      {infraLines.length > 0 && (
+        <div className="map-legend mono" style={{ fontSize: 10, marginTop: 4 }}>
+          <span style={{ color: "#26C6DA" }}>▬</span> Seekabel / Strom ·{" "}
+          <span style={{ color: "#FF6F00" }}>▬</span> Pipeline (EMODnet)
+        </div>
+      )}
     </div>
   );
 }

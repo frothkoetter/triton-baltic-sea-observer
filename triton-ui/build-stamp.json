@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.13-acoustic-sensors-label",
+  "build": "0.2.14-das-infra-map-filters",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

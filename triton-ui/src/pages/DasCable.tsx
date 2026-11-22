@@ -4,7 +4,22 @@ import { DataTable } from "../components/DataTable";
 import { DasCableDetail } from "../components/DasCableDetail";
 import { DasCableMap } from "../components/DasCableMap";
 import type { DasCableSegment } from "../lib/das-cable";
-import { segmentKey } from "../lib/das-cable";
+import {
+  DAS_THREAT_CATALOG,
+  segmentKey,
+  segmentMatchesCableFilter,
+} from "../lib/das-cable";
+import {
+  normalizeOstseeInfra,
+  normalizeOstseePipeline,
+  ostseeCableFilterOptions,
+  type OstseeInfraRow,
+  type OstseePipelineRow,
+} from "../lib/ostsee-infra-map";
+
+function segmentThreatLabel(seg: DasCableSegment): string {
+  return String(seg.predicted_threat_type ?? seg.threat_class ?? "").trim();
+}
 
 export function DasCablePage() {
   const [segments, setSegments] = useState<DasCableSegment[]>([]);
@@ -12,34 +27,50 @@ export function DasCablePage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [filterCable, setFilterCable] = useState("");
   const [filterThreat, setFilterThreat] = useState("");
+  const [ostseeInfra, setOstseeInfra] = useState<OstseeInfraRow[]>([]);
+  const [ostseePipelines, setOstseePipelines] = useState<OstseePipelineRow[]>([]);
 
   useEffect(() => {
     void (async () => {
-      const res = await fetchJson<{ rows?: DasCableSegment[]; source?: string }>("/api/das-cable/segments");
-      const rows = res.rows ?? [];
+      const [segRes, infraRes] = await Promise.all([
+        fetchJson<{ rows?: DasCableSegment[]; source?: string }>("/api/das-cable/segments"),
+        fetchJson<{
+          infrastruktur?: Record<string, unknown>[];
+          pipelines?: Record<string, unknown>[];
+        }>("/api/ostsee-infrastructure"),
+      ]);
+      const rows = segRes.rows ?? [];
       setSegments(rows);
-      setSource(res.source ?? "unknown");
+      setSource(segRes.source ?? "unknown");
       if (rows[0]) setSelectedKey(segmentKey(rows[0]));
+      setOstseeInfra(
+        (infraRes.infrastruktur ?? [])
+          .map((r) => normalizeOstseeInfra(r))
+          .filter((r): r is OstseeInfraRow => r != null)
+      );
+      setOstseePipelines(
+        (infraRes.pipelines ?? [])
+          .map((r) => normalizeOstseePipeline(r))
+          .filter((r): r is OstseePipelineRow => r != null)
+      );
     })();
   }, []);
 
   const cables = useMemo(() => {
-    return [...new Set(segments.map((s) => String(s.cable_asset ?? "")).filter(Boolean))].sort();
-  }, [segments]);
+    const fromSegments = segments.map((s) => String(s.cable_asset ?? s.cable_name ?? "")).filter(Boolean);
+    return ostseeCableFilterOptions(ostseeInfra, ostseePipelines, fromSegments);
+  }, [segments, ostseeInfra, ostseePipelines]);
 
   const threats = useMemo(() => {
-    return [
-      ...new Set(
-        segments.map((s) => String(s.predicted_threat_type ?? s.threat_class ?? "")).filter(Boolean)
-      ),
-    ].sort();
+    const fromData = segments.map((s) => segmentThreatLabel(s)).filter(Boolean);
+    return [...new Set([...DAS_THREAT_CATALOG, ...fromData])].sort();
   }, [segments]);
 
   const filtered = useMemo(() => {
     return segments.filter((s) => {
-      if (filterCable && s.cable_asset !== filterCable) return false;
+      if (!segmentMatchesCableFilter(s, filterCable)) return false;
       if (filterThreat) {
-        const t = s.predicted_threat_type ?? s.threat_class;
+        const t = segmentThreatLabel(s);
         if (t !== filterThreat) return false;
       }
       return true;
@@ -85,6 +116,8 @@ export function DasCablePage() {
             segments={filtered}
             selectedKey={selectedKey}
             onSelect={(s) => setSelectedKey(segmentKey(s))}
+            infrastruktur={ostseeInfra}
+            pipelines={ostseePipelines}
           />
         </section>
         <section className="panel lidar-detail-panel">

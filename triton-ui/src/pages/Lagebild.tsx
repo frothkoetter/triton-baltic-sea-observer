@@ -11,6 +11,7 @@ import {
   type GpsJammerMapEvent,
   type OutlierRow,
 } from "../components/TacticalMap";
+import { normalizeOstseeInfra, normalizeOstseePipeline } from "../lib/ostsee-infra-map";
 import { normalizeGpsJammerRow } from "../lib/gps-jammer";
 import {
   filterAisRows,
@@ -65,32 +66,6 @@ function normalizeFleet(row: Record<string, unknown>): FleetPosition | null {
     home_base: row.home_base ? String(row.home_base) : undefined,
     vessel_category: row.vessel_category ? String(row.vessel_category) : undefined,
     event_timestamp: String(row.event_timestamp ?? row.Event_Timestamp ?? ""),
-  };
-}
-
-function normalizeOstseeInfra(row: Record<string, unknown>): OstseeInfraRow | null {
-  const wkt = String(row.geometrie_wkt ?? row.Geometrie_Wkt ?? "").trim();
-  if (!wkt) return null;
-  return {
-    id: String(row.id ?? row.Id ?? ""),
-    name: String(row.name ?? row.Name ?? ""),
-    typ: String(row.typ ?? row.Typ ?? ""),
-    geometrie_wkt: wkt,
-    status: row.status != null ? String(row.status) : undefined,
-    medium: row.medium != null ? String(row.medium) : undefined,
-  };
-}
-
-function normalizeOstseePipeline(row: Record<string, unknown>): OstseePipelineRow | null {
-  const wkt = String(row.geometrie_wkt ?? row.Geometrie_Wkt ?? "").trim();
-  if (!wkt) return null;
-  return {
-    pipeline_name: String(row.pipeline_name ?? row.Pipeline_Name ?? ""),
-    medium: row.medium != null ? String(row.medium) : undefined,
-    status: row.status != null ? String(row.status) : undefined,
-    geo_typ: row.geo_typ != null ? String(row.geo_typ) : undefined,
-    geometrie_wkt: wkt,
-    quelle: row.quelle != null ? String(row.quelle) : undefined,
   };
 }
 
