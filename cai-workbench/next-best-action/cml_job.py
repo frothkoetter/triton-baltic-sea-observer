@@ -40,6 +40,53 @@ def _load_run_nba(root: Path):
     return mod
 
 
+_DEP_CHECKS = (
+    ("pyshacl", "pyshacl"),
+    ("rdflib", "rdflib"),
+    ("trino", "trino"),
+)
+
+
+def _missing_deps() -> list[str]:
+    missing: list[str] = []
+    for mod, pip_name in _DEP_CHECKS:
+        try:
+            __import__(mod)
+        except ImportError:
+            missing.append(pip_name)
+    return missing
+
+
+def _auto_pip_enabled() -> bool:
+    return os.environ.get("NBA_AUTO_PIP", "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+
+
+def _verify_deps(root: Path) -> None:
+    missing = _missing_deps()
+    if not missing:
+        return
+    if _auto_pip_enabled():
+        import subprocess
+
+        req = root / "requirements.txt"
+        print(f"NBA: installing missing {missing} from {req}", flush=True)
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-q", "-r", str(req)],
+        )
+        missing = _missing_deps()
+    if missing:
+        raise RuntimeError(
+            "NBA missing Python packages: "
+            + ", ".join(missing)
+            + f". Run once: cd {root} && pip install -r requirements.txt"
+            + " (or set NBA_AUTO_PIP=1, default)"
+        )
+
+
 def _in_jupyter_kernel() -> bool:
     return (
         "ipykernel" in sys.modules
@@ -56,6 +103,7 @@ def _run() -> int:
     os.chdir(root)
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    _verify_deps(root)
     mod = _load_run_nba(root)
     rc = mod.main()
     if _in_jupyter_kernel() and rc in (0, 2):

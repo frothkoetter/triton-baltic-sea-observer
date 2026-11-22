@@ -185,7 +185,26 @@ def main() -> int:
         print(f"NBA job failed: {exc}", file=sys.stderr)
         return 2
     except Exception as exc:
+        from src.shacl_gate import ShaclGateBlocked
+
         print(f"NBA job failed: {exc}", file=sys.stderr)
+        if isinstance(exc, ShaclGateBlocked):
+            rep = exc.report
+            print(f"shacl_engine={rep.engine} conforms={rep.conforms}", file=sys.stderr)
+            for v in rep.violations[:12]:
+                print(f"  shacl: {v}", file=sys.stderr)
+            if rep.engine == "dependency-error":
+                print(
+                    "Fix: cd cai-workbench/next-best-action && "
+                    "pip install 'pyparsing>=3.1.0' -r requirements.txt "
+                    "(or NBA_SHACL_GATE=0 for lab)",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    "Inspect artifacts/nba/<flow_uuid>/shacl_report.json and decision_record.ttl",
+                    file=sys.stderr,
+                )
         return 1
 
     print(f"flow_uuid={result.alert.flow_uuid}")
