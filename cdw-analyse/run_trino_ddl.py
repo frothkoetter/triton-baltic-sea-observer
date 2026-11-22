@@ -20,7 +20,17 @@ def transform_sql(text: str) -> str:
         text,
         count=1,
     )
+    text = re.sub(
+        r"(?im)^CREATE SCHEMA IF NOT EXISTS defense\s*;",
+        "CREATE SCHEMA IF NOT EXISTS iceberg.defense;",
+        text,
+    )
     text = re.sub(r"(?im)^use defense;\s*", "USE iceberg.defense;\n", text, count=1)
+    text = re.sub(
+        r"(?im)^USE defense\s*;",
+        "USE iceberg.defense;",
+        text,
+    )
     text = re.sub(r"`([a-zA-Z_][a-zA-Z0-9_]*)`", r"\1", text)
     text = re.sub(r"(?im)^CREATE EXTERNAL TABLE", "CREATE TABLE", text)
     text = re.sub(r"(?im)^INSERT INTO TABLE\b", "INSERT INTO", text)
@@ -81,6 +91,23 @@ def transform_sql(text: str) -> str:
     return text
 
 
+def _skip_create_schema(stmts: List[str]) -> List[str]:
+    if os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return stmts
+    return [
+        s
+        for s in stmts
+        if not re.match(
+            r"(?is)^CREATE\s+SCHEMA\s+IF\s+NOT\s+EXISTS\s+",
+            s.strip(),
+        )
+    ]
+
+
 def split_statements(text: str) -> List[str]:
     lines: List[str] = []
     for line in text.splitlines():
@@ -136,7 +163,7 @@ def connect():
 def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
     raw = open(path, encoding="utf-8").read()
     transformed = transform_sql(raw)
-    stmts = split_statements(transformed)
+    stmts = _skip_create_schema(split_statements(transformed))
     conn = connect()
     cur = conn.cursor()
     errors: List[str] = []
@@ -149,6 +176,12 @@ def run_file(path: str, stop_on_error: bool = True) -> Tuple[int, List[str]]:
             ok += 1
         except Exception as exc:
             msg = f"#{i} {preview}\n  {exc}"
+            if re.match(r"(?is)^CREATE\s+SCHEMA", stmt.strip()) and "404" in str(exc):
+                msg += (
+                    "\n  Hint: On CDW, schema defense may already exist or must be "
+                    "created in the Data Warehouse / metastore UI — not via Trino. "
+                    "Re-run with TRINO_SKIP_CREATE_SCHEMA=1 if iceberg.defense exists."
+                )
             errors.append(msg)
             if stop_on_error:
                 break

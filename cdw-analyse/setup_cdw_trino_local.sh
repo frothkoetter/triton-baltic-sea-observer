@@ -42,6 +42,7 @@ if [[ -z "${TRINO_HOST:-}" && -n "${TRINO_JDBC_URL}" ]]; then
 fi
 
 echo "==> Trino target: https://${TRINO_HOST}:${TRINO_PORT} catalog=${TRINO_CATALOG} schema=${TRINO_SCHEMA} user=${TRINO_USER}"
+echo "    (If CREATE SCHEMA returns 404: git pull create_db_tables_trino.sql, or TRINO_SKIP_CREATE_SCHEMA=1)"
 
 VENV="${ROOT}/.venv"
 PY="python3"
