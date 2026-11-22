@@ -2,7 +2,8 @@
 
 Set **Project → Settings → Environment variables** programmatically ([API v2](https://docs.cloudera.com/machine-learning/cloud/api/topics/ml-api-v2.html)).
 
-Trino host, DDL, and UI **Trino live** checklist: [`cdw-analyse/TRINO_SETUP_RUNBOOK.md`](../../cdw-analyse/TRINO_SETUP_RUNBOOK.md).
+Trino host, DDL, and UI **Trino live**: [`cdw-analyse/TRINO_SETUP_RUNBOOK.md`](../../cdw-analyse/TRINO_SETUP_RUNBOOK.md).  
+**UC1 / UC2 scheduled jobs**: [`cai-workbench/CML_UC_JOBS_SETUP.md`](../../cai-workbench/CML_UC_JOBS_SETUP.md).
 
 ## Prerequisites
 

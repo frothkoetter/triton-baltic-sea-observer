@@ -1,5 +1,7 @@
 # Situation awareness (Lagebild)
 
+**CML job setup (UC1 + UC2):** [`../CML_UC_JOBS_SETUP.md`](../CML_UC_JOBS_SETUP.md)
+
 Modular Cloudera AI Workbench project for **Baltic maritime situation pictures**: query `defense.lagebild`, summarise for LLM context, generate Mistral reports, PDF artifacts, and 24h/48h comparisons.
 
 ## Quickstart (notebook)

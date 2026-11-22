@@ -139,7 +139,7 @@ Bulk apply via API v2: [`scripts/cml/`](./scripts/cml/) (`set_project_environmen
 1. Apply warehouse DDL from [`cdw-analyse/`](./cdw-analyse/) (`create_db_tables_*.sql`, `run_trino_ddl.py` for NBA phases).
 2. Sync [`nifi-processors/upload/`](./nifi-processors/upload/) to the NiFi cluster; import flows from [`nifi-flow/`](./nifi-flow/).
 3. Optional: start Flink geofence job per [`csa-flink/readme.md`](./csa-flink/readme.md).
-4. Schedule UC1 (`cai-workbench/situation-awareness/cml_job.py`) and UC2 (`cai-workbench/next-best-action/cml_job.py`) on CML.
+4. Schedule UC1 / UC2 CML jobs — [`cai-workbench/CML_UC_JOBS_SETUP.md`](./cai-workbench/CML_UC_JOBS_SETUP.md) (`situation-awareness/cml_job.py`, `next-best-action/cml_job.py`, optional `trino-jobs/cml_job.py`).
 5. Deploy **triton-ui** as a CML Application or run locally with `npm run dev`.
 6. Import CDV visuals from [`cdv/`](./cdv/) and wire datasets to `defense` tables.
 
