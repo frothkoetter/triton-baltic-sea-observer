@@ -8,6 +8,7 @@ import {
   getAisAnalytics,
   getAreaViolations,
   getConnectionState,
+  noteWarehouseProbeOk,
   getDatasets,
   getFleet,
   getFleetAnalytics,
@@ -170,6 +171,7 @@ app.get("/api/health", async (req, res) => {
     const probe = await runTrino("SELECT 1 AS ok");
     if (probe.ok) {
       dataSource = "trino";
+      noteWarehouseProbeOk("trino");
     } else {
       warehouseProbeError = probe.error || "Trino probe failed";
     }

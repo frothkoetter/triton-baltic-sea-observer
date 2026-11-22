@@ -38,6 +38,14 @@ export function getConnectionState() {
   };
 }
 
+/** Clear stale lastError after a successful warehouse ping (e.g. /api/health SELECT 1). */
+export function noteWarehouseProbeOk(engine = "trino") {
+  connectionState.checked = true;
+  connectionState.live = true;
+  connectionState.engine = engine;
+  connectionState.lastError = null;
+}
+
 function runPython(sql) {
   return new Promise((resolve, reject) => {
     const child = spawn("python3", [BRIDGE, sql], {
