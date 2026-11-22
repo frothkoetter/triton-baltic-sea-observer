@@ -45,7 +45,7 @@ flowchart LR
 |------|--------|
 | Source | [`nifi-processors/upload/DasCableAcousticSimulator.py`](../nifi-processors/upload/DasCableAcousticSimulator.py) |
 | Engine | [`nifi-processors/upload/das_acoustic_engine.py`](../nifi-processors/upload/das_acoustic_engine.py) |
-| Processor version | `1.2.2` |
+| Processor version | `1.3.0` |
 | Output MIME | `application/x-hdf5` (or `application/json` for `json_preview`) |
 | Schema attribute | `das.schema` = **`triton/das-cable/v1`** |
 
@@ -56,7 +56,7 @@ flowchart LR
 | Cable Asset | `BALTICCONNECTOR` | Corridor from EMODnet / `ostsee_infrastruktur` (also `PCABLE_BSH_*`, `NORD_STREAM_*`, `RANDOM`) |
 | Segment Count | `6` | Windows along chainage (max 24 in code) |
 | Channel Count | `48` | Spatial DAS channels per window |
-| Window Seconds | `4` | Time window per segment |
+| Window Seconds | `4` (max **`30`**) | Underwater time window per segment (1–30 s) |
 | Sample Rate Hz | `2000` | Strain-rate sample rate |
 | Random Seed | empty | Optional reproducibility |
 | Output Format | `hdf5` | `hdf5` or `json_preview` (features only, no arrays) |
@@ -107,6 +107,12 @@ Defined in `das_acoustic_engine.THREAT_CLASSES`:
 | `anchor_drag` | ~5.5 Hz ramp |
 | `cui_sabotage_tap` | ~340 Hz impulse |
 | `cable_strain_anomaly` | ~1.2 Hz step strain |
+| `anchor_slip` | Staccato anchor slip bursts on cable |
+| `uboat_acoustic` | Low tonal cavitation / machinery (~14–38 Hz) |
+| `whale_vocalization` | Chirped call sequences (~52 Hz band) |
+| `hard_beep` | Sharp periodic beep (~620 Hz) |
+
+Long windows (e.g. **30 s** at 2000 Hz → 60 000 samples/segment) increase HDF5 size; UI playback still caps at **10 s** (`DAS_PLAY_MAX_SEC`). Consider `DAS_H5_MAX_MB` on the Application if batches exceed default **48 MB**.
 
 ---
 

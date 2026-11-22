@@ -23,12 +23,17 @@ THREAT_CLASSES = (
     "vessel_passage",
     "trawler_scrape",
     "anchor_drag",
+    "anchor_slip",
     "cui_sabotage_tap",
     "cable_strain_anomaly",
+    "uboat_acoustic",
+    "whale_vocalization",
+    "hard_beep",
 )
 
 DEFAULT_FS_HZ = 2000.0
 DEFAULT_WINDOW_S = 4.0
+MAX_WINDOW_S = 30.0
 DEFAULT_CHANNELS = 48
 DEFAULT_SEGMENTS = 6
 
@@ -80,8 +85,18 @@ class DasSegment:
         }
 
 
-def _stft(x: np.ndarray, fs: float, n_fft: int = 256, hop: int = 64) -> Tuple[np.ndarray, np.ndarray]:
+def _stft_params(n_samples: int) -> Tuple[int, int]:
+    """Scale FFT with window length (up to 30 s) for better low-freq separation."""
+    inner = max(n_samples // 8, 32)
+    n_fft = int(min(2048, max(256, 2 ** int(np.ceil(np.log2(inner))))))
+    hop = max(64, n_fft // 4)
+    return n_fft, hop
+
+
+def _stft(x: np.ndarray, fs: float, n_fft: int | None = None, hop: int | None = None) -> Tuple[np.ndarray, np.ndarray]:
     """Single-channel STFT magnitude."""
+    if n_fft is None or hop is None:
+        n_fft, hop = _stft_params(len(x))
     if len(x) < n_fft:
         x = np.pad(x, (0, n_fft - len(x)))
     frames = []
@@ -101,8 +116,12 @@ _THREAT_TONE_HZ: Dict[str, float] = {
     "vessel_passage": 24.0,
     "trawler_scrape": 88.0,
     "anchor_drag": 5.5,
+    "anchor_slip": 4.8,
     "cui_sabotage_tap": 340.0,
     "cable_strain_anomaly": 1.2,
+    "uboat_acoustic": 14.0,
+    "whale_vocalization": 52.0,
+    "hard_beep": 620.0,
 }
 
 
@@ -147,6 +166,56 @@ def _synthesize_waveform(
             data[ch] += drag * 0.35 * np.sin(2 * np.pi * 18 * t)
         return data.astype(np.float32)
 
+    if threat == "anchor_slip":
+        window_len = n_samples / fs
+        slip_hz = 1.2 / max(window_len, 0.5)
+        slip = np.zeros(n_samples)
+        for i in range(n_samples):
+            phase = (t[i] * slip_hz) % 1.0
+            slip[i] = 0.15 + (0.85 if phase < 0.18 else 0.0)
+        for ch in range(n_channels):
+            data[ch] += slip * 0.95 * np.sin(2 * np.pi * f0 * t + ch * 0.09)
+            data[ch] += slip * 0.4 * np.sin(2 * np.pi * 22 * t + ch * 0.04)
+            data[ch] += slip * rng.uniform(-0.12, 0.12)
+        return data.astype(np.float32)
+
+    if threat == "uboat_acoustic":
+        cav = 0.45 + 0.55 * np.sin(2 * np.pi * 0.35 * t)
+        for ch in range(n_channels):
+            data[ch] += cav * 0.5 * np.sin(2 * np.pi * f0 * t + ch * 0.08)
+            data[ch] += cav * 0.35 * np.sin(2 * np.pi * (f0 * 2.6) * t)
+            data[ch] += cav * 0.2 * np.sin(2 * np.pi * 38 * t + ch * 0.15)
+        return data.astype(np.float32)
+
+    if threat == "whale_vocalization":
+        calls = np.zeros(n_samples)
+        call_dur = int(fs * 1.8)
+        gap = int(fs * max(2.5, (n_samples / fs) / 12))
+        pos = int(fs * 0.4)
+        while pos + call_dur < n_samples:
+            local_t = np.arange(call_dur) / fs
+            chirp = np.linspace(f0 * 0.7, f0 * 1.8, call_dur)
+            wave = 0.65 * np.sin(2 * np.pi * chirp * local_t)
+            env = np.hanning(call_dur)
+            calls[pos : pos + call_dur] += wave * env
+            pos += call_dur + gap
+        for ch in range(n_channels):
+            data[ch] += calls * (0.85 + 0.1 * (ch % 5))
+            data[ch] += 0.08 * np.sin(2 * np.pi * 12 * t)
+        return data.astype(np.float32)
+
+    if threat == "hard_beep":
+        beep_hz = 2.5 / max(n_samples / fs, 0.5)
+        beeps = np.zeros(n_samples)
+        for i in range(n_samples):
+            phase = (t[i] * beep_hz) % 1.0
+            beeps[i] = 1.0 if phase < 0.12 else 0.0
+        tone = 0.75 * np.sin(2 * np.pi * f0 * t)
+        for ch in range(n_channels):
+            data[ch] += beeps * tone
+            data[ch] += beeps * 0.25 * np.sin(2 * np.pi * (f0 * 1.5) * t + ch * 0.2)
+        return data.astype(np.float32)
+
     if threat == "cui_sabotage_tap":
         impulse = np.zeros(n_samples)
         k = n_samples // 2
@@ -170,12 +239,16 @@ def _synthesize_waveform(
 def _pick_threat_mix(rng: random.Random, segments: int) -> List[str]:
     """Realistic mix along a cable patrol window."""
     weights = {
-        "ambient": 0.22,
-        "vessel_passage": 0.28,
-        "trawler_scrape": 0.12,
-        "anchor_drag": 0.18,
-        "cui_sabotage_tap": 0.08,
-        "cable_strain_anomaly": 0.12,
+        "ambient": 0.14,
+        "vessel_passage": 0.18,
+        "trawler_scrape": 0.08,
+        "anchor_drag": 0.1,
+        "anchor_slip": 0.08,
+        "cui_sabotage_tap": 0.06,
+        "cable_strain_anomaly": 0.08,
+        "uboat_acoustic": 0.1,
+        "whale_vocalization": 0.1,
+        "hard_beep": 0.08,
     }
     labels = list(weights.keys())
     probs = [weights[k] for k in labels]
@@ -197,6 +270,7 @@ def generate_das_batch(
     meta = cable_meta(asset)
     length_m = cable_length_m(asset)
     verts = cable_vertices(asset)
+    window_s = max(0.5, min(float(window_s), MAX_WINDOW_S))
     labels = list(threat_labels) if threat_labels else _pick_threat_mix(rng, n_segments)
     if len(labels) < n_segments:
         labels.extend(_pick_threat_mix(rng, n_segments - len(labels)))

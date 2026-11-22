@@ -22,6 +22,8 @@ from das_acoustic_engine import (
     DEFAULT_FS_HZ,
     DEFAULT_SEGMENTS,
     DEFAULT_WINDOW_S,
+    MAX_WINDOW_S,
+    THREAT_CLASSES,
     batch_geolocation_attributes,
     generate_das_batch,
     write_hdf5_batch,
@@ -38,10 +40,11 @@ class DasCableAcousticSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.2'
+        version = '1.3.0'
         description = (
-            'Synthetic DAS strain-rate data and STFT spectrograms (HDF5) along '
-            'EMODnet Baltic cables/pipelines (7 assets + RANDOM) — anchor drag & CUI scenarios.'
+            'Synthetic underwater DAS strain-rate + STFT spectrograms (HDF5) along '
+            'Baltic cables/pipelines — vessel, anchor slip, U-boat tonal, whale calls, '
+            'hard beep, CUI tap (window up to 30 s).'
         )
         dependencies = ['numpy', 'h5py']
 
@@ -76,7 +79,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
 
     WINDOW_SECONDS = PropertyDescriptor(
         name="Window Seconds",
-        description="Time window per segment.",
+        description=f"Time window per segment (1–{int(MAX_WINDOW_S)} s underwater record).",
         validators=[StandardValidators.POSITIVE_INTEGER_VALIDATOR],
         default_value=str(int(DEFAULT_WINDOW_S)),
         required=True,
@@ -127,6 +130,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
             n_seg = int(context.getProperty(self.SEGMENT_COUNT.name).getValue() or DEFAULT_SEGMENTS)
             n_ch = int(context.getProperty(self.CHANNEL_COUNT.name).getValue() or DEFAULT_CHANNELS)
             win_s = float(context.getProperty(self.WINDOW_SECONDS.name).getValue() or DEFAULT_WINDOW_S)
+            win_s = max(1.0, min(win_s, MAX_WINDOW_S))
             fs = float(context.getProperty(self.SAMPLE_RATE_HZ.name).getValue() or DEFAULT_FS_HZ)
             seed_raw = (context.getProperty(self.RANDOM_SEED.name).getValue() or "").strip()
             seed = int(seed_raw) if seed_raw.isdigit() else None
@@ -174,6 +178,7 @@ class DasCableAcousticSimulator(FlowFileTransform):
                 "das.window.seconds": str(win_s),
                 "das.fs_hz": str(int(fs)),
                 "das.threat.classes": threats,
+                "das.threat.catalog": ",".join(THREAT_CLASSES),
                 "filename": file_name,
             }
             attrs.update(batch_geolocation_attributes(segments))

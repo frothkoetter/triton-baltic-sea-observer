@@ -22,6 +22,7 @@ from cable_corridor_registry import (  # noqa: E402
     resolve_cable_asset,
 )
 from das_acoustic_engine import (  # noqa: E402
+    MAX_WINDOW_S,
     batch_geolocation_attributes,
     generate_das_batch,
     read_hdf5_features_from_bytes,
@@ -79,6 +80,39 @@ class TestDasCableAcoustic(unittest.TestCase):
         lon = float(geo["longitude"])
         self.assertTrue(59.0 < lat < 60.5)
         self.assertTrue(23.0 < lon < 25.5)
+
+    def test_max_window_30_seconds(self):
+        segments, meta = generate_das_batch(
+            "BALTICCONNECTOR",
+            n_segments=2,
+            n_channels=8,
+            window_s=30.0,
+            seed=3,
+        )
+        self.assertAlmostEqual(meta["window_s"], 30.0)
+        self.assertEqual(int(segments[0].channels.shape[1]), int(30.0 * meta["fs_hz"]))
+
+    def test_underwater_threat_synthesis(self):
+        for threat in (
+            "uboat_acoustic",
+            "whale_vocalization",
+            "anchor_slip",
+            "hard_beep",
+        ):
+            segs, _ = generate_das_batch(
+                "BALTICCONNECTOR",
+                n_segments=1,
+                threat_labels=[threat],
+                window_s=8.0,
+                n_channels=8,
+                seed=4,
+            )
+            self.assertEqual(segs[0].threat_class, threat)
+            self.assertGreater(float(segs[0].channels.std()), 0.01)
+
+    def test_window_clamped_to_max(self):
+        _, meta = generate_das_batch("BALTICCONNECTOR", window_s=120.0, n_segments=1, seed=1)
+        self.assertAlmostEqual(meta["window_s"], MAX_WINDOW_S)
 
     def test_hdf5_roundtrip(self):
         segments, meta = generate_das_batch("BALTICCONNECTOR", n_segments=4, n_channels=16, seed=1)
