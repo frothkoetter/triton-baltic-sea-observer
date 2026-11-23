@@ -101,8 +101,32 @@ export function collapseGpsJammerByGeohash(events: GpsJammerEvent[]): GpsJammerE
 }
 
 export function gpsJammerTileFillOpacity(signalIntegrity: number | null | undefined): number {
-  if (signalIntegrity == null || !Number.isFinite(signalIntegrity)) return 0.35;
-  return Math.min(0.65, Math.max(0.12, 0.75 - signalIntegrity * 0.55));
+  if (signalIntegrity == null || !Number.isFinite(signalIntegrity)) return 0.42;
+  return Math.min(0.72, Math.max(0.28, 0.82 - signalIntegrity * 0.5));
+}
+
+/** Geohash-6 cells are ~1 km; at zoom 6 they are sub-pixel — expand for display. */
+export function minGpsJammerSpanDegrees(zoom: number): number {
+  if (zoom >= 12) return 0.006;
+  if (zoom >= 10) return 0.018;
+  if (zoom >= 8) return 0.055;
+  if (zoom >= 7) return 0.12;
+  return 0.3;
+}
+
+export function expandLeafletBounds(
+  bounds: [[number, number], [number, number]],
+  minSpanDeg: number
+): [[number, number], [number, number]] {
+  const [[south, west], [north, east]] = bounds;
+  const latMid = (south + north) / 2;
+  const lonMid = (west + east) / 2;
+  const halfLat = Math.max((north - south) / 2, minSpanDeg / 2);
+  const halfLon = Math.max((east - west) / 2, minSpanDeg / 2);
+  return [
+    [latMid - halfLat, lonMid - halfLon],
+    [latMid + halfLat, lonMid + halfLon],
+  ];
 }
 
 /** Leaflet rectangle bounds for a jammer event (always tries lat/lon-backed geohash). */
@@ -117,6 +141,15 @@ export function gpsJammerLeafletBounds(
   return geohashLeafletBounds(encoded);
 }
 
-export function countGpsJammerDrawableTiles(events: GpsJammerEvent[]): number {
-  return events.reduce((n, e) => (gpsJammerLeafletBounds(e) ? n + 1 : n), 0);
+export function gpsJammerVisualLeafletBounds(
+  event: GpsJammerEvent,
+  zoom: number
+): [[number, number], [number, number]] | null {
+  const core = gpsJammerLeafletBounds(event);
+  if (!core) return null;
+  return expandLeafletBounds(core, minGpsJammerSpanDegrees(zoom));
+}
+
+export function countGpsJammerDrawableTiles(events: GpsJammerEvent[], zoom = 6): number {
+  return events.reduce((n, e) => (gpsJammerVisualLeafletBounds(e, zoom) ? n + 1 : n), 0);
 }
