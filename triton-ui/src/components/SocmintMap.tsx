@@ -65,7 +65,12 @@ export function SocmintMap({
 
   return (
     <div className="map-wrap socmint-map-wrap">
-      <MapContainer center={BALTIC_CENTER} zoom={BALTIC_ZOOM} className="tactical-map">
+      <MapContainer
+        center={BALTIC_CENTER}
+        zoom={BALTIC_ZOOM}
+        className="tactical-map"
+        style={{ height: "100%", width: "100%" }}
+      >
         <MapInvalidateSize />
         <BasemapTileLayer />
         <FlyToSelection
