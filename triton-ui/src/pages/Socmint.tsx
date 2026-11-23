@@ -218,7 +218,7 @@ function motionDetail({ selected }: { selected: SocmintMessage }) {
         Trust: {selected.trust_tag}
         {selected.disinformation_flag ? " · IW flagged" : ""}
       </div>
-      <p style={{ margin: "8px 0", lineHeight: 1.45 }}>{selected.tweet}</p>
+      <p className="socmint-tweet-full">{selected.tweet}</p>
       {selected.verification_notes ? (
         <p className="mono" style={{ fontSize: 12, color: "var(--accent-amber)" }}>
           Verify: {selected.verification_notes}

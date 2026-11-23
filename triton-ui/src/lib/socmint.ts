@@ -47,6 +47,13 @@ export function trustTagColor(tag: SocmintTrustTag | undefined, disinfo?: boolea
   return "#FFD54F";
 }
 
+/** Map hover / detail: preserve NiFi newlines, cap length for tooltips. */
+export function socmintTweetDisplay(text: string, maxLen?: number): string {
+  const t = text.replace(/\r\n/g, "\n").trim();
+  if (maxLen == null || t.length <= maxLen) return t;
+  return `${t.slice(0, maxLen)}…`;
+}
+
 export function threatTileColor(sevP90: number): string {
   if (sevP90 >= 85) return "#FF5252";
   if (sevP90 >= 65) return "#FF9800";
