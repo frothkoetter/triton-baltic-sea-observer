@@ -31,7 +31,7 @@ export const LAGEBILD_KPI_DEFS: LagebildKpiDef[] = [
     title: "Surveillance",
     hint: "Maritime Lageberichte gesamt",
     detail:
-      "Anzahl Meldungen in maritime_surveillance_reports (Simulator + Showcases), unabhängig von AIS-Outliers auf der Karte.",
+      "Anzahl Meldungen in maritime_surveillance_reports (STANAG/Simulator inkl. SOCINT-INTREP, SITREP, POSREP), unabhängig von AIS-Outliers auf der Karte.",
   },
   {
     key: "alerts",

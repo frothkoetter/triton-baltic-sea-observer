@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from marine_fleet_registry import GERMAN_NAVAL_FLEET, MARINE_POSITION_DECIMALS
+from socmint_catalog import pick_scenario
 
 # --- Traffic volume (messages per processor invocation) ----------------------------
 
@@ -298,6 +299,123 @@ def _posrep_unit_to_hq(
         message_position=pos,
         traffic_direction="unit_to_hq",
         message_category="POSREP",
+        exercise=exercise,
+        mmsi=meta["mmsi"],
+        body=body,
+    )
+
+
+def _socint_tweet_excerpt(text: str, max_len: int = 200) -> str:
+    flat = " ".join(text.split())
+    if len(flat) <= max_len:
+        return flat
+    return f"{flat[: max_len - 1]}…"
+
+
+def _socint_unit_to_hq(
+    ship: Dict[str, Any],
+    hq: Dict[str, str],
+    exercise: str,
+    aoi: str,
+    dtg: str,
+    seq: int,
+    rng: random.Random,
+) -> StanagMessage:
+    """Unit forwards open-source picture to HQ (correlates with defense.social_media_messages)."""
+    meta = _ship_meta(ship)
+    pos = format_position(float(ship["lat"]), float(ship["lon"]))
+    sc = pick_scenario(rng)
+    excerpt = _socint_tweet_excerpt(sc.tweet)
+    iw = " — IW/disinfo assessed" if sc.disinformation_flag else ""
+    subject = "SOCINT REPORT (INTREP)"
+    txt = (
+        f"EX {exercise} / {aoi}: {meta['name']} SOCINT sweep. "
+        f"Platform {sc.platform} @{sc.user_username} | lane {sc.intel_category} | "
+        f"trust {sc.trust_tag}{iw}. "
+        f"OSINT excerpt: {excerpt} "
+        f"Recommend cross-check with JEWCS / AIS / SOCMINT tile sketch."
+    )
+    msgid = f"SOCINT/{_unit_key(meta['name'])}/{seq:04d}"
+    body = _compile_message(
+        msgid=msgid,
+        dtg=dtg,
+        msg_from=meta["name"],
+        msg_to=hq["name"],
+        subject=subject,
+        position=pos,
+        txt=txt,
+        ampns=[
+            f"SCENARIO/ {sc.scenario_id}",
+            f"VERIFY/ {sc.verification_notes[:120]}",
+            f"REMARK/ Geoloc nominally {sc.latitude:.4f}N {sc.longitude:.4f}E",
+        ],
+        refs=f"SOCMINT/{sc.scenario_id}",
+    )
+    return StanagMessage(
+        message_id=msgid,
+        message_dtg=dtg,
+        message_from=meta["name"],
+        message_to=hq["name"],
+        message_subject=subject,
+        message_text=txt,
+        message_position=pos,
+        traffic_direction="unit_to_hq",
+        message_category="SOCINT",
+        exercise=exercise,
+        mmsi=meta["mmsi"],
+        body=body,
+    )
+
+
+def _socint_hq_to_unit(
+    ship: Dict[str, Any],
+    hq: Dict[str, str],
+    exercise: str,
+    aoi: str,
+    dtg: str,
+    seq: int,
+    rng: random.Random,
+) -> StanagMessage:
+    """HQ pushes IW / OSINT advisory down to unit."""
+    meta = _ship_meta(ship)
+    pos = format_position(float(ship["lat"]), float(ship["lon"]))
+    sc = pick_scenario(rng)
+    lane = sc.intel_category
+    action = rng.choice(
+        [
+            "do not engage on social media; report sightings via classified chain",
+            "expect coordinated disinformation spike in AO",
+            "correlate any citizen reports with SOCMINT trust tags before FLASH",
+            "monitor GPS integrity — tie SOCINT claims to adsb_nic / jamming tiles",
+        ]
+    )
+    subject = "SOCINT ADVISORY (IW WATCH)"
+    txt = (
+        f"TF SOCINT: Active narrative vic {aoi} ({lane}). Trust tag baseline {sc.trust_tag}. "
+        f"Directive for {meta['name']}: {action}. "
+        f"Sample handle @{sc.user_username} flagged in Baltic SOCMINT feed."
+    )
+    msgid = f"SOCINT-ADV/{hq['short']}/{seq:04d}"
+    body = _compile_message(
+        msgid=msgid,
+        dtg=dtg,
+        msg_from=hq["name"],
+        msg_to=meta["name"],
+        subject=subject,
+        position=pos,
+        txt=txt,
+        refs=f"SOCMINT/{sc.scenario_id}",
+    )
+    return StanagMessage(
+        message_id=msgid,
+        message_dtg=dtg,
+        message_from=hq["name"],
+        message_to=meta["name"],
+        message_subject=subject,
+        message_text=txt,
+        message_position=pos,
+        traffic_direction="hq_to_unit",
+        message_category="SOCINT",
         exercise=exercise,
         mmsi=meta["mmsi"],
         body=body,
@@ -589,8 +707,14 @@ def _legacy_sick_simple(unit_name: str, lat: float, lon: float, mmsi: str, rng: 
 
 Builder = Callable[..., StanagMessage]
 
-UNIT_TO_HQ_BUILDERS: List[Builder] = [_sitrep_unit_to_hq, _posrep_unit_to_hq, _contact_report, _sick_report]
-HQ_TO_UNIT_BUILDERS: List[Builder] = [_hq_frago_to_unit, _hq_warning_to_unit]
+UNIT_TO_HQ_BUILDERS: List[Builder] = [
+    _sitrep_unit_to_hq,
+    _posrep_unit_to_hq,
+    _contact_report,
+    _sick_report,
+    _socint_unit_to_hq,
+]
+HQ_TO_UNIT_BUILDERS: List[Builder] = [_hq_frago_to_unit, _hq_warning_to_unit, _socint_hq_to_unit]
 UNIT_TO_UNIT_BUILDERS: List[Builder] = [_inter_unit_pim, _inter_unit_rendezvous]
 
 

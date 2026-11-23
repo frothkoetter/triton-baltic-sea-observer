@@ -39,7 +39,8 @@ class StanagMessageGenerator(FlowFileTransform):
         version = '2.0.0'
         description = (
             'NATO-style operational messaging (SITREP, POSREP, FRAGO, WMSG, SPOT, '
-            'LOGREQ, MEDREP, inter-unit PIM). POSITION matches MarineShipSimulator. '
+            'SOCINT/INTREP, LOGREQ, MEDREP, inter-unit PIM). SOCINT lines reuse '
+            'Ostsee SOCMINT scenarios (social_media_messages). POSITION matches MarineShipSimulator. '
             'Traffic profiles simulate realistic counts per exercise phase.'
         )
         dependencies = []
