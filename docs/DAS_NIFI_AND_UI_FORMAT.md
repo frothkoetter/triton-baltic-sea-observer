@@ -26,6 +26,9 @@ flowchart LR
 
   NIFI -->|".h5" FlowFile| S3
   NIFI -->|UpdateAttribute + Put| ICE
+  CML[cai-workbench/das-cable-classifier predict.py]
+  NIFI -.->|optional InvokeHTTP| CML
+  CML -.->|predicted_threat_type| ICE
   ICE -->|Trino live| UI
   UI -->|hadoop_file_url + segment_index| BRIDGE
   BRIDGE -->|GET object| S3
@@ -94,6 +97,17 @@ After object store put, ingest must include:
 | **`segment_index`** | Integer matching HDF5 group `seg_NNN` |
 
 See [`DAS_NIFI_METADATA_MAP.md`](../nifi-processors/docs/DAS_NIFI_METADATA_MAP.md) for UpdateAttribute copy-paste.
+
+### CML classifier (optional leg)
+
+| Item | Value |
+|------|--------|
+| Project path | `cai-workbench/das-cable-classifier/` |
+| Deploy | `predict.py` + `cdsw-build.sh` → copies **`bundled/model.pkl`** (11 classes on current `main`) |
+| NiFi | InvokeHTTP → JsonPath `$.response.threat_type`, `$.response.confidence` |
+| Iceberg | `predicted_threat_type`, `model_confidence` |
+
+Retrain, promote `model.pkl` to `bundled/`, `git pull` + redeploy: see [`das-cable-classifier/README.md`](../cai-workbench/das-cable-classifier/README.md).
 
 ### Threat classes (ground truth in HDF5)
 
@@ -174,7 +188,7 @@ Build with DAS preview: check `/api/version` → `distDasPreview: true`, build �
 
 | Piece | Role |
 |-------|------|
-| [`DasCable.tsx`](../triton-ui/src/pages/DasCable.tsx) | Segment list + map |
+| [`DasCable.tsx`](../triton-ui/src/pages/DasCable.tsx) | Segment list + map + **Label** filter (Ground truth / ML) |
 | [`DasCableDetail.tsx`](../triton-ui/src/components/DasCableDetail.tsx) | Metadata table |
 | [`DasCablePreview.tsx`](../triton-ui/src/components/DasCablePreview.tsx) | Loads HDF5 preview |
 | [`DasSpectrogramCanvas.tsx`](../triton-ui/src/components/DasSpectrogramCanvas.tsx) | Canvas colormap |
@@ -218,7 +232,13 @@ curl -sS -o /tmp/das.wav "http://127.0.0.1:\$CDSW_APP_PORT/api/das-cable/wav?had
 
 From [`das-cable.ts`](../triton-ui/src/lib/das-cable.ts): e.g. `cui_sabotage_tap` red, `vessel_passage` blue, `cable_strain_anomaly` purple.
 
-**UI default (since 2026-11):** map/filter use **`threat_class`** (NiFi simulator ground truth). Dropdown **ML** switches to `predicted_threat_type` from the bundled CML classifier (`cai-workbench/das-cable-classifier`, 6 classes in `bundled/label_names.json`). If Trino `GROUP BY threat_class` shows many labels but the map showed only `cable_strain_anomaly`, the ML column was likely filled with a single biased prediction — compare both columns in the segment table.
+**UI default (2026-11):** map/filter/legend use **`threat_class`** (simulator ground truth in Iceberg). Toolbar **Label → ML** uses **`predicted_threat_type`** from NiFi + CML `das-cable-classifier`.
+
+| Symptom | Diagnosis |
+|---------|-----------|
+| Trino `GROUP BY threat_class` → 11 labels; map one purple blob | Old 6-class model or stale deploy → **`git pull`**, `cdsw-build.sh`, **redeploy** `predict.py`; use 11-class `bundled/model.pkl` on `main` |
+| GT map diverse, ML map flat | Expected until model retrained; detail panel shows **GT · ML** when they differ |
+| Segment table differs from map | Check active **Label** mode (GT vs ML) |
 
 ---
 
@@ -238,6 +258,8 @@ Live DAS rows with high threat feed **NBA** alert detection (`das_cable_threat` 
 | UI build | `/api/version` shows DAS preview build + `distDasPreview` |
 | S3 on app | `/api/health` → `das.s3Configured: true` |
 | Segment match | UI “S3 · seg *N*” matches `seg_NNN` in HDF5 |
+| CML model | After `bundled/model.pkl` update: `cdsw-build.sh` + Model **Redeploy** |
+| ML columns | `SELECT threat_class, predicted_threat_type, COUNT(*) FROM iceberg.defense.das_cable_spectrogram_metadata GROUP BY 1,2` |
 
 ---
 
