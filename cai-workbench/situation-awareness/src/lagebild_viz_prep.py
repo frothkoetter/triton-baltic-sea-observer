@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from typing import Any
 
 import numpy as np
@@ -48,9 +49,10 @@ _FRIENDLY_SOURCE: dict[str, str] = {
     "lidar": "LiDAR",
     "ais": "AIS",
     "marine": "Marine",
-    "social_media": "Social Media",
-    "social media": "Social Media",
-    "twitter": "Social Media",
+    "social_media": "SOCMINT",
+    "socialmedia": "SOCMINT",
+    "social media": "SOCMINT",
+    "twitter": "SOCMINT",
     "buoy": "Buoy",
     "bojen": "Buoy",
     "gps": "GPS",
@@ -71,6 +73,7 @@ _RADAR_PINNED_SOURCES = (
     "GPS Jammer",
     "Area violation",
     "RUS Fleet",
+    "SOCMINT",
     "LiDAR",
     "AIS",
     "Marine",
@@ -103,7 +106,7 @@ def friendly_source_label(value: object) -> str:
     if key_space in _FRIENDLY_SOURCE:
         return _FRIENDLY_SOURCE[key_space]
     if key.startswith("social"):
-        return "Social Media"
+        return "SOCMINT"
     if "lidar" in key:
         return "LiDAR"
     if key == "ais" or key.startswith("ais_"):
@@ -321,11 +324,11 @@ def rollup_data_sources(
     if total == 0:
         return counts
 
-    if cap_social and "Social Media" in counts.index:
-        sm = int(counts["Social Media"])
+    if cap_social and "SOCMINT" in counts.index:
+        sm = int(counts["SOCMINT"])
         if sm < social_min_count or (sm / total) < social_min_share:
             other = int(counts.get("Other", 0)) + sm
-            counts = counts.drop("Social Media")
+            counts = counts.drop("SOCMINT")
             counts["Other"] = other
 
     if len(counts) <= top_n:
@@ -340,6 +343,38 @@ def rollup_data_sources(
     elif "Other" in head.index and head["Other"] == 0:
         head = head.drop("Other")
     return head.sort_values(ascending=False)
+
+
+def socmint_feed_summary(df: pd.DataFrame) -> str:
+    """Analyst header for SOCMINT rows (``Data_Source='SocialMedia'`` → ``defense.social_media_messages``)."""
+    if df is None or df.empty:
+        return "SOCMINT: no rows in the lagebild window."
+    work = normalize_lagebild_frame(df) if "data_source" not in df.columns else df.copy()
+    if work.empty or "data_source" not in work.columns:
+        return "SOCMINT: data_source column missing."
+    labels = work["data_source"].astype(str).map(friendly_source_label)
+    soc = work.loc[labels == "SOCMINT"]
+    if soc.empty:
+        return (
+            "SOCMINT: no qualifying rows — run MessengerSimulator, refresh lagebild views, "
+            "optional TRINO_JOB=socmint_sketch for trust upgrades."
+        )
+    n = len(soc)
+    iw = 0
+    trust: Counter[str] = Counter()
+    details_col = _first_present(soc, _DETAILS_ALIASES)
+    for _, row in soc.iterrows():
+        blob = str(row.get(details_col or "details", ""))
+        if re.search(r"\bIW:\s*disinformation\b", blob, re.I) or "disinformation_flag" in blob.lower():
+            iw += 1
+        m = re.search(r"Trust:\s*([A-Z][A-Z0-9_]+)", blob)
+        if m:
+            trust[m.group(1)] += 1
+    trust_part = ", ".join(f"{k}: {v}" for k, v in trust.most_common(5)) or "trust tags not parsed"
+    return (
+        f"SOCMINT: {n} event(s) from defense.social_media_messages in lagebild; "
+        f"IW/disinfo rows: {iw}; trust — {trust_part}."
+    )
 
 
 def rollup_radar_sources(

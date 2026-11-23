@@ -46,7 +46,7 @@ _TOP_HARBOURS = 12
 
 def _source_color(label: str) -> str:
     token = label.lower().replace(" ", "_").split("_")[0]
-    if token == "social":
+    if token in ("social", "socmint"):
         return _SOURCE_COLORS["social"]
     if token == "gps":
         return _SOURCE_COLORS["gps"]

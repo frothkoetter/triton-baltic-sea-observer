@@ -15,6 +15,7 @@ SELECT * FROM {qualified_lagebild}
 WHERE harbour_name IN (
     SELECT name FROM {qualified_harbours} WHERE country = 'Germany'
 )
+   OR Data_Source IN ('SocialMedia')
 """.strip()
 
 BALTIC_WIDE_LAGEBILD_SQL = """
@@ -22,7 +23,9 @@ SELECT * FROM {qualified_lagebild}
 WHERE harbour_name IN (
     SELECT name FROM {qualified_harbours}
 )
-   OR Data_Source IN ('GPS_Jammer', 'REF', 'RUS_Fleet', 'AIS_Outlier')
+   OR Data_Source IN (
+        'GPS_Jammer', 'REF', 'RUS_Fleet', 'AIS_Outlier', 'SocialMedia'
+   )
    OR harbour_name IS NULL
 """.strip()
 

@@ -27,6 +27,7 @@ from src.lagebild_viz_prep import (
     normalize_lagebild_frame,
     rollup_data_sources,
     rollup_radar_sources,
+    socmint_feed_summary,
     visualization_panel_status,
 )
 from src.lagebild_map import basemap_backend, render_lagebild_map
@@ -203,6 +204,7 @@ class TestLagebildDataAccess(unittest.TestCase):
         self.assertIn("GPS_Jammer", sql)
         self.assertIn("REF", sql)
         self.assertIn("RUS_Fleet", sql)
+        self.assertIn("SocialMedia", sql)
         self.assertNotIn("country = 'Germany'", sql)
 
     def test_german_only_env_restores_filter(self) -> None:
@@ -388,8 +390,24 @@ class TestLagebildVizPrep(unittest.TestCase):
     def test_social_media_rollup_cap(self) -> None:
         series = pd.Series(["Social_Media"] + ["AIS"] * 40 + ["LiDAR"] * 59)
         rolled = rollup_data_sources(series, cap_social=True)
-        self.assertNotIn("Social Media", rolled.index)
+        self.assertNotIn("SOCMINT", rolled.index)
         self.assertIn("Other", rolled.index)
+
+    def test_socmint_feed_summary_parses_trust(self) -> None:
+        raw = pd.DataFrame(
+            {
+                "Data_Source": ["SocialMedia", "AIS"],
+                "details": [
+                    "Trust: DISINFORMATION_CONFIRMED | Platform: x | IW: disinformation | Tweet: test",
+                    "Status: ok",
+                ],
+                "harbour_name": ["Kiel", "Kiel"],
+            }
+        )
+        norm = normalize_lagebild_frame(raw)
+        summary = socmint_feed_summary(norm)
+        self.assertIn("SOCMINT", summary)
+        self.assertIn("DISINFORMATION_CONFIRMED", summary)
 
     def test_no_severity_fixture_all_panels(self) -> None:
         raw = _fixture_no_severity_trino_like(75)

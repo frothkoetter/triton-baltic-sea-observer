@@ -66,7 +66,7 @@ Use **`triton-trino`** in `TRINO_JDBC_URL` and `LAGEBILD_TRINO_HOST`. Mirror `LA
 | `0 * * * *` | `cai-workbench/situation-awareness/cml_job.py` | — | **UC1** hourly SITREP |
 | `5 * * * *` | `cai-workbench/next-best-action/cml_job.py` | — | **UC2** alert detection + NBA pipeline |
 
-Run **outliers** (and optionally **socmint_sketch**) before **UC1** so `lagebild` / SITREP see outliers and corroborated SOCMINT.
+Run **outliers** (and optionally **socmint_sketch**) before **UC1** so `lagebild` / SITREP see outliers and corroborated SOCMINT. UC1 SQL always includes **`Data_Source='SocialMedia'`** (defense.social_media_messages) alongside harbour-scoped rows; the SITREP prompt has a dedicated **SOCMINT / Information Environment** section.
 
 Full **`TRINO_*` env reference:** [`trino-jobs/README.md`](trino-jobs/README.md).
 
