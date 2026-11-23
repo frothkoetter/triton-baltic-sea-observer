@@ -93,7 +93,7 @@ LIMIT 20;
 
 ## SOCMINT verification (sketch lookup, Trino only)
 
-After Step 9 threats land in `baltic_threat_tile_sketches`, run:
+Step 9 runs `CREATE TABLE IF NOT EXISTS baltic_threat_tile_sketches` on first outlier job (no separate DDL required). After threats land there, run:
 
 ```bash
 ./run_socmint_sketch_verification_trino.sh
