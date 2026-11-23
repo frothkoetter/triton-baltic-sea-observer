@@ -21,7 +21,15 @@ NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight
 | GET | `/api/agents/ttyd` | KDM golden examples + TTYD SQL ids |
 | POST | `/api/agents/ttyd/resolve` | Natural language → mapping plan (MVP) |
 | POST | `/api/agents/ttyd/e2e` | KG compare + live Trino SQL for one golden example |
-| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) |
+| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) v2 + column validation |
+| GET | `/api/agents/ontology-map` | Semantic entities + column registry (ontology → table.columns) |
+| GET | `/api/agents/semantica/graph-summary` | [Semantica MCP](https://github.com/frothkoetter/semantica) `get_graph_summary` |
+| GET | `/api/agents/semantica/business-rules` | `get_business_rules` (JOINs, `sql_agent_hints`) |
+| GET | `/api/agents/semantica/paths` | `SEMANTICA_KG_PATH` / mapping / rules defaults |
+
+Bundled ontology: [`cdw-analyse/ontology/README.md`](../cdw-analyse/ontology/README.md) — same env vars as Semantica MCP (`SEMANTICA_KG_PATH`, `SEMANTICA_MAPPING_CONFIG`, `SEMANTICA_BUSINESS_RULES`).
+
+**UI:** Tab **Daten (Semantica)** = Talk to your Data. `ttyd/ask` includes `semantica_mcp` grounding. Crew-Apps unter „Legacy“.
 
 Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 

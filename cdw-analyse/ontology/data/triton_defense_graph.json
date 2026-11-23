@@ -1,0 +1,912 @@
+{
+  "graph_id": "0c4785b6-b502-40d7-baaa-31f8f98c16d0",
+  "nodes": [
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "Ontology",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "content": "Triton Baltic defense KDM ontology",
+        "source": "triton_build"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#AISTrackReport",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#AISTrackReport",
+        "label": "AIS track report",
+        "content": "AIS track report",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:ais_events_ice",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "ais_events_ice",
+        "schema": "defense",
+        "content": "ais_events_ice",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#MaritimePlatform",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#MaritimePlatform",
+        "label": "Maritime platform",
+        "content": "Maritime platform",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:ships",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "ships",
+        "schema": "defense",
+        "content": "ships",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#NavalUnit",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#NavalUnit",
+        "label": "Naval unit",
+        "content": "Naval unit",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#SanctionedMaritimePlatform",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#SanctionedMaritimePlatform",
+        "label": "Sanctioned maritime platform",
+        "content": "Sanctioned maritime platform",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:sanctioned_vessels",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "sanctioned_vessels",
+        "schema": "defense",
+        "content": "sanctioned_vessels",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#PlatformStatusReport",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#PlatformStatusReport",
+        "label": "Platform status report",
+        "content": "Platform status report",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:marine_vessel_status",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "marine_vessel_status",
+        "schema": "defense",
+        "content": "marine_vessel_status",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#SurveillanceArea",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#SurveillanceArea",
+        "label": "Surveillance area",
+        "content": "Surveillance area",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:observation_areas",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "observation_areas",
+        "schema": "defense",
+        "content": "observation_areas",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#AreaViolationEvent",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#AreaViolationEvent",
+        "label": "Area violation event",
+        "content": "Area violation event",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:area_violation",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "area_violation",
+        "schema": "defense",
+        "content": "area_violation",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#GPSElectronicWarfareIndicator",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#GPSElectronicWarfareIndicator",
+        "label": "GPS / EW integrity indicator",
+        "content": "GPS / EW integrity indicator",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:gps_jammer_events",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "gps_jammer_events",
+        "schema": "defense",
+        "content": "gps_jammer_events",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationPictureEntry",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#SituationPictureEntry",
+        "label": "Situation picture entry",
+        "content": "Situation picture entry",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:lagebild",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "lagebild",
+        "schema": "defense",
+        "content": "lagebild",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#FormattedTacticalMessage",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#FormattedTacticalMessage",
+        "label": "Formatted tactical message",
+        "content": "Formatted tactical message",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#OSINTSocialMediaPost",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#OSINTSocialMediaPost",
+        "label": "OSINT social media post",
+        "content": "OSINT social media post",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:social_media_messages",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "social_media_messages",
+        "schema": "defense",
+        "content": "social_media_messages",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselAnomalyEvent",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#VesselAnomalyEvent",
+        "label": "Vessel anomaly event",
+        "content": "Vessel anomaly event",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:vessel_outliers",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "vessel_outliers",
+        "schema": "defense",
+        "content": "vessel_outliers",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselProximityAssessment",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#VesselProximityAssessment",
+        "label": "Vessel proximity assessment",
+        "content": "Vessel proximity assessment",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:vessel_proximity",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "vessel_proximity",
+        "schema": "defense",
+        "content": "vessel_proximity",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#PortFacility",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#PortFacility",
+        "label": "Port facility",
+        "content": "Port facility",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:baltic_sea_harbours",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "baltic_sea_harbours",
+        "schema": "defense",
+        "content": "baltic_sea_harbours",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#BuoyMagneticDetection",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#BuoyMagneticDetection",
+        "label": "Buoy magnetic detection",
+        "content": "Buoy magnetic detection",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationAwarenessSummary",
+      "type": "OntologyClass",
+      "properties": {
+        "uri": "https://w3id.org/triton/baltic-sea-observer/defense#SituationAwarenessSummary",
+        "label": "Situation awareness summary",
+        "content": "Situation awareness summary",
+        "ontology_uri": "https://w3id.org/triton/baltic-sea-observer/defense#",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:situation_awareness_summary",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "situation_awareness_summary",
+        "schema": "defense",
+        "content": "situation_awareness_summary",
+        "source": "kdm_defense_classes"
+      }
+    },
+    {
+      "id": "triton:MaritimeUnit",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:MaritimeUnit",
+        "label": "MaritimeUnit",
+        "content": "MaritimeUnit",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:german_navy_fleet",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "german_navy_fleet",
+        "schema": "defense",
+        "content": "german_navy_fleet",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:rus_naval_fleet_positions",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "rus_naval_fleet_positions",
+        "schema": "defense",
+        "content": "rus_naval_fleet_positions",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:AISObservation",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:AISObservation",
+        "label": "AISObservation",
+        "content": "AISObservation",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:CriticalUnderwaterInfrastructure",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:CriticalUnderwaterInfrastructure",
+        "label": "CriticalInfrastructure",
+        "content": "CriticalInfrastructure",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:ostsee_pipelines",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "ostsee_pipelines",
+        "schema": "defense",
+        "content": "ostsee_pipelines",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:ostsee_infrastruktur",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "ostsee_infrastruktur",
+        "schema": "defense",
+        "content": "ostsee_infrastruktur",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:das_cable_spectrogram_metadata",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "das_cable_spectrogram_metadata",
+        "schema": "defense",
+        "content": "das_cable_spectrogram_metadata",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:MaritimeAnomaly",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:MaritimeAnomaly",
+        "label": "MaritimeAnomaly",
+        "content": "MaritimeAnomaly",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:RestrictedOperatingArea",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:RestrictedOperatingArea",
+        "label": "RestrictedOperatingArea",
+        "content": "RestrictedOperatingArea",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:SituationPicture",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:SituationPicture",
+        "label": "SituationPicture",
+        "content": "SituationPicture",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:maritime_surveillance_reports",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "maritime_surveillance_reports",
+        "schema": "defense",
+        "content": "maritime_surveillance_reports",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:marine_messages",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "marine_messages",
+        "schema": "defense",
+        "content": "marine_messages",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:SanctionedVessel",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:SanctionedVessel",
+        "label": "SanctionedVessel",
+        "content": "SanctionedVessel",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "triton:NbaDecision",
+      "type": "SemanticEntity",
+      "properties": {
+        "uri": "triton:NbaDecision",
+        "label": "NbaDecision",
+        "content": "NbaDecision",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:nba_incidents",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "nba_incidents",
+        "schema": "defense",
+        "content": "nba_incidents",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:nba_coa_runs",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "nba_coa_runs",
+        "schema": "defense",
+        "content": "nba_coa_runs",
+        "source": "baltic_trino_mapping"
+      }
+    },
+    {
+      "id": "urn:triton:defense:table:nba_incident_snapshots",
+      "type": "DatabaseTable",
+      "properties": {
+        "table_name": "nba_incident_snapshots",
+        "schema": "defense",
+        "content": "nba_incident_snapshots",
+        "source": "baltic_trino_mapping"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "definedIn:AISTrackReport",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#AISTrackReport",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:AISTrackReport:ais_events_ice",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#AISTrackReport",
+      "target_id": "urn:triton:defense:table:ais_events_ice",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:MaritimePlatform",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#MaritimePlatform",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:MaritimePlatform:ships",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#MaritimePlatform",
+      "target_id": "urn:triton:defense:table:ships",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:NavalUnit",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#NavalUnit",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "definedIn:SanctionedMaritimePlatform",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SanctionedMaritimePlatform",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:SanctionedMaritimePlatform:sanctioned_vessels",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SanctionedMaritimePlatform",
+      "target_id": "urn:triton:defense:table:sanctioned_vessels",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:PlatformStatusReport",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#PlatformStatusReport",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:PlatformStatusReport:marine_vessel_status",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#PlatformStatusReport",
+      "target_id": "urn:triton:defense:table:marine_vessel_status",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:SurveillanceArea",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SurveillanceArea",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:SurveillanceArea:observation_areas",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SurveillanceArea",
+      "target_id": "urn:triton:defense:table:observation_areas",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:AreaViolationEvent",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#AreaViolationEvent",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:AreaViolationEvent:area_violation",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#AreaViolationEvent",
+      "target_id": "urn:triton:defense:table:area_violation",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_view"
+      }
+    },
+    {
+      "id": "definedIn:GPSElectronicWarfareIndicator",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#GPSElectronicWarfareIndicator",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:GPSElectronicWarfareIndicator:gps_jammer_events",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#GPSElectronicWarfareIndicator",
+      "target_id": "urn:triton:defense:table:gps_jammer_events",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:SituationPictureEntry",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationPictureEntry",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:SituationPictureEntry:lagebild",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationPictureEntry",
+      "target_id": "urn:triton:defense:table:lagebild",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_view"
+      }
+    },
+    {
+      "id": "definedIn:FormattedTacticalMessage",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#FormattedTacticalMessage",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "definedIn:OSINTSocialMediaPost",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#OSINTSocialMediaPost",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:OSINTSocialMediaPost:social_media_messages",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#OSINTSocialMediaPost",
+      "target_id": "urn:triton:defense:table:social_media_messages",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:VesselAnomalyEvent",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselAnomalyEvent",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:VesselAnomalyEvent:vessel_outliers",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselAnomalyEvent",
+      "target_id": "urn:triton:defense:table:vessel_outliers",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:VesselProximityAssessment",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselProximityAssessment",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:VesselProximityAssessment:vessel_proximity",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#VesselProximityAssessment",
+      "target_id": "urn:triton:defense:table:vessel_proximity",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_view"
+      }
+    },
+    {
+      "id": "definedIn:PortFacility",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#PortFacility",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:PortFacility:baltic_sea_harbours",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#PortFacility",
+      "target_id": "urn:triton:defense:table:baltic_sea_harbours",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "definedIn:BuoyMagneticDetection",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#BuoyMagneticDetection",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "definedIn:SituationAwarenessSummary",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationAwarenessSummary",
+      "target_id": "https://w3id.org/triton/baltic-sea-observer/defense#",
+      "type": "definedIn",
+      "properties": {}
+    },
+    {
+      "id": "mapsTo:SituationAwarenessSummary:situation_awareness_summary",
+      "source_id": "https://w3id.org/triton/baltic-sea-observer/defense#SituationAwarenessSummary",
+      "target_id": "urn:triton:defense:table:situation_awareness_summary",
+      "type": "mapsToPhysicalTable",
+      "properties": {
+        "role": "primary_table"
+      }
+    },
+    {
+      "id": "semantic:MaritimeUnit:ships",
+      "source_id": "triton:MaritimeUnit",
+      "target_id": "urn:triton:defense:table:ships",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Vessel registry (static attributes); positions via ais_events_ice"
+      }
+    },
+    {
+      "id": "semantic:MaritimeUnit:ais_events_ice",
+      "source_id": "triton:MaritimeUnit",
+      "target_id": "urn:triton:defense:table:ais_events_ice",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Live/historic AIS positions for MaritimeUnit"
+      }
+    },
+    {
+      "id": "semantic:MaritimeUnit:german_navy_fleet",
+      "source_id": "triton:MaritimeUnit",
+      "target_id": "urn:triton:defense:table:german_navy_fleet",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Friendly naval order of battle"
+      }
+    },
+    {
+      "id": "semantic:MaritimeUnit:rus_naval_fleet_positions",
+      "source_id": "triton:MaritimeUnit",
+      "target_id": "urn:triton:defense:table:rus_naval_fleet_positions",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Adversary / RF fleet telemetry"
+      }
+    },
+    {
+      "id": "semantic:MaritimeUnit:marine_vessel_status",
+      "source_id": "triton:MaritimeUnit",
+      "target_id": "urn:triton:defense:table:marine_vessel_status",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Fleet readiness-style status (analytics)"
+      }
+    },
+    {
+      "id": "semantic:AISObservation:ais_events_ice",
+      "source_id": "triton:AISObservation",
+      "target_id": "urn:triton:defense:table:ais_events_ice",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Iceberg AIS event history"
+      }
+    },
+    {
+      "id": "semantic:CriticalInfrastructure:ostsee_pipelines",
+      "source_id": "triton:CriticalUnderwaterInfrastructure",
+      "target_id": "urn:triton:defense:table:ostsee_pipelines",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Pipeline segments (CUI corridor context)"
+      }
+    },
+    {
+      "id": "semantic:CriticalInfrastructure:ostsee_infrastruktur",
+      "source_id": "triton:CriticalUnderwaterInfrastructure",
+      "target_id": "urn:triton:defense:table:ostsee_infrastruktur",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Cables, landing points, offshore assets"
+      }
+    },
+    {
+      "id": "semantic:CriticalInfrastructure:das_cable_spectrogram_metadata",
+      "source_id": "triton:CriticalUnderwaterInfrastructure",
+      "target_id": "urn:triton:defense:table:das_cable_spectrogram_metadata",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "DAS cable segment spectrogram metadata (HDF5 catalog)"
+      }
+    },
+    {
+      "id": "semantic:MaritimeAnomaly:vessel_outliers",
+      "source_id": "triton:MaritimeAnomaly",
+      "target_id": "urn:triton:defense:table:vessel_outliers",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Published outlier feed (9 detection types)"
+      }
+    },
+    {
+      "id": "semantic:MaritimeAnomaly:gps_jammer_events",
+      "source_id": "triton:MaritimeAnomaly",
+      "target_id": "urn:triton:defense:table:gps_jammer_events",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "GPSElectronicWarfareIndicator / ProbableGPSJamming tiles"
+      }
+    },
+    {
+      "id": "semantic:RestrictedOperatingArea:observation_areas",
+      "source_id": "triton:RestrictedOperatingArea",
+      "target_id": "urn:triton:defense:table:observation_areas",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "SurveillanceArea / Tier-A polygons"
+      }
+    },
+    {
+      "id": "semantic:RestrictedOperatingArea:area_violation",
+      "source_id": "triton:RestrictedOperatingArea",
+      "target_id": "urn:triton:defense:table:area_violation",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "AreaViolationEvent VIEW (transition enter/exit)"
+      }
+    },
+    {
+      "id": "semantic:SituationPicture:lagebild",
+      "source_id": "triton:SituationPicture",
+      "target_id": "urn:triton:defense:table:lagebild",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Aggregated Lagebild view (live, not snapshot-pinned in NBA)"
+      }
+    },
+    {
+      "id": "semantic:SituationPicture:maritime_surveillance_reports",
+      "source_id": "triton:SituationPicture",
+      "target_id": "urn:triton:defense:table:maritime_surveillance_reports",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Surveillance report count / metadata"
+      }
+    },
+    {
+      "id": "semantic:SituationPicture:marine_messages",
+      "source_id": "triton:SituationPicture",
+      "target_id": "urn:triton:defense:table:marine_messages",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Marine traffic / STANAG-style messages"
+      }
+    },
+    {
+      "id": "semantic:SanctionedVessel:sanctioned_vessels",
+      "source_id": "triton:SanctionedVessel",
+      "target_id": "urn:triton:defense:table:sanctioned_vessels",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Sanctions / restricted analytics"
+      }
+    },
+    {
+      "id": "semantic:NbaDecision:nba_incidents",
+      "source_id": "triton:NbaDecision",
+      "target_id": "urn:triton:defense:table:nba_incidents",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "NBA incidents + HITL + decision JSON"
+      }
+    },
+    {
+      "id": "semantic:NbaDecision:nba_coa_runs",
+      "source_id": "triton:NbaDecision",
+      "target_id": "urn:triton:defense:table:nba_coa_runs",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "COA matrix scores"
+      }
+    },
+    {
+      "id": "semantic:NbaDecision:nba_incident_snapshots",
+      "source_id": "triton:NbaDecision",
+      "target_id": "urn:triton:defense:table:nba_incident_snapshots",
+      "type": "evidenceIn",
+      "properties": {
+        "role": "Iceberg snapshot bundle per incident"
+      }
+    }
+  ],
+  "links": []
+}

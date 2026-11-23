@@ -73,6 +73,12 @@ import {
 import { buildSemanticaKgGraph, getKgSqlQuery, listKgSqlQueries } from "./agent-kg.js";
 import { listTtydCatalog, resolveGoldenExample, runTtydE2e, buildMappingPlan } from "./agent-ttyd.js";
 import { runTtydAsk } from "./agent-ttyd-pipeline.js";
+import { readOntologyMapApi } from "./agent-ontology-schema.js";
+import {
+  getSemanticaBusinessRules,
+  getSemanticaGraphSummary,
+  semanticaEnvPaths,
+} from "./agent-semantica-mcp.js";
 import {
   COOKIE_NAME,
   dataModeMeta,
@@ -531,6 +537,22 @@ app.post("/api/agents/kg-sql/:queryId/run", async (req, res) => {
 
 app.get("/api/agents/ttyd", (_req, res) => {
   res.json(listTtydCatalog());
+});
+
+app.get("/api/agents/ontology-map", (_req, res) => {
+  res.json(readOntologyMapApi());
+});
+
+app.get("/api/agents/semantica/paths", (_req, res) => {
+  res.json({ ok: true, paths: semanticaEnvPaths() });
+});
+
+app.get("/api/agents/semantica/graph-summary", (_req, res) => {
+  res.json(getSemanticaGraphSummary());
+});
+
+app.get("/api/agents/semantica/business-rules", (_req, res) => {
+  res.json(getSemanticaBusinessRules());
 });
 
 app.post("/api/agents/ttyd/resolve", (req, res) => {
