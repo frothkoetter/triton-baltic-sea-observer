@@ -140,17 +140,33 @@ WHERE coalesce(
 ) >= current_timestamp - interval '24' hour;
 
 -- Persist trust upgrades for Lagebild/NBA (reads social_media_messages.trust_tag)
+-- NiFi batches may append duplicate (user_username, ts, tweet); MERGE needs one source row per target key.
 MERGE INTO social_media_messages AS target
 USING (
     SELECT
         user_username,
         ts,
         tweet,
-        effective_trust_tag,
-        effective_verification_notes
+        max_by(
+            effective_trust_tag,
+            CASE effective_trust_tag
+                WHEN 'SENSOR_CORROBORATED' THEN 2
+                WHEN 'LOW_CONFIDENCE' THEN 1
+                ELSE 0
+            END
+        ) AS effective_trust_tag,
+        max_by(
+            effective_verification_notes,
+            CASE effective_trust_tag
+                WHEN 'SENSOR_CORROBORATED' THEN 2
+                WHEN 'LOW_CONFIDENCE' THEN 1
+                ELSE 0
+            END
+        ) AS effective_verification_notes
     FROM socmint_sketch_verified v
     WHERE effective_trust_tag IN ('SENSOR_CORROBORATED', 'LOW_CONFIDENCE')
       AND COALESCE(v.disinformation_flag, false) = false
+    GROUP BY user_username, ts, tweet
 ) AS src
 ON target.user_username = src.user_username
    AND target.ts = src.ts
