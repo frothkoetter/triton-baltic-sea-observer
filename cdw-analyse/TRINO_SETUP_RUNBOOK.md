@@ -166,6 +166,34 @@ Continue after a single failure:
 python3 run_trino_ddl.py create_db_tables_trino.sql --continue
 ```
 
+### NSB `ships` seed only (`ships_nsb_trade_1000.sql`)
+
+North Sea Baltic sim MMSI **311040001+** need rows in **`iceberg.defense.ships`**. On CML:
+
+```bash
+cd ~/cdw-analyse
+git pull origin main
+[[ -f .env.trino.local ]] && set -a && source .env.trino.local && set +a
+export TRINO_SCHEMA=defense TRINO_CONNECT_SCHEMA=defense
+
+python3 - <<'PY'
+from run_trino_ddl import connect
+conn = connect(schema="defense")
+cur = conn.cursor()
+cur.execute(
+    "DELETE FROM iceberg.defense.ships WHERE mmsi >= 311040001 AND mmsi <= 311041000"
+)
+conn.close()
+print("DELETE NSB MMSI range: ok")
+PY
+
+TRINO_CONTINUE_ON_ERROR=1 python3 run_trino_ddl.py ships_nsb_trade_1000.sql --continue
+```
+
+| Failure | Cause |
+|---------|--------|
+| `Table 'iceberg.default.ships' does not exist` | Old runner: JDBC session schema was **default**. **Fix:** `git pull` (DDL runner rev ≥ `2026-11-23-defense-session-qualify`) or set `TRINO_CONNECT_SCHEMA=defense`, or use qualified `INSERT INTO iceberg.defense.ships` in the SQL file. |
+
 ---
 
 ## 6. Git pull without blocking on local env
