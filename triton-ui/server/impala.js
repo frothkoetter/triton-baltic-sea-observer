@@ -958,7 +958,7 @@ export async function getVesselOutliers() {
   return runQueryOrSample(PREDEFINED.vesselOutliersMap, () => sample.vesselOutliers);
 }
 
-/** GPS jamming tiles (gps_jammer_events or lagebild GPS_Jammer). */
+/** SOCMINT feed: posts, threat/density tiles, and GPS jammer overlay for corroboration. */
 export async function getSocmintFeed() {
   const messages = await runQueryOrSample(
     PREDEFINED.socmintMessagesMap,
@@ -979,16 +979,22 @@ export async function getSocmintFeed() {
     PREDEFINED.socmintDensityTiles,
     () => sample.socmintDensityTiles
   );
+  const gpsJammer = await getGpsJammerEvents();
   const source =
-    messages.source === "sample" && threat.source === "sample" && density.source === "sample"
+    messages.source === "sample" &&
+    threat.source === "sample" &&
+    density.source === "sample" &&
+    gpsJammer.source === "sample"
       ? "sample"
-      : messages.source ?? threat.source ?? density.source ?? "unknown";
+      : messages.source ?? threat.source ?? density.source ?? gpsJammer.source ?? "unknown";
   return {
-    ok: messages.ok || threat.ok || density.ok,
+    ok: messages.ok || threat.ok || density.ok || gpsJammer.ok,
     source,
     messages: messages.rows ?? [],
     threatTiles: threat.rows ?? [],
     densityTiles: density.rows ?? [],
+    gpsJammerEvents: gpsJammer.rows ?? [],
+    gpsJammerSource: gpsJammer.source ?? "unknown",
     fallbackReason: messages.fallbackReason ?? threat.fallbackReason,
   };
 }

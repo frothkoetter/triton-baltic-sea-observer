@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
 import { SocmintMap } from "../components/SocmintMap";
+import { normalizeGpsJammerRow, type GpsJammerEvent } from "../lib/gps-jammer";
 import {
   normalizeSocmintDensityRow,
   normalizeSocmintRow,
@@ -17,6 +18,8 @@ type FeedPayload = {
   messages?: Record<string, unknown>[];
   threatTiles?: Record<string, unknown>[];
   densityTiles?: Record<string, unknown>[];
+  gpsJammerEvents?: Record<string, unknown>[];
+  gpsJammerSource?: string;
 };
 
 const TRUST_FILTERS = [
@@ -32,6 +35,8 @@ export function SocmintPage() {
   const [messages, setMessages] = useState<SocmintMessage[]>([]);
   const [threatTiles, setThreatTiles] = useState<ThreatHotTile[]>([]);
   const [densityTiles, setDensityTiles] = useState<SocmintDensityTile[]>([]);
+  const [gpsJammerEvents, setGpsJammerEvents] = useState<GpsJammerEvent[]>([]);
+  const [gpsJammerSource, setGpsJammerSource] = useState("…");
   const [trustFilter, setTrustFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<string>("");
   const [iwOnly, setIwOnly] = useState(false);
@@ -40,6 +45,7 @@ export function SocmintPage() {
     posts: true,
     threatTiles: true,
     densityTiles: false,
+    gpsJammer: true,
   });
 
   useEffect(() => {
@@ -60,6 +66,12 @@ export function SocmintPage() {
         (res.densityTiles ?? [])
           .map((r) => normalizeSocmintDensityRow(r))
           .filter((r): r is SocmintDensityTile => r != null)
+      );
+      setGpsJammerSource(res.gpsJammerSource ?? "unknown");
+      setGpsJammerEvents(
+        (res.gpsJammerEvents ?? [])
+          .map((r) => normalizeGpsJammerRow(r))
+          .filter((r): r is GpsJammerEvent => r != null)
       );
     })();
   }, []);
@@ -84,8 +96,9 @@ export function SocmintPage() {
       (m) => m.disinformation_flag || m.trust_tag === "DISINFORMATION_CONFIRMED"
     ).length;
     const hotTiles = threatTiles.length;
-    return { n, corroborated, disinfo, hotTiles };
-  }, [filtered, threatTiles]);
+    const gpsJam = gpsJammerEvents.length;
+    return { n, corroborated, disinfo, hotTiles, gpsJam };
+  }, [filtered, threatTiles, gpsJammerEvents]);
 
   const tableRows = useMemo(
     () =>
@@ -110,6 +123,7 @@ export function SocmintPage() {
           <p className="panel-subtitle mono">
             Quelle {source} · Posts {kpis.n} · bestätigt {kpis.corroborated} · IW {kpis.disinfo} ·
             Hot tiles {kpis.hotTiles}
+            {layers.gpsJammer ? ` · GPS jammer ${kpis.gpsJam} (${gpsJammerSource})` : ""}
           </p>
         </div>
         <div className="socmint-toolbar">
@@ -159,6 +173,7 @@ export function SocmintPage() {
             ["posts", "Posts"],
             ["threatTiles", "Threat-Kacheln (sketch)"],
             ["densityTiles", "SOCMINT-Dichte"],
+            ["gpsJammer", `GPS jammer (${gpsJammerEvents.length})`],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="checkbox-inline">
@@ -183,6 +198,8 @@ export function SocmintPage() {
             showPosts={layers.posts}
             showThreatTiles={layers.threatTiles}
             showDensityTiles={layers.densityTiles}
+            showGpsJammer={layers.gpsJammer}
+            gpsJammerEvents={layers.gpsJammer ? gpsJammerEvents : []}
             onSelectMessage={setSelected}
           />
         </div>
