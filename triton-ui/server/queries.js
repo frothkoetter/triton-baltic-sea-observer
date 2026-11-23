@@ -12,6 +12,22 @@ const tsParse = (alias) => `coalesce(
   try_cast(replace(${alias}, 'Z', '') AS timestamp)
 )`;
 
+/** One row per MMSI (live Iceberg may contain duplicate seed INSERTs). */
+const GERMAN_FLEET_UNIQUE = `(
+  SELECT class, name, mmsi, jahr_in_dienst, besatzung
+  FROM (
+    SELECT
+      class,
+      name,
+      mmsi,
+      jahr_in_dienst,
+      besatzung,
+      row_number() OVER (PARTITION BY mmsi ORDER BY name) AS rn
+    FROM defense.german_navy_fleet
+  ) gnf
+  WHERE gnf.rn = 1
+)`;
+
 /** Latest AIS row per MMSI (Filter Rail predicates on `ships`). */
 export function buildAisLatestSnapshotCte(filters = {}) {
   const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
@@ -446,7 +462,7 @@ export function buildGermanFleetTrackSql(filters = {}) {
       m.event_timestamp,
       'deu_fleet' AS track_kind
     FROM defense.marine_vessel_status m
-    INNER JOIN defense.german_navy_fleet g ON CAST(m.mmsi AS varchar) = g.mmsi
+    INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON CAST(m.mmsi AS varchar) = g.mmsi
     WHERE ${predicates.join("\n      AND ")}
     ORDER BY m.mmsi, ${tsParse("m.event_timestamp")} ASC
     LIMIT 15000
@@ -498,7 +514,7 @@ export const PREDEFINED = {
   `,
   fleet: `
     SELECT class, name, mmsi, jahr_in_dienst, besatzung
-    FROM defense.german_navy_fleet
+    FROM ${GERMAN_FLEET_UNIQUE} g
     ORDER BY class, name
     LIMIT 200
   `,
@@ -631,7 +647,7 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.marine_vessel_status m
-      INNER JOIN defense.german_navy_fleet g ON CAST(m.mmsi AS varchar) = g.mmsi
+      INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON CAST(m.mmsi AS varchar) = g.mmsi
       WHERE m.latitude IS NOT NULL AND m.longitude IS NOT NULL
     )
     SELECT
@@ -714,13 +730,13 @@ export const PREDEFINED = {
     ORDER BY ingested_at DESC
     LIMIT 300
   `,
-  fleetKpi: `SELECT COUNT(*) AS cnt FROM defense.german_navy_fleet`,
-  personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM defense.german_navy_fleet`,
+  fleetKpi: `SELECT COUNT(*) AS cnt FROM ${GERMAN_FLEET_UNIQUE}`,
+  personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM ${GERMAN_FLEET_UNIQUE}`,
   surveillanceKpi: `SELECT COUNT(*) AS cnt FROM defense.maritime_surveillance_reports`,
   /** Fleet analytics: german_navy_fleet ⋈ marine_messages ⋈ marine_vessel_status (via MMSI / unit name). */
   fleetAnalyticsMessagesFrom: `
     SELECT ms.message_from AS name, COUNT(*) AS value
-    FROM defense.german_navy_fleet fl
+    FROM ${GERMAN_FLEET_UNIQUE} fl
     INNER JOIN defense.marine_messages ms ON ms.message_from = fl.name
     GROUP BY 1
     ORDER BY 2 DESC
@@ -729,7 +745,7 @@ export const PREDEFINED = {
   fleetAnalyticsMessagesTo: `
     SELECT ms.message_to AS name, COUNT(*) AS value
     FROM defense.marine_messages ms
-    INNER JOIN defense.german_navy_fleet fl ON ms.message_from = fl.name
+    INNER JOIN ${GERMAN_FLEET_UNIQUE} fl ON ms.message_from = fl.name
     GROUP BY 1
     ORDER BY 2 DESC
     LIMIT 8
@@ -747,7 +763,7 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.marine_vessel_status m
-      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+      INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON m.mmsi = g.mmsi
     )
     SELECT COALESCE(name, 'Unknown') AS name, COUNT(*) AS value
     FROM latest
@@ -768,7 +784,7 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.marine_vessel_status m
-      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+      INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON m.mmsi = g.mmsi
     )
     SELECT COALESCE(name, 'Unknown') AS name, COUNT(*) AS value
     FROM latest
@@ -789,7 +805,7 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.marine_vessel_status m
-      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+      INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON m.mmsi = g.mmsi
     )
     SELECT name, COUNT(*) AS value
     FROM latest
@@ -817,11 +833,11 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.marine_vessel_status m
-      INNER JOIN defense.german_navy_fleet g ON m.mmsi = g.mmsi
+      INNER JOIN ${GERMAN_FLEET_UNIQUE} g ON m.mmsi = g.mmsi
     ),
     msg_cnt AS (
       SELECT fl.name, COUNT(*) AS messages_out
-      FROM defense.german_navy_fleet fl
+      FROM ${GERMAN_FLEET_UNIQUE} fl
       INNER JOIN defense.marine_messages ms ON ms.message_from = fl.name
       GROUP BY 1
     )
@@ -850,7 +866,7 @@ export const PREDEFINED = {
       ms.message_dtg,
       ms.message_subject
     FROM defense.marine_messages ms
-    INNER JOIN defense.german_navy_fleet fl ON ms.message_from = fl.name
+    INNER JOIN ${GERMAN_FLEET_UNIQUE} fl ON ms.message_from = fl.name
     ORDER BY ms.message_timestamp DESC
     LIMIT 40
   `,

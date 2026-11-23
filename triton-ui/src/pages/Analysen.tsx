@@ -176,6 +176,7 @@ type AnalysenPageProps = { filters: LagebildFilters };
 export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [tab, setTab] = useState<TabId>("fleet");
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
+  const [fleetRegistry, setFleetRegistry] = useState<QueryResult | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
   const [aisAnalytics, setAisAnalytics] = useState<AisAnalyticsPayload | null>(null);
   const [sanctionedAnalytics, setSanctionedAnalytics] = useState<SanctionedAnalyticsPayload | null>(null);
@@ -189,8 +190,9 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
 
   useEffect(() => {
     void (async () => {
-      const [fa, bu, ru, vo, s, rz, areas] = await Promise.all([
+      const [fa, fr, bu, ru, vo, s, rz, areas] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
+        fetchJson<QueryResult>("/api/analyses/fleet"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
         fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
@@ -199,6 +201,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
         fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
       ]);
       setFleetAnalytics(fa);
+      setFleetRegistry(fr);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
       setOutlierAnalytics(vo);
@@ -285,7 +288,18 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             <code>message_from</code>) ⋈ <code>marine_vessel_status</code> (MMSI). Daten:{" "}
             {fleetAnalytics?.source ?? "…"}
             {fleetAnalytics?.fallbackReason ? ` — fallback (${fleetAnalytics.fallbackReason})` : ""}
+            {fleetRegistry?.deduped ? " · Stammdaten dedupliziert (MMSI)" : ""}
           </p>
+          <section className="panel" style={{ marginBottom: 12 }}>
+            <h2 className="panel-title">Stammdaten — german_navy_fleet</h2>
+            <p className="panel-subtitle">
+              Eine Zeile pro MMSI (Versorgungsschiffe/Tender u. a.). Quelle: {fleetRegistry?.source ?? "…"}
+            </p>
+            <DataTable
+              columns={["class", "name", "mmsi", "jahr_in_dienst", "besatzung"]}
+              rows={fleetRegistry?.rows ?? []}
+            />
+          </section>
           <div className="analyses-grid">
             <section className="panel">
               <h2 className="panel-title">STANAG outbound (message_from)</h2>

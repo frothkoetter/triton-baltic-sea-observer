@@ -7,6 +7,7 @@ export type QueryResult = {
   source?: string;
   error?: string;
   fallbackReason?: string;
+  deduped?: boolean;
 };
 
 const DATA_MODE_STORAGE = "triton_data_mode";

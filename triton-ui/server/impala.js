@@ -371,8 +371,29 @@ export async function getPositionTracks(opts = {}) {
   };
 }
 
+function dedupeFleetRowsByMmsi(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return rows;
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    const mmsi = String(row.mmsi ?? row.MMSI ?? "").trim();
+    if (!mmsi || seen.has(mmsi)) continue;
+    seen.add(mmsi);
+    out.push(row);
+  }
+  return out;
+}
+
 export async function getFleet() {
-  return runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
+  const res = await runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
+  if (res.rows?.length) {
+    const deduped = dedupeFleetRowsByMmsi(res.rows);
+    if (deduped.length !== res.rows.length) {
+      res.rows = deduped;
+      res.deduped = true;
+    }
+  }
+  return res;
 }
 
 const RUS_FLEET_ANALYTICS_KEYS = [
