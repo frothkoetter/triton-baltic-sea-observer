@@ -5,7 +5,12 @@ from __future__ import annotations
 import os
 import unittest
 
-from run_trino_ddl import _forgive_additive_ddl, _should_continue_on_error, transform_sql
+from run_trino_ddl import (
+    _forgive_additive_ddl,
+    _should_continue_on_error,
+    session_schema,
+    transform_sql,
+)
 
 
 class TestTrinoDdlQualify(unittest.TestCase):
@@ -61,6 +66,42 @@ class TestTrinoDdlQualify(unittest.TestCase):
         os.environ.pop("TRINO_CONTINUE_ON_ERROR", None)
         os.environ["TRINO_SKIP_DROP"] = "1"
         self.assertTrue(_should_continue_on_error(False))
+
+    def test_insert_ships_without_skip_create_schema(self) -> None:
+        """Standalone ships_nsb_trade_1000.sql must not resolve to iceberg.default.ships."""
+        saved = os.environ.copy()
+        try:
+            for key in (
+                "TRINO_QUALIFY_SCHEMA",
+                "TRINO_SKIP_CREATE_SCHEMA",
+                "TRINO_CONNECT_SCHEMA",
+                "TRINO_DDL_SESSION_SCHEMA",
+            ):
+                os.environ.pop(key, None)
+            raw = "INSERT INTO ships (mmsi) VALUES (311040001);"
+            out = transform_sql(raw)
+            self.assertIn("INSERT INTO iceberg.defense.ships", out, out)
+        finally:
+            os.environ.clear()
+            os.environ.update(saved)
+
+    def test_session_schema_defaults_to_defense(self) -> None:
+        saved = os.environ.get("TRINO_CONNECT_SCHEMA")
+        saved_legacy = os.environ.get("TRINO_DDL_SESSION_SCHEMA")
+        os.environ.pop("TRINO_CONNECT_SCHEMA", None)
+        os.environ.pop("TRINO_DDL_SESSION_SCHEMA", None)
+        os.environ["TRINO_SCHEMA"] = "defense"
+        try:
+            self.assertEqual(session_schema(for_ddl=True), "defense")
+        finally:
+            if saved is None:
+                os.environ.pop("TRINO_CONNECT_SCHEMA", None)
+            else:
+                os.environ["TRINO_CONNECT_SCHEMA"] = saved
+            if saved_legacy is None:
+                os.environ.pop("TRINO_DDL_SESSION_SCHEMA", None)
+            else:
+                os.environ["TRINO_DDL_SESSION_SCHEMA"] = saved_legacy
 
 
 if __name__ == "__main__":

@@ -21,7 +21,11 @@ def main() -> None:
     from north_sea_baltic_fleet_registry import MMSI_BASE
 
     print(f"-- NSB trade fleet ships (MMSI {MMSI_BASE}+), count={count}")
-    print("INSERT INTO ships (mmsi, ship_name, vessel_type, imo_number, call_sign, flag, length_m, beam_m, gross_tonnage, year_built, home_port) VALUES")
+    print(
+        "INSERT INTO iceberg.defense.ships "
+        "(mmsi, ship_name, vessel_type, imo_number, call_sign, flag, length_m, beam_m, "
+        "gross_tonnage, year_built, home_port) VALUES"
+    )
     rows = []
     for i in range(count):
         u = fleet_unit_for_index(i)

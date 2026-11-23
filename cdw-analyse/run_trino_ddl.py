@@ -15,7 +15,44 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2026-11-22-additive-ddl-fix"
+DDL_RUNNER_REV = "2026-11-23-defense-session-qualify"
+
+# Bare names in standalone SQL (ships_nsb_trade_1000.sql, patches) → iceberg.defense.*
+DEFENSE_KNOWN_TABLES = frozenset(
+    {
+        "ais_events_ice",
+        "ais_baseline_sketches",
+        "baltic_sea_harbours",
+        "baltic_threat_tile_sketches",
+        "das_cable_spectrogram_metadata",
+        "german_navy_fleet",
+        "german_navy_fleet_dedup",
+        "gps_jammer_events",
+        "infrastructure_ais_suspicions",
+        "lagebild",
+        "lidar_simulation_metadata",
+        "marine_messages",
+        "marine_vessel_status",
+        "maritime_surveillance_reports",
+        "nba_coa_runs",
+        "nba_incident_snapshots",
+        "nba_incidents",
+        "nba_materialized_tables",
+        "observation_areas",
+        "ostsee_infrastruktur",
+        "ostsee_pipelines",
+        "rus_fleet",
+        "rus_fleet_dedup",
+        "rus_naval_fleet_positions",
+        "sanctioned_vessels",
+        "sap_readiness_staging",
+        "ships",
+        "social_media_messages",
+        "socmint_tile_sketches",
+        "threat_hot_tiles",
+        "vessel_outliers",
+    }
+)
 
 
 def transform_sql(text: str) -> str:
@@ -109,15 +146,7 @@ def transform_sql(text: str) -> str:
         re.findall(r"(?im)^CREATE TABLE(?:\s+IF NOT EXISTS)?\s+(\w+)", text)
     )
     known_tables.update(re.findall(r"(?im)^ALTER TABLE\s+(\w+)", text))
-    known_tables.update(
-        {
-            "nba_incidents",
-            "nba_coa_runs",
-            "nba_incident_snapshots",
-            "nba_materialized_tables",
-            "sap_readiness_staging",
-        }
-    )
+    known_tables.update(DEFENSE_KNOWN_TABLES)
     if _should_qualify_schema():
         text = _qualify_defense_objects(text, known_tables)
         text = re.sub(
@@ -130,13 +159,13 @@ def transform_sql(text: str) -> str:
 
 
 def _should_qualify_schema() -> bool:
-    if os.environ.get("TRINO_QUALIFY_SCHEMA", "").strip().lower() in ("1", "true", "yes"):
+    mode = os.environ.get("TRINO_QUALIFY_SCHEMA", "").strip().lower()
+    if mode in ("0", "false", "no", "off"):
+        return False
+    if mode in ("1", "true", "yes"):
         return True
-    return os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-    )
+    # Default on: standalone INSERT INTO ships must not hit iceberg.default
+    return True
 
 
 def _qualify_prefix() -> str:
@@ -181,7 +210,7 @@ def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
         return f"{kw} {prefix}{name}"
 
     text = re.sub(
-        r"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|ALTER TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        r"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|DELETE FROM|MERGE INTO|ALTER TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
         _qualify_stmt_head,
         text,
     )
@@ -266,24 +295,15 @@ def _apply_statement_path_override() -> None:
 
 def session_schema(for_ddl: bool = True) -> str:
     """
-    JDBC session schema. On CDW, DDL against iceberg.defense must use session schema
-    ``defense`` (same as probe_iceberg_snapshots / trino-bridge), not ``default``.
+    JDBC session schema. On CDW, DML/DDL targets ``iceberg.defense`` — session schema
+    must be ``defense`` (same as probe_iceberg_snapshots / trino-bridge), not ``default``.
+    Set TRINO_DDL_SESSION_SCHEMA=default only for legacy greenfield CREATE SCHEMA bootstraps.
     """
+    _ = for_ddl
     explicit = os.environ.get("TRINO_CONNECT_SCHEMA", "").strip()
     if explicit:
         return explicit
-    skip_boot = os.environ.get("TRINO_SKIP_CREATE_SCHEMA", "").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-    )
-    if skip_boot:
-        return os.environ.get("TRINO_SCHEMA", "defense")
-    if for_ddl and os.environ.get("TRINO_DDL_USE_TARGET_SCHEMA", "").strip().lower() not in (
-        "1",
-        "true",
-        "yes",
-    ):
+    if os.environ.get("TRINO_DDL_SESSION_SCHEMA", "").strip().lower() == "default":
         return "default"
     return os.environ.get("TRINO_SCHEMA", "defense")
 
