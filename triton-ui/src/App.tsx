@@ -10,14 +10,16 @@ import { AgentConsolePage } from "./pages/AgentConsole";
 import { LidarPage } from "./pages/Lidar";
 import { DasCablePage } from "./pages/DasCable";
 import { SitrepPage } from "./pages/Sitrep";
+import { SocmintPage } from "./pages/Socmint";
 
-type Zone = "lagebild" | "analysen" | "lidar" | "das" | "sitrep" | "agents" | "nba";
+type Zone = "lagebild" | "analysen" | "lidar" | "das" | "socmint" | "sitrep" | "agents" | "nba";
 
 const ZONE_HASH: Record<Zone, string> = {
   lagebild: "",
   analysen: "analysen",
   lidar: "lidar",
   das: "das",
+  socmint: "socmint",
   sitrep: "sitrep",
   agents: "agents",
   nba: "nba",
@@ -30,6 +32,7 @@ function zoneFromHash(): Zone {
     h === "analysen" ||
     h === "lidar" ||
     h === "das" ||
+    h === "socmint" ||
     h === "sitrep" ||
     h === "agents" ||
     h === "sql" /* legacy hash → agents */ ||
@@ -164,6 +167,7 @@ export default function App() {
               ["analysen", "Analysen"],
               ["lidar", "LiDAR"],
               ["das", "Acoustic Sensors"],
+              ["socmint", "SOCMINT"],
               ["sitrep", "SITREP"],
               ["agents", "Agenten"],
               ["nba", "NBA HITL"],
@@ -195,6 +199,7 @@ export default function App() {
           {zone === "analysen" && <AnalysenPage filters={lagebildFilters} />}
           {zone === "lidar" && <LidarPage />}
           {zone === "das" && <DasCablePage />}
+          {zone === "socmint" && <SocmintPage />}
           {zone === "sitrep" && <SitrepPage />}
           {zone === "agents" && <AgentConsolePage />}
           {zone === "nba" && <NbaHitlPage />}

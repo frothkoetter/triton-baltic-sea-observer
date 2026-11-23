@@ -1,0 +1,206 @@
+import { useEffect, useMemo } from "react";
+import { CircleMarker, MapContainer, Rectangle, Tooltip, useMap } from "react-leaflet";
+import { BasemapTileLayer } from "./BasemapTileLayer";
+import { MapInvalidateSize } from "./MapInvalidateSize";
+import { quadkeyLeafletBounds } from "../lib/bing-quadkey";
+import {
+  type SocmintDensityTile,
+  type SocmintMessage,
+  type ThreatHotTile,
+  threatTileColor,
+  trustTagColor,
+} from "../lib/socmint";
+
+const BALTIC_CENTER: [number, number] = [57.5, 18.0];
+const BALTIC_ZOOM = 6;
+
+type Props = {
+  messages: SocmintMessage[];
+  threatTiles: ThreatHotTile[];
+  densityTiles?: SocmintDensityTile[];
+  selectedUsername?: string | null;
+  selectedTs?: string | null;
+  showThreatTiles?: boolean;
+  showDensityTiles?: boolean;
+  showPosts?: boolean;
+  onSelectMessage?: (msg: SocmintMessage) => void;
+};
+
+function FlyToSelection({
+  messages,
+  selectedUsername,
+  selectedTs,
+}: {
+  messages: SocmintMessage[];
+  selectedUsername?: string | null;
+  selectedTs?: string | null;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!selectedUsername || !selectedTs) return;
+    const hit = messages.find(
+      (m) => m.user_username === selectedUsername && m.ts === selectedTs
+    );
+    if (hit) map.flyTo([hit.latitude, hit.longitude], 9, { duration: 0.5 });
+  }, [messages, selectedUsername, selectedTs, map]);
+  return null;
+}
+
+export function SocmintMap({
+  messages,
+  threatTiles,
+  densityTiles = [],
+  selectedUsername,
+  selectedTs,
+  showThreatTiles = true,
+  showDensityTiles = true,
+  showPosts = true,
+  onSelectMessage,
+}: Props) {
+  const threatByKey = useMemo(() => {
+    const m = new Map<string, ThreatHotTile>();
+    for (const t of threatTiles) m.set(t.quadkey, t);
+    return m;
+  }, [threatTiles]);
+
+  return (
+    <div className="map-wrap socmint-map-wrap">
+      <MapContainer center={BALTIC_CENTER} zoom={BALTIC_ZOOM} className="tactical-map">
+        <MapInvalidateSize />
+        <BasemapTileLayer />
+        <FlyToSelection
+          messages={messages}
+          selectedUsername={selectedUsername}
+          selectedTs={selectedTs}
+        />
+
+        {showDensityTiles
+          ? densityTiles.map((d) => {
+              const bounds = quadkeyLeafletBounds(d.quadkey);
+              return (
+                <Rectangle
+                  key={`soc-density-${d.quadkey}`}
+                  bounds={bounds}
+                  pathOptions={{
+                    color: d.disinfo_count > 0 ? "#E53935" : "#4DA3FF",
+                    weight: 1,
+                    dashArray: "6 4",
+                    fillColor: d.disinfo_count > 0 ? "#E53935" : "#4DA3FF",
+                    fillOpacity: Math.min(0.35, 0.08 + d.post_count * 0.04),
+                  }}
+                >
+                  <Tooltip>
+                    <span className="mono">
+                      <strong>SOCMINT tile {d.quadkey}</strong>
+                      <br />
+                      Posts {d.post_count} · IW {d.disinfo_count}
+                    </span>
+                  </Tooltip>
+                </Rectangle>
+              );
+            })
+          : null}
+
+        {showThreatTiles
+          ? threatTiles.map((t) => {
+              const bounds = quadkeyLeafletBounds(t.quadkey);
+              const fill = threatTileColor(t.sev_p90);
+              return (
+                <Rectangle
+                  key={`threat-${t.quadkey}`}
+                  bounds={bounds}
+                  pathOptions={{
+                    color: fill,
+                    weight: 2,
+                    fillColor: fill,
+                    fillOpacity: Math.min(0.55, 0.15 + t.sev_p90 / 200),
+                  }}
+                >
+                  <Tooltip>
+                    <span className="mono">
+                      <strong>Threat sketch · {t.quadkey}</strong>
+                      <br />
+                      events={t.event_count} · P50 {t.sev_p50.toFixed(0)} · P90{" "}
+                      {t.sev_p90.toFixed(0)}
+                    </span>
+                  </Tooltip>
+                </Rectangle>
+              );
+            })
+          : null}
+
+        {showPosts
+          ? messages.map((m) => {
+              const selected =
+                m.user_username === selectedUsername && m.ts === selectedTs;
+              const color = trustTagColor(m.trust_tag, m.disinformation_flag);
+              const tile = m.quadkey ? threatByKey.get(m.quadkey) : undefined;
+              return (
+                <CircleMarker
+                  key={`${m.user_username}-${m.ts}`}
+                  center={[m.latitude, m.longitude]}
+                  radius={selected ? 11 : 8}
+                  pathOptions={{
+                    color: selected ? "#FFFFFF" : "#212121",
+                    weight: selected ? 3 : 2,
+                    fillColor: color,
+                    fillOpacity: 0.95,
+                  }}
+                  eventHandlers={{
+                    click: () => onSelectMessage?.(m),
+                  }}
+                >
+                  <Tooltip>
+                    <span className="mono">
+                      <strong>
+                        @{m.user_username} · {m.platform ?? "x"}
+                      </strong>
+                      <br />
+                      Trust: {m.trust_tag ?? "—"}
+                      {m.disinformation_flag ? " · IW" : ""}
+                      <br />
+                      {m.intel_category ?? "—"} · Prio {m.priority ?? "—"}
+                      {tile
+                        ? ` · tile P90 ${tile.sev_p90.toFixed(0)}`
+                        : ""}
+                      <br />
+                      {m.tweet.slice(0, 160)}
+                      {m.tweet.length > 160 ? "…" : ""}
+                    </span>
+                  </Tooltip>
+                </CircleMarker>
+              );
+            })
+          : null}
+      </MapContainer>
+      <div className="map-legend map-legend-infra" aria-hidden>
+        <span className="map-legend-item">
+          <i className="map-legend-swatch" style={{ background: "#3DDC84" }} /> SENSOR_CORROBORATED
+        </span>
+        <span className="map-legend-item">
+          <i className="map-legend-swatch" style={{ background: "#FFD54F" }} /> UNVERIFIED
+        </span>
+        <span className="map-legend-item">
+          <i className="map-legend-swatch" style={{ background: "#E53935" }} /> DISINFORMATION
+        </span>
+        <span className="map-legend-item">
+          <i
+            className="map-legend-swatch"
+            style={{ background: "#FF9800", opacity: 0.7 }}
+          />{" "}
+          Threat tile (P90)
+        </span>
+        <span className="map-legend-item">
+          <i
+            className="map-legend-swatch"
+            style={{
+              background: "transparent",
+              border: "2px dashed #4DA3FF",
+            }}
+          />{" "}
+          SOCMINT density tile
+        </span>
+      </div>
+    </div>
+  );
+}

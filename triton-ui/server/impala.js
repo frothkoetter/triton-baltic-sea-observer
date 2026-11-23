@@ -926,6 +926,40 @@ export async function getVesselOutliers() {
 }
 
 /** GPS jamming tiles (gps_jammer_events or lagebild GPS_Jammer). */
+export async function getSocmintFeed() {
+  const messages = await runQueryOrSample(
+    PREDEFINED.socmintMessagesMap,
+    () => sample.socmintMessages
+  );
+  let threat = await queryWarehouse(PREDEFINED.threatHotTiles);
+  if (!threat.ok || (threat.rows?.length ?? 0) === 0) {
+    threat = await queryWarehouse(PREDEFINED.threatTileSketchesFallback);
+  }
+  if (!threat.ok || (threat.rows?.length ?? 0) === 0) {
+    threat = {
+      ok: true,
+      source: "sample",
+      rows: sample.threatHotTiles,
+    };
+  }
+  const density = await runQueryOrSample(
+    PREDEFINED.socmintDensityTiles,
+    () => sample.socmintDensityTiles
+  );
+  const source =
+    messages.source === "sample" && threat.source === "sample" && density.source === "sample"
+      ? "sample"
+      : messages.source ?? threat.source ?? density.source ?? "unknown";
+  return {
+    ok: messages.ok || threat.ok || density.ok,
+    source,
+    messages: messages.rows ?? [],
+    threatTiles: threat.rows ?? [],
+    densityTiles: density.rows ?? [],
+    fallbackReason: messages.fallbackReason ?? threat.fallbackReason,
+  };
+}
+
 export async function getGpsJammerEvents() {
   const live = await queryWarehouse(PREDEFINED.gpsJammerEvents);
   if (live.ok && (live.rows?.length ?? 0) > 0) {
