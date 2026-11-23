@@ -481,7 +481,9 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
       {tab === "ais" && (
         <div className="analyses-ais">
           <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
-            Letzte AIS-Position pro MMSI (<code>ais_events_ice</code> ⋈ <code>ships</code>). Quelle:{" "}
+            Letzte AIS-Position pro MMSI (<code>ais_events_ice</code> LEFT JOIN <code>ships</code>).
+            Ohne Treffer in <code>ships</code> → Flagge „Unknown (kein ships-Eintrag)“ (z. B. NSB-Simulator
+            ohne <code className="mono">ships_nsb_trade_1000.sql</code> in Trino). Quelle:{" "}
             {aisAnalytics?.source ?? "…"}
             {filterSummary ? ` · Filter: ${filterSummary}` : " · Kein Filter aktiv"}
             {aisAnalytics?.fallbackReason ? ` — fallback (${aisAnalytics.fallbackReason})` : ""}
@@ -502,6 +504,12 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
                 {Number(aisKpi?.underway_count ?? 0)}
               </div>
               <div className="kpi-label">Underway (SOG ≥ 0,5)</div>
+            </div>
+            <div className="kpi" title="MMSI ohne passenden Eintrag in defense.ships">
+              <div className="kpi-value mono" style={{ fontSize: 22 }}>
+                {Number(aisKpi?.ohne_ships_eintrag ?? 0)}
+              </div>
+              <div className="kpi-label">Ohne ships-Eintrag</div>
             </div>
           </div>
           <div className="analyses-grid analyses-ais-grid">

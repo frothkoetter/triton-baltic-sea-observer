@@ -238,11 +238,21 @@ function sampleAisAnalytics(filters = {}) {
   const underway = rows.filter((r) => Number(r.speed ?? 0) >= 0.5).length;
   const avgSog =
     rows.length > 0 ? rows.reduce((a, r) => a + Number(r.speed ?? 0), 0) / rows.length : 0;
+  const ohneShips = rows.filter((r) => !String(r.flag ?? "").trim() || !String(r.ship_name ?? "").trim()).length;
+  const mitShips = rows.length - ohneShips;
   return {
     panels: {
       kpi: {
-        columns: ["total_ships", "avg_sog", "underway_count"],
-        rows: [{ total_ships: rows.length, avg_sog: Math.round(avgSog * 10) / 10, underway_count: underway }],
+        columns: ["total_ships", "avg_sog", "underway_count", "ohne_ships_eintrag", "mit_ships_eintrag"],
+        rows: [
+          {
+            total_ships: rows.length,
+            avg_sog: Math.round(avgSog * 10) / 10,
+            underway_count: underway,
+            ohne_ships_eintrag: ohneShips,
+            mit_ships_eintrag: mitShips,
+          },
+        ],
       },
       byFlag: { columns: ["name", "value"], rows: byFlag },
       byType: { columns: ["name", "value"], rows: byType },
