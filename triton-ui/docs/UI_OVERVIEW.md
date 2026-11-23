@@ -12,7 +12,7 @@ The app is a single-page application (`#hash` routes) backed by **Express** (`se
 | `#analysen` | **Analysen** | Aggregated analytics (fleet, buoys, RUS, AIS, sanctions, restricted) |
 | `#lidar` | **LiDAR** | Scan catalog + point-cloud preview (S3 LAS/LAZ) |
 | `#das` | **Acoustic Sensors** | Segment catalog + spectrogram/audio preview (S3 HDF5 or demo); see [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md) |
-| `#sitrep` | **SITREP** | PDF/text reports from S3 (`LAGEBILD_S3_PREFIX`) |
+| `#sitrep` | **SITREP** | UC1 NATO PDF/text from S3 (`LAGEBILD_S3_PREFIX`); includes **SOCMINT** (`SocialMedia` lagebild rows) + dedicated IE section |
 | `#agents` | **Agenten** | CrewAI chat apps + Semantica ontology (`#sql` redirects here) |
 | `#nba` | **NBA HITL** | Next Best Action incidents, COA matrix, decision recorder |
 

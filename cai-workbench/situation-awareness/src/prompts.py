@@ -28,7 +28,10 @@ Reporting time (analyst run): {report_time}
 
 The table rows come from defense.lagebild (Trino: iceberg.defense.lagebild). Columns **harbour_country**
 and **harbour_affiliation** (when present) are authoritative for port state (Germany/Russia/etc.).
-Use Data_Source (AIS, AIS_Outlier, LiDAR, RUS_Fleet, GPS_Jammer, …) and details text.
+Use Data_Source (AIS, AIS_Outlier, LiDAR, RUS_Fleet, GPS_Jammer, **SocialMedia/SOCMINT**, …) and details text.
+**SocialMedia** rows originate from ``defense.social_media_messages`` (open-source posts). Parse
+``Trust:``, ``Platform:``, ``Intel:``, optional ``IW: disinformation``, and the tweet excerpt in ``details``.
+Treat **DISINFORMATION_CONFIRMED** / IW as information-warfare; **SENSOR_CORROBORATED** as sensor-backed OSINT.
 **AIS_Outlier** rows are Trino anomaly detections (rendezvous, dark vessel, kinematics, …);
 use **Sev:** in details (0–5) for Threat Level — Sev 4–5 → CRITICAL/HIGH, Sev 2–3 → MEDIUM, Sev 0–1 → LOW unless Reason implies higher priority.
 
@@ -52,8 +55,11 @@ Required sections (use numbered headings ``**1. …**`` or ``SECTION N: TITLE``)
    ``* HarbourName (Country): detail``; include country for non-German ports; no duplicate of section 3 table.
 5. AIS Sanctions — use a small table ``| Vessel | MMSI | Harbour | Status |`` when any
    sanctioned vessel appears; otherwise one sentence "No sanctioned vessels observed."
-6. Conclusions & Directives — prefix each action ``DIRECTIVE 01:``, ``DIRECTIVE 02:``, … with
-   imperative C2 text (MPA/USV vectoring, sanctions follow-up, LiDAR re-scan).
+6. SOCMINT / Information Environment — separate bullets or a short table
+   ``| Sector / Platform | Trust tag | Assessment |`` for **SocialMedia** rows only (IW vs corroborated).
+   Cross-reference kinetic/AIS/GPS jamming claims in OSINT against sensor feeds when both appear in the data.
+7. Conclusions & Directives — prefix each action ``DIRECTIVE 01:``, ``DIRECTIVE 02:``, … with
+   imperative C2 text (MPA/USV vectoring, sanctions follow-up, LiDAR re-scan, SOCMINT counter-IW as needed).
 
 Use ``* Topic: detail`` bullets in section 2 and when tables are not warranted. Wrap long lines;
 do not start continuation lines with a new ``*``.

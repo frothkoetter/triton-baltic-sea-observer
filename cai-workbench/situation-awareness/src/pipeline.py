@@ -19,7 +19,7 @@ from .data_access import (
 )
 from .llm_client import chat_completion_text
 from .prompts import build_comparison_prompt, build_situation_prompt
-from .lagebild_viz_prep import normalize_lagebild_frame
+from .lagebild_viz_prep import normalize_lagebild_frame, socmint_feed_summary
 from .geo_rewrite import ensure_report_geography
 from .harbour_geography import enrich_harbour_columns, geography_context_block
 from .report_pdf import load_report_texts, write_report_pdf
@@ -57,7 +57,13 @@ def run_pipeline(
     dataframe = enrich_harbour_columns(dataframe)
     md_table, df_used = dataframe_to_markdown_bounded(dataframe, settings.max_char_limit)
     df_used = enrich_harbour_columns(df_used)
-    dataset_summary = geography_context_block(df_used) + "\n\n" + lagebild_dataset_summary(df_used)
+    dataset_summary = (
+        geography_context_block(df_used)
+        + "\n\n"
+        + socmint_feed_summary(df_used)
+        + "\n\n"
+        + lagebild_dataset_summary(df_used)
+    )
     report_time = datetime.now(timezone.utc)
     report_time_str = report_time.strftime("%Y-%m-%d %H:%M:%S UTC")
 
