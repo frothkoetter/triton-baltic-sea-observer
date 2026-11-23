@@ -4,6 +4,7 @@ import { DataTable } from "../components/DataTable";
 import { SocmintMap } from "../components/SocmintMap";
 import {
   collapseGpsJammerByGeohash,
+  countGpsJammerDrawableTiles,
   filterGpsJammerEvents,
   normalizeGpsJammerRow,
   type GpsJammingFilter,
@@ -95,6 +96,11 @@ export function SocmintPage() {
     });
     return collapseGpsJammerByGeohash(narrowed);
   }, [gpsJammerEvents, gpsJammingFilter, gpsMaxSignalIntegrity]);
+
+  const gpsJammerTileCount = useMemo(
+    () => countGpsJammerDrawableTiles(filteredGpsJammer),
+    [filteredGpsJammer]
+  );
 
   const filtered = useMemo(() => {
     return messages.filter((m) => {
@@ -229,7 +235,10 @@ export function SocmintPage() {
             />
             <span>{gpsMaxSignalIntegrity.toFixed(2)}</span>
           </label>
-          <span className="text-muted">Kacheln: 1× geohash (keine Punkt-Marker)</span>
+          <span className="text-muted">
+            Kacheln auf Karte: {gpsJammerTileCount} · Zeilen: {filteredGpsJammer.length} (geohash, keine
+            Punkt-Marker)
+          </span>
         </div>
       ) : null}
 
