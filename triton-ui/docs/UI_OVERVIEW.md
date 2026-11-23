@@ -43,7 +43,7 @@ Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Overr
 |-----|-----------|---------|
 | Flotte | `german_navy_fleet` | Registered DE naval units (count) |
 | Personal | `german_navy_fleet` | Sum of crew strengths |
-| Surveillance | `marine_surveillance_reports` | Situation reports (sim + live) |
+| Surveillance | `marine_surveillance_reports` | STANAG situation reports (SITREP, POSREP, **SOCINT/INTREP**, …) + `marine_messages` view |
 | Alerts | `vessel_outliers` (24h, severity ≥ 70) | High AIS anomalies |
 | *(in Alerts tile)* | `nba_incidents` | NBA case count (`GET /api/nba/incidents`) |
 

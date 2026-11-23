@@ -592,7 +592,25 @@ export const PREDEFINED = {
     SELECT * FROM defense.area_violation LIMIT 200
   `,
   surveillance: `
-    SELECT message_id, class, name, message_timestamp, message_latitude, message_longitude
+    SELECT
+      message_id,
+      message_subject,
+      message_from,
+      message_to,
+      message_dtg,
+      message_timestamp,
+      message_latitude,
+      message_longitude,
+      CASE
+        WHEN lower(coalesce(message_subject, '')) LIKE '%socint%' THEN 'SOCINT'
+        WHEN lower(coalesce(message_subject, '')) LIKE '%sitrep%' THEN 'SITREP'
+        WHEN lower(coalesce(message_subject, '')) LIKE '%posrep%' THEN 'POSREP'
+        WHEN lower(coalesce(message_subject, '')) LIKE '%spot%'
+          OR lower(coalesce(message_subject, '')) LIKE '%contact%' THEN 'SPOT'
+        WHEN lower(coalesce(message_subject, '')) LIKE '%frago%' THEN 'FRAGO'
+        WHEN lower(coalesce(message_subject, '')) LIKE '%wmsg%' THEN 'WMSG'
+        ELSE 'OTHER'
+      END AS report_class
     FROM defense.marine_messages
     ORDER BY message_timestamp DESC
     LIMIT 200

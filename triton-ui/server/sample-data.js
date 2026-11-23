@@ -670,9 +670,39 @@ export const restrictedRouteTracks = [
 ];
 
 export const surveillance = [
-  { message_id: "SR-2025-8841", class: "SURFACE", name: "Contact Alpha", message_timestamp: "2025-10-15T07:45:00Z", message_latitude: 55.02, message_longitude: 17.44 },
-  { message_id: "SR-2025-8840", class: "SUBSURFACE", name: "Contact Bravo", message_timestamp: "2025-10-15T06:30:00Z", message_latitude: 56.65, message_longitude: 19.71 },
-  { message_id: "SR-2025-8838", class: "AIR", name: "Track Charlie", message_timestamp: "2025-10-15T05:12:00Z", message_latitude: 54.35, message_longitude: 13.08 },
+  {
+    message_id: "SOCINT/FGS_SACHSEN/0003",
+    message_subject: "SOCINT REPORT (INTREP)",
+    message_from: "FGS Sachsen",
+    message_to: "MARITIME OPERATIONS CENTRE",
+    message_dtg: "151045ZNOV25",
+    message_timestamp: "2025-11-15T10:45:00Z",
+    message_latitude: 54.32,
+    message_longitude: 11.8,
+    report_class: "SOCINT",
+  },
+  {
+    message_id: "SITREP/FGS_BERLIN/0012",
+    message_subject: "SITUATION REPORT (SITREP)",
+    message_from: "FGS Berlin",
+    message_to: "TASK FORCE HQ BALTIC",
+    message_dtg: "151012ZNOV25",
+    message_timestamp: "2025-11-15T10:12:00Z",
+    message_latitude: 55.0,
+    message_longitude: 15.5,
+    report_class: "SITREP",
+  },
+  {
+    message_id: "SOCINT-ADV/MOC/0007",
+    message_subject: "SOCINT ADVISORY (IW WATCH)",
+    message_from: "MARITIME OPERATIONS CENTRE",
+    message_to: "FGS Braunschweig",
+    message_dtg: "150930ZNOV25",
+    message_timestamp: "2025-11-15T09:30:00Z",
+    message_latitude: 54.1,
+    message_longitude: 12.2,
+    report_class: "SOCINT",
+  },
 ];
 
 export const observationAreas = [

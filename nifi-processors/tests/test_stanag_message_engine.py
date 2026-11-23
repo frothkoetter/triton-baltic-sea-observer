@@ -77,10 +77,19 @@ class TestStanagMessageEngine(unittest.TestCase):
         self.assertIn("body_stanag", row)
         self.assertIn("traffic_direction", row)
 
+    def test_socint_in_message_mix(self):
+        messages = generate_stanag_batch(SHIPS, count=60, exercise="BALTOPS", seed=99)
+        cats = {m.message_category for m in messages}
+        self.assertIn("SOCINT", cats)
+        socint = [m for m in messages if m.message_category == "SOCINT"]
+        self.assertGreaterEqual(len(socint), 2)
+        self.assertTrue(any("SOCINT" in m.message_subject for m in socint))
+        self.assertTrue(any("SOCMINT/" in m.body for m in socint))
+
     def test_msgid_pattern(self):
         messages = generate_stanag_batch(SHIPS, count=5, exercise="IRON WOLF", seed=3)
         for m in messages:
-            self.assertRegex(m.message_id, r"^[A-Z]+/")
+            self.assertRegex(m.message_id, r"^[A-Z][A-Z0-9-]*/")
 
 
 if __name__ == "__main__":
