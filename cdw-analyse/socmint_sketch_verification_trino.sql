@@ -1,7 +1,8 @@
 -- =========================================================================================
 -- TRINO: SOCMINT VERIFICATION VIA THREAT TILE SKETCHES (no Flink / no heavy spatial join)
 -- =========================================================================================
--- Prerequisite: run outlier_detection_trino.sql (Step 9 builds baltic_threat_tile_sketches).
+-- Prerequisite for trust upgrades: outlier_detection_trino.sql Step 9 must have run at least once
+-- so baltic_threat_tile_sketches has rows (TRINO_JOB=outliers). Empty table ⇒ view/MERGE OK, no corroboration.
 --
 -- Logic:
 --   1. Map post lat/lon → zoom-11 quadkey (same grid as AIS baseline / outliers).
@@ -15,7 +16,20 @@
 
 USE iceberg.defense;
 
--- Optional: tile-level SOCMINT density (supports bot-campaign / burst detection without full scan)
+-- Empty until outlier job Step 9 runs; required so socmint_sketch_verified can be created.
+CREATE TABLE IF NOT EXISTS baltic_threat_tile_sketches (
+    quadkey varchar,
+    severity_tdigest varbinary,
+    outlier_type_set varbinary,
+    mmsi_set varbinary,
+    sensor_lane_set varbinary,
+    event_count bigint,
+    sev_p50 double,
+    sev_p90 double,
+    updated_at timestamp
+);
+
+-- Tile-level SOCMINT density (bot-campaign / burst detection without full scan)
 CREATE TABLE IF NOT EXISTS socmint_tile_sketches (
     quadkey varchar,
     post_count bigint,
