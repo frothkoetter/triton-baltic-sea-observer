@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.20-semantica-mcp-bridge",
+  "build": "0.2.21-ttyd-result-charts",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchJson } from "../api";
+import { TtydResultCharts } from "../components/TtydResultCharts";
 import { AgentConsolePage } from "./AgentConsole";
 
 type TtydExample = { id: string; description_de?: string };
@@ -81,6 +82,9 @@ function AssistantCard({ payload }: { payload: TtydAskResponse }) {
           3 · Live Trino ({sql?.source ?? "—"}, {sql?.row_count ?? 0} Zeilen)
         </summary>
         {sql?.error ? <div className="error-box">{sql.error}</div> : null}
+        {sql?.rows?.length ? (
+          <TtydResultCharts rows={sql.rows} columns={sql.columns} />
+        ) : null}
         {sql?.rows?.length ? (
           <div className="dsc-table-wrap">
             <table className="dsc-table">
