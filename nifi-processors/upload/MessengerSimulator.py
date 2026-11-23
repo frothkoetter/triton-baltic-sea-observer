@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+_EXTENSIONS_DIR = Path(__file__).resolve().parent
+if _EXTENSIONS_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, _EXTENSIONS_DIR.as_posix())
+
 from nifiapi.flowfiletransform import FlowFileTransform, FlowFileTransformResult
 from nifiapi.properties import PropertyDescriptor, StandardValidators
 import json
