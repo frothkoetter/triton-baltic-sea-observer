@@ -54,7 +54,10 @@ Writes to **`dev/samples/`**. Open in CloudCompare; color by **Classification**.
 
 On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it for every processor). Each processor adds what it needs via **`ProcessorDetails.dependencies`** (`numpy`, `pyproj`, `laspy`, …).
 
-**TwitterMessageGenerator not loading:** Check `nifi-app.log` for `Failed to install requirements for TwitterMessageGenerator`. Common cause: **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
+**TwitterMessageGenerator not loading:** Check `nifi-app.log` for `Failed to load code for Python Processor ... (TwitterMessageGenerator)`.
+
+- **`ModuleNotFoundError: No module named 'socmint_catalog'`** — deploy **`socmint_catalog.py`** next to **`MessengerSimulator.py`** under `python/extensions/` (full `upload/` sync). `MessengerSimulator` adds `python/extensions` to `sys.path` like `STANAGSimulator`; without both files the processor stays invalid.
+- **`Failed to install requirements`** — often **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
 
 **DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.2.2** — `Cable Asset` includes **RANDOM**; unique `filename` for PutCDPObjectStore; WGS84 attrs; CML `das-cable-classifier`.
 
