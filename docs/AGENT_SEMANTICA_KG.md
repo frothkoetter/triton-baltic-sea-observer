@@ -42,8 +42,12 @@ SQL templates are duplicated for operators in [`cdw-analyse/agent_kg_evidence_tr
 **E2E smoke (CML Session with Trino env):**
 
 ```bash
-cd triton-ui && node scripts/ttyd-e2e.mjs --local
+cd ~/triton-ui
+bash cdsw-build.sh          # once: installs Node into project (.nvm / .node-runtime)
+bash scripts/ttyd-e2e.sh --local
 ```
+
+CML sessions often have no global `node` — use **`ttyd-e2e.sh`**, not bare `node`.
 
 Data: [`kdm_defense_classes.json`](../cai-workbench/next-best-action/data/kdm_defense_classes.json) (16 KDM classes + golden examples).
 
