@@ -15,7 +15,7 @@ from trino.auth import BasicAuthentication
 from trino_endpoint import apply_all_trino_env
 
 # Bumped when CDW DDL runner behavior changes (setup script checks _skip_schema_setup).
-DDL_RUNNER_REV = "2026-11-23-defense-session-qualify"
+DDL_RUNNER_REV = "2026-11-23-no-double-qualify"
 
 # Bare names in standalone SQL (ships_nsb_trade_1000.sql, patches) → iceberg.defense.*
 DEFENSE_KNOWN_TABLES = frozenset(
@@ -179,13 +179,6 @@ def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
     prefix = _qualify_prefix()
     cat = os.environ.get("TRINO_CATALOG", "iceberg")
     sch = os.environ.get("TRINO_SCHEMA", "defense")
-    # defense.ships → iceberg.defense.ships (skip if already catalog-qualified).
-    text = re.sub(
-        rf"(?<!{re.escape(cat)}\.)(?<![\w.]){re.escape(sch)}\.",
-        prefix,
-        text,
-    )
-
     def _qualify_table_refs(body: str) -> str:
         # Only bare physical table names — not CTEs (LatestAISData) or catalog tokens (iceberg).
         def repl(m: re.Match[str]) -> str:
@@ -205,13 +198,27 @@ def _qualify_defense_objects(text: str, known_tables: set[str]) -> str:
     def _qualify_stmt_head(m: re.Match[str]) -> str:
         kw = m.group(1)
         name = m.group(2)
-        if "." in name:
+        parts = name.split(".")
+        if len(parts) == 3:
+            if parts[0].lower() == cat.lower() and parts[1].lower() == sch.lower():
+                return m.group(0)
             return m.group(0)
-        return f"{kw} {prefix}{name}"
+        if len(parts) == 2 and parts[0].lower() == sch.lower():
+            return f"{kw} {prefix}{parts[1]}"
+        if len(parts) == 1:
+            return f"{kw} {prefix}{name}"
+        return m.group(0)
 
+    tbl_ref = r"[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*){0,2}"
     text = re.sub(
-        r"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|DELETE FROM|MERGE INTO|ALTER TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+        rf"(?im)^(CREATE TABLE(?:\s+IF NOT EXISTS)?|DROP TABLE IF EXISTS|INSERT INTO|DELETE FROM|MERGE INTO|ALTER TABLE)\s+({tbl_ref})\b",
         _qualify_stmt_head,
+        text,
+    )
+    # defense.ships → iceberg.defense.ships in view bodies (not after iceberg.).
+    text = re.sub(
+        rf"(?<!{re.escape(cat)}\.){re.escape(sch)}\.",
+        prefix,
         text,
     )
     text = re.sub(

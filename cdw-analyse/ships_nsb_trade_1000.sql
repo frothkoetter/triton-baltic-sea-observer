@@ -1,6 +1,6 @@
 -- NSB trade fleet ships (MMSI 311040001+), count=1000
--- Target: iceberg.defense.ships (not session default)
-INSERT INTO iceberg.defense.ships (mmsi, ship_name, vessel_type, imo_number, call_sign, flag, length_m, beam_m, gross_tonnage, year_built, home_port) VALUES
+-- run_trino_ddl.py qualifies bare ``ships`` → iceberg.defense.ships
+INSERT INTO ships (mmsi, ship_name, vessel_type, imo_number, call_sign, flag, length_m, beam_m, gross_tonnage, year_built, home_port) VALUES
 (311040001, 'Maersk Star 0001', 'LNG Carrier', 'IMO9800000', 'NSB0000', 'Norway', 315.0, 18.0, 32319.0, 1998, 'Hamburg'),
 (311040002, 'Skagerrak Venture 0002', 'LNG Carrier', 'IMO9800001', 'NSB0001', 'Marshall Islands', 204.0, 27.0, 25336.8, 2022, 'Bremerhaven'),
 (311040003, 'Nord Trader 0003', 'LNG Carrier', 'IMO9800002', 'NSB0002', 'Norway', 245.0, 36.0, 48510.0, 2017, 'Wilhelmshaven'),

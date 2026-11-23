@@ -22,9 +22,8 @@ def main() -> None:
 
     print(f"-- NSB trade fleet ships (MMSI {MMSI_BASE}+), count={count}")
     print(
-        "INSERT INTO iceberg.defense.ships "
-        "(mmsi, ship_name, vessel_type, imo_number, call_sign, flag, length_m, beam_m, "
-        "gross_tonnage, year_built, home_port) VALUES"
+        "INSERT INTO ships (mmsi, ship_name, vessel_type, imo_number, call_sign, flag, "
+        "length_m, beam_m, gross_tonnage, year_built, home_port) VALUES"
     )
     rows = []
     for i in range(count):

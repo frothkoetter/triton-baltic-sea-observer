@@ -85,6 +85,17 @@ class TestTrinoDdlQualify(unittest.TestCase):
             os.environ.clear()
             os.environ.update(saved)
 
+    def test_insert_iceberg_defense_ships_not_doubled(self) -> None:
+        raw = "INSERT INTO iceberg.defense.ships (mmsi) VALUES (311040001);"
+        out = transform_sql(raw)
+        self.assertIn("INSERT INTO iceberg.defense.ships", out)
+        self.assertNotIn("iceberg.defense.iceberg", out)
+
+    def test_insert_defense_ships_schema_only(self) -> None:
+        raw = "INSERT INTO defense.ships (mmsi) VALUES (1);"
+        out = transform_sql(raw)
+        self.assertIn("INSERT INTO iceberg.defense.ships", out, out)
+
     def test_session_schema_defaults_to_defense(self) -> None:
         saved = os.environ.get("TRINO_CONNECT_SCHEMA")
         saved_legacy = os.environ.get("TRINO_DDL_SESSION_SCHEMA")
