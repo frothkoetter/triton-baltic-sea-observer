@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchJson } from "../api";
 import { DataTable } from "../components/DataTable";
 import { SocmintMap } from "../components/SocmintMap";
-import { normalizeGpsJammerRow, type GpsJammerEvent } from "../lib/gps-jammer";
+import {
+  collapseGpsJammerByGeohash,
+  filterGpsJammerEvents,
+  normalizeGpsJammerRow,
+  type GpsJammingFilter,
+  type GpsJammerEvent,
+} from "../lib/gps-jammer";
 import {
   normalizeSocmintDensityRow,
   normalizeSocmintRow,
@@ -47,6 +53,8 @@ export function SocmintPage() {
     densityTiles: false,
     gpsJammer: true,
   });
+  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("all");
+  const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
 
   useEffect(() => {
     void (async () => {
@@ -80,6 +88,14 @@ export function SocmintPage() {
     return [...new Set(messages.map((m) => m.platform ?? "x").filter(Boolean))].sort();
   }, [messages]);
 
+  const filteredGpsJammer = useMemo(() => {
+    const narrowed = filterGpsJammerEvents(gpsJammerEvents, {
+      jamming: gpsJammingFilter,
+      maxSignalIntegrity: gpsMaxSignalIntegrity,
+    });
+    return collapseGpsJammerByGeohash(narrowed);
+  }, [gpsJammerEvents, gpsJammingFilter, gpsMaxSignalIntegrity]);
+
   const filtered = useMemo(() => {
     return messages.filter((m) => {
       if (iwOnly && !m.disinformation_flag) return false;
@@ -96,9 +112,9 @@ export function SocmintPage() {
       (m) => m.disinformation_flag || m.trust_tag === "DISINFORMATION_CONFIRMED"
     ).length;
     const hotTiles = threatTiles.length;
-    const gpsJam = gpsJammerEvents.length;
+    const gpsJam = filteredGpsJammer.length;
     return { n, corroborated, disinfo, hotTiles, gpsJam };
-  }, [filtered, threatTiles, gpsJammerEvents]);
+  }, [filtered, threatTiles, filteredGpsJammer]);
 
   const tableRows = useMemo(
     () =>
@@ -173,7 +189,7 @@ export function SocmintPage() {
             ["posts", "Posts"],
             ["threatTiles", "Threat-Kacheln (sketch)"],
             ["densityTiles", "SOCMINT-Dichte"],
-            ["gpsJammer", `GPS jammer (${gpsJammerEvents.length})`],
+            ["gpsJammer", `GPS jammer (${filteredGpsJammer.length})`],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="checkbox-inline">
@@ -187,6 +203,36 @@ export function SocmintPage() {
         ))}
       </div>
 
+      {layers.gpsJammer ? (
+        <div className="socmint-gps-filters mono">
+          <label>
+            jamming_indicator
+            <select
+              value={gpsJammingFilter}
+              onChange={(e) => setGpsJammingFilter(e.target.value as GpsJammingFilter)}
+              aria-label="GPS jamming indicator filter"
+            >
+              <option value="all">Alle</option>
+              <option value="jamming">Jamming (true)</option>
+              <option value="monitor">Monitor (false)</option>
+            </select>
+          </label>
+          <label className="socmint-range">
+            signal_integrity ≤{" "}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(gpsMaxSignalIntegrity * 100)}
+              onChange={(e) => setGpsMaxSignalIntegrity(Number(e.target.value) / 100)}
+              aria-label="Maximum signal integrity"
+            />
+            <span>{gpsMaxSignalIntegrity.toFixed(2)}</span>
+          </label>
+          <span className="text-muted">Kacheln: 1× geohash (keine Punkt-Marker)</span>
+        </div>
+      ) : null}
+
       <div className="socmint-layout">
         <div className="socmint-map-panel">
           <SocmintMap
@@ -199,7 +245,7 @@ export function SocmintPage() {
             showThreatTiles={layers.threatTiles}
             showDensityTiles={layers.densityTiles}
             showGpsJammer={layers.gpsJammer}
-            gpsJammerEvents={layers.gpsJammer ? gpsJammerEvents : []}
+            gpsJammerEvents={layers.gpsJammer ? filteredGpsJammer : []}
             onSelectMessage={setSelected}
           />
         </div>
