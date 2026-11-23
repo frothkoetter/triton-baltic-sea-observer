@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.19-semantic-data-chat",
+  "build": "0.2.20-semantica-mcp-bridge",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

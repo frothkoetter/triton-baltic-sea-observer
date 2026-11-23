@@ -1,0 +1,78 @@
+# Triton defense — ontology ↔ Trino iceberg.defense (Semantica SEMANTICA_MAPPING_CONFIG)
+ontology_namespace: "https://w3id.org/triton/baltic-sea-observer/defense#"
+database: defense
+catalog: iceberg
+
+tables:
+  ais_events_ice: AISTrackReport
+  ships: MaritimePlatform
+  sanctioned_vessels: SanctionedMaritimePlatform
+  gps_jammer_events: GPSElectronicWarfareIndicator
+  observation_areas: SurveillanceArea
+  vessel_outliers: VesselAnomalyEvent
+  marine_messages: FormattedTacticalMessage
+  social_media_messages: OSINTSocialMediaPost
+  das_cable_spectrogram_metadata: CriticalUnderwaterInfrastructure
+  baltic_sea_harbours: PortFacility
+  nba_incidents: SituationAwarenessSummary
+
+views:
+  lagebild: SituationPictureEntry
+  area_violation: AreaViolationEvent
+  vessel_proximity: VesselProximityAssessment
+  latest_sanctioned_vessel_events: SanctionedMaritimePlatform
+
+preferred_tables:
+  SanctionedMaritimePlatform: sanctioned_vessels
+  MaritimePlatform: ships
+  AISTrackReport: ais_events_ice
+
+columns:
+  _global:
+    mmsi: platformIdentifier
+    latitude: latitude
+    longitude: longitude
+    event_timestamp: observedAt
+  ships:
+    ship_name: platformName
+    flag: flagState
+    vessel_type: platformCategory
+  sanctioned_vessels:
+    sanction_reason: sanctionReason
+    name: platformName
+  gps_jammer_events:
+    adsb_nic: navigationIntegrityCategory
+    jamming_indicator: jammingIndicator
+  lagebild:
+    Data_Source: dataSource
+    harbour_name: harbourName
+    event_time: eventTime
+
+foreign_keys:
+  - source_table: ais_events_ice
+    target_table: ships
+    source_column: mmsi
+    target_column: mmsi
+    edge_type: identifiesPlatform
+  - source_table: ais_events_ice
+    target_table: sanctioned_vessels
+    source_column: mmsi
+    target_column: mmsi
+    edge_type: identifiesSanctionedPlatform
+  - source_table: area_violation
+    target_table: observation_areas
+    source_column: area_id
+    target_column: area_id
+    edge_type: withinSurveillanceArea
+
+join_hints:
+  - id: sanctioned_latest_ais
+    classes: [SanctionedMaritimePlatform, AISTrackReport]
+    sql_pattern: |
+      SELECT sl.mmsi, sl.name, sl.sanction_reason, a.latitude, a.longitude, a.event_timestamp
+      FROM defense.sanctioned_vessels sl
+      JOIN defense.ais_events_ice a ON sl.mmsi = a.mmsi
+  - id: maritime_position
+    note: ships has no lat/lon — join ais_events_ice on mmsi
+    sql_pattern: |
+      JOIN defense.ais_events_ice a ON s.mmsi = a.mmsi

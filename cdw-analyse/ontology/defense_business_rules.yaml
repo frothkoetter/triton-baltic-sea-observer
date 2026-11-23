@@ -1,0 +1,57 @@
+# Declarative rules for defense TTYD / Semantica MCP (ontology_mapper → sql_executor)
+ontology_namespace: "https://w3id.org/triton/baltic-sea-observer/defense#"
+database: defense
+catalog: iceberg
+
+sql_agent_hints:
+  summary: >
+    Session SQL uses unqualified schema defense.* (Node qualifies to iceberg.defense at execution).
+    MaritimePlatform registry (ships) has NO latitude/longitude — use AISTrackReport (ais_events_ice) for positions.
+    SanctionedMaritimePlatform → sanctioned_vessels; live AIS via ais_events_ice.mmsi join.
+    SituationPictureEntry → VIEW lagebild (Data_Source, harbour_name, event_time).
+    AreaViolationEvent → VIEW area_violation (area_id + observation_areas.name, not area_name on view).
+    GPSElectronicWarfareIndicator → gps_jammer_events (adsb_nic, jamming_indicator, geohash).
+  qualify_note: "Prefer defense.table in plans; validator allowlists mapping_plan tables/views."
+  do_not_use:
+    - "ships.latitude — column does not exist"
+    - "ships.longitude — column does not exist"
+    - "iceberg.defense.table in Node session SQL — use defense.table placeholder"
+    - "area_violation.area_name — use area_id + observation_areas"
+  position_rule: >
+    For MaritimePlatform + AISTrackReport questions, always join ais_events_ice on mmsi (latest row via row_number window).
+
+thresholds:
+  gps_jamming_nic_threshold: 5
+  lagebild_lookback_hours: 24
+  area_violation_lookback_days: 7
+
+object_property_joins:
+  hasLatestTrack:
+    from_class: MaritimePlatform
+    from_table: ships
+    from_column: mmsi
+    to_class: AISTrackReport
+    to_table: ais_events_ice
+    to_column: mmsi
+    join_sql: "JOIN {database}.ais_events_ice a ON s.mmsi = a.mmsi"
+  hasSanctionListing:
+    from_class: SanctionedMaritimePlatform
+    from_table: sanctioned_vessels
+    from_column: mmsi
+    to_class: AISTrackReport
+    to_table: ais_events_ice
+    to_column: mmsi
+    join_sql: "JOIN {database}.ais_events_ice a ON sl.mmsi = a.mmsi"
+  violatesArea:
+    from_class: AreaViolationEvent
+    from_table: area_violation
+    from_column: area_id
+    to_class: SurveillanceArea
+    to_table: observation_areas
+    to_column: area_id
+    join_sql: "JOIN {database}.observation_areas oa ON av.area_id = oa.area_id"
+
+ttyd:
+  mapping_plan_gate: ready_for_sql
+  golden_catalog: cai-workbench/next-best-action/data/kdm_defense_classes.json
+  trino_mapping: cai-workbench/next-best-action/data/baltic_trino_mapping.json

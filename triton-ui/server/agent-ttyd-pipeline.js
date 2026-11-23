@@ -10,6 +10,7 @@ import {
 } from "./agent-ttyd.js";
 import { getKgSqlQuery } from "./agent-kg.js";
 import { semanticMappingForClasses, validateSqlMapping } from "./agent-ontology-schema.js";
+import { semanticaGroundingForClasses } from "./agent-semantica-mcp.js";
 
 function agentMapper(text, example) {
   const resolved = example ? { ok: true, example, score: 99 } : resolveGoldenExample(text);
@@ -129,6 +130,9 @@ export async function runTtydAsk({ text, queryWarehouse }) {
   const ontology_bindings = mapper.ok
     ? semanticMappingForClasses(mapper.kdm_classes)
     : [];
+  const semantica_mcp = mapper.ok
+    ? semanticaGroundingForClasses(mapper.kdm_classes)
+    : null;
   const analytic = await agentAnalytic(mapper, queryWarehouse);
   const sql_validation =
     mapper.ok && analytic.sql
@@ -141,6 +145,7 @@ export async function runTtydAsk({ text, queryWarehouse }) {
     schema: "triton-ttyd-ask/2",
     user_text: trimmed,
     ontology_bindings,
+    semantica_mcp,
     sql_validation,
     agents: {
       ontology_mapper: mapper,

@@ -9,6 +9,10 @@ type TtydAskResponse = {
   ok?: boolean;
   summary_de?: string;
   ontology_bindings?: { ontology_class: string; table: string; columns: string[] }[];
+  semantica_mcp?: {
+    graph_summary?: { graph_ready_for_sql?: boolean; backend?: string; ontology_class_count?: number };
+    sql_agent_hints?: string | null;
+  };
   sql_validation?: { ok?: boolean; warnings?: string[] };
   kg_compare?: { overlap_count?: number; tables_in_both?: string[] };
   agents?: {
@@ -50,6 +54,13 @@ function AssistantCard({ payload }: { payload: TtydAskResponse }) {
         <p className="text-muted" style={{ fontSize: 10 }}>
           KG overlap: {payload.kg_compare?.overlap_count ?? 0}
         </p>
+        {payload.semantica_mcp ? (
+          <p className="text-muted" style={{ fontSize: 10 }}>
+            Semantica MCP:{" "}
+            {payload.semantica_mcp.graph_summary?.graph_ready_for_sql ? "graph_ready_for_sql" : "snapshot"}{" "}
+            ({payload.semantica_mcp.graph_summary?.backend ?? "—"})
+          </p>
+        ) : null}
       </details>
       <details open className="dsc-step">
         <summary>
@@ -109,6 +120,7 @@ export function DataSemanticChatPage() {
   const [error, setError] = useState("");
   const [showCrew, setShowCrew] = useState(false);
   const [kgCount, setKgCount] = useState({ nodes: 0, edges: 0 });
+  const [mcpReady, setMcpReady] = useState<boolean | null>(null);
   const tailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -122,6 +134,10 @@ export function DataSemanticChatPage() {
         nodes: kg.graph?.nodes?.length ?? 0,
         edges: kg.graph?.edges?.length ?? 0,
       });
+      const sem = await fetchJson<{ graph_ready_for_sql?: boolean; node_count?: number }>(
+        "/api/agents/semantica/graph-summary"
+      );
+      setMcpReady(Boolean(sem.graph_ready_for_sql ?? sem.node_count));
     })();
   }, []);
 
@@ -182,7 +198,8 @@ export function DataSemanticChatPage() {
           </p>
         </div>
         <div className="dsc-meta text-muted" style={{ fontSize: 11 }}>
-          KG: {kgCount.nodes} Knoten / {kgCount.edges} Kanten
+          KG: {kgCount.nodes} Knoten / {kgCount.edges} Kanten · Semantica:{" "}
+          {mcpReady == null ? "…" : mcpReady ? "bereit" : "Snapshot"}
           <button type="button" className="linkish" style={{ marginLeft: 12 }} onClick={() => setShowCrew(true)}>
             Crew-Apps (Legacy)
           </button>
