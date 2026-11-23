@@ -71,6 +71,7 @@ import {
   readOntologySummary,
 } from "./agent-chat.js";
 import { buildSemanticaKgGraph, getKgSqlQuery, listKgSqlQueries } from "./agent-kg.js";
+import { listTtydCatalog, resolveGoldenExample, runTtydE2e, buildMappingPlan } from "./agent-ttyd.js";
 import {
   COOKIE_NAME,
   dataModeMeta,
@@ -525,6 +526,34 @@ app.post("/api/agents/kg-sql/:queryId/run", async (req, res) => {
     rows: result.rows,
     error: result.error,
   });
+});
+
+app.get("/api/agents/ttyd", (_req, res) => {
+  res.json(listTtydCatalog());
+});
+
+app.post("/api/agents/ttyd/resolve", (req, res) => {
+  const text = (req.body?.text ?? "").trim();
+  if (!text) return res.status(400).json({ ok: false, error: "text required" });
+  const resolved = resolveGoldenExample(text);
+  if (!resolved.ok) return res.status(404).json(resolved);
+  res.json({
+    ok: true,
+    example: resolved.example,
+    score: resolved.score,
+    mapping_plan: buildMappingPlan(resolved.example),
+  });
+});
+
+app.post("/api/agents/ttyd/e2e", async (req, res) => {
+  const text = req.body?.text;
+  const exampleId = req.body?.example_id;
+  const out = await runTtydE2e({ text, exampleId, queryWarehouse });
+  if (!out.ok) {
+    const code = out.error?.includes("Unknown") ? 404 : 400;
+    return res.status(code).json(out);
+  }
+  res.json(out);
 });
 
 app.post("/api/agents/chat", async (req, res) => {
