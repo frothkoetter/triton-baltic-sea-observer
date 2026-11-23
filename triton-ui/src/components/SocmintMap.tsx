@@ -7,6 +7,7 @@ import {
   type SocmintDensityTile,
   type SocmintMessage,
   type ThreatHotTile,
+  socmintTweetDisplay,
   threatTileColor,
   trustTagColor,
 } from "../lib/socmint";
@@ -155,23 +156,23 @@ export function SocmintMap({
                     click: () => onSelectMessage?.(m),
                   }}
                 >
-                  <Tooltip>
-                    <span className="mono">
-                      <strong>
-                        @{m.user_username} · {m.platform ?? "x"}
-                      </strong>
-                      <br />
-                      Trust: {m.trust_tag ?? "—"}
-                      {m.disinformation_flag ? " · IW" : ""}
-                      <br />
-                      {m.intel_category ?? "—"} · Prio {m.priority ?? "—"}
-                      {tile
-                        ? ` · tile P90 ${tile.sev_p90.toFixed(0)}`
-                        : ""}
-                      <br />
-                      {m.tweet.slice(0, 160)}
-                      {m.tweet.length > 160 ? "…" : ""}
-                    </span>
+                  <Tooltip className="socmint-marker-tooltip" direction="top" offset={[0, -6]}>
+                    <div className="socmint-tooltip">
+                      <div className="socmint-tooltip-meta mono">
+                        <strong>
+                          @{m.user_username} · {m.platform ?? "x"}
+                        </strong>
+                        <br />
+                        Trust: {m.trust_tag ?? "—"}
+                        {m.disinformation_flag ? " · IW" : ""}
+                        <br />
+                        {m.intel_category ?? "—"} · Prio {m.priority ?? "—"}
+                        {tile ? ` · tile P90 ${tile.sev_p90.toFixed(0)}` : ""}
+                      </div>
+                      <p className="socmint-tooltip-body">
+                        {socmintTweetDisplay(m.tweet, 220)}
+                      </p>
+                    </div>
                   </Tooltip>
                 </CircleMarker>
               );
