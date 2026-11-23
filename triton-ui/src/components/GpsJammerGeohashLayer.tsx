@@ -1,8 +1,10 @@
-import { Rectangle, Tooltip } from "react-leaflet";
+import { useMemo, useState } from "react";
+import { Rectangle, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import {
   type GpsJammerEvent,
-  gpsJammerLeafletBounds,
   gpsJammerTileFillOpacity,
+  gpsJammerVisualLeafletBounds,
+  minGpsJammerSpanDegrees,
 } from "../lib/gps-jammer";
 
 type Props = {
@@ -10,20 +12,36 @@ type Props = {
 };
 
 export function GpsJammerGeohashLayer({ events }: Props) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(() => map.getZoom());
+  useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  });
+
+  const minSpan = minGpsJammerSpanDegrees(zoom);
+
+  const tiles = useMemo(() => {
+    return events
+      .map((j) => {
+        const bounds = gpsJammerVisualLeafletBounds(j, zoom);
+        if (!bounds) return null;
+        return { event: j, bounds };
+      })
+      .filter((t): t is { event: GpsJammerEvent; bounds: [[number, number], [number, number]] } => t != null);
+  }, [events, zoom]);
+
   return (
     <>
-      {events.map((j) => {
+      {tiles.map(({ event: j, bounds }) => {
         const jamming = j.jamming_indicator !== false;
         const color = jamming ? "#E040FB" : "#BA68C8";
-        const bounds = gpsJammerLeafletBounds(j);
-        if (!bounds) return null;
         const nic = j.adsb_nic;
         return (
           <Rectangle
             key={`gpsjam-gh-${j.geohash}-${j.event_timestamp ?? ""}`}
             bounds={bounds}
             pathOptions={{
-              color: "#4A148C",
+              color: jamming ? "#F3E5F5" : "#CE93D8",
               weight: jamming ? 2 : 1,
               dashArray: jamming ? undefined : "4 3",
               fillColor: color,
@@ -43,6 +61,8 @@ export function GpsJammerGeohashLayer({ events }: Props) {
                     ? `Signal integrity ${j.signal_integrity.toFixed(2)}`
                     : "Signal integrity —"}
                   {j.harbour_name ? ` · ${j.harbour_name}` : ""}
+                  <br />
+                  Anzeige mind. {minSpan.toFixed(2)}° (Zoom {zoom})
                   <br />
                   {(j.reason ?? (jamming ? "Probable jamming (NIC<5)" : "Monitor")).slice(0, 120)}
                 </p>

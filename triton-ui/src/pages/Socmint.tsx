@@ -236,8 +236,8 @@ export function SocmintPage() {
             <span>{gpsMaxSignalIntegrity.toFixed(2)}</span>
           </label>
           <span className="text-muted">
-            Kacheln auf Karte: {gpsJammerTileCount} · Zeilen: {filteredGpsJammer.length} (geohash, keine
-            Punkt-Marker)
+            Kacheln auf Karte: {gpsJammerTileCount} · Zeilen: {filteredGpsJammer.length} (Geohash-Rechtecke,
+            bei Zoom 6 vergrößert für Sichtbarkeit)
           </span>
         </div>
       ) : null}
