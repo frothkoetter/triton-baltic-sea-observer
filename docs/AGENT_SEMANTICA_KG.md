@@ -1,5 +1,7 @@
 # Agent console — Semantica knowledge graph & Trino evidence
 
+Roadmap (multi-agent „Talk to your Data“): [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md).
+
 NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight KG view** derived from:
 
 | Source | Role |
