@@ -16,6 +16,9 @@ NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight
 | GET | `/api/agents/kg-graph` | Nodes/edges: `IncidentConcept`, `SemanticEntity`, `TrinoTable`, `RulebookRef` |
 | GET | `/api/agents/kg-sql` | Allowlisted evidence queries (metadata only) |
 | POST | `/api/agents/kg-sql/:queryId/run` | Execute one curated **SELECT** via Trino bridge |
+| GET | `/api/agents/ttyd` | KDM golden examples + TTYD SQL ids |
+| POST | `/api/agents/ttyd/resolve` | Natural language → mapping plan (MVP) |
+| POST | `/api/agents/ttyd/e2e` | KG compare + live Trino SQL for one golden example |
 
 Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 
@@ -30,8 +33,19 @@ Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 | `kg_lagebild_sources` | `lagebild.Data_Source` |
 | `kg_nba_open_incidents` | Recent `nba_incidents` |
 | `kg_socmint_trust` | SOCMINT `trust_tag` counts |
+| `ttyd_sanctioned_latest_ais` | Sanctioned + latest AIS |
+| `ttyd_gps_jamming_nic` | GPS jamming NIC &lt; 5 |
+| `ttyd_area_entry_sample` | `area_violation` enter events |
 
 SQL templates are duplicated for operators in [`cdw-analyse/agent_kg_evidence_trino.sql`](../cdw-analyse/agent_kg_evidence_trino.sql) (CML / Trino CLI).
+
+**E2E smoke (CML Session with Trino env):**
+
+```bash
+cd triton-ui && node scripts/ttyd-e2e.mjs --local
+```
+
+Data: [`kdm_defense_classes.json`](../cai-workbench/next-best-action/data/kdm_defense_classes.json) (16 KDM classes + golden examples).
 
 ## CML — run evidence SQL manually
 

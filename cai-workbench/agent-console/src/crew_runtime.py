@@ -108,7 +108,7 @@ def _crewai_reply(app: AgentApp, messages: list[dict[str, str]], onto_ctx: str) 
         f"Ontologie:\n{onto_ctx}\n\n"
         f"Konversation:\n{_history_text(messages)}\n\n"
         f"Beantworte die letzte USER-Nachricht auf Deutsch. "
-        f"Evidence über UI KG-SQL-Buttons, nicht ad-hoc SQL."
+        f"Evidence über UI KG-SQL / TTYD-E2E (/api/agents/ttyd/e2e), nicht ad-hoc SQL."
     )
     task = Task(
         description=desc,

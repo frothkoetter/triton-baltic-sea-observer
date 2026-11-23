@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.16-vessel-outlier-analytics",
+  "build": "0.2.17-talk-to-data",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

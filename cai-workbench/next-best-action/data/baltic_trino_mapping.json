@@ -12,8 +12,13 @@
       "tables": [
         {
           "table": "ships",
-          "role": "Latest AIS positions / fleet snapshot",
-          "key_columns": ["mmsi", "ship_name", "flag", "latitude", "longitude", "vessel_type"]
+          "role": "Vessel registry (static attributes); positions via ais_events_ice",
+          "key_columns": ["mmsi", "ship_name", "flag", "vessel_type", "home_port"]
+        },
+        {
+          "table": "ais_events_ice",
+          "role": "Live/historic AIS positions for MaritimeUnit",
+          "key_columns": ["mmsi", "latitude", "longitude", "event_timestamp", "sog"]
         },
         {
           "table": "german_navy_fleet",

@@ -16,7 +16,9 @@ const ONTOLOGY_FILE = path.join(DATA_DIR, "baltic_ontology.json");
 const TRINO_MAPPING_FILE = path.join(DATA_DIR, "baltic_trino_mapping.json");
 const SEMANTICA_SAMPLE = path.join(__dirname, "data", "nba-semantica-record-sample.json");
 
-const DEFENSE = "iceberg.defense";
+/** Session SQL uses defense.* — qualifyDefenseSql() → iceberg.defense.* */
+const DEFENSE = "defense";
+const DEFENSE_LABEL = "iceberg.defense";
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -159,6 +161,62 @@ export const KG_SQL_QUERIES = [
     `),
   },
   {
+    id: "ttyd_sanctioned_latest_ais",
+    label: "TTYD · SanctionedMaritimePlatform + latest AIS",
+    entity_id: "SanctionedMaritimePlatform",
+    alert_types: ["rus_fleet_proximity"],
+    description: "Golden GQ-03 — sanction_reason + last position (ais_events_ice).",
+    sql: qualify(`
+      WITH sanctioned_list AS (
+        SELECT name, mmsi, sanction_reason
+        FROM {defense}.sanctioned_vessels
+      ),
+      latest_ais AS (
+        SELECT a.mmsi, a.latitude, a.longitude, a.event_timestamp,
+          row_number() OVER (PARTITION BY a.mmsi ORDER BY coalesce(
+            try(from_iso8601_timestamp(replace(a.event_timestamp, ' ', 'T'))),
+            try_cast(a.event_timestamp AS timestamp)
+          ) DESC) AS rn
+        FROM {defense}.ais_events_ice a
+        WHERE a.mmsi IN (SELECT mmsi FROM sanctioned_list WHERE mmsi IS NOT NULL)
+      )
+      SELECT sl.mmsi, sl.name, sl.sanction_reason,
+        la.latitude, la.longitude, la.event_timestamp
+      FROM sanctioned_list sl
+      LEFT JOIN latest_ais la ON sl.mmsi = la.mmsi AND la.rn = 1
+      ORDER BY sl.name
+      LIMIT 25
+    `),
+  },
+  {
+    id: "ttyd_gps_jamming_nic",
+    label: "TTYD · ProbableGPSJamming (adsb_nic < 5)",
+    entity_id: "GPSElectronicWarfareIndicator",
+    alert_types: ["gps_jammer"],
+    description: "Golden GQ-05 — NATO NIC threshold.",
+    sql: qualify(`
+      SELECT geohash, ts AS event_timestamp, latitude, longitude, adsb_nic, jamming_indicator
+      FROM {defense}.gps_jammer_events
+      WHERE adsb_nic < 5
+      ORDER BY ts DESC
+      LIMIT 50
+    `),
+  },
+  {
+    id: "ttyd_area_entry_sample",
+    label: "TTYD · AreaViolationEvent (enter) sample",
+    entity_id: "MaritimeAnomaly",
+    alert_types: ["ais_pipeline_blackout"],
+    description: "Golden GQ-04 — area_violation VIEW + area_id.",
+    sql: qualify(`
+      SELECT av.mmsi, av.area_id, av.transition, av.event_timestamp
+      FROM {defense}.area_violation av
+      WHERE av.transition = 'enter'
+      ORDER BY av.event_timestamp DESC
+      LIMIT 20
+    `),
+  },
+  {
     id: "kg_socmint_trust",
     label: "SOCMINT · trust_tag counts",
     entity_id: "SituationPicture",
@@ -179,7 +237,7 @@ const queriesById = new Map(KG_SQL_QUERIES.map((q) => [q.id, q]));
 export function listKgSqlQueries() {
   return {
     ok: true,
-    catalog: DEFENSE,
+    catalog: DEFENSE_LABEL,
     schema: "defense",
     queries: KG_SQL_QUERIES.map(({ id, label, entity_id, alert_types, description }) => ({
       id,
@@ -225,7 +283,7 @@ export function buildSemanticaKgGraph() {
           nodes.push({
             id: tableId,
             kind: "TrinoTable",
-            label: `${DEFENSE}.${table}`,
+            label: `${DEFENSE_LABEL}.${table}`,
             table,
           });
         }
