@@ -1,3 +1,10 @@
+import {
+  encodeGeohash,
+  geohashLeafletBounds,
+  geohashMatchesPoint,
+  isValidGeohashString,
+} from "./geohash";
+
 export type GpsJammingFilter = "all" | "jamming" | "monitor";
 
 export type GpsJammerEvent = {
@@ -13,6 +20,24 @@ export type GpsJammerEvent = {
   harbour_name?: string;
 };
 
+function normalizeSignalIntegrity(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  let n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  if (n > 1 && n <= 100) n /= 100;
+  return n;
+}
+
+function resolveEventGeohash(row: Record<string, unknown>, lat: number, lon: number): string {
+  const candidates = [row.geohash, row.Geohash, row.id, row.ID];
+  for (const raw of candidates) {
+    if (!isValidGeohashString(raw)) continue;
+    const gh = String(raw).trim().toLowerCase();
+    if (geohashMatchesPoint(gh, lat, lon)) return gh;
+  }
+  return encodeGeohash(lat, lon, 6);
+}
+
 export function normalizeGpsJammerRow(row: Record<string, unknown>): GpsJammerEvent | null {
   const lat = Number(row.latitude ?? row.Latitude);
   const lon = Number(row.longitude ?? row.Longitude);
@@ -21,7 +46,7 @@ export function normalizeGpsJammerRow(row: Record<string, unknown>): GpsJammerEv
   const sigRaw = row.signal_integrity ?? row.Signal_Integrity;
   const jamRaw = row.jamming_indicator ?? row.Jamming_Indicator;
   return {
-    geohash: String(row.geohash ?? row.Geohash ?? row.id ?? ""),
+    geohash: resolveEventGeohash(row, lat, lon),
     latitude: lat,
     longitude: lon,
     event_timestamp: row.event_timestamp
@@ -30,7 +55,7 @@ export function normalizeGpsJammerRow(row: Record<string, unknown>): GpsJammerEv
         ? String(row.timestamp)
         : undefined,
     adsb_nic: nicRaw == null || nicRaw === "" ? null : Number(nicRaw),
-    signal_integrity: sigRaw == null || sigRaw === "" ? null : Number(sigRaw),
+    signal_integrity: normalizeSignalIntegrity(sigRaw),
     jamming_indicator:
       jamRaw === true || jamRaw === 1 || String(jamRaw).toLowerCase() === "true"
         ? true
@@ -78,4 +103,20 @@ export function collapseGpsJammerByGeohash(events: GpsJammerEvent[]): GpsJammerE
 export function gpsJammerTileFillOpacity(signalIntegrity: number | null | undefined): number {
   if (signalIntegrity == null || !Number.isFinite(signalIntegrity)) return 0.35;
   return Math.min(0.65, Math.max(0.12, 0.75 - signalIntegrity * 0.55));
+}
+
+/** Leaflet rectangle bounds for a jammer event (always tries lat/lon-backed geohash). */
+export function gpsJammerLeafletBounds(
+  event: GpsJammerEvent
+): [[number, number], [number, number]] | null {
+  const fromHash = geohashLeafletBounds(event.geohash);
+  if (fromHash && geohashMatchesPoint(event.geohash, event.latitude, event.longitude)) {
+    return fromHash;
+  }
+  const encoded = encodeGeohash(event.latitude, event.longitude, 6);
+  return geohashLeafletBounds(encoded);
+}
+
+export function countGpsJammerDrawableTiles(events: GpsJammerEvent[]): number {
+  return events.reduce((n, e) => (gpsJammerLeafletBounds(e) ? n + 1 : n), 0);
 }

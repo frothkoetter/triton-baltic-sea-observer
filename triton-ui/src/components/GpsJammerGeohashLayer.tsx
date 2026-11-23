@@ -1,7 +1,7 @@
 import { Rectangle, Tooltip } from "react-leaflet";
-import { geohashLeafletBounds } from "../lib/geohash";
 import {
   type GpsJammerEvent,
+  gpsJammerLeafletBounds,
   gpsJammerTileFillOpacity,
 } from "../lib/gps-jammer";
 
@@ -15,7 +15,7 @@ export function GpsJammerGeohashLayer({ events }: Props) {
       {events.map((j) => {
         const jamming = j.jamming_indicator !== false;
         const color = jamming ? "#E040FB" : "#BA68C8";
-        const bounds = geohashLeafletBounds(j.geohash);
+        const bounds = gpsJammerLeafletBounds(j);
         if (!bounds) return null;
         const nic = j.adsb_nic;
         return (
