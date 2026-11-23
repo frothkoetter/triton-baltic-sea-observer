@@ -184,17 +184,19 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [observationAreas, setObservationAreas] = useState<ObservationArea[]>([]);
   const [buoyAnalytics, setBuoyAnalytics] = useState<BuoyAnalyticsPayload | null>(null);
   const [rusFleetAnalytics, setRusFleetAnalytics] = useState<RusFleetAnalyticsPayload | null>(null);
+  const [rusFleetRegistry, setRusFleetRegistry] = useState<QueryResult | null>(null);
   const [outlierAnalytics, setOutlierAnalytics] = useState<VesselOutlierAnalyticsPayload | null>(null);
 
   const filterQs = aisAnalyticsQuery(filters);
 
   useEffect(() => {
     void (async () => {
-      const [fa, fr, bu, ru, vo, s, rz, areas] = await Promise.all([
+      const [fa, fr, bu, ru, rfr, vo, s, rz, areas] = await Promise.all([
         fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         fetchJson<QueryResult>("/api/analyses/fleet"),
         fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
+        fetchJson<QueryResult>("/api/analyses/rus-fleet"),
         fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
         fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
         fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
@@ -204,6 +206,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
       setFleetRegistry(fr);
       setBuoyAnalytics(bu);
       setRusFleetAnalytics(ru);
+      setRusFleetRegistry(rfr);
       setOutlierAnalytics(vo);
       setSanctionedAnalytics(s);
       setRestrictedAnalytics(rz);
@@ -398,7 +401,27 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             max SOG), Heimathafen-Distanz, <code>observation_areas</code> (ST_Within). Quelle:{" "}
             {rusFleetAnalytics?.source ?? "…"}
             {rusFleetAnalytics?.fallbackReason ? ` — fallback (${rusFleetAnalytics.fallbackReason})` : ""}
+            {rusFleetRegistry?.deduped ? " · Stammdaten dedupliziert (MMSI)" : ""}
           </p>
+          <section className="panel" style={{ marginBottom: 12 }}>
+            <h2 className="panel-title">Stammdaten — rus_fleet</h2>
+            <p className="panel-subtitle">
+              Eine Zeile pro MMSI (Russische Ostseeflotte). Quelle: {rusFleetRegistry?.source ?? "…"}
+            </p>
+            <DataTable
+              columns={[
+                "class",
+                "name",
+                "mmsi",
+                "jahr_in_dienst",
+                "besatzung",
+                "home_base",
+                "vessel_category",
+                "default_mission_state",
+              ]}
+              rows={rusFleetRegistry?.rows ?? []}
+            />
+          </section>
           <div className="kpi-row">
             <div className="kpi">
               <div className="kpi-value">{rusKpis.registered}</div>

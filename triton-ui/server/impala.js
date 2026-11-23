@@ -371,7 +371,7 @@ export async function getPositionTracks(opts = {}) {
   };
 }
 
-function dedupeFleetRowsByMmsi(rows) {
+function dedupeRowsByMmsi(rows) {
   if (!Array.isArray(rows) || rows.length === 0) return rows;
   const seen = new Set();
   const out = [];
@@ -387,7 +387,19 @@ function dedupeFleetRowsByMmsi(rows) {
 export async function getFleet() {
   const res = await runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
   if (res.rows?.length) {
-    const deduped = dedupeFleetRowsByMmsi(res.rows);
+    const deduped = dedupeRowsByMmsi(res.rows);
+    if (deduped.length !== res.rows.length) {
+      res.rows = deduped;
+      res.deduped = true;
+    }
+  }
+  return res;
+}
+
+export async function getRusFleet() {
+  const res = await runQueryOrSample(PREDEFINED.rusFleet, () => []);
+  if (res.rows?.length) {
+    const deduped = dedupeRowsByMmsi(res.rows);
     if (deduped.length !== res.rows.length) {
       res.rows = deduped;
       res.deduped = true;

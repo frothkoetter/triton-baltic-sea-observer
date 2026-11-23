@@ -28,6 +28,38 @@ const GERMAN_FLEET_UNIQUE = `(
   WHERE gnf.rn = 1
 )`;
 
+const RUS_FLEET_UNIQUE = `(
+  SELECT
+    class,
+    name,
+    mmsi,
+    jahr_in_dienst,
+    besatzung,
+    home_base,
+    base_role,
+    data_source,
+    hull_number,
+    vessel_category,
+    default_mission_state
+  FROM (
+    SELECT
+      class,
+      name,
+      mmsi,
+      jahr_in_dienst,
+      besatzung,
+      home_base,
+      base_role,
+      data_source,
+      hull_number,
+      vessel_category,
+      default_mission_state,
+      row_number() OVER (PARTITION BY mmsi ORDER BY name) AS rn
+    FROM defense.rus_fleet
+  ) rnf
+  WHERE rnf.rn = 1
+)`;
+
 /** Latest AIS row per MMSI (Filter Rail predicates on `ships`). */
 export function buildAisLatestSnapshotCte(filters = {}) {
   const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
@@ -496,7 +528,7 @@ export function buildRussianFleetTrackSql(filters = {}) {
       p.event_timestamp,
       'rus_fleet' AS track_kind
     FROM defense.rus_naval_fleet_positions p
-    LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+    LEFT JOIN ${RUS_FLEET_UNIQUE} rf ON p.mmsi = rf.mmsi
     WHERE ${predicates.join("\n      AND ")}
     ORDER BY p.mmsi, ${tsParse("p.event_timestamp")} ASC
     LIMIT 15000
@@ -516,6 +548,20 @@ export const PREDEFINED = {
     SELECT class, name, mmsi, jahr_in_dienst, besatzung
     FROM ${GERMAN_FLEET_UNIQUE} g
     ORDER BY class, name
+    LIMIT 200
+  `,
+  rusFleet: `
+    SELECT
+      class,
+      name,
+      mmsi,
+      jahr_in_dienst,
+      besatzung,
+      home_base,
+      vessel_category,
+      default_mission_state
+    FROM ${RUS_FLEET_UNIQUE} r
+    ORDER BY home_base, class, name
     LIMIT 200
   `,
   sanctions: `
@@ -683,7 +729,7 @@ export const PREDEFINED = {
           ) DESC
         ) AS rn
       FROM defense.rus_naval_fleet_positions p
-      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      LEFT JOIN ${RUS_FLEET_UNIQUE} rf ON p.mmsi = rf.mmsi
       WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
         AND coalesce(
           try(from_iso8601_timestamp(p.event_timestamp)),
@@ -891,7 +937,7 @@ export const PREDEFINED = {
           ORDER BY ${tsParse("p.event_timestamp")} DESC
         ) AS rn
       FROM defense.rus_naval_fleet_positions p
-      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      LEFT JOIN ${RUS_FLEET_UNIQUE} rf ON p.mmsi = rf.mmsi
       WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
     ),
     movement AS (
@@ -972,7 +1018,7 @@ export const PREDEFINED = {
           ORDER BY ${tsParse("p.event_timestamp")} DESC
         ) AS rn
       FROM defense.rus_naval_fleet_positions p
-      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      LEFT JOIN ${RUS_FLEET_UNIQUE} rf ON p.mmsi = rf.mmsi
     ),
     movement AS (
       SELECT mmsi, MAX(speed) AS max_sog_24h
@@ -1010,13 +1056,13 @@ export const PREDEFINED = {
   `,
   rusAnalyticsCategoryMix: `
     SELECT COALESCE(vessel_category, 'unknown') AS name, COUNT(*) AS value
-    FROM defense.rus_fleet
+    FROM ${RUS_FLEET_UNIQUE}
     GROUP BY 1
     ORDER BY 2 DESC
   `,
   rusAnalyticsHomeBaseMix: `
     SELECT COALESCE(home_base, 'unknown') AS name, COUNT(*) AS value
-    FROM defense.rus_fleet
+    FROM ${RUS_FLEET_UNIQUE}
     GROUP BY 1
     ORDER BY 2 DESC
   `,
@@ -1039,7 +1085,7 @@ export const PREDEFINED = {
           ORDER BY ${tsParse("p.event_timestamp")} DESC
         ) AS rn
       FROM defense.rus_naval_fleet_positions p
-      LEFT JOIN defense.rus_fleet rf ON p.mmsi = rf.mmsi
+      LEFT JOIN ${RUS_FLEET_UNIQUE} rf ON p.mmsi = rf.mmsi
       WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
     )
     SELECT
