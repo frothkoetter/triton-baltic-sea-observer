@@ -58,48 +58,112 @@ Use **`triton-trino`** in `TRINO_JDBC_URL` and `LAGEBILD_TRINO_HOST`. Mirror `LA
 
 ## 3. Recommended job schedule
 
-| Cron (example) | Script | Purpose |
-|----------------|--------|---------|
-| `45 * * * *` | `cai-workbench/trino-jobs/cml_job.py` | `TRINO_JOB=outliers` → `vessel_outliers` |
-| `50 * * * *` (weekly / after DDL) | same | `TRINO_JOB=lagebild_views` → refresh `lagebild` views |
-| `0 * * * *` | `cai-workbench/situation-awareness/cml_job.py` | **UC1** hourly SITREP |
-| `5 * * * *` | `cai-workbench/next-best-action/cml_job.py` | **UC2** alert detection + NBA pipeline |
+| Cron (example) | Script | Job env | Purpose |
+|----------------|--------|---------|---------|
+| `45 * * * *` | `cai-workbench/trino-jobs/cml_job.py` | `TRINO_JOB=outliers` | `vessel_outliers`, threat tile sketches |
+| `50 * * * *` | same | `TRINO_JOB=socmint_sketch` | SOCMINT trust MERGE (after Step 9 sketches) |
+| `55 * * * *` (weekly / after DDL) | same | `TRINO_JOB=lagebild_views` | refresh `lagebild` / `lagebild_all_events` |
+| `0 * * * *` | `cai-workbench/situation-awareness/cml_job.py` | — | **UC1** hourly SITREP |
+| `5 * * * *` | `cai-workbench/next-best-action/cml_job.py` | — | **UC2** alert detection + NBA pipeline |
 
-Run **outliers** before **UC1** so `lagebild` includes `AIS_Outlier` rows.
+Run **outliers** (and optionally **socmint_sketch**) before **UC1** so `lagebild` / SITREP see outliers and corroborated SOCMINT.
+
+Full **`TRINO_*` env reference:** [`trino-jobs/README.md`](trino-jobs/README.md).
 
 ---
 
-## 4. Job A — Trino outliers (feeds UC1)
+## 4. CAI Trino batch — `cml_job.py` (Jobs A / A2 / A3)
+
+One Python script, **three optional scheduled jobs** — differentiate only via **Job → Environment** (`TRINO_JOB`).
+
+### Wizard (all variants)
 
 | Field | Value |
 |-------|--------|
-| Type | **Scheduled Job** |
-| Python script | `cai-workbench/trino-jobs/cml_job.py` |
+| Type | **Scheduled Job** *(not a notebook)* |
+| Python script | **`cai-workbench/trino-jobs/cml_job.py`** |
 | Kernel | Python 3 |
-| Arguments | none (use env only) |
+| Arguments | none |
+| Build once | `bash cai-workbench/trino-jobs/cdsw-build.sh` |
 
-**Job environment**
+Project must be the **full repo** at `/home/cdsw` (needs `cdw-analyse/*.sql`).
 
-| Variable | Value |
-|----------|--------|
-| `TRINO_USER` / `TRINO_PASSWORD` | CDW credentials |
-| `TRINO_JDBC_URL` | `jdbc:trino://triton-trino.…/iceberg/defense` |
+### Shared environment (project or job)
+
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `TRINO_USER` | yes* | CDW user |
+| `TRINO_PASSWORD` | yes* | CDW password |
+| `TRINO_JDBC_URL` | recommended | `jdbc:trino://triton-trino.…:443/iceberg/defense` |
+| `TRINO_CATALOG` | optional | default `iceberg` |
+| `TRINO_SCHEMA` | optional | default `defense` |
+| `TRINO_HOST` / `TRINO_PORT` | optional | used if JDBC omitted (`443`) |
+
+\* **Alternative:** set only **`LAGEBILD_TRINO_USER`**, **`LAGEBILD_TRINO_PASSWORD`**, **`LAGEBILD_TRINO_HOST`**, **`LAGEBILD_TRINO_PORT`**, **`LAGEBILD_TRINO_CATALOG`**, **`LAGEBILD_TRINO_SCHEMA`** (and optionally **`LAGEBILD_TRINO_JDBC_URL`**) on the **project** — `cml_job.py` copies into `TRINO_*` when those are unset on the job.
+
+**Per-job selector**
+
+| Variable | Job A | Job A2 | Job A3 |
+|----------|-------|--------|--------|
+| `TRINO_JOB` | `outliers` *(default if omitted)* | `socmint_sketch` | `lagebild_views` |
+
+**Optional DDL runner** (usually not needed on CML after initial `setup_cdw_trino_local.sh`):
+
+| Variable | Typical |
+|----------|---------|
+| `TRINO_SCHEMA_PREFLIGHT` | `auto` |
+| `TRINO_SKIP_CREATE_SCHEMA` | `1` |
+| `TRINO_CONTINUE_ON_ERROR` | `1` for outliers/socmint *(set automatically by runner)* |
+| `TRINO_JOB_DEBUG` | `1` when debugging paths |
+
+Template: [`scripts/cml/triton-project.env.example`](../scripts/cml/triton-project.env.example).
+
+### Job A — outliers (feeds UC1 map + SITREP)
+
+| | |
+|--|--|
+| Schedule | `45 * * * *` |
 | `TRINO_JOB` | `outliers` |
-
-Optional: same as project via `LAGEBILD_TRINO_*` (job copies into `TRINO_*`).
-
-**Session test**
+| Runs | `cdw-analyse/outlier_detection_trino.sql` |
 
 ```bash
 export TRINO_JOB=outliers
 python3 cai-workbench/trino-jobs/cml_job.py
 ```
 
-**Verify**
-
 ```sql
 SELECT Outlier_Type, COUNT(*) FROM iceberg.defense.vessel_outliers GROUP BY 1;
+SELECT COUNT(*) FROM iceberg.defense.baltic_threat_tile_sketches;
 ```
+
+### Job A2 — SOCMINT sketch verification
+
+| | |
+|--|--|
+| Schedule | `50 * * * *` *(after Job A)* |
+| `TRINO_JOB` | `socmint_sketch` (aliases: `socmint`, `socmint_verify`) |
+| Runs | `cdw-analyse/socmint_sketch_verification_trino.sql` |
+
+```bash
+export TRINO_JOB=socmint_sketch
+python3 cai-workbench/trino-jobs/cml_job.py
+```
+
+Requires **`baltic_threat_tile_sketches`** from Job A. Verify: `SELECT trust_tier, COUNT(*) FROM iceberg.defense.social_media_messages GROUP BY 1;`
+
+### Job A3 — Lagebild view refresh
+
+| | |
+|--|--|
+| Schedule | weekly or after `create_db_tables_trino.sql` changes |
+| `TRINO_JOB` | `lagebild_views` |
+| Runs | `cdw-analyse/run_lagebild_views.py` |
+
+```sql
+SELECT Data_Source, COUNT(*) FROM iceberg.defense.lagebild GROUP BY 1;
+```
+
+Expect **`OK statements: 2/2`**. If `0/2` or syntax error, `git pull origin main` (see [`trino-jobs/README.md`](trino-jobs/README.md)).
 
 ---
 
@@ -223,7 +287,9 @@ Deploy UI: `triton-ui/entry.py` Application — see [`triton-ui/APPLICATION_TROU
 | Symptom | Action |
 |---------|--------|
 | Job log shows `Cell In[` | Job must use `cml_job.py`, not notebook |
-| Outliers `SystemExit: 0` + `OK statements: N` | Trino OK — Jupyter false failure; Scheduled Job + latest `trino-jobs/cml_job.py` |
+| Outliers `SystemExit: 0` + `OK statements: N` | Trino OK — Jupyter false failure; use Scheduled Job + latest `trino-jobs/cml_job.py` |
+| Outliers `TABLE_NOT_FOUND` on `baltic_threat_tile_sketches` | `git pull main` (CREATE TABLE in Step 9); re-run `TRINO_JOB=outliers` before socmint |
+| SOCMINT `MERGE_TARGET_ROW_MULTIPLE_MATCHES` | `git pull main` (grouped MERGE source in `socmint_sketch_verification_trino.sql`) |
 | UC1 `missing … fpdf2` | Session: `cd cai-workbench/situation-awareness && pip install -r requirements.txt`; or `LAGEBILD_AUTO_PIP=1` (default) on job — `cml_job.py` auto-installs once |
 | Log shows `Cell In[` | Use **Scheduled Job** script `cml_job.py`, not notebook cells |
 | Trino `error 404` | Host `triton-trino.*`; VW **Running** |

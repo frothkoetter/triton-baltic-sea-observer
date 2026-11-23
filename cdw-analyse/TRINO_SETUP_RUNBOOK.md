@@ -294,13 +294,16 @@ See `triton-ui/APPLICATION_TROUBLESHOOTING.md` for **Starting** / port mismatch 
 
 ---
 
-## 11. UC1 & UC2 CML scheduled jobs
+## 11. CML Trino batch jobs + UC1 & UC2
 
-After Trino and DDL are green, configure hourly **Situation awareness (UC1)** and **Next Best Action (UC2)** jobs:
+After Trino and DDL are green:
 
-**[cai-workbench/CML_UC_JOBS_SETUP.md](../cai-workbench/CML_UC_JOBS_SETUP.md)**
+| Doc | Content |
+|-----|---------|
+| **[cai-workbench/trino-jobs/README.md](../cai-workbench/trino-jobs/README.md)** | **`cml_job.py`** wizard fields, **`TRINO_JOB`**, full **`TRINO_*` / `LAGEBILD_TRINO_*` env** table |
+| **[cai-workbench/CML_UC_JOBS_SETUP.md](../cai-workbench/CML_UC_JOBS_SETUP.md)** | Cron order (outliers → socmint → UC1 → UC2), UC1/UC2 job env, UI alignment |
 
-Includes cron order (outliers → UC1 → UC2), wizard fields, environment tables, and UI alignment.
+Minimum Trino batch job: Scheduled Job → `cai-workbench/trino-jobs/cml_job.py`, project `TRINO_USER` / `TRINO_PASSWORD` / `TRINO_JDBC_URL`, job override **`TRINO_JOB=outliers`**.
 
 ---
 
