@@ -1,6 +1,6 @@
 # Agent console — Semantica knowledge graph & Trino evidence
 
-Vollständiger TTYD-Plan: [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md) · Build **0.2.18-ttyd-full**.
+Roadmap (multi-agent „Talk to your Data“): [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md) · Build **0.2.20-semantica-mcp-bridge**.
 
 NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight KG view** derived from:
 
