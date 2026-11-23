@@ -1,8 +1,8 @@
 # DAS cable threat classifier (Cloudera AI)
 
-Klassifiziert **Seekabel-DAS-Spektrogramme** (HDF5 aus NiFi `DasCableAcousticSimulator`) nach Ereignistyp — Ankerschleifen, CUI-Sabotage-Tapping, Trawler, Schiffspassage, etc.
+Klassifiziert **Seekabel-DAS-Spektrogramme** (HDF5 aus NiFi `DasCableAcousticSimulator`) nach Ereignistyp — Anker, CUI, Trawler, Schiffspassage, Walruf, U-Boot-Tonal usw.
 
-Spiegelbild von [`lidar-vessel-classifier`](../lidar-vessel-classifier/): `fit.py` trainiert, `predict.py` scored HDF5 oder Feature-Vektoren.
+Spiegelbild von [`lidar-vessel-classifier`](../lidar-vessel-classifier/): `train.py` / `fit.py` trainieren, `predict.py` scored HDF5 oder Feature-Vektoren in CML **Model Deployment**.
 
 ## Datenquelle
 
@@ -10,74 +10,146 @@ Spiegelbild von [`lidar-vessel-classifier`](../lidar-vessel-classifier/): `fit.p
 |------------|------|
 | NiFi Prozessor | `nifi-processors/upload/DasCableAcousticSimulator.py` |
 | Engine + HDF5 | `nifi-processors/upload/das_acoustic_engine.py` |
-| Kabel (NiFi Property **Cable Asset**) | `BALTICCONNECTOR` (Default), `NORD_STREAM_1`, `NORD_STREAM_2`, `PCABLE_BSH_1`–`4` — WKT aus `ostsee_infrastruktur` |
+| Kabel (NiFi Property **Cable Asset**) | `BALTICCONNECTOR` (Default), `NORD_STREAM_1`, `NORD_STREAM_2`, `PCABLE_BSH_1`–`4`, `RANDOM` |
 
-Schema: `triton/das-cable/v1` — Gruppe `segments/seg_XXX` mit `channels`, `spectrogram`, `frequencies_hz`, `threat_class` (Ground Truth für Training). Vollständige NiFi- und UI-Doku: [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md).
+Schema: `triton/das-cable/v1` — HDF5-Gruppe `segments/seg_XXX` mit `spectrogram`, `frequencies_hz`, Attribut **`threat_class`** (Ground Truth).
 
-## Schnellstart (Session / lokal)
+End-to-end NiFi, Iceberg, NATO UI: [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md).
+
+---
+
+## Model artifacts (Git vs Workspace)
+
+| Datei | In Git? | Rolle |
+|-------|---------|--------|
+| **`bundled/model.pkl`** | **ja** | Standardmodell für Deploy (aktuell **11 Klassen**, sklearn `Pipeline`) |
+| **`bundled/label_names.json`** | ja | Label-Liste (muss zu `clf.classes_` passen) |
+| **`model.pkl`** (Projekt-Root) | nein (`.gitignore`) | Laufzeit-Kopie für CML Build / Session; `cdsw-build.sh` kopiert aus `bundled/` |
+| **`artifacts/`** | nein | Training: `model.joblib`, `training_meta.json`, `training_rows.csv` |
+
+**Trainiertes Modell ins Repo übernehmen** (nach Session oder Upload):
 
 ```bash
-cd ~/cai-workbench/das-cable-classifier   # CML: volles Git-Repo nötig (nifi-processors/upload)
-pip install -r requirements.txt
-python3 train.py --cable BALTICCONNECTOR --batches 120
+cd cai-workbench/das-cable-classifier
+cp -f /pfad/zu/model.pkl bundled/model.pkl
+cp -f bundled/model.pkl model.pkl
+python3 -c "import joblib; c=list(joblib.load('bundled/model.pkl').named_steps['clf'].classes_); import json; json.dump(c, open('bundled/label_names.json','w'), indent=2)"
+git add bundled/model.pkl bundled/label_names.json
+```
+
+Dann `git push` → auf CML `git pull` → Model **neu deployen** (siehe unten).
+
+---
+
+## Threat classes (11)
+
+Abgestimmt mit `das_acoustic_engine.THREAT_CLASSES` und `src/labels.py`:
+
+`ambient`, `vessel_passage`, `trawler_scrape`, `anchor_drag`, `anchor_slip`, `anchor_drop_tow`, `cui_sabotage_tap`, `cable_strain_anomaly`, `uboat_acoustic`, `whale_vocalization`, `hard_beep`
+
+**Trino:** Spalte **`threat_class`** = Simulator-GT. **`predicted_threat_type`** = Output dieses Modells (NiFi InvokeHTTP). NATO UI Tab **#das**: Filter **Ground truth** vs **ML** — siehe DAS-Format-Doku.
+
+Ältere Bundles mit nur **6** Klassen neigten zu ML-Bias (`cable_strain_anomaly`). Repo-`bundled/model.pkl` auf `main` enthält **11** Klassen (RandomForest, 200 Bäume).
+
+---
+
+## Schnellstart (CML Session)
+
+Voraussetzung: **volles Git-Repo** (`nifi-processors/upload` für `das_acoustic_engine`).
+
+```bash
+cd ~
+git pull origin main
+cd cai-workbench/das-cable-classifier
+python3 -m pip install -r requirements.txt
+
+# Synthetisches Training (NiFi-kompatible Features)
+python3 train.py --cable BALTICCONNECTOR --batches 120 --seed 42
 python3 scripts/validate_nifi_ml.py
 ```
 
-### CML: Modell neu trainieren
+Ergebnis: `model.pkl`, `bundled/model.pkl`, `artifacts/training_meta.json`.
 
-| Schritt | Aktion |
-|--------|--------|
-| 1 | Projekt-Working Dir = **Repo-Root** (`/home/cdsw`). `git pull origin main`. |
-| 2 | **Session** (empfohlen): `cd cai-workbench/das-cable-classifier` → `python3 train.py --batches 120` (alle **11** `THREAT_CLASSES` aus `das_acoustic_engine`). |
-| 3 | Oder **Experiment**: Script `cai-workbench/das-cable-classifier/fit.py`, Kernel Python 3. |
-| 4 | Prüfen: `artifacts/training_meta.json`, `model.pkl`, `bundled/model.pkl`, `bundled/label_names.json`. |
-| 5 | **Model deploy** neu: Engine Build `cdsw-build.sh`, Entry **`predict.py`**, Input **`predict`**. Files: `predict.py`, `src/`, `model.pkl`, `bundled/`, `requirements.txt`. |
-| 6 | NiFi InvokeHTTP: JsonPath `$.response.threat_type` → `predicted_threat_type` (siehe `NIFI_INVOKEHTTP.md`). |
+---
 
-**Fehler `ModuleNotFoundError: das_acoustic_engine`:** Session nicht im Klassifier-Ordner / Repo ohne `nifi-processors/upload` — `train.py` importiert die NiFi-Engine.
+## CML Experiment
 
-**Fehler `import train` in fit.py:** `fit.py` wechselt jetzt automatisch nach `cai-workbench/das-cable-classifier` (nicht nur `/home/cdsw`).
+| Feld | Wert |
+|------|------|
+| Script | `cai-workbench/das-cable-classifier/fit.py` |
+| Kernel | Python 3 |
 
-**Nur 6 Klassen im alten Bundled-Modell:** Nach Training enthält `label_names.json` alle vom Simulator gesampelten Klassen; NiFi schreibt `predicted_threat_type` — UI „ML“ vs Trino `threat_class` (GT).
+`fit.py` wechselt automatisch ins Klassifier-Verzeichnis (nicht nur `/home/cdsw`).
 
-`validate_nifi_ml.py` erzeugt ein NiFi-kompatibles HDF5-Batch, extrahiert Features wie der Flow und vergleicht Predictions mit synthetischer Ground Truth.
+---
 
-## CML
+## Model Deployment (predict)
 
-| Artefakt | Rolle |
-|----------|--------|
-| `fit.py` | Experiment — Training |
-| `predict.py` | Model Deployment — `predict({ "hdf5_bytes_base64": "..." })` |
-| `model.pkl` | Gesynct von Training oder Build (`bundled/model.pkl` → Root) |
-| `cdsw-build.sh` | Engine Build — `pip install` + Kopie `bundled/model.pkl` |
-| `bundled/model.pkl` | Vorgefertigtes Modell im Repo (Deploy ohne Experiment) |
+| Feld | Wert |
+|------|------|
+| Projektordner | Repo-Root oder `cai-workbench/das-cable-classifier` |
+| Entry | **`predict.py`** (Datei — **kein** Notebook) |
+| Input function | **`predict`** |
+| Build | `bash cdsw-build.sh` |
 
-**Model deploy:** Projektordner `cai-workbench/das-cable-classifier`, Entry **`predict.py`** (Datei — **kein** Notebook), Input function **`predict`**. Build engine = `cdsw-build.sh`. Fehler `__file__ is not defined` → Model läuft Notebook-Code; Entry auf `predict.py` setzen und neu deployen.
+**Nach `git pull` mit neuem `bundled/model.pkl`:**
 
-CML kopiert oft **kein** `bundled/` ins Model-Image (Build-Log `transferring context: 3kB`). Dann erzeugt `cdsw-build.sh` per `scripts/build_model_for_deploy.py` ein **`model.pkl`** (synthetisch, ~1 Min). Besser: unter Model **Files** auch `bundled/model.pkl` + `bundled/label_names.json` + `src/` mit aufnehmen, oder vor Deploy `python3 train.py` laufen lassen und **`model.pkl`** im Projekt root belassen (nicht gitignored im Workspace — wird mit ins Image genommen, wenn die Datei im Projekt liegt).
+```bash
+cd cai-workbench/das-cable-classifier
+git pull origin main
+cp -f bundled/model.pkl model.pkl
+bash cdsw-build.sh
+# CML UI → Models → Rebuild engine + Redeploy
+```
 
-Fehler `FileNotFoundError: ... /home/cdsw/model.pkl` — **alter** `predict.py` (ohne `bundled/`-Fallback). Im Projekt prüfen: `head -3 predict.py` enthält `_model_pkl_path`. Dann **Engine neu bauen** (`cdsw-build.sh`) und **Model neu deployen** (nicht nur Session). `model.pkl` ist gitignored — Build kopiert `bundled/model.pkl`. Logs zeigen `das-cable-classifier: loading …` bei Erfolg.
+**Model Files** (wenn Build-Context klein ist): `predict.py`, `cml_root.py`, `src/`, `requirements.txt`, `bundled/model.pkl`, `bundled/label_names.json`.
+
+CML kopiert manchmal kein `bundled/` (Build-Log `transferring context: 3kB`). Dann fällt `cdsw-build.sh` auf `scripts/build_model_for_deploy.py` zurück (schnelles **synthetisches** 11-Klassen-Modell — für Demo, nicht für Produktion). **Lösung:** `bundled/` explizit in Model-Files oder frisch `train.py` + `model.pkl` im Root vor Deploy.
+
+**Logs bei Erfolg:** `das-cable-classifier: loading …/model.pkl` (stderr aus `predict.py`).
+
+NiFi-Anbindung: [`NIFI_INVOKEHTTP.md`](NIFI_INVOKEHTTP.md).
 
 ### predict API
 
+HDF5 inline:
+
+```json
+{ "hdf5_bytes_base64": "<base64>" }
+```
+
+S3 (CML Data Connection **S3 Object Store**, oder Env — siehe `src/s3_client.py`):
+
 ```json
 {
-  "hdf5_bytes_base64": "<base64 von NiFi FlowFile (HDF5)>"
+  "request": {
+    "uri": "s3a://bucket/.../das_balticconnector_6seg.h5",
+    "segment_index": "2"
+  }
 }
 ```
 
-Oder HDF5 aus S3 (CML data connection **S3 Object Store**, oder `DAS_S3_CONNECTION_NAME`):
+Antwort (rollup): `threat_type`, `confidence`, `predictions[]` optional.
 
-```json
-{
-  "uri": "s3a://triton-buk-…/data/user/…/das/das_balticconnector_6seg.h5"
-}
-```
+---
 
-(`s3_uri`, `s3a_uri`, `hadoop_file_url` werden ebenfalls akzeptiert.)
+## Troubleshooting
 
-Antwort: `threat_type`, `confidence`, `probabilities`, optional `ground_truth` wenn im HDF5.
+| Problem | Lösung |
+|---------|--------|
+| `ModuleNotFoundError: das_acoustic_engine` | `cd cai-workbench/das-cable-classifier`; Repo mit `nifi-processors/upload` |
+| `import train` in altem `fit.py` | `git pull` (fix ab 2026-11) |
+| `FileNotFoundError: model.pkl` | `cdsw-build.sh`; `bundled/model.pkl` committen oder trainieren |
+| `__file__ is not defined` | Model-Entry auf **`predict.py`**, nicht Notebook |
+| ML nur `cable_strain_anomaly` in UI | Altes Modell / falsche Klasse — **Redeploy** mit 11-Klassen-`bundled/model.pkl`; UI kurz **ML** vs **Ground truth** vergleichen |
+| NiFi leere `predicted_threat_type` | JsonPath `$.response.threat_type`, Request mit `segment_index` — siehe NIFI-Doku |
 
-## Klassen
+---
 
-`ambient`, `vessel_passage`, `trawler_scrape`, `anchor_drag`, `cui_sabotage_tap`, `cable_strain_anomaly`
+## Referenzen
+
+| Dokument | Inhalt |
+|----------|--------|
+| [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../../docs/DAS_NIFI_AND_UI_FORMAT.md) | HDF5, Iceberg, UI, S3 preview |
+| [`nifi-processors/docs/DAS_NIFI_METADATA_MAP.md`](../../nifi-processors/docs/DAS_NIFI_METADATA_MAP.md) | Attribute → Tabelle |
+| [`NIFI_INVOKEHTTP.md`](NIFI_INVOKEHTTP.md) | InvokeHTTP + EvaluateJsonPath |

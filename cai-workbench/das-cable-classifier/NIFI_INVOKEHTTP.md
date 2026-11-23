@@ -2,6 +2,8 @@
 
 Same gateway pattern as [lidar-vessel-classifier/NIFI_INVOKEHTTP.md](../lidar-vessel-classifier/NIFI_INVOKEHTTP.md), but the response has **`threat_type`** / **`predictions[]`**, not `vessel_type`.
 
+**Model:** `cai-workbench/das-cable-classifier/bundled/model.pkl` (11 threat classes — see [README.md](README.md)). After `git pull`, run `cdsw-build.sh` and **redeploy** the CML model so NiFi does not call an old 6-class endpoint.
+
 ## Request body (after PutCDPObjectStore)
 
 Pass the simulator primary segment so the model returns **flat** fields for EvaluateJsonPath (no array index in JsonPath):

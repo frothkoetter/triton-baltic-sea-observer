@@ -59,7 +59,7 @@ On NiFi, shared **`upload/requirements.txt`** must stay **empty** (NiFi runs it 
 - **`ModuleNotFoundError: No module named 'socmint_catalog'`** — deploy **`socmint_catalog.py`** next to **`MessengerSimulator.py`** under `python/extensions/` (full `upload/` sync). `MessengerSimulator` adds `python/extensions` to `sys.path` like `STANAGSimulator`; without both files the processor stays invalid.
 - **`Failed to install requirements`** — often **`[Errno 28] No space left on device`** while pip installs shared `requirements.txt` into `/var/opt/nifi/python/work/extensions/...`. Fix: empty `requirements.txt` on the NiFi host, delete stale dirs under `.../python/work/extensions/`, redeploy `MessengerSimulator.py` (`dependencies = []`), restart processor.
 
-**DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.2.2** — `Cable Asset` includes **RANDOM**; unique `filename` for PutCDPObjectStore; WGS84 attrs; CML `das-cable-classifier`.
+**DAS cable:** **`upload/DasCableAcousticSimulator.py` 1.2.2** — `Cable Asset` includes **RANDOM**; unique `filename` for PutCDPObjectStore; WGS84 attrs; optional CML **`das-cable-classifier`** (`predict.py`, 11 classes) → `predicted_threat_type` — [`cai-workbench/das-cable-classifier/README.md`](../cai-workbench/das-cable-classifier/README.md), [`docs/DAS_NIFI_AND_UI_FORMAT.md`](../docs/DAS_NIFI_AND_UI_FORMAT.md).
 
 **STANAG:** **`upload/STANAGSimulator.py` 2.0.0** — exercise traffic profiles (`watch_section`, `major_exercise`, …), HQ ↔ unit ↔ unit mixes, `text_bundle` or `ndjson`. Engine: **`stanag_message_engine.py`**. Tests: `tests/test_stanag_message_engine.py`.
 
