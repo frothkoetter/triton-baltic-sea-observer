@@ -49,6 +49,21 @@ AGENT_APPS: tuple[AgentApp, ...] = (
         starter_prompt="Welche OPSEC-Regeln gelten bei GPS jamming?",
     ),
     AgentApp(
+        app_id="talk-to-data",
+        title="Talk to your Data",
+        subtitle="Mapper → SQL → Synthese (live Trino)",
+        role="Ontology-Driven Data Analyst",
+        goal=(
+            "Map natural language to KDM classes and run allowlisted Trino evidence. "
+            "UI uses POST /api/agents/ttyd/ask (3-agent pipeline)."
+        ),
+        backstory=(
+            "Du orchestrierst Ontology Mapper, SQL Executor und Answer Synthesizer "
+            "gegen iceberg.defense — kein freies SQL."
+        ),
+        starter_prompt="SanctionedMaritimePlatform mit letzter AISTrackReport-Position und sanction_reason?",
+    ),
+    AgentApp(
         app_id="semantica-curator",
         title="Semantica-Kurator",
         subtitle="KG, SHACL, MCP-Brücke",

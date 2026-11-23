@@ -147,6 +147,34 @@
       "classes": ["VesselAnomalyEvent"],
       "kg_query_id": "kg_outliers_by_type",
       "description_de": "Vessel outlier Verteilung"
+    },
+    {
+      "id": "gq_gdansk_lagebild",
+      "prompts": ["Gdańsk", "Gdansk", "PortFacility", "SituationPictureEntry", "lagebild", "24 hours", "24h"],
+      "classes": ["SituationPictureEntry", "PortFacility"],
+      "kg_query_id": "ttyd_lagebild_gdansk",
+      "description_de": "Lagebild um Hafen Gdańsk (Data_Source, harbour_name)"
+    },
+    {
+      "id": "gq_marine_messages",
+      "prompts": ["marine_messages", "FormattedTacticalMessage", "messageDateTimeGroup", "DTG", "Baltic", "tactical message"],
+      "classes": ["FormattedTacticalMessage"],
+      "kg_query_id": "ttyd_marine_messages_baltic",
+      "description_de": "Taktische Kurzmeldungen Ostsee (DTG + Betreff)"
+    },
+    {
+      "id": "gq_fishing_kiel",
+      "prompts": ["fishing", "FishingVessel", "Kiel", "vicinity", "nahe", "Fischerei"],
+      "classes": ["MaritimePlatform", "AISTrackReport", "PortFacility"],
+      "kg_query_id": "ttyd_fishing_near_kiel",
+      "description_de": "Fischereifahrzeuge in der Nähe von Kiel (AIS, nicht ships.lat)"
+    },
+    {
+      "id": "gq_mda_prior",
+      "prompts": ["analyzed before", "mda_sanctions", "MDA", "prior", "zuvor", "nba incident"],
+      "classes": ["SituationAwarenessSummary", "SanctionedMaritimePlatform"],
+      "kg_query_id": "ttyd_nba_mda_history",
+      "description_de": "Frühere NBA-/MDA-ähnliche Vorfälle (nba_incidents)"
     }
   ]
 }
