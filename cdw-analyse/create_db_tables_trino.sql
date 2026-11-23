@@ -377,7 +377,15 @@ CREATE TABLE social_media_messages(
   longitude         double    COMMENT 'The longitude of the tweet location',
   metrics_retweets  integer       COMMENT 'The number of retweets',
   metrics_likes     integer       COMMENT 'The number of likes',
-  metrics_replies   integer       COMMENT 'The number of replies'
+  metrics_replies   integer       COMMENT 'The number of replies',
+  platform          varchar    COMMENT 'Source platform: x, telegram, tiktok',
+  intel_category    varchar    COMMENT 'SOCMINT intel lane: kinetic, shadow_fleet, disinformation, etc.',
+  trust_tag         varchar    COMMENT 'UNVERIFIED_SOCMINT | SENSOR_CORROBORATED | DISINFORMATION_CONFIRMED',
+  disinformation_flag boolean COMMENT 'True when message is confirmed or strongly suspected disinformation',
+  verification_notes varchar   COMMENT 'Analyst/auto-verification notes (reverse image, AIS fusion, bot campaign)',
+  scenario_id       varchar    COMMENT 'NiFi simulator scenario id for demos',
+  image_recycle_id  varchar    COMMENT 'Known recycled image id when applicable',
+  correlation_hint  varchar    COMMENT 'Suggested sensor stream for Flink cross-check'
 ) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
 DROP TABLE IF EXISTS german_navy_fleet;
@@ -958,6 +966,11 @@ LatestSocialMedia AS (
         s.ts AS social_time,
         s.longitude AS social_lon,
         s.latitude AS social_lat,
+        s.platform,
+        s.intel_category,
+        s.trust_tag,
+        s.disinformation_flag,
+        s.verification_notes,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
         great_circle_distance(s.latitude, s.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m,
@@ -1269,8 +1282,17 @@ SELECT
     CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
     CONCAT(
         'Distance: ', CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
-        'Prio: ', CAST(s.priority AS VARCHAR),
-        ' | Tweet: ', s.tweet
+        'Trust: ', COALESCE(s.trust_tag, 'UNVERIFIED_SOCMINT'),
+        ' | Platform: ', COALESCE(s.platform, 'x'),
+        ' | Intel: ', COALESCE(s.intel_category, 'unknown'),
+        CASE WHEN s.disinformation_flag = TRUE THEN ' | IW: disinformation' ELSE '' END,
+        ' | Prio: ', CAST(s.priority AS VARCHAR),
+        ' | Tweet: ', s.tweet,
+        CASE
+            WHEN s.verification_notes IS NOT NULL AND s.verification_notes != ''
+            THEN CONCAT(' | Verify: ', s.verification_notes)
+            ELSE ''
+        END
     ) AS details
 FROM
     FilteredSocialMedia s
@@ -1523,6 +1545,11 @@ LatestSocialMedia AS (
         s.ts AS social_time,
         s.longitude AS social_lon,
         s.latitude AS social_lat,
+        s.platform,
+        s.intel_category,
+        s.trust_tag,
+        s.disinformation_flag,
+        s.verification_notes,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
         great_circle_distance(s.latitude, s.longitude, h.Harbour_Lat, h.Harbour_Lon) * 1000.0 AS distance_m
@@ -1811,8 +1838,17 @@ SELECT
     CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
     CONCAT(
         'Distance: ', CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
-        'Prio: ', CAST(s.priority AS VARCHAR),
-        ' | Tweet: ', s.tweet
+        'Trust: ', COALESCE(s.trust_tag, 'UNVERIFIED_SOCMINT'),
+        ' | Platform: ', COALESCE(s.platform, 'x'),
+        ' | Intel: ', COALESCE(s.intel_category, 'unknown'),
+        CASE WHEN s.disinformation_flag = TRUE THEN ' | IW: disinformation' ELSE '' END,
+        ' | Prio: ', CAST(s.priority AS VARCHAR),
+        ' | Tweet: ', s.tweet,
+        CASE
+            WHEN s.verification_notes IS NOT NULL AND s.verification_notes != ''
+            THEN CONCAT(' | Verify: ', s.verification_notes)
+            ELSE ''
+        END
     ) AS details
 FROM
     FilteredSocialMedia s

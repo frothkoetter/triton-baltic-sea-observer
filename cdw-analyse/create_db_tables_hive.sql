@@ -245,7 +245,15 @@ CREATE TABLE IF NOT EXISTS social_media_messages(
   longitude         DOUBLE    COMMENT 'The longitude of the tweet location',
   metrics_retweets  INT       COMMENT 'The number of retweets',
   metrics_likes     INT       COMMENT 'The number of likes',
-  metrics_replies   INT       COMMENT 'The number of replies'
+  metrics_replies   INT       COMMENT 'The number of replies',
+  platform          STRING    COMMENT 'Source platform: x, telegram, tiktok',
+  intel_category    STRING    COMMENT 'SOCMINT intel lane: kinetic, shadow_fleet, disinformation, etc.',
+  trust_tag         STRING    COMMENT 'UNVERIFIED_SOCMINT | SENSOR_CORROBORATED | DISINFORMATION_CONFIRMED',
+  disinformation_flag BOOLEAN COMMENT 'True when message is confirmed or strongly suspected disinformation',
+  verification_notes STRING   COMMENT 'Analyst/auto-verification notes (reverse image, AIS fusion, bot campaign)',
+  scenario_id       STRING    COMMENT 'NiFi simulator scenario id for demos',
+  image_recycle_id  STRING    COMMENT 'Known recycled image id when applicable',
+  correlation_hint  STRING    COMMENT 'Suggested sensor stream for Flink cross-check'
 )
 PARTITIONED BY SPEC (TRUNCATE(10, ts))
 STORED by ICEBERG;
@@ -818,6 +826,11 @@ LatestSocialMedia AS (
         s.ts AS social_time,
         s.longitude AS social_lon,
         s.latitude AS social_lat,
+        s.platform,
+        s.intel_category,
+        s.trust_tag,
+        s.disinformation_flag,
+        s.verification_notes,
         h.harbour_name AS harbour_name,
         h.Proximity_Meters AS Proximity_Meters,
         ST_GeodesicLengthWGS84(
@@ -1111,8 +1124,17 @@ SELECT
     CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR) AS dist_km,
     CONCAT(
         'Distance: ', CAST(ROUND(s.distance_m / 1000.0, 2) AS VARCHAR), ' km | ',
-        'Prio: ', CAST(s.priority AS VARCHAR),
-        ' | Tweet: ', s.tweet
+        'Trust: ', COALESCE(s.trust_tag, 'UNVERIFIED_SOCMINT'),
+        ' | Platform: ', COALESCE(s.platform, 'x'),
+        ' | Intel: ', COALESCE(s.intel_category, 'unknown'),
+        CASE WHEN s.disinformation_flag = TRUE THEN ' | IW: disinformation' ELSE '' END,
+        ' | Prio: ', CAST(s.priority AS VARCHAR),
+        ' | Tweet: ', s.tweet,
+        CASE
+            WHEN s.verification_notes IS NOT NULL AND s.verification_notes != ''
+            THEN CONCAT(' | Verify: ', s.verification_notes)
+            ELSE ''
+        END
     ) AS details
 FROM
     FilteredSocialMedia s

@@ -14,7 +14,8 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `cable_corridor_registry.py` | EMODnet WKT (Balticconnector, …) |
 | `STANAGSimulator.py` | STANAG / ops messaging (**2.0.0** — HQ ↔ unit ↔ unit) |
 | `stanag_message_engine.py` | Message templates, traffic profiles, NDJSON render |
-| `MessengerSimulator.py` | Messenger sim |
+| `MessengerSimulator.py` | SOCMINT sim — `TwitterMessageGenerator` **3.0.0** (X/Telegram, trust tags) |
+| `socmint_catalog.py` | Ostsee SOCMINT scenarios + simulated verification (stdlib) |
 | `gpsjammer.py` | GPS jamming sim |
 | `BalticShipRouteStateReset.py` | Reset `/tmp` ship route state (optional dump to FlowFile) |
 | `RusFleetPositionSimulator.py` | Russian Baltic Fleet positions (`rus_fleet_positions`) |
