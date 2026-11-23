@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# SOCMINT trust upgrade via baltic_threat_tile_sketches (run after outlier_detection_trino.sql).
+# SOCMINT trust upgrade via baltic_threat_tile_sketches (meaningful after outlier job Step 9).
 set -euo pipefail
+echo "Hint: run outlier job first for threat tiles — cd ~/cai-workbench/trino-jobs && TRINO_JOB=outliers python3 cml_job.py" >&2
 cd "$(dirname "$0")"
 if [[ -f .env.trino.local ]]; then
   set -a && source .env.trino.local && set +a

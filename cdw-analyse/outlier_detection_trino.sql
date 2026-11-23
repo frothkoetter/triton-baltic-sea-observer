@@ -886,6 +886,18 @@ FROM infrastructure_ais_suspicions;
 -- =========================================================================================
 -- Rebuild snapshots per job (~11 km Bing tiles, 4h threats). O(tiles) lookup vs O(posts×ais).
 
+CREATE TABLE IF NOT EXISTS baltic_threat_tile_sketches (
+    quadkey varchar COMMENT 'Bing quadkey zoom 11.',
+    severity_tdigest varbinary COMMENT 'T-Digest of threat severity scores in tile.',
+    outlier_type_set varbinary COMMENT 'SetDigest of Outlier_Type / event labels.',
+    mmsi_set varbinary COMMENT 'SetDigest of MMSI or pseudo-ids (0 for DAS).',
+    sensor_lane_set varbinary COMMENT 'SetDigest of lanes: AIS, DAS, GPS_EW, etc.',
+    event_count bigint COMMENT 'Raw point count merged into sketch.',
+    sev_p50 double COMMENT 'Cached median severity for fast NBA filters.',
+    sev_p90 double COMMENT 'Cached P90 severity.',
+    updated_at timestamp COMMENT 'Last sketch refresh (UTC).'
+);
+
 DELETE FROM baltic_threat_tile_sketches;
 
 INSERT INTO baltic_threat_tile_sketches (

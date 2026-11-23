@@ -6,7 +6,8 @@ Runs **CDW Trino SQL** from `cdw-analyse/` as CML Scheduled Jobs (`.py` only in 
 
 | CML job file | `TRINO_JOB` | What runs |
 |--------------|-------------|-----------|
-| `cai-workbench/trino-jobs/cml_job.py` | `outliers` (default) | `cdw-analyse/outlier_detection_trino.sql` → `vessel_outliers`, `infrastructure_ais_suspicions`, baselines |
+| `cai-workbench/trino-jobs/cml_job.py` | `outliers` (default) | `cdw-analyse/outlier_detection_trino.sql` → `vessel_outliers`, `infrastructure_ais_suspicions`, baselines, **`baltic_threat_tile_sketches` (Step 9)** |
+| same | `socmint_sketch` (aliases: `socmint`, `socmint_verify`) | `socmint_sketch_verification_trino.sql` → `socmint_tile_sketches`, view `socmint_sketch_verified`, MERGE `social_media_messages` — **run after outliers** for trust upgrades |
 | same | `lagebild_views` | `defense.lagebild` + `defense.lagebild_all_events` (includes **AIS_Outlier** union) |
 
 ## Environment
@@ -20,9 +21,10 @@ Optional: `TRINO_JOB=lagebild_views` on a **one-off** job after deploying view S
 
 ## Suggested schedule (simulation)
 
-1. **:45** — `TRINO_JOB=outliers` (`cml_job.py`) — refresh baselines + `vessel_outliers`
-2. **:50** — `TRINO_JOB=lagebild_views` — only needed after DDL/view changes (or weekly smoke)
-3. **:00** — UC1 `situation-awareness/cml_job.py` (SITREP reads `iceberg.defense.lagebild`, now with `Data_Source='AIS_Outlier'`)
+1. **:45** — `TRINO_JOB=outliers` (`cml_job.py`) — refresh baselines + `vessel_outliers` + threat tile sketches
+2. **:50** — `TRINO_JOB=socmint_sketch` — SOCMINT tile density + trust MERGE (needs Step 9 data for corroboration)
+3. **:55** — `TRINO_JOB=lagebild_views` — only needed after DDL/view changes (or weekly smoke)
+4. **:00** — UC1 `situation-awareness/cml_job.py` (SITREP reads `iceberg.defense.lagebild`, now with `Data_Source='AIS_Outlier'`)
 
 Verify:
 
