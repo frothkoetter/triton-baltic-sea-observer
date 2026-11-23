@@ -1,8 +1,13 @@
 [
   "ambient",
   "anchor_drag",
+  "anchor_drop_tow",
+  "anchor_slip",
   "cable_strain_anomaly",
   "cui_sabotage_tap",
+  "hard_beep",
   "trawler_scrape",
-  "vessel_passage"
+  "uboat_acoustic",
+  "vessel_passage",
+  "whale_vocalization"
 ]
