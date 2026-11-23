@@ -18,6 +18,24 @@ Then create/restart the Application.
 
 After **`git pull origin main`**, restart the Application. **`dist/` is in git** (from `0.2.3-das-preview`) so you do **not** need `npm run build` on CML unless you edit `src/`.
 
+### `git pull` blocked by `triton-ui/dist/*`
+
+If a session **`npm run build`** left local `dist/` changes, pull may abort with *would be overwritten by merge*.
+
+From repo root (`/home/cdsw`):
+
+```bash
+git checkout -- triton-ui/dist/index.html
+git clean -fd triton-ui/dist/assets/
+git pull origin main
+```
+
+Then either use the **`dist/` from git** (restart Application only), or rebuild and optionally commit `dist/`:
+
+```bash
+cd triton-ui && bash cdsw-build.sh
+```
+
 Verify:
 
 ```bash
