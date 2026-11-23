@@ -580,8 +580,23 @@ a {
   }
 }
 
+.socmint-map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .socmint-map-panel .socmint-map-wrap {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 320px;
   height: min(56vh, 520px);
+}
+
+.socmint-map-wrap .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-elevated);
 }
 
 .socmint-detail-panel {
