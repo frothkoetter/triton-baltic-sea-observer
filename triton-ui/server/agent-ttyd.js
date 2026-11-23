@@ -86,14 +86,23 @@ export function buildMappingPlan(example) {
 }
 
 const KDM_TO_ENTITY = {
-  SanctionedMaritimePlatform: "MaritimeUnit",
+  SanctionedMaritimePlatform: "SanctionedVessel",
   AISTrackReport: "AISObservation",
   MaritimePlatform: "MaritimeUnit",
   NavalUnit: "MaritimeUnit",
   GPSElectronicWarfareIndicator: "MaritimeAnomaly",
   SituationPictureEntry: "SituationPicture",
   VesselAnomalyEvent: "MaritimeAnomaly",
-  AreaViolationEvent: "MaritimeAnomaly",
+  AreaViolationEvent: "RestrictedOperatingArea",
+  FormattedTacticalMessage: "SituationPicture",
+  PortFacility: "SituationPicture",
+  SituationAwarenessSummary: "SituationPicture",
+};
+
+const KDM_TO_CONCEPT = {
+  GPSElectronicWarfareIndicator: "gps_jammer",
+  AreaViolationEvent: "ais_pipeline_blackout",
+  VesselAnomalyEvent: "ais_pipeline_blackout",
 };
 
 /** Tables the Semantica KG links to given KDM class ids. */
@@ -110,11 +119,17 @@ export function kgTablesForClasses(classIds) {
       }
     }
   }
+  const conceptIds = new Set();
+  for (const cid of classIds) {
+    const concept = KDM_TO_CONCEPT[cid];
+    if (concept) conceptIds.add(`concept:${concept}`);
+  }
   const tables = new Set();
   for (const e of edges) {
-    if (!entityIds.has(e.from)) continue;
-    const to = nodes.find((n) => n.id === e.to);
-    if (to?.table) tables.add(to.table);
+    if (entityIds.has(e.from) || conceptIds.has(e.from)) {
+      const to = nodes.find((n) => n.id === e.to);
+      if (to?.table) tables.add(to.table);
+    }
   }
   return [...tables];
 }

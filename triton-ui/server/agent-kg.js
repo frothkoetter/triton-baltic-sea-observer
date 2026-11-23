@@ -217,6 +217,81 @@ export const KG_SQL_QUERIES = [
     `),
   },
   {
+    id: "ttyd_lagebild_gdansk",
+    label: "TTYD · SituationPicture Gdańsk 24h",
+    entity_id: "SituationPicture",
+    alert_types: ["lagebild_flash"],
+    description: "Lagebild slices near PortFacility Gdańsk.",
+    sql: qualify(`
+      SELECT "Data_Source" AS source, harbour_name, COUNT(*) AS n
+      FROM {defense}.lagebild
+      WHERE harbour_name = 'Gdańsk'
+      GROUP BY 1, 2
+      ORDER BY n DESC
+      LIMIT 20
+    `),
+  },
+  {
+    id: "ttyd_marine_messages_baltic",
+    label: "TTYD · FormattedTacticalMessage Baltic",
+    entity_id: "SituationPicture",
+    alert_types: ["sitrep_escalation"],
+    description: "marine_messages DTG + subject (Baltic bbox).",
+    sql: qualify(`
+      SELECT message_dtg, message_subject
+      FROM {defense}.marine_messages
+      WHERE message_latitude BETWEEN 53.0 AND 60.5
+        AND message_longitude BETWEEN 9.0 AND 30.5
+      ORDER BY message_timestamp DESC
+      LIMIT 40
+    `),
+  },
+  {
+    id: "ttyd_fishing_near_kiel",
+    label: "TTYD · Fishing vessels near Kiel",
+    entity_id: "MaritimeUnit",
+    alert_types: ["demo_greifswald"],
+    description: "AIS positions + ships registry (not ships.lat).",
+    sql: qualify(`
+      WITH port AS (
+        SELECT latitude, longitude FROM {defense}.baltic_sea_harbours WHERE name = 'Kiel' LIMIT 1
+      ),
+      latest AS (
+        SELECT a.mmsi, a.latitude, a.longitude, a.event_timestamp,
+          row_number() OVER (PARTITION BY a.mmsi ORDER BY coalesce(
+            try(from_iso8601_timestamp(replace(a.event_timestamp, ' ', 'T'))),
+            try_cast(a.event_timestamp AS timestamp)
+          ) DESC) AS rn
+        FROM {defense}.ais_events_ice a
+        WHERE a.latitude IS NOT NULL
+      )
+      SELECT s.ship_name, s.vessel_type, l.mmsi, l.latitude, l.longitude,
+        great_circle_distance(l.latitude, l.longitude, p.latitude, p.longitude) * 1000 AS distance_m
+      FROM latest l
+      JOIN {defense}.ships s ON l.mmsi = s.mmsi
+      CROSS JOIN port p
+      WHERE l.rn = 1
+        AND lower(s.vessel_type) LIKE '%fish%'
+        AND great_circle_distance(l.latitude, l.longitude, p.latitude, p.longitude) * 1000 <= 30000
+      ORDER BY distance_m
+      LIMIT 25
+    `),
+  },
+  {
+    id: "ttyd_nba_mda_history",
+    label: "TTYD · Prior NBA / MDA-style incidents",
+    entity_id: "NbaDecision",
+    alert_types: ["lagebild_flash", "rus_fleet_proximity"],
+    description: "Replaces phantom mda_decision table.",
+    sql: qualify(`
+      SELECT flow_uuid, alert_type, priority, status, theatre, updated_at
+      FROM {defense}.nba_incidents
+      WHERE alert_type IN ('rus_fleet_proximity', 'lagebild_flash', 'gps_jammer', 'das_cable_threat')
+      ORDER BY updated_at DESC
+      LIMIT 15
+    `),
+  },
+  {
     id: "kg_socmint_trust",
     label: "SOCMINT · trust_tag counts",
     entity_id: "SituationPicture",

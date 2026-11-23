@@ -16,6 +16,10 @@ const EXAMPLES = [
   "gq_registry_gap",
   "gq_area_violation",
   "gq_outliers",
+  "gq_gdansk_lagebild",
+  "gq_marine_messages",
+  "gq_fishing_kiel",
+  "gq_mda_prior",
 ];
 
 async function runLocal() {

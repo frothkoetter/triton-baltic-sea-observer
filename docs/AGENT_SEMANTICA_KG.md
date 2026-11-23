@@ -1,5 +1,7 @@
 # Agent console — Semantica knowledge graph & Trino evidence
 
+Vollständiger TTYD-Plan: [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md) · Build **0.2.18-ttyd-full**.
+
 NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight KG view** derived from:
 
 | Source | Role |
@@ -19,6 +21,7 @@ NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight
 | GET | `/api/agents/ttyd` | KDM golden examples + TTYD SQL ids |
 | POST | `/api/agents/ttyd/resolve` | Natural language → mapping plan (MVP) |
 | POST | `/api/agents/ttyd/e2e` | KG compare + live Trino SQL for one golden example |
+| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) |
 
 Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 
@@ -36,6 +39,10 @@ Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 | `ttyd_sanctioned_latest_ais` | Sanctioned + latest AIS |
 | `ttyd_gps_jamming_nic` | GPS jamming NIC &lt; 5 |
 | `ttyd_area_entry_sample` | `area_violation` enter events |
+| `ttyd_lagebild_gdansk` | Lagebild harbour Gdańsk |
+| `ttyd_marine_messages_baltic` | tactical messages Baltic |
+| `ttyd_fishing_near_kiel` | fishing AIS near Kiel |
+| `ttyd_nba_mda_history` | prior NBA incidents (MDA) |
 
 SQL templates are duplicated for operators in [`cdw-analyse/agent_kg_evidence_trino.sql`](../cdw-analyse/agent_kg_evidence_trino.sql) (CML / Trino CLI).
 

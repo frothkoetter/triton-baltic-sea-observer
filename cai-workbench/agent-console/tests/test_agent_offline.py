@@ -13,7 +13,7 @@ class TestAgentOffline(unittest.TestCase):
         self.assertGreaterEqual(len(summary["concepts"]), 3)
 
     def test_catalog(self):
-        self.assertEqual(len(apps_catalog()), 3)
+        self.assertGreaterEqual(len(apps_catalog()), 4)
 
     def test_offline_chat(self):
         import os

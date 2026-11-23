@@ -72,6 +72,7 @@ import {
 } from "./agent-chat.js";
 import { buildSemanticaKgGraph, getKgSqlQuery, listKgSqlQueries } from "./agent-kg.js";
 import { listTtydCatalog, resolveGoldenExample, runTtydE2e, buildMappingPlan } from "./agent-ttyd.js";
+import { runTtydAsk } from "./agent-ttyd-pipeline.js";
 import {
   COOKIE_NAME,
   dataModeMeta,
@@ -554,6 +555,13 @@ app.post("/api/agents/ttyd/e2e", async (req, res) => {
     return res.status(code).json(out);
   }
   res.json(out);
+});
+
+app.post("/api/agents/ttyd/ask", async (req, res) => {
+  const text = req.body?.text;
+  const out = await runTtydAsk({ text, queryWarehouse });
+  const code = out.ok ? 200 : out.error === "text required" ? 400 : 422;
+  res.status(code).json(out);
 });
 
 app.post("/api/agents/chat", async (req, res) => {

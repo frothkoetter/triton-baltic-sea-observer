@@ -182,22 +182,40 @@ export function AgentConsolePage() {
     setDraft("");
     setBusy(true);
     setError("");
-    try {
-      const res = await fetchJson<{
-        ok: boolean;
-        message?: ChatMessage;
-        engine?: string;
-        error?: string;
-      }>("/api/agents/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_id: appId, messages: next }),
-      });
-      if (res.ok && res.message) {
-        setMessages([...next, res.message]);
-        setEngine(res.engine ?? "");
+  try {
+      if (appId === "talk-to-data") {
+        const res = await fetchJson<{
+          ok?: boolean;
+          summary_de?: string;
+          reply?: string;
+          error?: string;
+          agents?: { ontology_mapper?: { example_id?: string } };
+        }>("/api/agents/ttyd/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: content }),
+        });
+        const body = res.reply || res.summary_de || res.error || "(keine Antwort)";
+        setMessages([...next, { role: "assistant", content: body }]);
+        setEngine(res.agents?.ontology_mapper?.example_id ? `ttyd:${res.agents.ontology_mapper.example_id}` : "ttyd");
+        if (!res.ok) setError(res.error ?? "TTYD ohne Treffer");
       } else {
-        setError(res.error ?? "Chat failed");
+        const res = await fetchJson<{
+          ok: boolean;
+          message?: ChatMessage;
+          engine?: string;
+          error?: string;
+        }>("/api/agents/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_id: appId, messages: next }),
+        });
+        if (res.ok && res.message) {
+          setMessages([...next, res.message]);
+          setEngine(res.engine ?? "");
+        } else {
+          setError(res.error ?? "Chat failed");
+        }
       }
     } catch (e) {
       setError(String(e));
