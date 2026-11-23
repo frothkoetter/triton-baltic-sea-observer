@@ -793,7 +793,7 @@ export const PREDEFINED = {
            channel_count, window_seconds, fs_hz, filename, ingested_at
     FROM defense.das_cable_spectrogram_metadata
     ORDER BY ingested_at DESC
-    LIMIT 300
+    LIMIT 1500
   `,
   fleetKpi: `SELECT COUNT(*) AS cnt FROM ${GERMAN_FLEET_UNIQUE}`,
   personnelKpi: `SELECT COALESCE(SUM(besatzung), 0) AS cnt FROM ${GERMAN_FLEET_UNIQUE}`,

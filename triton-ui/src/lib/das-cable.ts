@@ -30,6 +30,25 @@ export function segmentKey(seg: DasCableSegment): string {
   return `${seg.hadoop_file_url ?? seg.filename ?? "?" }#${seg.segment_index ?? 0}`;
 }
 
+/** Map / filter: simulator ground truth (`threat_class`) vs CML classifier (`predicted_threat_type`). */
+export type DasThreatLabelMode = "ground_truth" | "ml";
+
+export function segmentThreatLabel(
+  seg: DasCableSegment,
+  mode: DasThreatLabelMode = "ground_truth"
+): string {
+  const gt = String(seg.threat_class ?? "").trim();
+  const ml = String(seg.predicted_threat_type ?? "").trim();
+  if (mode === "ml") return ml || gt || "ambient";
+  return gt || ml || "ambient";
+}
+
+export function segmentThreatLabelsDiffer(seg: DasCableSegment): boolean {
+  const gt = String(seg.threat_class ?? "").trim();
+  const ml = String(seg.predicted_threat_type ?? "").trim();
+  return Boolean(gt && ml && gt !== ml);
+}
+
 /** NiFi DasCableAcousticSimulator ground-truth catalog (das_acoustic_engine.THREAT_CLASSES). */
 export const DAS_THREAT_CATALOG = [
   "ambient",

@@ -218,6 +218,8 @@ curl -sS -o /tmp/das.wav "http://127.0.0.1:\$CDSW_APP_PORT/api/das-cable/wav?had
 
 From [`das-cable.ts`](../triton-ui/src/lib/das-cable.ts): e.g. `cui_sabotage_tap` red, `vessel_passage` blue, `cable_strain_anomaly` purple.
 
+**UI default (since 2026-11):** map/filter use **`threat_class`** (NiFi simulator ground truth). Dropdown **ML** switches to `predicted_threat_type` from the bundled CML classifier (`cai-workbench/das-cable-classifier`, 6 classes in `bundled/label_names.json`). If Trino `GROUP BY threat_class` shows many labels but the map showed only `cable_strain_anomaly`, the ML column was likely filled with a single biased prediction — compare both columns in the segment table.
+
 ---
 
 ## 6. NBA integration (optional)

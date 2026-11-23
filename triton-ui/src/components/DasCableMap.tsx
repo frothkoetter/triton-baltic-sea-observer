@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { CircleMarker, MapContainer, Polyline, Tooltip, useMap } from "react-leaflet";
-import type { DasCableSegment } from "../lib/das-cable";
-import { dasThreatColor, segmentKey } from "../lib/das-cable";
+import type { DasCableSegment, DasThreatLabelMode } from "../lib/das-cable";
+import { dasThreatColor, segmentKey, segmentThreatLabel } from "../lib/das-cable";
 import {
   buildOstseeInfraMapLines,
   type OstseeInfraRow,
@@ -15,6 +15,7 @@ type MapProps = {
   onSelect: (seg: DasCableSegment) => void;
   infrastruktur?: OstseeInfraRow[];
   pipelines?: OstseePipelineRow[];
+  threatLabelMode?: DasThreatLabelMode;
 };
 
 function FlyToSelected({ segments, selectedKey }: Pick<MapProps, "segments" | "selectedKey">) {
@@ -34,6 +35,7 @@ export function DasCableMap({
   onSelect,
   infrastruktur = [],
   pipelines = [],
+  threatLabelMode = "ground_truth",
 }: MapProps) {
   const center: [number, number] = [57, 18];
   const infraLines = useMemo(
@@ -64,7 +66,7 @@ export function DasCableMap({
         {segments.map((seg) => {
           const key = segmentKey(seg);
           const selected = key === selectedKey;
-          const label = seg.predicted_threat_type ?? seg.threat_class ?? "ambient";
+          const label = segmentThreatLabel(seg, threatLabelMode);
           const color = dasThreatColor(label);
           const severity = label === "cui_sabotage_tap" || label === "anchor_drag" ? 11 : 8;
           return (
