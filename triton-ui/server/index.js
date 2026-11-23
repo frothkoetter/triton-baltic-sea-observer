@@ -23,6 +23,7 @@ import {
   getVesselOutliers,
   getVesselOutlierAnalytics,
   getGpsJammerEvents,
+  getSocmintFeed,
   getSanctions,
   getSanctionedAnalytics,
   getRestrictedAnalytics,
@@ -324,6 +325,10 @@ app.get("/api/vessel-outliers", async (_req, res) => {
 
 app.get("/api/gps-jammer-events", async (_req, res) => {
   res.json(await getGpsJammerEvents());
+});
+
+app.get("/api/socmint/feed", async (_req, res) => {
+  res.json(await getSocmintFeed());
 });
 
 app.get("/api/fleet-positions", async (_req, res) => {

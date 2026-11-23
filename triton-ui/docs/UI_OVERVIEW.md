@@ -55,6 +55,7 @@ Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Overr
 | DEU / RUS Fleet | `/api/fleet-positions` | `german_navy_fleet` + `rus_fleet` positions |
 | AIS Outliers | `/api/vessel-outliers` | `vessel_outliers` (Trino detection job) |
 | GPS jammer | `/api/gps-jammer-events` | `gps_jammer_events` (NiFi GpsJammer) · fallback `lagebild` `GPS_Jammer` |
+| SOCMINT | `/api/socmint/feed` | `social_media_messages`, `threat_hot_tiles`, `socmint_tile_sketches` · map + Bing zoom-11 tiles |
 | Route tracks 24h · Zeitachse | `/api/position-tracks` | `ais_events_ice`, DE/RUS fleet history; max 10 objects, time slider; Trino via `trino-bridge.py` respects SQL `LIMIT` (cap `TRINO_MAX_ROWS`, default 25000) |
 | AIS Outliers (Analysen) | `/api/analyses/vessel-outlier-analytics` | `vessel_outliers` 24h — KPI, Typ/Severity, hourly, Tabelle |
 | Restricted Areas | `/api/observation-areas` | Tier-A `observation_areas` (EMODnet military) |

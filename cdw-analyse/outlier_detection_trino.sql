@@ -880,3 +880,90 @@ SELECT
     'Verify against cable/pipeline protection zone; correlate EO/MAD if available',
     Severity_Level
 FROM infrastructure_ais_suspicions;
+
+-- =========================================================================================
+-- STEP 9: BALTIC THREAT TILE SKETCHES (fast tile-level risk for SOCMINT / NBA)
+-- =========================================================================================
+-- Rebuild snapshots per job (~11 km Bing tiles, 4h threats). O(tiles) lookup vs O(posts×ais).
+
+DELETE FROM baltic_threat_tile_sketches;
+
+INSERT INTO baltic_threat_tile_sketches (
+    quadkey,
+    severity_tdigest,
+    outlier_type_set,
+    mmsi_set,
+    sensor_lane_set,
+    event_count,
+    sev_p50,
+    sev_p90,
+    updated_at
+)
+WITH threat_points AS (
+    SELECT
+        bing_tile_quadkey(bing_tile_at(o.Latitude, o.Longitude, 11)) AS quadkey,
+        CAST(COALESCE(o.Severity_Level, 55) AS double) AS sev,
+        COALESCE(o.Outlier_Type, 'Unknown') AS otype,
+        CAST(COALESCE(o.MMSI, 0) AS varchar) AS mmsi_id,
+        CASE
+            WHEN o.Outlier_Type = 'DAS Cable Threat' THEN 'DAS'
+            WHEN o.Outlier_Type LIKE 'Pipeline%' THEN 'INFRA'
+            ELSE 'AIS'
+        END AS lane
+    FROM vessel_outliers o
+    WHERE o.Latitude BETWEEN 53.0 AND 66.5
+      AND o.Longitude BETWEEN 9.0 AND 31.0
+      AND coalesce(
+          try(from_iso8601_timestamp(o.Event_Timestamp)),
+          try_cast(replace(o.Event_Timestamp, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '4' hour
+    UNION ALL
+    SELECT
+        bing_tile_quadkey(bing_tile_at(g.latitude, g.longitude, 11)) AS quadkey,
+        75.0 AS sev,
+        COALESCE(g.event_type, 'gps_jammer_event') AS otype,
+        'GPS' AS mmsi_id,
+        'GPS_EW' AS lane
+    FROM defense.gps_jammer_events g
+    WHERE g.jamming_indicator = TRUE
+      AND g.latitude BETWEEN 53.0 AND 66.5
+      AND g.longitude BETWEEN 9.0 AND 31.0
+      AND coalesce(
+          try(from_iso8601_timestamp(g.ts)),
+          try_cast(replace(g.ts, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '4' hour
+),
+sk AS (
+    SELECT
+        quadkey,
+        tdigest_agg(sev) AS sev_td,
+        make_set_digest(otype) AS type_sd,
+        make_set_digest(mmsi_id) AS mmsi_sd,
+        make_set_digest(lane) AS lane_sd,
+        COUNT(*) AS event_count
+    FROM threat_points
+    WHERE quadkey IS NOT NULL
+    GROUP BY quadkey
+)
+SELECT
+    quadkey,
+    CAST(sev_td AS varbinary),
+    CAST(type_sd AS varbinary),
+    CAST(mmsi_sd AS varbinary),
+    CAST(lane_sd AS varbinary),
+    event_count,
+    value_at_quantile(sev_td, 0.5),
+    value_at_quantile(sev_td, 0.9),
+    current_timestamp
+FROM sk;
+
+CREATE OR REPLACE VIEW threat_hot_tiles AS
+SELECT
+    quadkey,
+    event_count,
+    sev_p50,
+    sev_p90,
+    updated_at
+FROM baltic_threat_tile_sketches
+WHERE sev_p90 >= 60
+   OR event_count >= 3;

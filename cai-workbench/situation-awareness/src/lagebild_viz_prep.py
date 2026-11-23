@@ -34,7 +34,9 @@ _AREA_NAME_IN_DETAILS_RE = re.compile(
 )
 
 _HIGH_SEVERITY_RE = re.compile(
-    r"\b(sanctions?|kilo|submarine|critical|frigate|torpedo|jammer|hostile)\b",
+    r"\b(sanctions?|kilo|submarine|critical|frigate|torpedo|jammer|hostile"
+    r"|disinformation|desinfo|iw:\s*disinformation|baltiysk|shadow.?fleet|estlink"
+    r"|disinformation_confirmed|sensor_corroborated)\b",
     re.I,
 )
 _LOW_SEVERITY_RE = re.compile(

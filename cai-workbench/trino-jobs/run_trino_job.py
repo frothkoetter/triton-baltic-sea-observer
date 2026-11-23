@@ -27,6 +27,15 @@ def main() -> int:
         sql_rel = "outlier_detection_trino.sql"
         os.environ.setdefault("TRINO_CONTINUE_ON_ERROR", "1")
         stop_on_error = False
+    elif job in (
+        "socmint_sketch",
+        "socmint_verify",
+        "threat_sketch",
+        "socmint",
+    ):
+        sql_rel = "socmint_sketch_verification_trino.sql"
+        os.environ.setdefault("TRINO_CONTINUE_ON_ERROR", "1")
+        stop_on_error = False
     elif job in ("lagebild_views", "lagebild", "views"):
         import importlib.util
 
@@ -43,7 +52,7 @@ def main() -> int:
         sql_rel = os.environ.get("TRINO_SQL_FILE", "").strip()
         if not sql_rel:
             print(
-                f"Unknown TRINO_JOB={job!r}; use outliers|lagebild_views or set TRINO_SQL_FILE",
+                f"Unknown TRINO_JOB={job!r}; use outliers|socmint_sketch|lagebild_views or set TRINO_SQL_FILE",
                 file=sys.stderr,
             )
             return 2

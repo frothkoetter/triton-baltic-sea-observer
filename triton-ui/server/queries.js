@@ -1216,6 +1216,62 @@ export const PREDEFINED = {
         try_cast(replace(event_timestamp, 'Z', '') AS timestamp)
       ) >= current_timestamp - interval '24' hour
   `,
+  /** SOCMINT posts (NiFi TwitterMessageGenerator v3) — 24h Baltic window. */
+  socmintMessagesMap: `
+    SELECT
+      user_name,
+      user_username,
+      tweet,
+      ts,
+      priority,
+      latitude,
+      longitude,
+      platform,
+      intel_category,
+      trust_tag,
+      disinformation_flag,
+      verification_notes,
+      scenario_id,
+      correlation_hint,
+      metrics_retweets,
+      metrics_likes,
+      metrics_replies
+    FROM defense.social_media_messages
+    WHERE latitude BETWEEN 53.0 AND 66.0
+      AND longitude BETWEEN 9.0 AND 31.0
+      AND coalesce(
+        try(from_iso8601_timestamp(ts)),
+        try(from_iso8601_timestamp(replace(ts, 'Z', '+00:00'))),
+        try_cast(replace(ts, 'Z', '') AS timestamp)
+      ) >= current_timestamp - interval '48' hour
+    ORDER BY coalesce(
+      try(from_iso8601_timestamp(ts)),
+      try(from_iso8601_timestamp(replace(ts, 'Z', '+00:00'))),
+      try_cast(replace(ts, 'Z', '') AS timestamp)
+    ) DESC
+    LIMIT 300
+  `,
+  /** Trino Step 9 threat sketch hot tiles (zoom-11). */
+  threatHotTiles: `
+    SELECT quadkey, event_count, sev_p50, sev_p90, updated_at
+    FROM defense.threat_hot_tiles
+    ORDER BY sev_p90 DESC, event_count DESC
+    LIMIT 120
+  `,
+  threatTileSketchesFallback: `
+    SELECT quadkey, event_count, sev_p50, sev_p90, updated_at
+    FROM defense.baltic_threat_tile_sketches
+    WHERE sev_p90 >= 50 OR event_count >= 2
+    ORDER BY sev_p90 DESC
+    LIMIT 120
+  `,
+  socmintDensityTiles: `
+    SELECT quadkey, post_count, disinfo_count, updated_at
+    FROM defense.socmint_tile_sketches
+    WHERE post_count > 0
+    ORDER BY post_count DESC
+    LIMIT 120
+  `,
 };
 
 export const DATASET_STARTER_SQL = {

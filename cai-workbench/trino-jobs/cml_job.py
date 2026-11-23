@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # CML Scheduled Job — run Trino SQL from cdw-analyse (outlier pipeline or lagebild view refresh).
-# Env: TRINO_USER, TRINO_PASSWORD (or TRINO_JDBC_URL), TRINO_JOB=outliers|lagebild_views
+# Env: TRINO_USER, TRINO_PASSWORD (or TRINO_JDBC_URL), TRINO_JOB=outliers|socmint_sketch|lagebild_views
 # Optional: LAGEBILD_TRINO_* / TRINO_HOST / TRINO_CATALOG / TRINO_SCHEMA
 from __future__ import annotations
 
