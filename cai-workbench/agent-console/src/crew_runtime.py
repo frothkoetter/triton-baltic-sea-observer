@@ -72,7 +72,9 @@ def _llm_reply(app: AgentApp, messages: list[dict[str, str]], onto_ctx: str) -> 
     system = (
         f"{app.role}. {app.goal}\n{app.backstory}\n\n"
         f"Ontologie (Semantica seed):\n{onto_ctx}\n\n"
-        "Antworte auf Deutsch, präzise, max. 2 kurze Absätze. Kein SQL."
+        "Antworte auf Deutsch, präzise, max. 2 kurze Absätze. "
+        "Verweis auf Semantica-KG und Trino-Evidence über Agenten-UI "
+        "(KG-Graph + „Trino Evidence“), nicht freies SQL im Chat."
     )
     convo = _history_text(messages)
     out_messages = [
@@ -105,7 +107,8 @@ def _crewai_reply(app: AgentApp, messages: list[dict[str, str]], onto_ctx: str) 
     desc = (
         f"Ontologie:\n{onto_ctx}\n\n"
         f"Konversation:\n{_history_text(messages)}\n\n"
-        f"Beantworte die letzte USER-Nachricht auf Deutsch (kein SQL)."
+        f"Beantworte die letzte USER-Nachricht auf Deutsch. "
+        f"Evidence über UI KG-SQL-Buttons, nicht ad-hoc SQL."
     )
     task = Task(
         description=desc,

@@ -70,6 +70,7 @@ import {
   readBusinessRulesSummary,
   readOntologySummary,
 } from "./agent-chat.js";
+import { buildSemanticaKgGraph, getKgSqlQuery, listKgSqlQueries } from "./agent-kg.js";
 import {
   COOKIE_NAME,
   dataModeMeta,
@@ -498,6 +499,32 @@ app.get("/api/agents/ontology", (_req, res) => {
 
 app.get("/api/agents/business-rules", (_req, res) => {
   res.json(readBusinessRulesSummary());
+});
+
+app.get("/api/agents/kg-graph", (_req, res) => {
+  res.json(buildSemanticaKgGraph());
+});
+
+app.get("/api/agents/kg-sql", (_req, res) => {
+  res.json(listKgSqlQueries());
+});
+
+app.post("/api/agents/kg-sql/:queryId/run", async (req, res) => {
+  const resolved = getKgSqlQuery(req.params.queryId);
+  if (!resolved.ok) {
+    return res.status(400).json(resolved);
+  }
+  const result = await queryWarehouse(resolved.sql);
+  res.json({
+    ok: result.ok,
+    source: result.source,
+    query_id: resolved.query.id,
+    label: resolved.query.label,
+    sql: resolved.sql,
+    columns: result.columns,
+    rows: result.rows,
+    error: result.error,
+  });
 });
 
 app.post("/api/agents/chat", async (req, res) => {

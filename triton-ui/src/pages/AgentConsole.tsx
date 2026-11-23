@@ -26,6 +26,26 @@ type TrinoEntity = {
   tables?: { table: string; role?: string }[];
 };
 
+type KgNode = { id: string; kind: string; label: string; iri?: string; table?: string };
+type KgEdge = { from: string; to: string; relation: string };
+type KgSqlMeta = {
+  id: string;
+  label: string;
+  entity_id?: string;
+  alert_types?: string[];
+  description?: string;
+};
+
+type SqlRunResult = {
+  ok?: boolean;
+  query_id?: string;
+  label?: string;
+  source?: string;
+  columns?: string[];
+  rows?: Record<string, unknown>[];
+  error?: string;
+};
+
 export function AgentConsolePage() {
   const [apps, setApps] = useState<AgentApp[]>([]);
   const [appId, setAppId] = useState("lage-analyst");
@@ -39,6 +59,11 @@ export function AgentConsolePage() {
   const [businessRules, setBusinessRules] = useState<BusinessRuleRow[]>([]);
   const [trinoEntities, setTrinoEntities] = useState<TrinoEntity[]>([]);
   const [rulesNote, setRulesNote] = useState("");
+  const [kgNodes, setKgNodes] = useState<KgNode[]>([]);
+  const [kgEdges, setKgEdges] = useState<KgEdge[]>([]);
+  const [kgSqlQueries, setKgSqlQueries] = useState<KgSqlMeta[]>([]);
+  const [sqlBusyId, setSqlBusyId] = useState<string | null>(null);
+  const [sqlResult, setSqlResult] = useState<SqlRunResult | null>(null);
   const tailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -59,8 +84,33 @@ export function AgentConsolePage() {
       setBusinessRules(br.business_rules ?? []);
       setRulesNote(br.classification_note ?? "");
       setTrinoEntities(br.trino_mapping?.semantic_entities ?? []);
+      const kg = await fetchJson<{ graph?: { nodes?: KgNode[]; edges?: KgEdge[] } }>(
+        "/api/agents/kg-graph"
+      );
+      setKgNodes(kg.graph?.nodes ?? []);
+      setKgEdges(kg.graph?.edges ?? []);
+      const kq = await fetchJson<{ queries?: KgSqlMeta[] }>("/api/agents/kg-sql");
+      setKgSqlQueries(kq.queries ?? []);
     })();
   }, []);
+
+  async function runKgSql(queryId: string) {
+    setSqlBusyId(queryId);
+    setSqlResult(null);
+    try {
+      const res = await fetchJson<SqlRunResult>(
+        `/api/agents/kg-sql/${encodeURIComponent(queryId)}/run`,
+        { method: "POST" }
+      );
+      setSqlResult(res);
+    } catch (e) {
+      setSqlResult({ ok: false, error: String(e) });
+    } finally {
+      setSqlBusyId(null);
+    }
+  }
+
+  const conceptNodes = kgNodes.filter((n) => n.kind === "IncidentConcept");
 
   useEffect(() => {
     tailRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -124,7 +174,7 @@ export function AgentConsolePage() {
       <aside className="panel agent-apps-rail">
         <h2 className="panel-title">Agenten-Apps</h2>
         <p className="text-muted" style={{ fontSize: 12, marginTop: 0 }}>
-          CrewAI + Semantica-Ontologie — kein SQL-Workspace.
+          CrewAI + Semantica-KG · Trino-Evidence (allowlist).
         </p>
         {apps.map((a) => (
           <button
@@ -219,6 +269,80 @@ export function AgentConsolePage() {
             </li>
           ))}
         </ul>
+        <h2 className="panel-title" style={{ marginTop: 12 }}>
+          Semantica KG
+        </h2>
+        <p className="text-muted" style={{ fontSize: 10 }}>
+          {conceptNodes.length} Konzepte · {kgEdges.length} Kanten (concept/entity → Trino)
+        </p>
+        <ul className="agent-ontology-list">
+          {conceptNodes.slice(0, 8).map((c) => {
+            const id = c.id.replace(/^concept:/, "");
+            const linked = kgEdges
+              .filter((e) => e.from === c.id)
+              .map((e) => kgNodes.find((n) => n.id === e.to)?.table)
+              .filter(Boolean)
+              .slice(0, 3);
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => {
+                    setDraft(
+                      `Semantica-KG: Erkläre Konzept ${id} (${c.label}) und Evidence-Tabellen ${linked.join(", ")}.`
+                    );
+                    setAppId("semantica-curator");
+                  }}
+                >
+                  <span className="mono">{id}</span>
+                </button>
+                <div className="text-muted" style={{ fontSize: 10 }}>
+                  {linked.length ? linked.join(" · ") : "—"}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <h2 className="panel-title" style={{ marginTop: 12 }}>
+          Trino Evidence
+        </h2>
+        <ul className="agent-ontology-list">
+          {kgSqlQueries.map((q) => (
+            <li key={q.id}>
+              <button
+                type="button"
+                className="linkish"
+                style={{ fontSize: 11, padding: "4px 8px" }}
+                disabled={sqlBusyId === q.id}
+                onClick={() => void runKgSql(q.id)}
+              >
+                {sqlBusyId === q.id ? "…" : "▶"} {q.label}
+              </button>
+              <div className="text-muted" style={{ fontSize: 10 }}>
+                {q.description}
+              </div>
+            </li>
+          ))}
+        </ul>
+        {sqlResult ? (
+          <div className="panel" style={{ marginTop: 8, padding: 8, fontSize: 11 }}>
+            <div>
+              <strong>{sqlResult.label ?? sqlResult.query_id}</strong>
+              <span className="text-muted"> · {sqlResult.source ?? "…"}</span>
+            </div>
+            {sqlResult.error ? (
+              <div className="error-box">{sqlResult.error}</div>
+            ) : (
+              <pre className="mono" style={{ maxHeight: 160, overflow: "auto", margin: 0 }}>
+                {(sqlResult.rows ?? [])
+                  .slice(0, 12)
+                  .map((row) => JSON.stringify(row))
+                  .join("\n") || "(keine Zeilen)"}
+              </pre>
+            )}
+          </div>
+        ) : null}
         <h2 className="panel-title" style={{ marginTop: 12 }}>
           Semantica · Konzepte
         </h2>
