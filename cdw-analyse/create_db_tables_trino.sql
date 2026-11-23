@@ -385,7 +385,7 @@ CREATE TABLE social_media_messages(
   verification_notes varchar   COMMENT 'Analyst/auto-verification notes (reverse image, AIS fusion, bot campaign)',
   scenario_id       varchar    COMMENT 'NiFi simulator scenario id for demos',
   image_recycle_id  varchar    COMMENT 'Known recycled image id when applicable',
-  correlation_hint  varchar    COMMENT 'Suggested sensor stream for Flink cross-check'
+  correlation_hint  varchar    COMMENT 'Suggested sensor stream for Trino sketch cross-check'
 ) WITH (partitioning = ARRAY['truncate(ts, 10)']);
 
 DROP TABLE IF EXISTS german_navy_fleet;
@@ -758,6 +758,30 @@ CREATE TABLE ais_baseline_sketches (
   speed_tdigest varbinary COMMENT 'Serialized T-Digest of SOG.',
   mmsi_set_digest varbinary COMMENT 'Serialized SetDigest of MMSIs.',
   updated_at timestamp COMMENT 'Last baseline update (UTC).'
+);
+
+-- Rolling threat density per map tile (~11 km); rebuilt each outlier job (4h window).
+DROP TABLE IF EXISTS baltic_threat_tile_sketches;
+CREATE TABLE baltic_threat_tile_sketches (
+  quadkey varchar COMMENT 'Bing quadkey zoom 11.',
+  severity_tdigest varbinary COMMENT 'T-Digest of threat severity scores in tile.',
+  outlier_type_set varbinary COMMENT 'SetDigest of Outlier_Type / event labels.',
+  mmsi_set varbinary COMMENT 'SetDigest of MMSI or pseudo-ids (0 for DAS).',
+  sensor_lane_set varbinary COMMENT 'SetDigest of lanes: AIS, DAS, GPS_EW, etc.',
+  event_count bigint COMMENT 'Raw point count merged into sketch.',
+  sev_p50 double COMMENT 'Cached median severity for fast NBA filters.',
+  sev_p90 double COMMENT 'Cached P90 severity.',
+  updated_at timestamp COMMENT 'Last sketch refresh (UTC).'
+);
+
+DROP TABLE IF EXISTS socmint_tile_sketches;
+CREATE TABLE socmint_tile_sketches (
+  quadkey varchar COMMENT 'Bing quadkey zoom 11.',
+  post_count bigint COMMENT 'SOCMINT posts in 24h window.',
+  account_set varbinary COMMENT 'SetDigest of user_username.',
+  trust_tag_set varbinary COMMENT 'SetDigest of trust_tag values.',
+  disinfo_count bigint COMMENT 'Posts with disinformation_flag in tile.',
+  updated_at timestamp COMMENT 'Last sketch refresh (UTC).'
 );
 
 DROP TABLE IF EXISTS vessel_outliers;

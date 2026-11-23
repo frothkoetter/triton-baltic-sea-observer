@@ -24,6 +24,8 @@ Tables written:
 | `ais_baseline_sketches` | T-Digest SOG + MMSI SetDigest per quadkey / type / course sector |
 | `vessel_outliers` | Detected anomalies (Iceberg; NiFi PutIceberg compatible) |
 | `infrastructure_ais_suspicions` | Pipeline/cable AIS blackout & korridor hits (spatial-lab 08/07) |
+| `baltic_threat_tile_sketches` | **Step 9** — per-tile T-Digest severity + SetDigest outlier types/MMSIs (4h window) |
+| `socmint_tile_sketches` | SOCMINT post density per tile (companion job) |
 
 ## Pipeline steps
 
@@ -36,6 +38,8 @@ Tables written:
 | 5 | STS | `Rendezvous` | Baltic 2h window: ≤500 m, both SOG &lt; 4 kn, latest AIS per MMSI/minute, pair dedupe |
 | 6 | Infrastructure | `Pipeline AIS Blackout` | 7d `ais_daten` gaps 30–1440 min vs `ostsee_pipelines_segmented` (lab query 08); ends in last 24h |
 | 7 | Infrastructure | `Pipeline Korridor Crossing`, `Pipeline Korridor Loitering` | Buffered corridor intersects + multi-cross or &gt;15 min &lt;3 kn (lab query 07) |
+| 8 | DAS | `DAS Cable Threat` | `das_cable_spectrogram_metadata` threats → `vessel_outliers` |
+| 9 | **Threat sketches** | — | Rebuild `baltic_threat_tile_sketches` + view `threat_hot_tiles` for fast SOCMINT/NBA |
 
 Each job run **deletes** rows for the Trino rule types above, then recomputes (prevents million-row `Rendezvous` buildup). Legacy NiFi labels (e.g. `Route Deviation`) are untouched.
 
@@ -87,10 +91,28 @@ ORDER BY Event_Timestamp DESC
 LIMIT 20;
 ```
 
+## SOCMINT verification (sketch lookup, Trino only)
+
+After Step 9 threats land in `baltic_threat_tile_sketches`, run:
+
+```bash
+./run_socmint_sketch_verification_trino.sh
+# or on CML: TRINO_JOB=socmint_sketch
+```
+
+See [`socmint_sketch_verification_trino.sql`](socmint_sketch_verification_trino.sql) and view `socmint_sketch_verified`. Trust upgrades use tile **sev_p50 / sev_p90** instead of heavy AIS↔post spatial joins.
+
+| Sketch | Type | Use |
+|--------|------|-----|
+| `ais_baseline_sketches` | T-Digest SOG + MMSI set per tile/type/sector | Kinematic outlier **detection** (P99 SOG) |
+| `baltic_threat_tile_sketches` | T-Digest severity + type/MMSI/lane sets | Gefahren **tile lookup** + SOCMINT **verification** |
+| `socmint_tile_sketches` | Post count + account set per tile | IW burst / coordinated tile activity |
+
 ## Scheduling
 
 - Run **baseline (Step 1)** hourly (needs ~24h AIS history).
-- Run **detection (Steps 2–5)** every 5–15 minutes after NiFi batches land in Iceberg.
+- Run **detection (Steps 2–9)** every 5–15 minutes after NiFi batches land in Iceberg.
+- Run **SOCMINT sketch verify** immediately after outliers (same cadence or every 15 min).
 - Use CDP Query Studio, Oozie/cron, or NiFi **ExecuteSQL** / Trino reporting against this script.
 
 ## Related
