@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.18-ttyd-full",
+  "build": "0.2.19-semantic-data-chat",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

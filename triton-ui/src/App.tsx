@@ -6,7 +6,7 @@ import { EMPTY_LAGEBILD_FILTERS, type LagebildFilters } from "./lib/lagebild-fil
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
 import { NbaHitlPage } from "./pages/NbaHitl";
-import { AgentConsolePage } from "./pages/AgentConsole";
+import { DataSemanticChatPage } from "./pages/DataSemanticChat";
 import { LidarPage } from "./pages/Lidar";
 import { DasCablePage } from "./pages/DasCable";
 import { SitrepPage } from "./pages/Sitrep";
@@ -169,7 +169,7 @@ export default function App() {
               ["das", "Acoustic Sensors"],
               ["socmint", "SOCMINT"],
               ["sitrep", "SITREP"],
-              ["agents", "Agenten"],
+              ["agents", "Daten (Semantica)"],
               ["nba", "NBA HITL"],
             ] as const
           ).map(([id, label]) => (
@@ -201,7 +201,7 @@ export default function App() {
           {zone === "das" && <DasCablePage />}
           {zone === "socmint" && <SocmintPage />}
           {zone === "sitrep" && <SitrepPage />}
-          {zone === "agents" && <AgentConsolePage />}
+          {zone === "agents" && <DataSemanticChatPage />}
           {zone === "nba" && <NbaHitlPage />}
         </main>
       </div>

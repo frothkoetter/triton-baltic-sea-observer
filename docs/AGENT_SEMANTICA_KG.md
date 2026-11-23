@@ -21,7 +21,10 @@ NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight
 | GET | `/api/agents/ttyd` | KDM golden examples + TTYD SQL ids |
 | POST | `/api/agents/ttyd/resolve` | Natural language → mapping plan (MVP) |
 | POST | `/api/agents/ttyd/e2e` | KG compare + live Trino SQL for one golden example |
-| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) |
+| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) v2 + column validation |
+| GET | `/api/agents/ontology-map` | Semantic entities + column registry (ontology → table.columns) |
+
+**UI:** Tab **Agenten** = **Talk to your Data** (single-column Semantica-style chat). Crew-Apps unter „Legacy“.
 
 Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 

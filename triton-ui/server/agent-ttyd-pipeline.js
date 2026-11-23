@@ -9,6 +9,7 @@ import {
   compareKgVsPlan,
 } from "./agent-ttyd.js";
 import { getKgSqlQuery } from "./agent-kg.js";
+import { semanticMappingForClasses, validateSqlMapping } from "./agent-ontology-schema.js";
 
 function agentMapper(text, example) {
   const resolved = example ? { ok: true, example, score: 99 } : resolveGoldenExample(text);
@@ -125,13 +126,22 @@ export async function runTtydAsk({ text, queryWarehouse }) {
     ? compareKgVsPlan(mapper.mapping_plan, kgTables)
     : { overlap_count: 0, tables_in_both: [], tables_plan_only: [] };
 
+  const ontology_bindings = mapper.ok
+    ? semanticMappingForClasses(mapper.kdm_classes)
+    : [];
   const analytic = await agentAnalytic(mapper, queryWarehouse);
+  const sql_validation =
+    mapper.ok && analytic.sql
+      ? validateSqlMapping(analytic.sql, mapper.mapping_plan)
+      : { ok: false, warnings: ["no sql"] };
   const synthesizer = agentSynthesizer(trimmed, mapper, analytic, kgCompare);
 
   return {
     ok: mapper.ok && synthesizer.ok,
-    schema: "triton-ttyd-ask/1",
+    schema: "triton-ttyd-ask/2",
     user_text: trimmed,
+    ontology_bindings,
+    sql_validation,
     agents: {
       ontology_mapper: mapper,
       sql_executor: analytic,
