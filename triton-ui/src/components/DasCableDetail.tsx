@@ -1,21 +1,31 @@
-import type { DasCableSegment } from "../lib/das-cable";
-import { dasThreatColor } from "../lib/das-cable";
+import type { DasCableSegment, DasThreatLabelMode } from "../lib/das-cable";
+import { dasThreatColor, segmentThreatLabel, segmentThreatLabelsDiffer } from "../lib/das-cable";
 import { DasCablePreview } from "./DasCablePreview";
 
-type Props = { segment: DasCableSegment | null };
+type Props = { segment: DasCableSegment | null; threatLabelMode?: DasThreatLabelMode };
 
-export function DasCableDetail({ segment }: Props) {
+export function DasCableDetail({ segment, threatLabelMode = "ground_truth" }: Props) {
   if (!segment) {
     return <p className="lidar-preview empty">Wählen Sie ein Segment auf der Karte oder in der Tabelle.</p>;
   }
-  const threat = segment.predicted_threat_type ?? segment.threat_class ?? "ambient";
+  const threat = segmentThreatLabel(segment, threatLabelMode);
   const color = dasThreatColor(threat);
+  const showMlMismatch = segmentThreatLabelsDiffer(segment);
   return (
     <div className="lidar-preview">
       <div className="lidar-preview-title">{segment.cable_name ?? segment.cable_asset}</div>
       <span className="type-pill" style={{ borderColor: color, color }}>
         {threat}
       </span>
+      {showMlMismatch ? (
+        <p className="mono" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+          GT <strong>{segment.threat_class}</strong> · ML{" "}
+          <strong>{segment.predicted_threat_type}</strong>
+          {segment.model_confidence != null
+            ? ` (${Number(segment.model_confidence).toFixed(2)})`
+            : ""}
+        </p>
+      ) : null}
       <DasCablePreview segment={segment} />
       <table className="lidar-meta-table">
         <tbody>
