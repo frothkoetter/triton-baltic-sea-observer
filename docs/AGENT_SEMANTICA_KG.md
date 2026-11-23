@@ -1,6 +1,6 @@
 # Agent console — Semantica knowledge graph & Trino evidence
 
-Roadmap (multi-agent „Talk to your Data“): [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md).
+Roadmap (multi-agent „Talk to your Data“): [`IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md`](./IMPLEMENTIERUNGSPLAN_ONTOLOGY_AGENTIC_TTYD.md) · Build **0.2.20-semantica-mcp-bridge**.
 
 NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight KG view** derived from:
 
@@ -18,6 +18,18 @@ NATO UI tab **#agents** (Agenten) binds conversational agents to a **lightweight
 | GET | `/api/agents/kg-graph` | Nodes/edges: `IncidentConcept`, `SemanticEntity`, `TrinoTable`, `RulebookRef` |
 | GET | `/api/agents/kg-sql` | Allowlisted evidence queries (metadata only) |
 | POST | `/api/agents/kg-sql/:queryId/run` | Execute one curated **SELECT** via Trino bridge |
+| GET | `/api/agents/ttyd` | KDM golden examples + TTYD SQL ids |
+| POST | `/api/agents/ttyd/resolve` | Natural language → mapping plan (MVP) |
+| POST | `/api/agents/ttyd/e2e` | KG compare + live Trino SQL for one golden example |
+| POST | `/api/agents/ttyd/ask` | **3-Agent-Pipeline** (Mapper → SQL → Synthesizer) v2 + column validation |
+| GET | `/api/agents/ontology-map` | Semantic entities + column registry (ontology → table.columns) |
+| GET | `/api/agents/semantica/graph-summary` | [Semantica MCP](https://github.com/frothkoetter/semantica) `get_graph_summary` |
+| GET | `/api/agents/semantica/business-rules` | `get_business_rules` (JOINs, `sql_agent_hints`) |
+| GET | `/api/agents/semantica/paths` | `SEMANTICA_KG_PATH` / mapping / rules defaults |
+
+Bundled ontology: [`cdw-analyse/ontology/README.md`](../cdw-analyse/ontology/README.md) — same env vars as Semantica MCP (`SEMANTICA_KG_PATH`, `SEMANTICA_MAPPING_CONFIG`, `SEMANTICA_BUSINESS_RULES`).
+
+**UI:** Tab **Daten (Semantica)** = Talk to your Data. `ttyd/ask` includes `semantica_mcp` grounding. Crew-Apps unter „Legacy“.
 
 Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 
@@ -32,8 +44,27 @@ Same read-only rules as `/api/query` (`sql-validator.js`): no DDL/DML.
 | `kg_lagebild_sources` | `lagebild.Data_Source` |
 | `kg_nba_open_incidents` | Recent `nba_incidents` |
 | `kg_socmint_trust` | SOCMINT `trust_tag` counts |
+| `ttyd_sanctioned_latest_ais` | Sanctioned + latest AIS |
+| `ttyd_gps_jamming_nic` | GPS jamming NIC &lt; 5 |
+| `ttyd_area_entry_sample` | `area_violation` enter events |
+| `ttyd_lagebild_gdansk` | Lagebild harbour Gdańsk |
+| `ttyd_marine_messages_baltic` | tactical messages Baltic |
+| `ttyd_fishing_near_kiel` | fishing AIS near Kiel |
+| `ttyd_nba_mda_history` | prior NBA incidents (MDA) |
 
 SQL templates are duplicated for operators in [`cdw-analyse/agent_kg_evidence_trino.sql`](../cdw-analyse/agent_kg_evidence_trino.sql) (CML / Trino CLI).
+
+**E2E smoke (CML Session with Trino env):**
+
+```bash
+cd ~/triton-ui
+bash cdsw-build.sh          # once: installs Node into project (.nvm / .node-runtime)
+bash scripts/ttyd-e2e.sh --local
+```
+
+CML sessions often have no global `node` — use **`ttyd-e2e.sh`**, not bare `node`.
+
+Data: [`kdm_defense_classes.json`](../cai-workbench/next-best-action/data/kdm_defense_classes.json) (16 KDM classes + golden examples).
 
 ## CML — run evidence SQL manually
 

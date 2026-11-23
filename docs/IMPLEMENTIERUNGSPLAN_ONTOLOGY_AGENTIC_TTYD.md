@@ -1,6 +1,8 @@
 # Implementierungsplan: Ontology-Driven Agentic AI („Talk to your Data“)
 
-Stand: November 2026 · Repository: **Triton Baltic Sea Observer**  
+Stand: November 2026 · Repository: **Triton Baltic Sea Observer**
+
+**Umsetzungsstatus (MVP):** in `main` ab Build **0.2.20-semantica-mcp-bridge** — TTYD-Pipeline, Semantica-MCP-Bundle (`cdw-analyse/ontology/`), UI **Daten (Semantica)** (`DataSemanticChat.tsx`). Details: [Lieferumfang-Kurzreferenz](#lieferumfang-implementiert) unten.
 Verwandte Artefakte: [`AGENT_SEMANTICA_KG.md`](./AGENT_SEMANTICA_KG.md) · [`baltic_ontology.json`](../cai-workbench/next-best-action/data/baltic_ontology.json) · [`baltic_trino_mapping.json`](../cai-workbench/next-best-action/data/baltic_trino_mapping.json) · [`UI_OVERVIEW.md`](../triton-ui/docs/UI_OVERVIEW.md) · NBA Phase 8 MCP/Semantica · CML `workflow_data/config/*`
 
 ---
@@ -308,3 +310,19 @@ MCP-Server: **iceberg-mcp-server-trino** + **semantica** — Session-ENV identis
 | **KDM** | Knowledge/Data Mapping (16 Defence-Ontologie-Klassen) |
 | **MappingPlan** | Maschinenlesbarer Übersetzer-Output vor SQL |
 | **Useful artifacts** | Zitierpfade: R2RML, Rules, Graph JSON |
+
+---
+
+## Lieferumfang (implementiert)
+
+| Komponente | Ort |
+|------------|-----|
+| 16 KDM-Klassen + 10 Golden Examples | `kdm_defense_classes.json` |
+| 3-Agent-Pipeline (Mapper, SQL, Synthesizer) v2 | `agent-ttyd-pipeline.js`, `POST /api/agents/ttyd/ask` |
+| Semantica MCP bundle | `cdw-analyse/ontology/*`, `GET /api/agents/semantica/*` |
+| KG vs Plan Vergleich + E2E | `agent-ttyd.js`, `scripts/ttyd-e2e.sh` |
+| Allowlist SQL (10 golden queries) | `agent-kg.js` |
+| UI Talk to Data | `DataSemanticChat.tsx` (#agents); Legacy `AgentConsole.tsx` |
+| DDL-Mapping-Validator | `cdw-analyse/validate_kdm_mapping.py` |
+
+**Backlog:** CrewAI-LLM-Mapper, dynamisches SQL aus `get_business_rules`, `record_decision` nach Antwort, JC3IEDM-Serialisierung — siehe Phasen 4–6 oben.

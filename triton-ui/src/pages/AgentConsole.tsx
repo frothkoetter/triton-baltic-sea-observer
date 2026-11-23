@@ -46,6 +46,22 @@ type SqlRunResult = {
   error?: string;
 };
 
+type TtydExample = {
+  id: string;
+  description_de?: string;
+  kg_query_id?: string;
+  classes?: string[];
+};
+
+type TtydE2eResult = {
+  ok?: boolean;
+  example_id?: string;
+  mapping_plan?: { tables?: string[]; views?: string[] };
+  kg_compare?: { overlap_count?: number; tables_in_both?: string[] };
+  synthesis?: { summary_de?: string };
+  sql?: SqlRunResult & { row_count?: number };
+};
+
 export function AgentConsolePage() {
   const [apps, setApps] = useState<AgentApp[]>([]);
   const [appId, setAppId] = useState("lage-analyst");
@@ -64,6 +80,9 @@ export function AgentConsolePage() {
   const [kgSqlQueries, setKgSqlQueries] = useState<KgSqlMeta[]>([]);
   const [sqlBusyId, setSqlBusyId] = useState<string | null>(null);
   const [sqlResult, setSqlResult] = useState<SqlRunResult | null>(null);
+  const [ttydExamples, setTtydExamples] = useState<TtydExample[]>([]);
+  const [ttydBusyId, setTtydBusyId] = useState<string | null>(null);
+  const [ttydResult, setTtydResult] = useState<TtydE2eResult | null>(null);
   const tailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -91,8 +110,28 @@ export function AgentConsolePage() {
       setKgEdges(kg.graph?.edges ?? []);
       const kq = await fetchJson<{ queries?: KgSqlMeta[] }>("/api/agents/kg-sql");
       setKgSqlQueries(kq.queries ?? []);
+      const ttyd = await fetchJson<{ golden_examples?: TtydExample[] }>("/api/agents/ttyd");
+      setTtydExamples(ttyd.golden_examples ?? []);
     })();
   }, []);
+
+  async function runTtydE2e(exampleId: string) {
+    setTtydBusyId(exampleId);
+    setTtydResult(null);
+    try {
+      const res = await fetchJson<TtydE2eResult>("/api/agents/ttyd/e2e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ example_id: exampleId }),
+      });
+      setTtydResult(res);
+      if (res.sql) setSqlResult(res.sql);
+    } catch (e) {
+      setTtydResult({ ok: false, synthesis: { summary_de: String(e) } });
+    } finally {
+      setTtydBusyId(null);
+    }
+  }
 
   async function runKgSql(queryId: string) {
     setSqlBusyId(queryId);
@@ -143,22 +182,40 @@ export function AgentConsolePage() {
     setDraft("");
     setBusy(true);
     setError("");
-    try {
-      const res = await fetchJson<{
-        ok: boolean;
-        message?: ChatMessage;
-        engine?: string;
-        error?: string;
-      }>("/api/agents/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_id: appId, messages: next }),
-      });
-      if (res.ok && res.message) {
-        setMessages([...next, res.message]);
-        setEngine(res.engine ?? "");
+  try {
+      if (appId === "talk-to-data") {
+        const res = await fetchJson<{
+          ok?: boolean;
+          summary_de?: string;
+          reply?: string;
+          error?: string;
+          agents?: { ontology_mapper?: { example_id?: string } };
+        }>("/api/agents/ttyd/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: content }),
+        });
+        const body = res.reply || res.summary_de || res.error || "(keine Antwort)";
+        setMessages([...next, { role: "assistant", content: body }]);
+        setEngine(res.agents?.ontology_mapper?.example_id ? `ttyd:${res.agents.ontology_mapper.example_id}` : "ttyd");
+        if (!res.ok) setError(res.error ?? "TTYD ohne Treffer");
       } else {
-        setError(res.error ?? "Chat failed");
+        const res = await fetchJson<{
+          ok: boolean;
+          message?: ChatMessage;
+          engine?: string;
+          error?: string;
+        }>("/api/agents/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_id: appId, messages: next }),
+        });
+        if (res.ok && res.message) {
+          setMessages([...next, res.message]);
+          setEngine(res.engine ?? "");
+        } else {
+          setError(res.error ?? "Chat failed");
+        }
       }
     } catch (e) {
       setError(String(e));
@@ -304,6 +361,35 @@ export function AgentConsolePage() {
             );
           })}
         </ul>
+        <h2 className="panel-title" style={{ marginTop: 12 }}>
+          Talk to your Data (E2E)
+        </h2>
+        <p className="text-muted" style={{ fontSize: 10 }}>
+          Ontology → Mapping-Plan ↔ KG-Tabellen → Live-SQL
+        </p>
+        <ul className="agent-ontology-list">
+          {ttydExamples.map((ex) => (
+            <li key={ex.id}>
+              <button
+                type="button"
+                className="linkish"
+                style={{ fontSize: 11 }}
+                disabled={ttydBusyId === ex.id}
+                onClick={() => void runTtydE2e(ex.id)}
+              >
+                {ttydBusyId === ex.id ? "…" : "◎"} {ex.description_de ?? ex.id}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {ttydResult?.synthesis?.summary_de ? (
+          <div className="text-muted" style={{ fontSize: 10, marginTop: 6 }}>
+            {ttydResult.synthesis.summary_de}
+            {ttydResult.kg_compare?.overlap_count != null
+              ? ` · KG overlap: ${ttydResult.kg_compare.overlap_count}`
+              : null}
+          </div>
+        ) : null}
         <h2 className="panel-title" style={{ marginTop: 12 }}>
           Trino Evidence
         </h2>

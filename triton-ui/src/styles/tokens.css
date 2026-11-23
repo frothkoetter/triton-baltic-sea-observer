@@ -1113,6 +1113,140 @@ a {
   min-height: 520px;
 }
 
+.data-semantic-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: min(78vh, 720px);
+}
+
+.dsc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.dsc-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dsc-chip {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  max-width: 280px;
+}
+
+.dsc-chip:hover:not(:disabled) {
+  border-color: var(--accent, #c9a227);
+}
+
+.dsc-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 320px;
+  max-height: min(55vh, 560px);
+}
+
+.dsc-compose {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 10px;
+}
+
+.dsc-compose textarea {
+  flex: 1;
+  font-family: inherit;
+  font-size: 13px;
+  min-height: 56px;
+}
+
+.dsc-steps {
+  font-size: 12px;
+  width: 100%;
+}
+
+.dsc-summary {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.dsc-step {
+  margin: 6px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.dsc-step summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dsc-bindings {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.dsc-sql {
+  font-size: 10px;
+  max-height: 140px;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 8px 0 0;
+  padding: 8px;
+  background: var(--bg-base);
+  border-radius: 4px;
+}
+
+.dsc-table-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.dsc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.dsc-table th,
+.dsc-table td {
+  border: 1px solid var(--border-subtle);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.dsc-warn {
+  color: #e8a87c;
+  font-size: 11px;
+  margin: 4px 0;
+}
+
+.dsc-back {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
 .agent-chat-main {
   display: flex;
   flex-direction: column;

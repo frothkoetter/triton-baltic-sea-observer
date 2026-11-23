@@ -12,8 +12,13 @@
       "tables": [
         {
           "table": "ships",
-          "role": "Latest AIS positions / fleet snapshot",
-          "key_columns": ["mmsi", "ship_name", "flag", "latitude", "longitude", "vessel_type"]
+          "role": "Vessel registry (static attributes); positions via ais_events_ice",
+          "key_columns": ["mmsi", "ship_name", "flag", "vessel_type", "home_port"]
+        },
+        {
+          "table": "ais_events_ice",
+          "role": "Live/historic AIS positions for MaritimeUnit",
+          "key_columns": ["mmsi", "latitude", "longitude", "event_timestamp", "sog"]
         },
         {
           "table": "german_navy_fleet",
@@ -75,6 +80,11 @@
           "table": "vessel_outliers",
           "role": "Published outlier feed (9 detection types)",
           "key_columns": ["mmsi", "outlier_type", "event_timestamp", "severity", "latitude", "longitude"]
+        },
+        {
+          "table": "gps_jammer_events",
+          "role": "GPSElectronicWarfareIndicator / ProbableGPSJamming tiles",
+          "key_columns": ["geohash", "ts", "adsb_nic", "jamming_indicator", "latitude", "longitude"]
         }
       ],
       "sql_jobs": ["cdw-analyse/outlier_detection_trino.sql"],
@@ -95,13 +105,13 @@
       "tables": [
         {
           "table": "observation_areas",
-          "role": "Tier-A / EMODnet observation polygons",
-          "key_columns": ["name", "geometry", "tier"]
+          "role": "SurveillanceArea / Tier-A polygons",
+          "key_columns": ["area_id", "polygon", "country", "area_type", "tier"]
         },
         {
           "table": "area_violation",
-          "role": "Ship vs restricted area violations",
-          "key_columns": ["mmsi", "area_name", "violation_time"]
+          "role": "AreaViolationEvent VIEW (transition enter/exit)",
+          "key_columns": ["mmsi", "area_id", "transition", "event_timestamp"]
         }
       ],
       "api_routes": ["/api/observation-areas", "/api/analyses/violations", "/api/analyses/restricted-analytics"]
@@ -175,7 +185,7 @@
       "detection_sql": "cai-workbench/next-best-action/sql/alerts/das_cable_threat_top1.sql"
     },
     "gps_jammer": {
-      "primary_tables": ["vessel_outliers", "ais_events_ice", "marine_messages"],
+      "primary_tables": ["gps_jammer_events", "vessel_outliers", "ais_events_ice", "marine_messages"],
       "outlier_types": ["Misreported Status", "MMSI Teleportation"]
     },
     "rus_fleet_proximity": {

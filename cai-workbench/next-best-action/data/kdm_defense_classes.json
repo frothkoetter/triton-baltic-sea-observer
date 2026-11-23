@@ -1,0 +1,180 @@
+{
+  "version": "2026-11",
+  "namespace": "https://w3id.org/triton/baltic-sea-observer/defense#",
+  "warehouse": { "catalog": "iceberg", "schema": "defense" },
+  "thresholds": {
+    "gps_jamming_nic_threshold": 5,
+    "proximity_harbour_lagebild_ais_m": 30000,
+    "lagebild_lookback_hours": 24,
+    "vessel_proximity_window_hours": 4,
+    "area_violation_lookback_days": 7
+  },
+  "classes": [
+    {
+      "class_id": "AISTrackReport",
+      "label": "AIS track report",
+      "primary_table": "ais_events_ice",
+      "position_columns": ["latitude", "longitude", "event_timestamp"],
+      "registry_only": false
+    },
+    {
+      "class_id": "MaritimePlatform",
+      "label": "Maritime platform",
+      "primary_table": "ships",
+      "position_columns": [],
+      "position_via": { "table": "ais_events_ice", "join_on": "mmsi", "note": "Registry has no lat/lon" }
+    },
+    {
+      "class_id": "NavalUnit",
+      "label": "Naval unit",
+      "primary_tables": ["german_navy_fleet", "ships"],
+      "filter_hints": ["vessel_type = Naval", "german_navy_fleet"]
+    },
+    {
+      "class_id": "SanctionedMaritimePlatform",
+      "label": "Sanctioned maritime platform",
+      "primary_table": "sanctioned_vessels",
+      "key_columns": ["mmsi", "name", "sanction_reason"],
+      "preferred_view": "latest_sanctioned_vessel_events"
+    },
+    {
+      "class_id": "PlatformStatusReport",
+      "label": "Platform status report",
+      "primary_table": "marine_vessel_status"
+    },
+    {
+      "class_id": "SurveillanceArea",
+      "label": "Surveillance area",
+      "primary_table": "observation_areas",
+      "key_columns": ["area_id", "name", "polygon"]
+    },
+    {
+      "class_id": "AreaViolationEvent",
+      "label": "Area violation event",
+      "primary_view": "area_violation",
+      "key_columns": ["mmsi", "area_id", "transition", "event_timestamp"],
+      "note": "Use area_id + observation_areas.name, not area_name on view"
+    },
+    {
+      "class_id": "GPSElectronicWarfareIndicator",
+      "label": "GPS / EW integrity indicator",
+      "primary_table": "gps_jammer_events",
+      "key_columns": ["geohash", "ts", "latitude", "longitude", "adsb_nic", "jamming_indicator"]
+    },
+    {
+      "class_id": "SituationPictureEntry",
+      "label": "Situation picture entry",
+      "primary_view": "lagebild",
+      "key_columns": ["Data_Source", "event_time", "latitude", "longitude"]
+    },
+    {
+      "class_id": "FormattedTacticalMessage",
+      "label": "Formatted tactical message",
+      "primary_tables": ["marine_messages", "maritime_surveillance_reports"],
+      "key_columns": ["message_dtg", "message_subject"]
+    },
+    {
+      "class_id": "OSINTSocialMediaPost",
+      "label": "OSINT social media post",
+      "primary_table": "social_media_messages"
+    },
+    {
+      "class_id": "VesselAnomalyEvent",
+      "label": "Vessel anomaly event",
+      "primary_table": "vessel_outliers"
+    },
+    {
+      "class_id": "VesselProximityAssessment",
+      "label": "Vessel proximity assessment",
+      "primary_view": "vessel_proximity"
+    },
+    {
+      "class_id": "PortFacility",
+      "label": "Port facility",
+      "primary_table": "baltic_sea_harbours",
+      "key_columns": ["name", "latitude", "longitude"]
+    },
+    {
+      "class_id": "BuoyMagneticDetection",
+      "label": "Buoy magnetic detection",
+      "primary_tables": ["buoy_data", "buoy_near_harbours"]
+    },
+    {
+      "class_id": "SituationAwarenessSummary",
+      "label": "Situation awareness summary",
+      "primary_table": "situation_awareness_summary"
+    }
+  ],
+  "golden_examples": [
+    {
+      "id": "gq_sanctioned_ais",
+      "prompts": ["sanctioned", "sanction_reason", "latest ais", "AISTrackReport"],
+      "classes": ["SanctionedMaritimePlatform", "AISTrackReport"],
+      "kg_query_id": "ttyd_sanctioned_latest_ais",
+      "description_de": "Sanktionsschiffe mit letzter AIS-Position und sanction_reason"
+    },
+    {
+      "id": "gq_gps_jamming",
+      "prompts": ["gps jamming", "ProbableGPSJamming", "adsb_nic", "EW"],
+      "classes": ["GPSElectronicWarfareIndicator"],
+      "kg_query_id": "ttyd_gps_jamming_nic",
+      "description_de": "GPS-Jamming: adsb_nic unter NATO-Schwelle"
+    },
+    {
+      "id": "gq_lagebild_sources",
+      "prompts": ["lagebild", "situation picture", "SituationPictureEntry", "Gdańsk", "sources"],
+      "classes": ["SituationPictureEntry"],
+      "kg_query_id": "kg_lagebild_sources",
+      "description_de": "Lagebild-Quellen (Data_Source)"
+    },
+    {
+      "id": "gq_registry_gap",
+      "prompts": ["ships registry", "ohne ships", "MMSI gap", "Unknown"],
+      "classes": ["MaritimePlatform", "AISTrackReport"],
+      "kg_query_id": "kg_ships_registry_gap",
+      "description_de": "AIS-MMSI ohne ships-Stammdaten"
+    },
+    {
+      "id": "gq_area_violation",
+      "prompts": ["AreaEntry", "Bornholm", "area violation", "SurveillanceArea"],
+      "classes": ["AreaViolationEvent", "SurveillanceArea"],
+      "kg_query_id": "ttyd_area_entry_sample",
+      "description_de": "Area enter/exit (area_violation VIEW)"
+    },
+    {
+      "id": "gq_outliers",
+      "prompts": ["outlier", "vessel anomaly", "VesselAnomalyEvent"],
+      "classes": ["VesselAnomalyEvent"],
+      "kg_query_id": "kg_outliers_by_type",
+      "description_de": "Vessel outlier Verteilung"
+    },
+    {
+      "id": "gq_gdansk_lagebild",
+      "prompts": ["Gdańsk", "Gdansk", "PortFacility", "SituationPictureEntry", "lagebild", "24 hours", "24h"],
+      "classes": ["SituationPictureEntry", "PortFacility"],
+      "kg_query_id": "ttyd_lagebild_gdansk",
+      "description_de": "Lagebild um Hafen Gdańsk (Data_Source, harbour_name)"
+    },
+    {
+      "id": "gq_marine_messages",
+      "prompts": ["marine_messages", "FormattedTacticalMessage", "messageDateTimeGroup", "DTG", "Baltic", "tactical message"],
+      "classes": ["FormattedTacticalMessage"],
+      "kg_query_id": "ttyd_marine_messages_baltic",
+      "description_de": "Taktische Kurzmeldungen Ostsee (DTG + Betreff)"
+    },
+    {
+      "id": "gq_fishing_kiel",
+      "prompts": ["fishing", "FishingVessel", "Kiel", "vicinity", "nahe", "Fischerei"],
+      "classes": ["MaritimePlatform", "AISTrackReport", "PortFacility"],
+      "kg_query_id": "ttyd_fishing_near_kiel",
+      "description_de": "Fischereifahrzeuge in der Nähe von Kiel (AIS, nicht ships.lat)"
+    },
+    {
+      "id": "gq_mda_prior",
+      "prompts": ["analyzed before", "mda_sanctions", "MDA", "prior", "zuvor", "nba incident"],
+      "classes": ["SituationAwarenessSummary", "SanctionedMaritimePlatform"],
+      "kg_query_id": "ttyd_nba_mda_history",
+      "description_de": "Frühere NBA-/MDA-ähnliche Vorfälle (nba_incidents)"
+    }
+  ]
+}
