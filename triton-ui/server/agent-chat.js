@@ -152,7 +152,8 @@ export const AGENT_APPS = [
     app_id: "semantica-curator",
     title: "Semantica-Kurator",
     subtitle: "KG, SHACL, MCP-Brücke",
-    starter_prompt: "Wie spiegle ich einen NBA-Freigabe-Entschluss im Semantica KG?",
+    starter_prompt:
+      "Wie verknüpfe ich semantica_record.json (MCP record_decision) mit den Trino-Evidence-Queries im KG-Panel?",
   },
 ];
 

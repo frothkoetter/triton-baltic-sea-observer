@@ -1,6 +1,6 @@
 # Agent Console — CrewAI + Semantica ontology (UI Phase 9)
 
-Replaces the NATO UI **SQL workspace** with three conversational agent apps grounded on `next-best-action/data/baltic_ontology.json` (Semantica KG seed).
+Conversational agent apps on `next-best-action/data/baltic_ontology.json` (Semantica KG seed) plus **KG graph** and **allowlisted Trino evidence** in the NATO UI `#agents` tab. See [`docs/AGENT_SEMANTICA_KG.md`](../../docs/AGENT_SEMANTICA_KG.md).
 
 ## Apps
 

@@ -26,10 +26,13 @@ Shared **Filter Rail** (multi-select: AIS flag, vessel type, ship name; **DEU / 
 |----------|---------|
 | `GET /api/agents/apps` | Lage-Analyst, COA-Berater, Semantica-Kurator |
 | `GET /api/agents/ontology` | `baltic_ontology.json` concepts + rulebook refs |
+| `GET /api/agents/kg-graph` | Semantica KG nodes/edges (concepts → Trino tables) |
+| `GET /api/agents/kg-sql` | Allowlisted evidence query catalog |
+| `POST /api/agents/kg-sql/:id/run` | Run one curated SELECT (Trino or sample) |
 | `POST /api/agents/chat` | `{ app_id, messages[] }` → Python `chat_bridge.py` (CrewAI / LLM / offline) |
 | `GET /api/agents/business-rules` | NATO business rules + `baltic_trino_mapping.json` entity map |
 
-Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Override with `TRITON_ONTOLOGY_PATH`.
+Ontology path: `cai-workbench/next-best-action/data/baltic_ontology.json`. Override with `TRITON_ONTOLOGY_PATH`. KG/SQL: [`docs/AGENT_SEMANTICA_KG.md`](../../docs/AGENT_SEMANTICA_KG.md).
 
 ---
 
