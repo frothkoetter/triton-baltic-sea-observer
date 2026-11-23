@@ -4,6 +4,7 @@ import { BasemapTileLayer } from "./BasemapTileLayer";
 import { MapInvalidateSize } from "./MapInvalidateSize";
 import { quadkeyLeafletBounds } from "../lib/bing-quadkey";
 import type { GpsJammerEvent } from "../lib/gps-jammer";
+import { GpsJammerGeohashLayer } from "./GpsJammerGeohashLayer";
 import {
   type SocmintDensityTile,
   type SocmintMessage,
@@ -140,40 +141,7 @@ export function SocmintMap({
             })
           : null}
 
-        {showGpsJammer
-          ? gpsJammerEvents.map((j) => {
-              const jamming = j.jamming_indicator !== false;
-              const color = jamming ? "#E040FB" : "#BA68C8";
-              const nic = j.adsb_nic;
-              return (
-                <CircleMarker
-                  key={`soc-gpsjam-${j.geohash}-${j.event_timestamp}`}
-                  center={[j.latitude, j.longitude]}
-                  radius={jamming ? 12 : 9}
-                  pathOptions={{
-                    color: "#4A148C",
-                    fillColor: color,
-                    fillOpacity: 0.93,
-                    weight: 2,
-                  }}
-                >
-                  <Tooltip>
-                    <span className="mono">
-                      <strong>GPS jammer · {j.geohash || "tile"}</strong>
-                      <br />
-                      {nic != null && Number.isFinite(nic) ? `NIC ${nic}` : "NIC —"}
-                      {j.signal_integrity != null && Number.isFinite(j.signal_integrity)
-                        ? ` · integrity ${j.signal_integrity.toFixed(2)}`
-                        : ""}
-                      {j.harbour_name ? ` · ${j.harbour_name}` : ""}
-                      <br />
-                      {(j.reason ?? (jamming ? "Probable jamming (NIC<5)" : "Monitor")).slice(0, 140)}
-                    </span>
-                  </Tooltip>
-                </CircleMarker>
-              );
-            })
-          : null}
+        {showGpsJammer ? <GpsJammerGeohashLayer events={gpsJammerEvents} /> : null}
 
         {showPosts
           ? messages.map((m) => {
@@ -248,7 +216,7 @@ export function SocmintMap({
         </span>
         {showGpsJammer ? (
           <span className="map-legend-item">
-            <i className="map-legend-swatch" style={{ background: "#E040FB" }} /> GPS jammer (NIC)
+            <i className="map-legend-swatch" style={{ background: "#E040FB" }} /> GPS jammer (geohash)
           </span>
         ) : null}
       </div>

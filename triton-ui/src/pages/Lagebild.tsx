@@ -12,7 +12,12 @@ import {
   type OutlierRow,
 } from "../components/TacticalMap";
 import { normalizeOstseeInfra, normalizeOstseePipeline } from "../lib/ostsee-infra-map";
-import { normalizeGpsJammerRow } from "../lib/gps-jammer";
+import {
+  collapseGpsJammerByGeohash,
+  filterGpsJammerEvents,
+  normalizeGpsJammerRow,
+  type GpsJammingFilter,
+} from "../lib/gps-jammer";
 import {
   filterAisRows,
   filterFleetUnits,
@@ -134,6 +139,16 @@ export function LagebildPage({ filters }: Props) {
     nba: true,
     routeTracks: true,
   });
+  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("all");
+  const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
+
+  const filteredGpsJammer = useMemo(() => {
+    const narrowed = filterGpsJammerEvents(gpsJammerEvents, {
+      jamming: gpsJammingFilter,
+      maxSignalIntegrity: gpsMaxSignalIntegrity,
+    });
+    return collapseGpsJammerByGeohash(narrowed);
+  }, [gpsJammerEvents, gpsJammingFilter, gpsMaxSignalIntegrity]);
 
   const nbaOnMap = useMemo(
     () =>
@@ -360,7 +375,7 @@ export function LagebildPage({ filters }: Props) {
                   : key === "outliers"
                     ? `AIS Outliers (${filteredOutliers.length})`
                     : key === "gpsJammer"
-                      ? `GPS jammer (${gpsJammerEvents.length})`
+                      ? `GPS jammer (${filteredGpsJammer.length})`
                       : key === "routeTracks"
                       ? `Route tracks 24h (${trackLegend.total})`
                       : key === "areas"
@@ -387,7 +402,7 @@ export function LagebildPage({ filters }: Props) {
           infrastruktur={ostseeInfra}
           pipelines={ostseePipelines}
           outliers={layers.outliers ? filteredOutliers : []}
-          gpsJammerEvents={layers.gpsJammer ? gpsJammerEvents : []}
+          gpsJammerEvents={layers.gpsJammer ? filteredGpsJammer : []}
           showGpsJammer={layers.gpsJammer}
           germanFleet={layers.germanFleet ? filteredGerman : []}
           russianFleet={layers.russianFleet ? filteredRussian : []}
@@ -435,8 +450,34 @@ export function LagebildPage({ filters }: Props) {
       <section className="panel" style={{ marginTop: 8 }}>
         <h2 className="panel-title">GPS jammer events (defense.gps_jammer_events)</h2>
         <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
-          Geohash tiles · ADSB NIC / signal integrity · source {gpsJammerSource}
+          Geohash-Kacheln (keine Punkt-Marker) · source {gpsJammerSource}
         </p>
+        <div className="socmint-gps-filters mono" style={{ marginBottom: 10 }}>
+          <label>
+            jamming_indicator
+            <select
+              value={gpsJammingFilter}
+              onChange={(e) => setGpsJammingFilter(e.target.value as GpsJammingFilter)}
+              aria-label="GPS jamming indicator filter"
+            >
+              <option value="all">Alle</option>
+              <option value="jamming">Jamming (true)</option>
+              <option value="monitor">Monitor (false)</option>
+            </select>
+          </label>
+          <label className="socmint-range">
+            signal_integrity ≤{" "}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(gpsMaxSignalIntegrity * 100)}
+              onChange={(e) => setGpsMaxSignalIntegrity(Number(e.target.value) / 100)}
+              aria-label="Maximum signal integrity"
+            />
+            <span>{gpsMaxSignalIntegrity.toFixed(2)}</span>
+          </label>
+        </div>
         <DataTable
           columns={[
             "geohash",
@@ -450,7 +491,7 @@ export function LagebildPage({ filters }: Props) {
             "reason",
           ]}
           rows={
-            gpsJammerEvents.slice(0, 50) as unknown as Record<string, unknown>[]
+            filteredGpsJammer.slice(0, 50) as unknown as Record<string, unknown>[]
           }
         />
       </section>
