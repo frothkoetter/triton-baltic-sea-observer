@@ -64,6 +64,17 @@ bash scripts/ttyd-e2e.sh --local
 
 CML sessions often have no global `node` — use **`ttyd-e2e.sh`**, not bare `node`.
 
+**CML shell cwd:** If your prompt is `~/triton-ui$` (repo root is **parent**), use paths **without** the `triton-ui/` prefix:
+
+```bash
+cd ~/triton-ui
+git -C .. pull origin main          # or: cd ~ && git pull origin main
+git checkout -- dist/                 # NOT triton-ui/dist/
+bash scripts/ttyd-e2e.sh --local      # NOT triton-ui/scripts/...
+```
+
+After pull: **restart the CDSW Application** (Node process loads new `server/*.js`). Footer / `build-stamp.json` should show **`0.2.20-semantica-mcp-bridge`** and `dist/index.html` should reference `index-x5xFyDh8.js` (not `index-B5TzeqFm.js`). Re-run `bash cdsw-build.sh` only if you need to rebuild `dist/` locally.
+
 Data: [`kdm_defense_classes.json`](../cai-workbench/next-best-action/data/kdm_defense_classes.json) (16 KDM classes + golden examples).
 
 ## CML — run evidence SQL manually

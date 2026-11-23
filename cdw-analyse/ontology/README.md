@@ -44,6 +44,16 @@ Install Semantica:
 pip install "git+https://github.com/frothkoetter/semantica.git"
 ```
 
+## CML (already in `~/triton-ui`)
+
+```bash
+cd ~/triton-ui
+git -C .. pull origin main
+git checkout -- dist/
+bash scripts/ttyd-e2e.sh --local
+# Restart CDSW Application, then open #agents (Daten Semantica)
+```
+
 ## Triton UI API
 
 - `GET /api/agents/semantica/graph-summary` — `get_graph_summary` (Python MCP or Node KG snapshot)
