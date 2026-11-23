@@ -54,7 +54,7 @@ export function SocmintPage() {
     densityTiles: false,
     gpsJammer: true,
   });
-  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("all");
+  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("jamming");
   const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
 
   useEffect(() => {

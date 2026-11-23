@@ -1,6 +1,7 @@
 /** Read-only SQL templates aligned with CDV dataset names (defense schema). */
 
 import { normalizeAisFilterObject, sqlInLiterals } from "./ais-filters.js";
+import { AIS_RESOLVED_FLAG_SQL } from "./ais-resolved-flag.js";
 
 function sqlLiteral(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
@@ -64,19 +65,22 @@ const RUS_FLEET_UNIQUE = `(
 export function buildAisLatestSnapshotCte(filters = {}) {
   const { flags, vesselTypes, shipNames } = normalizeAisFilterObject(filters);
   const predicates = ["a.latitude IS NOT NULL", "a.longitude IS NOT NULL"];
-  const flagIn = sqlInLiterals("s.flag", flags);
-  if (flagIn) predicates.push(flagIn);
   const typeIn = sqlInLiterals("s.vessel_type", vesselTypes);
   if (typeIn) predicates.push(typeIn);
   const nameIn = sqlInLiterals("s.ship_name", shipNames);
   if (nameIn) predicates.push(nameIn);
+  const snapshotPredicates = [];
+  const flagIn = sqlInLiterals("flag", flags);
+  if (flagIn) snapshotPredicates.push(flagIn);
+  const snapshotWhere =
+    snapshotPredicates.length > 0 ? `\n      WHERE ${snapshotPredicates.join("\n        AND ")}` : "";
   return `
     WITH latest AS (
       SELECT
         a.mmsi,
         s.ship_name,
         s.vessel_type,
-        s.flag,
+        ${AIS_RESOLVED_FLAG_SQL} AS flag,
         a.status,
         a.Destination AS destination,
         a.speed,
@@ -93,7 +97,20 @@ export function buildAisLatestSnapshotCte(filters = {}) {
       WHERE ${predicates.join("\n        AND ")}
     ),
     ais_snapshot AS (
-      SELECT * FROM latest WHERE rn = 1
+      SELECT
+        mmsi,
+        ship_name,
+        vessel_type,
+        flag,
+        status,
+        destination,
+        speed,
+        latitude,
+        longitude,
+        course,
+        event_timestamp
+      FROM latest
+      WHERE rn = 1${snapshotWhere}
     )`;
 }
 
@@ -125,10 +142,12 @@ export function buildAisAnalyticsQueries(filters = {}) {
       SELECT
         COUNT(*) AS total_ships,
         ROUND(AVG(speed), 2) AS avg_sog,
-        SUM(CASE WHEN COALESCE(speed, 0) >= 0.5 THEN 1 ELSE 0 END) AS underway_count
+        SUM(CASE WHEN COALESCE(speed, 0) >= 0.5 THEN 1 ELSE 0 END) AS underway_count,
+        SUM(CASE WHEN flag = 'Unknown (kein ships-Eintrag)' THEN 1 ELSE 0 END) AS ohne_ships_eintrag,
+        SUM(CASE WHEN flag <> 'Unknown (kein ships-Eintrag)' THEN 1 ELSE 0 END) AS mit_ships_eintrag
       FROM ais_snapshot`,
     byFlag: `${cte}
-      SELECT COALESCE(flag, 'Unknown') AS name, COUNT(*) AS value
+      SELECT flag AS name, COUNT(*) AS value
       FROM ais_snapshot
       GROUP BY 1
       ORDER BY 2 DESC
@@ -166,7 +185,7 @@ export function buildAisAnalyticsQueries(filters = {}) {
       GROUP BY 1
       ORDER BY 2 DESC`,
     avgSogByFlag: `${cte}
-      SELECT COALESCE(flag, 'Unknown') AS name, ROUND(AVG(speed), 2) AS value
+      SELECT flag AS name, ROUND(AVG(speed), 2) AS value
       FROM ais_snapshot
       GROUP BY 1
       HAVING COUNT(*) >= 1

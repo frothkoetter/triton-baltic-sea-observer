@@ -139,7 +139,7 @@ export function LagebildPage({ filters }: Props) {
     nba: true,
     routeTracks: true,
   });
-  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("all");
+  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("jamming");
   const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
 
   const filteredGpsJammer = useMemo(() => {
