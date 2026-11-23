@@ -192,7 +192,8 @@ TRINO_CONTINUE_ON_ERROR=1 python3 run_trino_ddl.py ships_nsb_trade_1000.sql --co
 
 | Failure | Cause |
 |---------|--------|
-| `Table 'iceberg.default.ships' does not exist` | Old runner: JDBC session schema was **default**. **Fix:** `git pull` (DDL runner rev ≥ `2026-11-23-defense-session-qualify`) or set `TRINO_CONNECT_SCHEMA=defense`, or use qualified `INSERT INTO iceberg.defense.ships` in the SQL file. |
+| `Table 'iceberg.default.ships' does not exist` | JDBC session schema was **default**. **Fix:** `git pull` (runner rev ≥ `2026-11-23-defense-session-qualify`) or `export TRINO_CONNECT_SCHEMA=defense`. |
+| `Too many dots … iceberg.defense.iceberg.defense.ships` | Runner qualified only the first name segment (`iceberg`). **Fix:** `git pull` (rev ≥ `2026-11-23-no-double-qualify`); use bare `INSERT INTO ships` in the file. |
 
 ---
 
