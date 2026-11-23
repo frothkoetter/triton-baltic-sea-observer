@@ -3,6 +3,7 @@ import { CircleMarker, MapContainer, Rectangle, Tooltip, useMap } from "react-le
 import { BasemapTileLayer } from "./BasemapTileLayer";
 import { MapInvalidateSize } from "./MapInvalidateSize";
 import { quadkeyLeafletBounds } from "../lib/bing-quadkey";
+import type { GpsJammerEvent } from "../lib/gps-jammer";
 import {
   type SocmintDensityTile,
   type SocmintMessage,
@@ -19,10 +20,12 @@ type Props = {
   messages: SocmintMessage[];
   threatTiles: ThreatHotTile[];
   densityTiles?: SocmintDensityTile[];
+  gpsJammerEvents?: GpsJammerEvent[];
   selectedUsername?: string | null;
   selectedTs?: string | null;
   showThreatTiles?: boolean;
   showDensityTiles?: boolean;
+  showGpsJammer?: boolean;
   showPosts?: boolean;
   onSelectMessage?: (msg: SocmintMessage) => void;
 };
@@ -51,10 +54,12 @@ export function SocmintMap({
   messages,
   threatTiles,
   densityTiles = [],
+  gpsJammerEvents = [],
   selectedUsername,
   selectedTs,
   showThreatTiles = true,
   showDensityTiles = true,
+  showGpsJammer = false,
   showPosts = true,
   onSelectMessage,
 }: Props) {
@@ -135,6 +140,41 @@ export function SocmintMap({
             })
           : null}
 
+        {showGpsJammer
+          ? gpsJammerEvents.map((j) => {
+              const jamming = j.jamming_indicator !== false;
+              const color = jamming ? "#E040FB" : "#BA68C8";
+              const nic = j.adsb_nic;
+              return (
+                <CircleMarker
+                  key={`soc-gpsjam-${j.geohash}-${j.event_timestamp}`}
+                  center={[j.latitude, j.longitude]}
+                  radius={jamming ? 12 : 9}
+                  pathOptions={{
+                    color: "#4A148C",
+                    fillColor: color,
+                    fillOpacity: 0.93,
+                    weight: 2,
+                  }}
+                >
+                  <Tooltip>
+                    <span className="mono">
+                      <strong>GPS jammer · {j.geohash || "tile"}</strong>
+                      <br />
+                      {nic != null && Number.isFinite(nic) ? `NIC ${nic}` : "NIC —"}
+                      {j.signal_integrity != null && Number.isFinite(j.signal_integrity)
+                        ? ` · integrity ${j.signal_integrity.toFixed(2)}`
+                        : ""}
+                      {j.harbour_name ? ` · ${j.harbour_name}` : ""}
+                      <br />
+                      {(j.reason ?? (jamming ? "Probable jamming (NIC<5)" : "Monitor")).slice(0, 140)}
+                    </span>
+                  </Tooltip>
+                </CircleMarker>
+              );
+            })
+          : null}
+
         {showPosts
           ? messages.map((m) => {
               const selected =
@@ -206,6 +246,11 @@ export function SocmintMap({
           />{" "}
           SOCMINT density tile
         </span>
+        {showGpsJammer ? (
+          <span className="map-legend-item">
+            <i className="map-legend-swatch" style={{ background: "#E040FB" }} /> GPS jammer (NIC)
+          </span>
+        ) : null}
       </div>
     </div>
   );
