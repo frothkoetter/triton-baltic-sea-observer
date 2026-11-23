@@ -17,11 +17,28 @@ Schema: `triton/das-cable/v1` — Gruppe `segments/seg_XXX` mit `channels`, `spe
 ## Schnellstart (Session / lokal)
 
 ```bash
-cd cai-workbench/das-cable-classifier
+cd ~/cai-workbench/das-cable-classifier   # CML: volles Git-Repo nötig (nifi-processors/upload)
 pip install -r requirements.txt
-python3 train.py --cable BALTICCONNECTOR --batches 80
+python3 train.py --cable BALTICCONNECTOR --batches 120
 python3 scripts/validate_nifi_ml.py
 ```
+
+### CML: Modell neu trainieren
+
+| Schritt | Aktion |
+|--------|--------|
+| 1 | Projekt-Working Dir = **Repo-Root** (`/home/cdsw`). `git pull origin main`. |
+| 2 | **Session** (empfohlen): `cd cai-workbench/das-cable-classifier` → `python3 train.py --batches 120` (alle **11** `THREAT_CLASSES` aus `das_acoustic_engine`). |
+| 3 | Oder **Experiment**: Script `cai-workbench/das-cable-classifier/fit.py`, Kernel Python 3. |
+| 4 | Prüfen: `artifacts/training_meta.json`, `model.pkl`, `bundled/model.pkl`, `bundled/label_names.json`. |
+| 5 | **Model deploy** neu: Engine Build `cdsw-build.sh`, Entry **`predict.py`**, Input **`predict`**. Files: `predict.py`, `src/`, `model.pkl`, `bundled/`, `requirements.txt`. |
+| 6 | NiFi InvokeHTTP: JsonPath `$.response.threat_type` → `predicted_threat_type` (siehe `NIFI_INVOKEHTTP.md`). |
+
+**Fehler `ModuleNotFoundError: das_acoustic_engine`:** Session nicht im Klassifier-Ordner / Repo ohne `nifi-processors/upload` — `train.py` importiert die NiFi-Engine.
+
+**Fehler `import train` in fit.py:** `fit.py` wechselt jetzt automatisch nach `cai-workbench/das-cable-classifier` (nicht nur `/home/cdsw`).
+
+**Nur 6 Klassen im alten Bundled-Modell:** Nach Training enthält `label_names.json` alle vom Simulator gesampelten Klassen; NiFi schreibt `predicted_threat_type` — UI „ML“ vs Trino `threat_class` (GT).
 
 `validate_nifi_ml.py` erzeugt ein NiFi-kompatibles HDF5-Batch, extrahiert Features wie der Flow und vergleicht Predictions mit synthetischer Ground Truth.
 
