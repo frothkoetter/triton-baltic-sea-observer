@@ -2038,16 +2038,17 @@ body.lagebild-map-fs-active {
 
 .triton-intro-hero-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: clamp(10px, 3vw, 20px);
+  gap: clamp(12px, 2.5vw, 18px);
   transform-style: preserve-3d;
 }
 
 .triton-intro-cloudera-logo {
   display: block;
-  height: clamp(22px, 4vw, 32px);
+  height: clamp(24px, 4.5vw, 36px);
   width: auto;
-  max-width: min(22vw, 120px);
+  max-width: min(52vw, 160px);
   object-fit: contain;
   opacity: 0.94;
   flex-shrink: 0;
