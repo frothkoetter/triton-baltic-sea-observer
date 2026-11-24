@@ -9,6 +9,7 @@ import {
 import { wktToPolygonRings, type LatLng } from "../lib/wkt-geo";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 import { GpsJammerGeohashLayer } from "./GpsJammerGeohashLayer";
+import { MapInvalidateSize } from "./MapInvalidateSize";
 
 export type ObservationArea = {
   area_id: string;
@@ -134,6 +135,7 @@ export function TacticalMap({
     <div className="map-wrap">
       <MapContainer center={center} zoom={6} style={{ height: "100%", width: "100%" }}>
         <BasemapTileLayer />
+        <MapInvalidateSize />
 
         {showAreas &&
           areaPolygons.map((a) => {

@@ -129,19 +129,34 @@ export function LagebildPage({ filters }: Props) {
   const [nbaIncidents, setNbaIncidents] = useState<NbaIncident[]>([]);
   const [nbaSource, setNbaSource] = useState("…");
   const [layers, setLayers] = useState({
-    ais: true,
-    areas: true,
-    infrastructure: true,
-    sanctions: true,
-    outliers: true,
-    gpsJammer: true,
+    ais: false,
+    areas: false,
+    infrastructure: false,
+    sanctions: false,
+    outliers: false,
+    gpsJammer: false,
     germanFleet: true,
     russianFleet: true,
-    nba: true,
-    routeTracks: true,
+    nba: false,
+    routeTracks: false,
   });
+  const [mapFullscreen, setMapFullscreen] = useState(false);
   const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("jamming");
   const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
+
+  useEffect(() => {
+    if (!mapFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMapFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mapFullscreen]);
+
+  useEffect(() => {
+    document.body.classList.toggle("lagebild-map-fs-active", mapFullscreen);
+    return () => document.body.classList.remove("lagebild-map-fs-active");
+  }, [mapFullscreen]);
 
   const filteredGpsJammer = useMemo(() => {
     const narrowed = filterGpsJammerEvents(gpsJammerEvents, {
@@ -396,8 +411,21 @@ export function LagebildPage({ filters }: Props) {
         </span>
       </div>
 
-      <section className="panel">
-        <h2 className="panel-title">Lagebild — AIS &amp; Anomalies (visual 123)</h2>
+      <section
+        className={`panel lagebild-map-panel${mapFullscreen ? " lagebild-map-panel--fullscreen" : ""}`}
+      >
+        <div className="panel-title-row">
+          <h2 className="panel-title">Lagebild — AIS &amp; Anomalies (visual 123)</h2>
+          <button
+            type="button"
+            className="chip map-fullscreen-btn"
+            aria-pressed={mapFullscreen}
+            title={mapFullscreen ? "Vollbild beenden (Esc)" : "Karte im Vollbild"}
+            onClick={() => setMapFullscreen((v) => !v)}
+          >
+            {mapFullscreen ? "Vollbild beenden" : "Karte Vollbild"}
+          </button>
+        </div>
         <TacticalMap
           ships={layers.ais ? filteredAis : []}
           areas={areas}
