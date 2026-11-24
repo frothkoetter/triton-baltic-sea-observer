@@ -79,7 +79,7 @@ import {
   getSemanticaGraphSummary,
   semanticaEnvPaths,
 } from "./agent-semantica-mcp.js";
-import { snapshotStatus } from "./sample-snapshot-loader.js";
+import { demoArtifactStatus, snapshotStatus } from "./sample-snapshot-loader.js";
 import {
   COOKIE_NAME,
   dataModeMeta,
@@ -218,6 +218,11 @@ app.get("/api/health", async (req, res) => {
     warehouseProbeError,
     ...modeMeta,
     liveSnapshot: snapshotStatus(),
+    demoArtifacts: {
+      ...demoArtifactStatus(),
+      s3Configured: s3Configured(),
+      sitrepConfigured: sitrepConfigured(),
+    },
     impala: state,
     nba: {
       trinoConfigured: Boolean(process.env.TRINO_USER && process.env.TRINO_PASSWORD),

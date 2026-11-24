@@ -38,6 +38,12 @@ export function LidarPage() {
   return (
     <div className="lidar-page">
       <div className="lidar-toolbar">
+        {source === "sample-snapshot" ? (
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+            Demo catalog from live-snapshot · LAS point clouds still loaded from S3 (
+            <code>hadoop_file_url</code>)
+          </span>
+        ) : null}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>
           lidar_simulation_metadata · Data: {source}
         </span>

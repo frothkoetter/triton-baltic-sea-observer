@@ -5,6 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { SNAPSHOT_PREDEFINED_MAP, SNAPSHOT_POSITION_TRACKS } from "../server/snapshot-datasets.js";
 import {
@@ -93,6 +94,30 @@ async function main() {
     fs.writeFileSync(path.join(OUT_DIR, filename), JSON.stringify(trackRows, null, 2), "utf8");
     datasets.positionTracks = filename;
     stats.positionTracks = trackRows.length;
+  }
+
+  const sitrepBridge = path.join(__dirname, "..", "server", "sitrep-bridge.py");
+  const sitrepList = spawnSync("python3", [sitrepBridge, "list"], {
+    encoding: "utf8",
+    env: process.env,
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  try {
+    const parsed = JSON.parse(sitrepList.stdout || "{}");
+    if (parsed.ok && Array.isArray(parsed.rows) && parsed.rows.length > 0) {
+      const filename = "sitrepReports.json";
+      fs.writeFileSync(path.join(OUT_DIR, filename), JSON.stringify(parsed.rows, null, 2), "utf8");
+      datasets.sitrepReports = filename;
+      stats.sitrepReports = parsed.rows.length;
+      console.log(`OK sitrepReports: ${parsed.rows.length} rows (S3/local index; PDFs stay on S3)`);
+    } else {
+      const msg = parsed.error || sitrepList.stderr?.trim() || "sitrep list empty";
+      console.warn(`SKIP sitrepReports: ${msg}`);
+      errors.push(`sitrepReports: ${msg}`);
+    }
+  } catch (e) {
+    console.warn(`SKIP sitrepReports: ${e.message}`);
+    errors.push(`sitrepReports: ${e.message}`);
   }
 
   const manifest = {

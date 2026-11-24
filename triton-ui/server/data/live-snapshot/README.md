@@ -19,6 +19,8 @@ Set footer **Demo** (or **Auto** without Trino). Check `/api/health`:
 
 API responses use `source: "sample-snapshot"` (KPI line **sample-snapshot**) when overlay is active; otherwise embedded demo (`source: "sample"`, ~8 AIS ships).
 
+**LiDAR / DAS / SITREP in Demo:** `lidarScans`, `dasCableSegments`, and (when captured) `sitrepReports` come from the snapshot catalog. **LAS**, **HDF5** previews, and **SITREP PDFs** are still loaded from **S3** (or `LAGEBILD_ARTIFACTS_DIR`) using `hadoop_file_url` / `pdf` from those rows — capture also runs `sitrep-bridge list` when `SITREP_S3_PREFIX` or artifacts dir is set. Check `/api/health` → `demoArtifacts`.
+
 Re-run capture after simulator/warehouse updates; commit snapshot files if you want them in git (can be large).
 
 ## Without snapshot

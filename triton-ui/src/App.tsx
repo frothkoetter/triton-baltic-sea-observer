@@ -179,8 +179,8 @@ export default function App() {
               ["das", "Acoustic Sensors"],
               ["socmint", "SOCMINT"],
               ["sitrep", "SITREP"],
-              ["agents", "Daten (Semantica)"],
-              ["nba", "NBA HITL"],
+              ["agents", "Agent TTYD"],
+              ["nba", "COA HITL"],
             ] as const
           ).map(([id, label]) => (
             <button
