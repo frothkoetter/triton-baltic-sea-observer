@@ -1,5 +1,15 @@
 import type { LagebildFilters } from "../lib/lagebild-filters";
 
+function activeFilterCount(f: LagebildFilters): number {
+  return (
+    f.flags.length +
+    f.vesselTypes.length +
+    f.shipNames.length +
+    f.germanUnits.length +
+    f.russianUnits.length
+  );
+}
+
 export type FilterRailPicklists = {
   flags: string[];
   vesselTypes: string[];
@@ -11,6 +21,8 @@ export type FilterRailPicklists = {
 type Props = FilterRailPicklists & {
   filters: LagebildFilters;
   onFiltersChange: (next: LagebildFilters) => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 };
 
 function toggleValue(list: string[], value: string): string[] {
@@ -75,7 +87,10 @@ export function FilterRail({
   russianUnits,
   filters,
   onFiltersChange,
+  expanded,
+  onExpandedChange,
 }: Props) {
+  const active = activeFilterCount(filters);
   const patch = (partial: Partial<LagebildFilters>) =>
     onFiltersChange({ ...filters, ...partial });
 
@@ -91,9 +106,47 @@ export function FilterRail({
       russianUnits: [],
     });
 
+  if (!expanded) {
+    return (
+      <aside className="filter-rail filter-rail--mini" aria-label="Filter Rail (minimiert)">
+        <button
+          type="button"
+          className="filter-rail-expand-btn"
+          title="Filter einblenden"
+          aria-expanded={false}
+          onClick={() => onExpandedChange(true)}
+        >
+          <span className="filter-rail-expand-icon" aria-hidden>
+            »
+          </span>
+          <span className="filter-rail-mini-label">Filter</span>
+        </button>
+        {active > 0 ? (
+          <span className="filter-rail-active-badge" title={`${active} aktive Filter`}>
+            {active}
+          </span>
+        ) : null}
+        <button type="button" className="chip filter-rail-mini-clear" onClick={clearAll} title="Alle Filter löschen">
+          ✕
+        </button>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="filter-rail">
-      <h3>Filter Rail</h3>
+    <aside className="filter-rail filter-rail--expanded">
+      <div className="filter-rail-head">
+        <h3>Filter Rail</h3>
+        <button
+          type="button"
+          className="filter-rail-minimize-btn"
+          title="Filter minimieren"
+          aria-expanded
+          onClick={() => onExpandedChange(false)}
+        >
+          « Minimieren
+        </button>
+      </div>
       <MultiFilterField
         id="flag"
         label="Flag AIS (Mehrfach)"

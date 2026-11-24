@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.22-triton-intro-3d",
+  "build": "0.2.23-filter-rail-mini",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
