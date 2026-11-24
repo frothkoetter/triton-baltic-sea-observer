@@ -16,7 +16,30 @@ Downloads objects whose **S3 `LastModified`** falls on the chosen calendar day i
 - **Auth (pick one):**
   - **AWS SSO** (recommended on laptop): profile in `~/.aws/config`, `aws sso login --profile …`
   - **CDP workload keys:** `S3_WORKLOAD_USER` / `S3_WORKLOAD_PASSWORD` or `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
-- **`S3_ENDPOINT_URL`** for CDP / Ozone object store (required for private cloud buckets; same idea as **triton-ui**)
+- **`S3_ENDPOINT_URL`** — see [What is `S3_ENDPOINT_URL`?](#what-is-s3_endpoint_url) below (only for **AWS CLI on your laptop**; not the `s3a://…` path)
+
+### What is `S3_ENDPOINT_URL`?
+
+Think of two separate pieces:
+
+| Piece | Example | Role |
+|-------|---------|------|
+| **Object path** (you already have) | `s3a://triton-buk-ab3b8c81/data/user/frothkoetter/das/` | *Which bucket and folder* |
+| **Endpoint** (`S3_ENDPOINT_URL`) | `https://…` (from CDP) | *Which server* speaks the S3 API for your environment |
+
+NiFi and the UI write to **Cloudera’s object store** (S3-compatible), **not** to public Amazon S3. The AWS CLI defaults to `amazonaws.com`. Without `S3_ENDPOINT_URL`, `aws s3 cp` talks to the wrong place and cannot see `triton-buk-ab3b8c81`.
+
+It is **not** inside the `s3a://` URI. You cannot derive it from `triton-buk-ab3b8c81`.
+
+**Where to copy it (same value for `das/`, `lidar/`, `reports/`):**
+
+1. **Cloudera AI** → your project → **Data** → **Data Connections** → open **S3 Object Store** → field named like **Endpoint**, **S3 endpoint**, or **Service URL** (wording varies by CDP version).
+2. **Application env** on the NATO UI (if S3 previews already work): look for `S3_ENDPOINT_URL` or `AWS_ENDPOINT_URL`.
+3. **CDP docs / admin** for your env: “S3 gateway” or “Ozone S3” HTTPS URL for programmatic access (often used with workload access keys or SSO).
+
+On **CML sessions**, Python code can use the data connection and **omit** this env var. This shell script uses **`aws` on your machine**, so you **must** set `S3_ENDPOINT_URL` (or `AWS_ENDPOINT_URL`) unless your `~/.aws/config` profile defines `endpoint_url`.
+
+Also set **`AWS_DEFAULT_REGION=us-east-1`** for many CDP gateways (signing region, not where files “live”).
 
 ### SSO profile (`~/.aws/config` sketch)
 
