@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.29-buoy-geo-map-fix",
+  "build": "0.2.30-analysen-tab-order",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

@@ -36,11 +36,11 @@ import {
 
 const TABS = [
   { id: "fleet", label: BLUE_FLEET_LABEL },
-  { id: "buoys", label: "Buoys" },
   { id: "rus", label: RED_FLEET_LABEL },
   { id: "ais", label: "AIS" },
   { id: "outliers", label: "AIS Outliers" },
   { id: "sanctions", label: "Sanctions" },
+  { id: "buoys", label: "Buoys" },
   { id: "restricted", label: "Restricted Areas" },
 ] as const;
 
