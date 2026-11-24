@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.30-analysen-tab-order",
+  "build": "0.2.31-analysen-load-progress",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

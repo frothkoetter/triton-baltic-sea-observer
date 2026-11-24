@@ -1149,6 +1149,47 @@ body.lagebild-map-fs-active {
   color: var(--accent-amber);
 }
 
+.analysen-load-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.analysen-load-banner {
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(77, 163, 255, 0.08);
+  border-radius: 4px;
+}
+
+.analysen-load-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.analysen-load-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.analysen-load-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4da3ff, #3ddc84);
+  transition: width 0.35s ease;
+}
+
+.analysen-load-meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .analyses-tabs {
   display: flex;
   gap: 4px;
