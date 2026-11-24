@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.32-lagebild-trim-panels",
+  "build": "0.2.37-lagebild-trim-panels",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
