@@ -3,6 +3,7 @@ import { fetchJson, getClientDataMode, setServerDataMode } from "./api";
 import { TRITON_UI_BUILD } from "./lib/build-info";
 import { FilterRail, type FilterRailPicklists } from "./components/FilterRail";
 import { EMPTY_LAGEBILD_FILTERS, type LagebildFilters } from "./lib/lagebild-filters";
+import { loadFilterRailExpanded, saveFilterRailExpanded } from "./lib/filter-rail-prefs";
 import { AnalysenPage } from "./pages/Analysen";
 import { LagebildPage } from "./pages/Lagebild";
 import { NbaHitlPage } from "./pages/NbaHitl";
@@ -81,6 +82,12 @@ export default function App() {
   const [dataMode, setDataMode] = useState<"live" | "sample" | "auto">(() => getClientDataMode());
   const [modeBusy, setModeBusy] = useState(false);
   const [lagebildFilters, setLagebildFilters] = useState<LagebildFilters>(EMPTY_LAGEBILD_FILTERS);
+  const [filterRailExpanded, setFilterRailExpanded] = useState(() => loadFilterRailExpanded());
+
+  const setFilterRailExpandedPersist = useCallback((next: boolean) => {
+    setFilterRailExpanded(next);
+    saveFilterRailExpanded(next);
+  }, []);
   const [filterOptions, setFilterOptions] = useState<FilterRailPicklists>({
     flags: [],
     vesselTypes: [],
@@ -191,11 +198,13 @@ export default function App() {
         </div>
       </header>
 
-      <div className="app-body">
+      <div className={`app-body ${filterRailExpanded ? "" : "app-body--filter-mini"}`}>
         <FilterRail
           {...filterOptions}
           filters={lagebildFilters}
           onFiltersChange={setLagebildFilters}
+          expanded={filterRailExpanded}
+          onExpandedChange={setFilterRailExpandedPersist}
         />
         <main className="main-pane">
           {zone === "lagebild" && <LagebildPage filters={lagebildFilters} />}
