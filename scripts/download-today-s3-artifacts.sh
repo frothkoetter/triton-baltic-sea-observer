@@ -4,6 +4,7 @@
 # store under a local directory, and compress to .tar.gz.
 #
 # Auth: AWS SSO (recommended) via --profile / AWS_PROFILE, or workload keys (S3_WORKLOAD_*).
+# S3_ENDPOINT_URL / AWS_ENDPOINT_URL are optional (omit when SSO profile reaches the bucket).
 # Prefixes: SITREP_S3_PREFIX or LAGEBILD_S3_PREFIX, S3_LIDAR_ALLOWED_PREFIX, S3_DAS_ALLOWED_PREFIX.
 #
 # Usage:
