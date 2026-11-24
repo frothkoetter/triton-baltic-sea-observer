@@ -4,6 +4,7 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { trinoConfigured } from "./trino-client.js";
+import { snapshotStatus } from "./sample-snapshot-loader.js";
 
 const store = new AsyncLocalStorage();
 
