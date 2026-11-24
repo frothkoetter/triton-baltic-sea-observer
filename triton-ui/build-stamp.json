@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.31-analysen-load-progress",
+  "build": "0.2.32-ais-cte-where-fix",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

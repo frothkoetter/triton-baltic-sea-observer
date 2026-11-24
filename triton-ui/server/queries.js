@@ -72,8 +72,10 @@ export function buildAisLatestSnapshotCte(filters = {}) {
   const snapshotPredicates = [];
   const flagIn = sqlInLiterals("flag", flags);
   if (flagIn) snapshotPredicates.push(flagIn);
-  const snapshotWhere =
-    snapshotPredicates.length > 0 ? `\n      WHERE ${snapshotPredicates.join("\n        AND ")}` : "";
+  const snapshotAnd =
+    snapshotPredicates.length > 0
+      ? `\n        AND ${snapshotPredicates.join("\n        AND ")}`
+      : "";
   return `
     WITH latest AS (
       SELECT
@@ -110,7 +112,7 @@ export function buildAisLatestSnapshotCte(filters = {}) {
         course,
         event_timestamp
       FROM latest
-      WHERE rn = 1${snapshotWhere}
+      WHERE rn = 1${snapshotAnd}
     )`;
 }
 
