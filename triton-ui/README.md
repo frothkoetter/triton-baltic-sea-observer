@@ -78,7 +78,8 @@ See `.env.example`. Credentials belong only in `.env.local`.
 | `IMPALA_AUTH_MECH` | `LDAP` (typical for AuthMech=12 workloads) |
 | `IMPALA_HTTP_PATH` | `cliservice` |
 | `TRITON_FORCE_SAMPLE_DATA` | `true` to skip Impala/Trino and use embedded demo data |
-| *(autonomous demo)* | Leave `TRINO_*` / `IMPALA_*` empty **or** set `TRITON_FORCE_SAMPLE_DATA=true` — Lagebild uses `sample-data.js`; NBA HITL uses `nba-sample.js` + bundled decision/governance/semantica JSON (no warehouse required) |
+| *(autonomous demo)* | Leave `TRINO_*` / `IMPALA_*` empty **or** set `TRITON_FORCE_SAMPLE_DATA=true` — Lagebild uses `sample-data.js` **or** a **live snapshot** if present under `server/data/live-snapshot/` |
+| **Live snapshot demo** | On CML with Trino up: `bash scripts/capture-live-snapshot.sh` → then use footer **Demo** offline with real captured rows (`/api/health` → `liveSnapshot.available`) |
 | `PROXIMITY_ALERT_API_KEY` | SSB MVE key for Schiffsnähe (`GET /api/proximity-alerts`) |
 
 ## Impala notes

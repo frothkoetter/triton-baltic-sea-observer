@@ -4,6 +4,7 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { trinoConfigured } from "./trino-client.js";
+import { snapshotStatus } from "./sample-snapshot-loader.js";
 
 const store = new AsyncLocalStorage();
 
@@ -73,6 +74,10 @@ export function getSampleReason() {
   }
   const mode = getEffectiveDataMode();
   if (mode === "sample") {
+    const snap = snapshotStatus();
+    if (snap.available) {
+      return `Demo-Modus (Live-Snapshot ${snap.capturedAt ?? ""})`;
+    }
     return "Demo-Modus gewählt (Cookie/Header)";
   }
   if (!trinoConfigured()) {

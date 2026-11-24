@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.23-filter-rail-mini",
+  "build": "0.2.24-live-snapshot-demo",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

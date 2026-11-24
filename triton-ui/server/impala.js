@@ -2,7 +2,10 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lagebildEnginePreference, queryTrinoDefense } from "./data-engine.js";
-import * as sample from "./sample-data.js";
+import * as sampleEmbedded from "./sample-data.js";
+import { resolveSampleData } from "./sample-snapshot-loader.js";
+
+const sample = resolveSampleData(sampleEmbedded);
 import {
   PREDEFINED,
   buildAisAnalyticsQueries,
