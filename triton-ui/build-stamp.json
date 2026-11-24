@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.28-nav-ttyd-coa-artifacts",
+  "build": "0.2.29-buoy-geo-map-fix",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

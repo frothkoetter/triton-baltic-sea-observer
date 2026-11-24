@@ -233,12 +233,32 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
 
   const p = fleetAnalytics?.panels;
   const bp = buoyAnalytics?.panels;
-  const geoClusters = (bp?.geoClusters?.rows ?? []).map((r) => ({
-    geo_position_lat: Number(r.geo_position_lat),
-    geo_position_lon: Number(r.geo_position_lon),
-    record_count: Number(r.record_count ?? 0),
-    sum_altitude: Number(r.sum_altitude ?? 0),
-  }));
+  const geoClusterRows =
+    bp?.geoClusters?.rows ??
+    (bp as { geo?: { rows?: Record<string, unknown>[] } })?.geo?.rows ??
+    [];
+  const geoClusters = geoClusterRows
+    .map((r) => {
+      const lat = Number(
+        r.geo_position_lat ?? r.Geo_Position_Lat ?? r.latitude ?? r.Latitude
+      );
+      const lon = Number(
+        r.geo_position_lon ?? r.Geo_Position_Lon ?? r.longitude ?? r.Longitude
+      );
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      return {
+        geo_position_lat: lat,
+        geo_position_lon: lon,
+        record_count: Number(r.record_count ?? r.Record_Count ?? 0),
+        sum_altitude: Number(r.sum_altitude ?? r.Sum_Altitude ?? 0),
+      };
+    })
+    .filter(Boolean) as {
+    geo_position_lat: number;
+    geo_position_lon: number;
+    record_count: number;
+    sum_altitude: number;
+  }[];
   const rp = rusFleetAnalytics?.panels;
   const rusUnits = rp?.unitDisposition?.rows ?? [];
   const rusKpis = {
@@ -389,12 +409,24 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             <section className="panel buoy-map-panel">
               <h2 className="panel-title">Detektionen — Karte</h2>
               <p className="panel-subtitle">GROUP BY geo_position_lat, geo_position_lon — sum(altitude)</p>
+              {geoClusters.length === 0 ? (
+                <p className="text-muted" style={{ fontSize: 12, margin: "0 0 8px" }} role="status">
+                  Keine Karteneinträge — prüfen Sie <code>defense.buoy_near_harbours</code> (Geo-Cluster-Abfrage
+                  leer oder Panel <code>geoClusters</code> fehlt in der API-Antwort).
+                </p>
+              ) : null}
               <BuoyAnalyticsMap clusters={geoClusters} />
             </section>
             <section className="panel buoy-scatter-panel">
               <h2 className="panel-title">Typ × Klassifikation</h2>
               <p className="panel-subtitle">avg(payload_object_confidence) · Bubble = record_count</p>
-              <ChartClassificationGrid rows={bp?.classificationGrid?.rows ?? []} />
+              <ChartClassificationGrid
+                rows={
+                  bp?.classificationGrid?.rows ??
+                  (bp as { grid?: { rows?: Record<string, unknown>[] } })?.grid?.rows ??
+                  []
+                }
+              />
             </section>
           </div>
         </div>
