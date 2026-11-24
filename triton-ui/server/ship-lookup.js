@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { queryWarehouse } from "./impala.js";
-import * as sample from "./sample-data.js";
+import * as sampleEmbedded from "./sample-data.js";
+import { getResolvedSampleData } from "./sample-snapshot-loader.js";
+
+function getSample() {
+  return getResolvedSampleData(sampleEmbedded);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,13 +26,13 @@ function loadStaticRegistry() {
 
 function mergeSampleRegistries() {
   const map = { ...loadStaticRegistry() };
-  for (const row of sample.aisShips) {
+  for (const row of getSample().aisShips) {
     map[String(row.mmsi)] = {
       ship_name: row.ship_name,
       vessel_type: row.vessel_type,
     };
   }
-  for (const row of sample.sanctions) {
+  for (const row of getSample().sanctions) {
     const mmsi = String(row.MMSI ?? row.mmsi ?? "");
     if (!mmsi) continue;
     map[mmsi] = {
@@ -35,13 +40,13 @@ function mergeSampleRegistries() {
       vessel_type: row.Type ?? row.type ?? "—",
     };
   }
-  for (const row of sample.germanFleetPositions) {
+  for (const row of getSample().germanFleetPositions) {
     map[String(row.mmsi)] = {
       ship_name: row.unit_name,
       vessel_type: row.unit_class,
     };
   }
-  for (const row of sample.russianFleetPositions) {
+  for (const row of getSample().russianFleetPositions) {
     map[String(row.mmsi)] = {
       ship_name: row.unit_name,
       vessel_type: row.unit_class,

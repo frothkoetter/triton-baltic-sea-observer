@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.26-lagebild-fleet-fs",
+  "build": "0.2.27-demo-snapshot-overlay",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

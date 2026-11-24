@@ -3,9 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lagebildEnginePreference, queryTrinoDefense } from "./data-engine.js";
 import * as sampleEmbedded from "./sample-data.js";
-import { resolveSampleData } from "./sample-snapshot-loader.js";
-
-const sample = resolveSampleData(sampleEmbedded);
+import { getResolvedSampleData, sampleResponseSource } from "./sample-snapshot-loader.js";
 import {
   PREDEFINED,
   buildAisAnalyticsQueries,
@@ -23,6 +21,10 @@ import { normalizeAisFilterObject } from "./ais-filters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "impala-bridge.py");
+
+function getSample() {
+  return getResolvedSampleData(sampleEmbedded);
+}
 
 let connectionState = {
   checked: false,
@@ -135,12 +137,14 @@ export async function queryWarehouse(sql) {
 export async function runQueryOrSample(sql, sampleFn) {
   if (shouldUseSampleData()) {
     const rows = sampleFn();
+    const source = sampleResponseSource(getSample());
     return {
       ok: true,
-      source: "sample",
+      source,
       columns: rows.length ? Object.keys(rows[0]) : [],
       rows,
       fallbackReason: getEffectiveDataMode() === "sample" ? "demo_mode" : "trino_not_configured",
+      snapshotCapturedAt: getSample().meta?.snapshotCapturedAt ?? null,
     };
   }
   const live = await queryWarehouse(sql);
@@ -158,19 +162,21 @@ export async function runQueryOrSample(sql, sampleFn) {
     };
   }
   const rows = sampleFn();
+  const source = sampleResponseSource(getSample());
   return {
     ok: true,
-    source: "sample",
+    source,
     columns: rows.length ? Object.keys(rows[0]) : [],
     rows,
     fallbackReason: live.error,
+    snapshotCapturedAt: getSample().meta?.snapshotCapturedAt ?? null,
   };
 }
 
 export async function listTables() {
   const sql = "SHOW TABLES IN defense";
   const res = await runQueryOrSample(sql, () =>
-    sample.tables.map((name) => ({ name, tab_name: name }))
+    getSample().tables.map((name) => ({ name, tab_name: name }))
   );
   if (res.source === "sample") {
     return res;
@@ -213,7 +219,7 @@ function speedBand(speed) {
 }
 
 function sampleAisAnalytics(filters = {}) {
-  const rows = filterSampleAisRows(sample.aisShips, filters);
+  const rows = filterSampleAisRows(getSample().aisShips, filters);
   const byFlag = aggregateNameValue(rows, "flag");
   const byType = aggregateNameValue(rows, "vessel_type");
   const topDestinations = aggregateNameValue(
@@ -307,7 +313,7 @@ export async function getAisAnalytics(filters = {}) {
 
 export async function getAis(filters = {}) {
   const sql = buildAisLatestSql(filters);
-  return runQueryOrSample(sql, () => filterSampleAisRows(sample.aisShips, filters));
+  return runQueryOrSample(sql, () => filterSampleAisRows(getSample().aisShips, filters));
 }
 
 function filterSampleFleetTrackRows(rows, filters = {}) {
@@ -335,7 +341,7 @@ export async function getPositionTracks(opts = {}) {
     jobs.push(
       runQueryOrSample(buildAisTrackSql(filterArgs), () =>
         filterSampleFleetTrackRows(
-          sample.samplePositionTrackRows().filter((r) => r.track_kind === "ais"),
+          getSample().samplePositionTrackRows().filter((r) => r.track_kind === "ais"),
           filterArgs
         )
       )
@@ -345,7 +351,7 @@ export async function getPositionTracks(opts = {}) {
     jobs.push(
       runQueryOrSample(buildGermanFleetTrackSql(filterArgs), () =>
         filterSampleFleetTrackRows(
-          sample.samplePositionTrackRows().filter((r) => r.track_kind === "deu_fleet"),
+          getSample().samplePositionTrackRows().filter((r) => r.track_kind === "deu_fleet"),
           filterArgs
         )
       )
@@ -355,7 +361,7 @@ export async function getPositionTracks(opts = {}) {
     jobs.push(
       runQueryOrSample(buildRussianFleetTrackSql(filterArgs), () =>
         filterSampleFleetTrackRows(
-          sample.samplePositionTrackRows().filter((r) => r.track_kind === "rus_fleet"),
+          getSample().samplePositionTrackRows().filter((r) => r.track_kind === "rus_fleet"),
           filterArgs
         )
       )
@@ -398,7 +404,7 @@ function dedupeRowsByMmsi(rows) {
 }
 
 export async function getFleet() {
-  const res = await runQueryOrSample(PREDEFINED.fleet, () => sample.fleet);
+  const res = await runQueryOrSample(PREDEFINED.fleet, () => getSample().fleet);
   if (res.rows?.length) {
     const deduped = dedupeRowsByMmsi(res.rows);
     if (deduped.length !== res.rows.length) {
@@ -432,7 +438,7 @@ const RUS_FLEET_ANALYTICS_KEYS = [
 
 export async function getRusFleetAnalytics() {
   if (forceSample()) {
-    return { ok: true, source: "sample", ...sample.rusFleetAnalytics };
+    return { ok: true, source: "sample", ...getSample().rusFleetAnalytics };
   }
   const results = await Promise.all(
     RUS_FLEET_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
@@ -453,7 +459,7 @@ export async function getRusFleetAnalytics() {
     return {
       ok: true,
       source: "sample",
-      ...sample.rusFleetAnalytics,
+      ...getSample().rusFleetAnalytics,
       fallbackReason: results.find((r) => !r.ok)?.error,
     };
   }
@@ -480,7 +486,7 @@ const VESSEL_OUTLIER_ANALYTICS_KEYS = [
 ];
 
 function sampleVesselOutlierAnalytics() {
-  const rows = sample.vesselOutliers;
+  const rows = getSample().vesselOutliers;
   const byType = new Map();
   const bySev = new Map();
   const mmsiStats = new Map();
@@ -604,7 +610,7 @@ const BUOY_ANALYTICS_KEYS = [
 
 export async function getBuoyAnalytics() {
   if (forceSample()) {
-    return { ok: true, source: "sample", ...sample.buoyAnalytics };
+    return { ok: true, source: "sample", ...getSample().buoyAnalytics };
   }
   const results = await Promise.all(
     BUOY_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
@@ -625,7 +631,7 @@ export async function getBuoyAnalytics() {
     return {
       ok: true,
       source: "sample",
-      ...sample.buoyAnalytics,
+      ...getSample().buoyAnalytics,
       fallbackReason: results.find((r) => !r.ok)?.error,
     };
   }
@@ -634,7 +640,7 @@ export async function getBuoyAnalytics() {
 
 export async function getFleetAnalytics() {
   if (forceSample()) {
-    return { ok: true, source: "sample", ...sample.fleetAnalytics };
+    return { ok: true, source: "sample", ...getSample().fleetAnalytics };
   }
   const results = await Promise.all(
     FLEET_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
@@ -655,7 +661,7 @@ export async function getFleetAnalytics() {
     return {
       ok: true,
       source: "sample",
-      ...sample.fleetAnalytics,
+      ...getSample().fleetAnalytics,
       fallbackReason: results.find((r) => !r.ok)?.error,
     };
   }
@@ -663,7 +669,7 @@ export async function getFleetAnalytics() {
 }
 
 export async function getSanctions() {
-  return runQueryOrSample(PREDEFINED.sanctions, () => sample.sanctions);
+  return runQueryOrSample(PREDEFINED.sanctions, () => getSample().sanctions);
 }
 
 function sampleSanctionedRouteLegs(historyRows) {
@@ -690,8 +696,8 @@ function sampleSanctionedRouteLegs(historyRows) {
 }
 
 function sampleSanctionedAnalytics() {
-  const aisByMmsi = new Map(sample.aisShips.map((r) => [r.mmsi, r]));
-  const registry = sample.sanctions.map((sv) => {
+  const aisByMmsi = new Map(getSample().aisShips.map((r) => [r.mmsi, r]));
+  const registry = getSample().sanctions.map((sv) => {
     const ais = sv.MMSI != null ? aisByMmsi.get(sv.MMSI) : undefined;
     const reason = sv.Sanction_Reason;
     return {
@@ -713,10 +719,10 @@ function sampleSanctionedAnalytics() {
   const withAis = registry.filter((r) => r.latest_ais_time).length;
   const withDest = registry.filter((r) => r.destination && r.destination !== "—").length;
   const destHistory = aggregateNameValue(
-    sample.sanctionedAisDestHistory.map((r) => ({ dest: r.destination })),
+    getSample().sanctionedAisDestHistory.map((r) => ({ dest: r.destination })),
     "dest"
   );
-  const topRoutes = sampleSanctionedRouteLegs(sample.sanctionedAisDestHistory);
+  const topRoutes = sampleSanctionedRouteLegs(getSample().sanctionedAisDestHistory);
   const byReason = aggregateNameValue(
     registry.map((r) => ({ reason_short: r.sanction_reason_short })),
     "reason_short"
@@ -787,7 +793,7 @@ export async function getSanctionedAnalytics() {
 }
 
 function sampleRestrictedAnalytics() {
-  const rows = sample.restrictedRouteTracks;
+  const rows = getSample().restrictedRouteTracks;
   const vesselKey = (r) => `${r.mmsi}`;
   const zoneSet = new Set(rows.map((r) => r.area_id));
   const mmsiSet = new Set(rows.map((r) => r.mmsi));
@@ -911,21 +917,21 @@ export async function getRestrictedAnalytics() {
 }
 
 export async function getAreaViolations() {
-  return runQueryOrSample(PREDEFINED.areaViolations, () => sample.areaViolations);
+  return runQueryOrSample(PREDEFINED.areaViolations, () => getSample().areaViolations);
 }
 
 export async function getSurveillance() {
-  return runQueryOrSample(PREDEFINED.surveillance, () => sample.surveillance);
+  return runQueryOrSample(PREDEFINED.surveillance, () => getSample().surveillance);
 }
 
 export async function getObservationAreas() {
-  return runQueryOrSample(PREDEFINED.observationAreas, () => sample.observationAreas);
+  return runQueryOrSample(PREDEFINED.observationAreas, () => getSample().observationAreas);
 }
 
 export async function getOstseeInfrastructure() {
   const [infra, pipelines] = await Promise.all([
-    runQueryOrSample(PREDEFINED.ostseeInfrastruktur, () => sample.ostseeInfrastruktur),
-    runQueryOrSample(PREDEFINED.ostseePipelines, () => sample.ostseePipelines),
+    runQueryOrSample(PREDEFINED.ostseeInfrastruktur, () => getSample().ostseeInfrastruktur),
+    runQueryOrSample(PREDEFINED.ostseePipelines, () => getSample().ostseePipelines),
   ]);
   const source =
     infra.source === "sample" && pipelines.source === "sample"
@@ -943,8 +949,8 @@ export async function getOstseeInfrastructure() {
 /** vessel_outliers for map; falls back to sample when warehouse unavailable. */
 export async function getFleetPositions() {
   const [german, russian] = await Promise.all([
-    runQueryOrSample(PREDEFINED.germanFleetPositions, () => sample.germanFleetPositions),
-    runQueryOrSample(PREDEFINED.russianFleetPositions, () => sample.russianFleetPositions),
+    runQueryOrSample(PREDEFINED.germanFleetPositions, () => getSample().germanFleetPositions),
+    runQueryOrSample(PREDEFINED.russianFleetPositions, () => getSample().russianFleetPositions),
   ]);
   const source =
     german.source === "sample" && russian.source === "sample"
@@ -968,14 +974,14 @@ export async function getVesselOutliers() {
   if (lagebild.ok && (lagebild.rows?.length ?? 0) > 0) {
     return lagebild;
   }
-  return runQueryOrSample(PREDEFINED.vesselOutliersMap, () => sample.vesselOutliers);
+  return runQueryOrSample(PREDEFINED.vesselOutliersMap, () => getSample().vesselOutliers);
 }
 
 /** SOCMINT feed: posts, threat/density tiles, and GPS jammer overlay for corroboration. */
 export async function getSocmintFeed() {
   const messages = await runQueryOrSample(
     PREDEFINED.socmintMessagesMap,
-    () => sample.socmintMessages
+    () => getSample().socmintMessages
   );
   let threat = await queryWarehouse(PREDEFINED.threatHotTiles);
   if (!threat.ok || (threat.rows?.length ?? 0) === 0) {
@@ -985,12 +991,12 @@ export async function getSocmintFeed() {
     threat = {
       ok: true,
       source: "sample",
-      rows: sample.threatHotTiles,
+      rows: getSample().threatHotTiles,
     };
   }
   const density = await runQueryOrSample(
     PREDEFINED.socmintDensityTiles,
-    () => sample.socmintDensityTiles
+    () => getSample().socmintDensityTiles
   );
   const gpsJammer = await getGpsJammerEvents();
   const source =
@@ -1021,15 +1027,15 @@ export async function getGpsJammerEvents() {
   if (lagebild.ok && (lagebild.rows?.length ?? 0) > 0) {
     return lagebild;
   }
-  return runQueryOrSample(PREDEFINED.gpsJammerEvents, () => sample.gpsJammerEvents);
+  return runQueryOrSample(PREDEFINED.gpsJammerEvents, () => getSample().gpsJammerEvents);
 }
 
 export async function getLidarScans() {
-  return runQueryOrSample(PREDEFINED.lidarScans, () => sample.lidarScans);
+  return runQueryOrSample(PREDEFINED.lidarScans, () => getSample().lidarScans);
 }
 
 export async function getDasCableSegments() {
-  const raw = await runQueryOrSample(PREDEFINED.dasCableSegments, () => sample.dasCableSegments);
+  const raw = await runQueryOrSample(PREDEFINED.dasCableSegments, () => getSample().dasCableSegments);
   const rows = raw.rows ?? raw.samples ?? [];
   const normalized = Array.isArray(rows) ? rows.map((r) => normalizeDasSegment(r)) : rows;
   return { ...raw, rows: normalized };
@@ -1037,11 +1043,13 @@ export async function getDasCableSegments() {
 
 export async function getKpis() {
   if (forceSample()) {
+    const bundle = getSample();
     return {
       ok: true,
-      source: "sample",
-      ...sample.kpis,
+      source: sampleResponseSource(bundle),
+      ...bundle.kpis,
       demoMode: true,
+      snapshotCapturedAt: bundle.meta?.snapshotCapturedAt ?? null,
     };
   }
   const [fleet, personnel, surv, alerts] = await Promise.all([
@@ -1061,15 +1069,17 @@ export async function getKpis() {
       alerts: alerts.ok ? Number(alerts.rows?.[0]?.cnt ?? 0) : 2,
     };
   }
+  const bundle = getSample();
   return {
     ok: true,
-    source: "sample",
-    ...sample.kpis,
+    source: sampleResponseSource(bundle),
+    ...bundle.kpis,
     fallbackReason: fleet.error,
     demoMode: true,
+    snapshotCapturedAt: bundle.meta?.snapshotCapturedAt ?? null,
   };
 }
 
 export function getDatasets() {
-  return sample.datasets;
+  return getSample().datasets;
 }

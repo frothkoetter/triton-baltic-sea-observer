@@ -10,19 +10,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SNAPSHOT_DIR = path.join(__dirname, "data", "live-snapshot");
 const MANIFEST_PATH = path.join(SNAPSHOT_DIR, "manifest.json");
 
-let cachedManifest = null;
+let resolvedCache = null;
+let resolvedCacheKey = null;
+
+export function snapshotDir() {
+  return SNAPSHOT_DIR;
+}
+
+function manifestCacheKey() {
+  if (!fs.existsSync(MANIFEST_PATH)) return "none";
+  try {
+    return String(fs.statSync(MANIFEST_PATH).mtimeMs);
+  } catch {
+    return "none";
+  }
+}
 
 export function readSnapshotManifest() {
-  if (cachedManifest !== null) return cachedManifest;
-  if (!fs.existsSync(MANIFEST_PATH)) {
-    cachedManifest = false;
-    return null;
-  }
+  if (!fs.existsSync(MANIFEST_PATH)) return null;
   try {
-    cachedManifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
-    return cachedManifest;
+    return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
   } catch {
-    cachedManifest = false;
     return null;
   }
 }
@@ -32,7 +40,6 @@ export function snapshotStatus() {
   if (!manifest) {
     return { available: false, capturedAt: null, datasetCount: 0 };
   }
-  const files = manifest.datasets ? Object.keys(manifest.datasets) : [];
   let loaded = 0;
   for (const file of Object.values(manifest.datasets || {})) {
     if (fs.existsSync(path.join(SNAPSHOT_DIR, file))) loaded += 1;
@@ -41,6 +48,7 @@ export function snapshotStatus() {
     available: loaded > 0,
     capturedAt: manifest.captured_at ?? null,
     datasetCount: loaded,
+    rowCounts: manifest.row_counts ?? null,
     source: manifest.source ?? "trino",
     catalog: manifest.catalog ?? null,
     schema: manifest.schema ?? null,
@@ -80,13 +88,55 @@ export function resolveSampleData(embedded) {
 
   if (overlayCount === 0) return embedded;
 
+  out.kpis = { ...embedded.kpis, ...computeKpisFromBundle(out) };
+
   out.meta = {
     ...embedded.meta,
     source: "sample",
     snapshot: true,
     snapshotCapturedAt: manifest.captured_at,
     snapshotDatasets: overlayCount,
+    snapshotRowCounts: manifest.row_counts ?? null,
     message: `Demo aus Live-Snapshot (${manifest.captured_at ?? "unbekannt"})`,
   };
   return out;
+}
+
+/** Cached merge; invalidates when manifest.json mtime changes (re-capture without restart). */
+export function getResolvedSampleData(embedded) {
+  const key = manifestCacheKey();
+  if (resolvedCache && resolvedCacheKey === key) return resolvedCache;
+  resolvedCache = resolveSampleData(embedded);
+  resolvedCacheKey = key;
+  return resolvedCache;
+}
+
+export function resetResolvedSampleCache() {
+  resolvedCache = null;
+  resolvedCacheKey = null;
+}
+
+export function sampleResponseSource(bundle) {
+  return bundle?.meta?.snapshot ? "sample-snapshot" : "sample";
+}
+
+export function computeKpisFromBundle(bundle) {
+  const fleet = Array.isArray(bundle.fleet) ? bundle.fleet : [];
+  const surveillance = Array.isArray(bundle.surveillance) ? bundle.surveillance : [];
+  const outliers = Array.isArray(bundle.vesselOutliers) ? bundle.vesselOutliers : [];
+
+  const fleetUnits = fleet.length;
+  const personnel = fleet.reduce(
+    (sum, r) => sum + Number(r.besatzung ?? r.crew_size ?? 0),
+    0
+  );
+  const surveillanceReports = surveillance.length;
+  const alerts = outliers.filter((r) => Number(r.severity_level ?? 0) >= 70).length;
+
+  return {
+    fleetUnits,
+    personnel,
+    surveillanceReports,
+    alerts,
+  };
 }
