@@ -2,7 +2,10 @@
 
 Script: [`download-today-s3-artifacts.sh`](./download-today-s3-artifacts.sh)
 
-Downloads objects whose **S3 `LastModified`** falls on the chosen calendar day in **`ARTIFACT_TZ`** (default `Europe/Berlin`):
+Downloads objects by **S3 `LastModified`**:
+
+- **Default:** whole calendar day in **`ARTIFACT_TZ`** (default `Europe/Berlin`)
+- **`--last-hours N`:** only objects modified in the last **N** hours (default `2` if flag has no value)
 
 | Category | Env prefix | Extensions |
 |----------|------------|------------|
@@ -40,6 +43,9 @@ export S3_DAS_ALLOWED_PREFIX='s3a://triton-buk-ab3b8c81/data/user/frothkoetter/d
 
 ./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE --dry-run
 ./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE
+# last 2 hours only (rolling window, UTC comparison on LastModified):
+./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE --last-hours
+./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE --last-hours 6
 # one-shot login + download:
 ./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE --sso-login
 ```

@@ -26,6 +26,7 @@ DRY_RUN=0
 SKIP_ARCHIVE=0
 SSO_LOGIN=0
 QUIET_AWS=1
+LAST_HOURS=""
 
 # download summary (label -> count)
 declare -a SUMMARY_LABELS=()
@@ -39,6 +40,7 @@ usage() {
   echo "  --profile NAME    AWS CLI profile (SSO or static); sets AWS_PROFILE"
   echo "  --sso-login       run 'aws sso login' for --profile / AWS_PROFILE first"
   echo "  --date YYYY-MM-DD calendar day in ARTIFACT_TZ (default: today)"
+  echo "  --last-hours [N]  S3 LastModified within last N hours (default N=2); overrides --date"
   echo "  --out DIR         output directory (default: ./triton-s3-artifacts-YYYYMMDD)"
   echo "  --tz ZONE         IANA tz for --date (default: Europe/Berlin)"
   echo "  --dry-run         list objects only, no download"
@@ -64,6 +66,15 @@ while [[ $# -gt 0 ]]; do
     --date)
       TARGET_DATE="$2"
       shift 2
+      ;;
+    --last-hours)
+      if [[ -n "${2:-}" && "$2" != --* && "$2" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        LAST_HOURS="$2"
+        shift 2
+      else
+        LAST_HOURS="2"
+        shift
+      fi
       ;;
     --out)
       OUT_DIR="$2"
@@ -174,7 +185,13 @@ if [[ -z "$TARGET_DATE" ]]; then
 fi
 
 if [[ -z "$OUT_DIR" ]]; then
-  OUT_DIR="${ROOT}/triton-s3-artifacts-${TARGET_DATE//-/}"
+  if [[ -n "$LAST_HOURS" ]]; then
+    _stamp="$(TZ="$ARTIFACT_TZ" date +%Y%m%d-%H%M)"
+    OUT_DIR="${ROOT}/triton-s3-artifacts-${_stamp}-last${LAST_HOURS}h"
+    unset _stamp
+  else
+    OUT_DIR="${ROOT}/triton-s3-artifacts-${TARGET_DATE//-/}"
+  fi
 fi
 
 mkdir -p "$OUT_DIR"
@@ -183,7 +200,7 @@ SITREP_PREFIX="${SITREP_S3_PREFIX:-${LAGEBILD_S3_PREFIX:-}}"
 LIDAR_PREFIX="${S3_LIDAR_ALLOWED_PREFIX:-}"
 DAS_PREFIX="${S3_DAS_ALLOWED_PREFIX:-}"
 
-export ARTIFACT_TZ TARGET_DATE OUT_DIR DRY_RUN AWS_PROFILE
+export ARTIFACT_TZ TARGET_DATE OUT_DIR DRY_RUN AWS_PROFILE LAST_HOURS
 
 ensure_aws_credentials
 
@@ -206,23 +223,31 @@ parse_s3_uri() {
   printf '%s\t%s\n' "$bucket" "$key"
 }
 
-# Lists keys under prefix whose LastModified falls on TARGET_DATE in ARTIFACT_TZ.
+# Lists keys: full calendar day (TARGET_DATE) or last LAST_HOURS (if set).
 # Args: bucket prefix extension1 extension2 ...
-list_today_keys() {
+list_matched_keys() {
   local bucket="$1"
   local prefix="$2"
   shift 2
   python3 - "$bucket" "$prefix" "$@" <<'PY'
 import json, os, subprocess, sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 bucket, prefix = sys.argv[1], sys.argv[2]
 exts = tuple(e.lower().lstrip(".") for e in sys.argv[3:] if e)
-day = os.environ["TARGET_DATE"]
 tz = ZoneInfo(os.environ.get("ARTIFACT_TZ", "Europe/Berlin"))
-start = datetime.fromisoformat(f"{day}T00:00:00").replace(tzinfo=tz)
-end = datetime.fromisoformat(f"{day}T23:59:59.999999").replace(tzinfo=tz)
+last_hours_raw = (os.environ.get("LAST_HOURS") or "").strip()
+if last_hours_raw:
+    hours = float(last_hours_raw)
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(hours=hours)
+    filter_label = f"last {hours:g}h (UTC window)"
+else:
+    day = os.environ["TARGET_DATE"]
+    start = datetime.fromisoformat(f"{day}T00:00:00").replace(tzinfo=tz)
+    end = datetime.fromisoformat(f"{day}T23:59:59.999999").replace(tzinfo=tz)
+    filter_label = f"day {day} {tz.key}"
 
 aws_cmd = ["aws", "s3api", "list-objects-v2", "--bucket", bucket, "--prefix", prefix, "--output", "json"]
 profile = (os.environ.get("AWS_PROFILE") or "").strip()
@@ -259,11 +284,15 @@ while True:
         if not lm:
             continue
         dt = datetime.fromisoformat(lm.replace("Z", "+00:00"))
-        if start <= dt.astimezone(tz) <= end:
+        if last_hours_raw:
+            in_window = start <= dt <= end
+        else:
+            in_window = start <= dt.astimezone(tz) <= end
+        if in_window:
             matched += 1
             print(key)
     print(
-        f"  … list page {page}: scanned {scanned}, matched {matched} for {day}",
+        f"  … list page {page}: scanned {scanned}, matched {matched} ({filter_label})",
         file=sys.stderr,
         flush=True,
     )
@@ -312,18 +341,26 @@ download_category() {
   prefix="${parsed#*$'\t'}"
   local dest="${OUT_DIR}/${subdir}"
   mkdir -p "$dest"
-  echo "== $label: s3://${bucket}/${prefix} (day ${TARGET_DATE} ${ARTIFACT_TZ}) =="
+  if [[ -n "$LAST_HOURS" ]]; then
+    echo "== $label: s3://${bucket}/${prefix} (last ${LAST_HOURS}h, S3 LastModified) =="
+  else
+    echo "== $label: s3://${bucket}/${prefix} (day ${TARGET_DATE} ${ARTIFACT_TZ}) =="
+  fi
   progress_line "  Listing objects…"
   local keys=()
   local line
   while IFS= read -r line; do
     [[ -n "$line" ]] && keys+=("$line")
-  done < <(list_today_keys "$bucket" "$prefix" "$@" || true)
+  done < <(list_matched_keys "$bucket" "$prefix" "$@" || true)
   local n=${#keys[@]}
   SUMMARY_LABELS+=("$label")
   SUMMARY_COUNTS+=("$n")
   if [[ "$n" -eq 0 ]]; then
-    echo "  (no objects for this day)"
+    if [[ -n "$LAST_HOURS" ]]; then
+      echo "  (no objects in last ${LAST_HOURS}h)"
+    else
+      echo "  (no objects for this day)"
+    fi
     return 0
   fi
   echo "  Found $n file(s) to download"
@@ -358,6 +395,7 @@ MANIFEST="${OUT_DIR}/manifest.txt"
 {
   echo "triton-s3-artifacts"
   echo "date=${TARGET_DATE} tz=${ARTIFACT_TZ}"
+  echo "last_hours=${LAST_HOURS:-}"
   echo "created=$(TZ=UTC date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "sitrep_prefix=${SITREP_PREFIX:-}"
   echo "lidar_prefix=${LIDAR_PREFIX:-}"
@@ -391,10 +429,17 @@ if command -v du >/dev/null 2>&1; then
   OUT_BYTES=$(du -sb "$OUT_DIR" 2>/dev/null | cut -f1 || echo 0)
 fi
 
-echo "== Summary (${TARGET_DATE}) =="
-for idx in "${!SUMMARY_LABELS[@]}"; do
-  echo "  ${SUMMARY_LABELS[$idx]}: ${SUMMARY_COUNTS[$idx]} file(s)"
+if [[ -n "$LAST_HOURS" ]]; then
+  echo "== Summary (last ${LAST_HOURS}h, S3 LastModified) =="
+else
+  echo "== Summary (${TARGET_DATE}) =="
+fi
+_summary_i=0
+while [[ $_summary_i -lt ${#SUMMARY_LABELS[@]} ]]; do
+  echo "  ${SUMMARY_LABELS[_summary_i]}: ${SUMMARY_COUNTS[_summary_i]} file(s)"
+  _summary_i=$((_summary_i + 1))
 done
+unset _summary_i
 echo "  Total: ${total_files} file(s), $(human_bytes "$OUT_BYTES") under $(basename "$OUT_DIR")"
 
 ARCHIVE="${OUT_DIR}.tar.gz"
