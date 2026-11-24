@@ -1,0 +1,1202 @@
+[
+  {
+    "mmsi": 123456031,
+    "area_id": "FI-Defence-Helsinki-Approaches-25.1",
+    "event_timestamp": "2026-11-22 20:51:39.797",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "FI-Defence-Helsinki-Approaches-25.1",
+    "event_timestamp": "2026-11-22 20:51:39.797",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "FI-Defence-Helsinki-Approaches-25.1",
+    "event_timestamp": "2026-11-22 20:51:39.797",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:30:39.299",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:30:39.299",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:30:39.299",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:31:35.951",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:31:35.951",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 123456031,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 21:31:35.951",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:11:36.365",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:11:36.365",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:11:36.365",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:14:08.706",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:14:08.706",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040049,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:14:08.706",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:45:30.479",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:45:30.479",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:45:30.479",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:46:15.902",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:46:15.902",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 14:46:15.902",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "EE-Defence-West-Estonia-24.3",
+    "event_timestamp": "2026-11-23 14:41:13.530",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "EE-Defence-West-Estonia-24.3",
+    "event_timestamp": "2026-11-23 14:41:13.530",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040068,
+    "area_id": "EE-Defence-West-Estonia-24.3",
+    "event_timestamp": "2026-11-23 14:41:13.530",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:12:06.958",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:12:06.958",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:12:06.958",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:13:14.267",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:13:14.267",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040109,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-23 15:13:14.267",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:06:26.172",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:06:26.172",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:06:26.172",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:59:15.948",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:59:15.948",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 14:59:15.948",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 18:28:06.393",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 18:28:06.393",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 18:28:06.393",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 20:43:37.353",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 20:43:37.353",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-22 20:43:37.353",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.319",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.319",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.319",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.422",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.422",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.422",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.577",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.577",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.577",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.796",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.796",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.796",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.963",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.963",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:46.963",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:47.060",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:47.060",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:44:47.060",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:45:35.064",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:45:35.064",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:45:35.064",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:46:35.083",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:46:35.083",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:46:35.083",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:47:35.075",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:47:35.075",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:47:35.075",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:48:35.042",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:48:35.042",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:48:35.042",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:01.354",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:01.354",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:01.354",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:54.345",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:54.345",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:50:54.345",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:51:35.208",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:51:35.208",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:51:35.208",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:52:35.106",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:52:35.106",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:52:35.106",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:15.172",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:15.172",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:15.172",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:54.649",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:54.649",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:54:54.649",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:55:35.212",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:55:35.212",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:55:35.212",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:56:35.118",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:56:35.118",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:56:35.118",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:57:58.062",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:57:58.062",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:57:58.062",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:58:43.827",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:58:43.827",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 07:58:43.827",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:09.906",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:09.906",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:09.906",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:56.681",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:56.681",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:00:56.681",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:18.853",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:18.853",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:18.853",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:53.910",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:53.910",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 08:02:53.910",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.864",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.864",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.864",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.969",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.969",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:16.969",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.129",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.129",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.129",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.298",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.298",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.298",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.428",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.428",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.428",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.542",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.542",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.542",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.691",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.691",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:11:17.691",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:12:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:12:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:12:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:13:04.769",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:13:04.769",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:13:04.769",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:14:04.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:14:04.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:14:04.690",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:15:04.717",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:15:04.717",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:15:04.717",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:16:35.919",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:16:35.919",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:16:35.919",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:17:07.945",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:17:07.945",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:17:07.945",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:18:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:18:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:18:04.727",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:19:04.771",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:19:04.771",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:19:04.771",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:20:34.867",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:20:34.867",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:20:34.867",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:21:19.092",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:21:19.092",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:21:19.092",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:22:04.871",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:22:04.871",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:22:04.871",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:23:04.870",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:23:04.870",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:23:04.870",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:24:27.583",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:24:27.583",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:24:27.583",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:25:13.631",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:25:13.631",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:25:13.631",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:26:35.439",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:26:35.439",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:26:35.439",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:27:14.401",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:27:14.401",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:27:14.401",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:28:42.960",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:28:42.960",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:28:42.960",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:29:28.069",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:29:28.069",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:29:28.069",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:31:04.892",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:31:04.892",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040116,
+    "area_id": "DE-Firing-Putlos-Todendorf",
+    "event_timestamp": "2026-11-23 14:31:04.892",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040121,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 18:35:33.178",
+    "transition": "enter"
+  },
+  {
+    "mmsi": 311040121,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 18:35:33.178",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040121,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 18:35:33.178",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040121,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 18:36:34.944",
+    "transition": "exit"
+  },
+  {
+    "mmsi": 311040121,
+    "area_id": "DE-Firing-Bornholm-Bight",
+    "event_timestamp": "2026-11-22 18:36:34.944",
+    "transition": "exit"
+  }
+]

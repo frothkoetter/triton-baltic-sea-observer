@@ -1,0 +1,830 @@
+[
+  {
+    "Name": "BALAZS",
+    "MMSI": 123456001,
+    "IMO": 9327413,
+    "Type": "Chemical/Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "ARISTO",
+    "MMSI": 123456011,
+    "IMO": 9327413,
+    "Type": "Chemical/Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "M/V Angara",
+    "MMSI": 273800001,
+    "IMO": 9179842,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: Beförderung von im Verteidigungs- und Sicherheitssektor verwendeten Gütern und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "M/V Angara",
+    "MMSI": 273800001,
+    "IMO": 9179842,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: Beförderung von im Verteidigungs- und Sicherheitssektor verwendeten Gütern und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "HAI II",
+    "MMSI": 123456021,
+    "IMO": 9259599,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS ARGE",
+    "MMSI": 123456033,
+    "IMO": 9299745,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "M/V Maria",
+    "MMSI": 273800002,
+    "IMO": 8517839,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: Beförderung von im Verteidigungs- und Sicherheitssektor verwendeten Gütern und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Saam FSU",
+    "MMSI": 273800003,
+    "IMO": 9915090,
+    "Type": "Floating Storage Unit",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "M/V Maria",
+    "MMSI": 273800002,
+    "IMO": 8517839,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: Beförderung von im Verteidigungs- und Sicherheitssektor verwendeten Gütern und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Saam FSU",
+    "MMSI": 273800003,
+    "IMO": 9915090,
+    "Type": "Floating Storage Unit",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "HS ATLANTICA",
+    "MMSI": 636022401,
+    "IMO": 9322839,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited; HS Atlantica Limited"
+  },
+  {
+    "Name": "HS BURAQ",
+    "MMSI": 636022364,
+    "IMO": 9381732,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS ESBERG",
+    "MMSI": 636022386,
+    "IMO": 9410894,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS EVERETT",
+    "MMSI": 636022403,
+    "IMO": 9410870,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "Koryak FSU",
+    "MMSI": 273800004,
+    "IMO": 9915105,
+    "Type": "Floating Storage Unit",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hana",
+    "MMSI": 273800005,
+    "IMO": 9353113,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Canis Power",
+    "MMSI": 273800006,
+    "IMO": 9289520,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Andromeda Star",
+    "MMSI": 273800007,
+    "IMO": 9402471,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Koryak FSU",
+    "MMSI": 273800004,
+    "IMO": 9915105,
+    "Type": "Floating Storage Unit",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hana",
+    "MMSI": 273800005,
+    "IMO": 9353113,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Canis Power",
+    "MMSI": 273800006,
+    "IMO": 9289520,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Andromeda Star",
+    "MMSI": 273800007,
+    "IMO": 9402471,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe b: Beförderung von Rohöl oder Erdölerzeugnissen, die in Anhang XIII aufgeführt sind, ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, sowie Anwendung irregulärer und mit hohem Risiko behafteter Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Lotus",
+    "MMSI": 273800008,
+    "IMO": 9339337,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Spirit",
+    "MMSI": 273800009,
+    "IMO": 9318553,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Stream",
+    "MMSI": 273800010,
+    "IMO": 9318541,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "SCF Amur",
+    "MMSI": 273800011,
+    "IMO": 9333436,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen oder von Russland strukturell für Zwecke des Energietransports genutzt werden, was dem Ziel der Verringerung der russischen Einnahmen in diesem Sektor zuwiderläuft",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Lady R",
+    "MMSI": 273800012,
+    "IMO": 9161003,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: im Verteidigungs- und Sicherheitssektor verwendete Güter und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine befördern",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Maia-1",
+    "MMSI": 273800013,
+    "IMO": 9358010,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: im Verteidigungs- und Sicherheitssektor verwendete Güter und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine befördern",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Audax",
+    "MMSI": 273800014,
+    "IMO": 9763837,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Pugnax",
+    "MMSI": 273800015,
+    "IMO": 9763849,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Lotus",
+    "MMSI": 273800008,
+    "IMO": 9339337,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Spirit",
+    "MMSI": 273800009,
+    "IMO": 9318553,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "NS Stream",
+    "MMSI": 273800010,
+    "IMO": 9318541,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "SCF Amur",
+    "MMSI": 273800011,
+    "IMO": 9333436,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe c: so betrieben werden, dass sie zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beitragen oder diese unterstützen oder von Russland strukturell für Zwecke des Energietransports genutzt werden, was dem Ziel der Verringerung der russischen Einnahmen in diesem Sektor zuwiderläuft",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Lady R",
+    "MMSI": 273800012,
+    "IMO": 9161003,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: im Verteidigungs- und Sicherheitssektor verwendete Güter und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine befördern",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Maia-1",
+    "MMSI": 273800013,
+    "IMO": 9358010,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x, Absatz 2 Buchstabe a: im Verteidigungs- und Sicherheitssektor verwendete Güter und Technologien von oder nach Russland, zur Verwendung in Russland oder für die Kriegsführung Russlands in der Ukraine befördern",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Audax",
+    "MMSI": 273800014,
+    "IMO": 9763837,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Pugnax",
+    "MMSI": 273800015,
+    "IMO": 9763849,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hunter Star",
+    "MMSI": 273800016,
+    "IMO": 9830769,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hebe",
+    "MMSI": 273800017,
+    "IMO": 9259185,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Enisey",
+    "MMSI": 273800018,
+    "IMO": 9079169,
+    "Type": "Bulk Carrier",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe d Betrieb derart, dass zu Maßnahmen oder Strategien beigetragen wird oder diese unterstützt werden, mit denen die wirtschaftliche Lebensfähigkeit oder die Ernährungssicherheit der Ukraine (etwa durch Beförderung gestohlenen ukrainischen Getreides) oder die Erhaltung des kulturellen Erbes der Ukraine (etwa durch Beförderung gestohlener ukrainischer Kulturgüter) untergraben oder bedroht werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Vela Rain",
+    "MMSI": 273800019,
+    "IMO": 9331141,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Ocean AMZ",
+    "MMSI": 273800020,
+    "IMO": 9394935,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Galian 2",
+    "MMSI": 273800021,
+    "IMO": 9331153,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Robon",
+    "MMSI": 273800022,
+    "IMO": 9144782,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Beks Aqua",
+    "MMSI": 273800023,
+    "IMO": 9277735,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Kemerovo",
+    "MMSI": 273800024,
+    "IMO": 9312884,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Krymsk",
+    "MMSI": 273800025,
+    "IMO": 9270529,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Krasnoyarsk",
+    "MMSI": 273800026,
+    "IMO": 9312896,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Kaliningrad",
+    "MMSI": 273800027,
+    "IMO": 9341067,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hunter Star",
+    "MMSI": 273800016,
+    "IMO": 9830769,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe c: Betrieb derart, dass zu Maßnahmen oder Strategien zur Ausbeutung, zur Entwicklung oder zum Ausbau des Energiesektors in Russland, einschließlich der Energieinfrastruktur, beigetragen wird oder diese unterstützt",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Hebe",
+    "MMSI": 273800017,
+    "IMO": 9259185,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Enisey",
+    "MMSI": 273800018,
+    "IMO": 9079169,
+    "Type": "Bulk Carrier",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe d Betrieb derart, dass zu Maßnahmen oder Strategien beigetragen wird oder diese unterstützt werden, mit denen die wirtschaftliche Lebensfähigkeit oder die Ernährungssicherheit der Ukraine (etwa durch Beförderung gestohlenen ukrainischen Getreides) oder die Erhaltung des kulturellen Erbes der Ukraine (etwa durch Beförderung gestohlener ukrainischer Kulturgüter) untergraben oder bedroht werden",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Vela Rain",
+    "MMSI": 273800019,
+    "IMO": 9331141,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Ocean AMZ",
+    "MMSI": 273800020,
+    "IMO": 9394935,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Galian 2",
+    "MMSI": 273800021,
+    "IMO": 9331153,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Robon",
+    "MMSI": 273800022,
+    "IMO": 9144782,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Beks Aqua",
+    "MMSI": 273800023,
+    "IMO": 9277735,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Kemerovo",
+    "MMSI": 273800024,
+    "IMO": 9312884,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe b: Beförderung von in Anhang XIII aufgeführten Rohöl oder Erdölerzeugnissen, die ihren Ursprung in Russland haben oder aus Russland ausgeführt werden, während irreguläre und mit hohem Risiko behaftete Transportpraktiken gemäß der Entschließung A.1192(33) der Generalversammlung der Internationalen Seeschifffahrtsorganisation betrieben werden.",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Krymsk",
+    "MMSI": 273800025,
+    "IMO": 9270529,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Krasnoyarsk",
+    "MMSI": 273800026,
+    "IMO": 9312896,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "Kaliningrad",
+    "MMSI": 273800027,
+    "IMO": 9341067,
+    "Type": "Tanker",
+    "Flag": "Russia",
+    "Sanction_Reason": "Artikel 4x Absatz 2 Buchstabe g: Schiff, das Eigentum der in Anhang I der Verordnung (EU) Nr. 269/2014 aufgeführten natürlichen oder juristischen Personen, Organisationen oder Einrichtungen ist, von diesen gechartert oder betrieben wird oder anderweitig unter dem Namen oder im Namen, in Verbindung mit diesen oder zugunsten dieser Personen verwendet wird",
+    "Linked_To": "EU"
+  },
+  {
+    "Name": "SARA II",
+    "MMSI": 636022546,
+    "IMO": 9301615,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "SENSUS",
+    "MMSI": 636022146,
+    "IMO": 9296585,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "UZE",
+    "MMSI": 636022072,
+    "IMO": 9323338,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS GLORY",
+    "MMSI": 636018127,
+    "IMO": 9249087,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS LEGEND",
+    "MMSI": 636022362,
+    "IMO": 9381744,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS STAR",
+    "MMSI": 636018885,
+    "IMO": 9274446,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "LA PRIDE",
+    "MMSI": 636022251,
+    "IMO": 9274616,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "MONA",
+    "MMSI": 636022424,
+    "IMO": 9314818,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "NELLIS",
+    "MMSI": 636022550,
+    "IMO": 9322267,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "OSPEROUS",
+    "MMSI": 636022098,
+    "IMO": 9412995,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "PERIA",
+    "MMSI": 636022479,
+    "IMO": 9322827,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "BALAZS",
+    "MMSI": 123456001,
+    "IMO": 9327413,
+    "Type": "Chemical/Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "ARISTO",
+    "MMSI": 123456011,
+    "IMO": 9327413,
+    "Type": "Chemical/Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HAI II",
+    "MMSI": 123456021,
+    "IMO": 9259599,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS ARGE",
+    "MMSI": 123456033,
+    "IMO": 9299745,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS ATLANTICA",
+    "MMSI": 636022401,
+    "IMO": 9322839,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited; HS Atlantica Limited"
+  },
+  {
+    "Name": "HS BURAQ",
+    "MMSI": 636022364,
+    "IMO": 9381732,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS ESBERG",
+    "MMSI": 636022386,
+    "IMO": 9410894,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS EVERETT",
+    "MMSI": 636022403,
+    "IMO": 9410870,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS GLORY",
+    "MMSI": 636018127,
+    "IMO": 9249087,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS LEGEND",
+    "MMSI": 636022362,
+    "IMO": 9381744,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "HS STAR",
+    "MMSI": 636018885,
+    "IMO": 9274446,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "LA PRIDE",
+    "MMSI": 636022251,
+    "IMO": 9274616,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "MONA",
+    "MMSI": 636022424,
+    "IMO": 9314818,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "NELLIS",
+    "MMSI": 636022550,
+    "IMO": 9322267,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "OSPEROUS",
+    "MMSI": 636022098,
+    "IMO": 9412995,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "PERIA",
+    "MMSI": 636022479,
+    "IMO": 9322827,
+    "Type": "Crude Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "SARA II",
+    "MMSI": 636022546,
+    "IMO": 9301615,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "SENSUS",
+    "MMSI": 636022146,
+    "IMO": 9296585,
+    "Type": "Products Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  },
+  {
+    "Name": "UZE",
+    "MMSI": 636022072,
+    "IMO": 9323338,
+    "Type": "Chemical/Oil Tanker",
+    "Flag": "Liberia",
+    "Sanction_Reason": "Blocked under E.O. 14024",
+    "Linked_To": "Hennesea Holdings Limited"
+  }
+]

@@ -1,0 +1,2552 @@
+[
+  {
+    "geohash": "u3y43kf",
+    "event_timestamp": "2026-11-24T15:05:04.764Z",
+    "latitude": 55.26625,
+    "longitude": 19.746,
+    "adsb_nic": 3,
+    "signal_integrity": 0.34,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4xpsq9",
+    "event_timestamp": "2026-11-24T15:05:04.764Z",
+    "latitude": 60.41727,
+    "longitude": 10.03218,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udh2d9u",
+    "event_timestamp": "2026-11-24T15:05:04.764Z",
+    "latitude": 56.3486,
+    "longitude": 28.59317,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6v4ggc",
+    "event_timestamp": "2026-11-24T15:05:04.764Z",
+    "latitude": 60.97386,
+    "longitude": 18.44822,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3cqvh9",
+    "event_timestamp": "2026-11-24T15:05:04.764Z",
+    "latitude": 56.05547,
+    "longitude": 13.22986,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3th73u",
+    "event_timestamp": "2026-11-24T14:05:04.771Z",
+    "latitude": 54.19429,
+    "longitude": 18.43013,
+    "adsb_nic": 6,
+    "signal_integrity": 0.77,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u62q8g0",
+    "event_timestamp": "2026-11-24T14:05:04.771Z",
+    "latitude": 58.81611,
+    "longitude": 11.63547,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6mzbxn",
+    "event_timestamp": "2026-11-24T14:05:04.771Z",
+    "latitude": 59.05817,
+    "longitude": 19.36702,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u33wpwd",
+    "event_timestamp": "2026-11-24T14:05:04.771Z",
+    "latitude": 53.12252,
+    "longitude": 13.69241,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3tum9u",
+    "event_timestamp": "2026-11-24T14:05:04.771Z",
+    "latitude": 54.19484,
+    "longitude": 19.58364,
+    "adsb_nic": 3,
+    "signal_integrity": 0.38,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3uvqwk",
+    "event_timestamp": "2026-11-24T13:05:04.766Z",
+    "latitude": 55.80154,
+    "longitude": 18.22206,
+    "adsb_nic": 7,
+    "signal_integrity": 0.86,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6b9y04",
+    "event_timestamp": "2026-11-24T13:05:04.766Z",
+    "latitude": 60.77709,
+    "longitude": 12.22037,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3d23sn",
+    "event_timestamp": "2026-11-24T13:05:04.766Z",
+    "latitude": 53.50346,
+    "longitude": 14.48926,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u92ruwv",
+    "event_timestamp": "2026-11-24T13:05:04.766Z",
+    "latitude": 53.43081,
+    "longitude": 23.05659,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4pqcv6",
+    "event_timestamp": "2026-11-24T13:05:04.766Z",
+    "latitude": 57.46556,
+    "longitude": 10.27617,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u38ussm",
+    "event_timestamp": "2026-11-24T12:05:04.767Z",
+    "latitude": 54.25239,
+    "longitude": 12.5097,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4p55sz",
+    "event_timestamp": "2026-11-24T12:05:04.767Z",
+    "latitude": 56.8043,
+    "longitude": 10.00743,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u96wq96",
+    "event_timestamp": "2026-11-24T12:05:04.767Z",
+    "latitude": 53.13765,
+    "longitude": 26.30469,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3fyrxk",
+    "event_timestamp": "2026-11-24T12:05:04.767Z",
+    "latitude": 55.98322,
+    "longitude": 15.45276,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u99f7v7",
+    "event_timestamp": "2026-11-24T12:05:04.767Z",
+    "latitude": 53.86295,
+    "longitude": 25.13065,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3qnvqd",
+    "event_timestamp": "2026-11-24T11:05:04.769Z",
+    "latitude": 53.25474,
+    "longitude": 19.92103,
+    "adsb_nic": 4,
+    "signal_integrity": 0.56,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud3n46n",
+    "event_timestamp": "2026-11-24T11:05:04.769Z",
+    "latitude": 58.72233,
+    "longitude": 24.01344,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6hbrzw",
+    "event_timestamp": "2026-11-24T11:05:04.769Z",
+    "latitude": 56.33647,
+    "longitude": 18.27938,
+    "adsb_nic": 4,
+    "signal_integrity": 0.53,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6h0j9e",
+    "event_timestamp": "2026-11-24T11:05:04.769Z",
+    "latitude": 56.25942,
+    "longitude": 17.12137,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud80zn5",
+    "event_timestamp": "2026-11-24T11:05:04.769Z",
+    "latitude": 59.22793,
+    "longitude": 22.81218,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udgbzd5",
+    "event_timestamp": "2026-11-24T10:05:04.761Z",
+    "latitude": 60.6126,
+    "longitude": 28.10731,
+    "adsb_nic": 6,
+    "signal_integrity": 0.69,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9urtt0",
+    "event_timestamp": "2026-11-24T10:05:04.761Z",
+    "latitude": 56.19048,
+    "longitude": 28.71944,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6kb2d7",
+    "event_timestamp": "2026-11-24T10:05:04.761Z",
+    "latitude": 57.71353,
+    "longitude": 17.95633,
+    "adsb_nic": 3,
+    "signal_integrity": 0.45,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud55c64",
+    "event_timestamp": "2026-11-24T10:05:04.761Z",
+    "latitude": 56.92046,
+    "longitude": 26.77646,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6e9nbk",
+    "event_timestamp": "2026-11-24T10:05:04.761Z",
+    "latitude": 59.24055,
+    "longitude": 16.47478,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9gcmkg",
+    "event_timestamp": "2026-11-24T09:05:04.763Z",
+    "latitude": 55.09074,
+    "longitude": 28.00848,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u69up82",
+    "event_timestamp": "2026-11-24T09:05:04.763Z",
+    "latitude": 59.767,
+    "longitude": 14.04142,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud64e89",
+    "event_timestamp": "2026-11-24T09:05:04.763Z",
+    "latitude": 58.09866,
+    "longitude": 25.46828,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9esgke",
+    "event_timestamp": "2026-11-24T09:05:04.763Z",
+    "latitude": 54.2983,
+    "longitude": 27.5696,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u39v3fm",
+    "event_timestamp": "2026-11-24T09:05:04.763Z",
+    "latitude": 54.37373,
+    "longitude": 13.79588,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3b95th",
+    "event_timestamp": "2026-11-24T08:05:04.770Z",
+    "latitude": 55.04804,
+    "longitude": 12.11292,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud778zs",
+    "event_timestamp": "2026-11-24T08:05:04.770Z",
+    "latitude": 58.31272,
+    "longitude": 27.10926,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u99c00f",
+    "event_timestamp": "2026-11-24T08:05:04.770Z",
+    "latitude": 53.61828,
+    "longitude": 24.96455,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6p7yq3",
+    "event_timestamp": "2026-11-24T08:05:04.770Z",
+    "latitude": 56.94388,
+    "longitude": 21.72144,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u1zrgnd",
+    "event_timestamp": "2026-11-24T08:05:04.770Z",
+    "latitude": 56.2426,
+    "longitude": 10.33028,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud6s4qq",
+    "event_timestamp": "2026-11-24T07:05:04.762Z",
+    "latitude": 58.39461,
+    "longitude": 26.124,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6t36yw",
+    "event_timestamp": "2026-11-24T07:05:04.762Z",
+    "latitude": 59.31809,
+    "longitude": 18.762,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u92q4n7",
+    "event_timestamp": "2026-11-24T07:05:04.762Z",
+    "latitude": 53.12055,
+    "longitude": 22.9443,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9uefkg",
+    "event_timestamp": "2026-11-24T07:05:04.762Z",
+    "latitude": 55.53014,
+    "longitude": 28.93158,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud17b2k",
+    "event_timestamp": "2026-11-24T07:05:04.762Z",
+    "latitude": 56.91157,
+    "longitude": 24.27548,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u39rh7w",
+    "event_timestamp": "2026-11-24T06:05:04.765Z",
+    "latitude": 54.68797,
+    "longitude": 13.2039,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6s8fdg",
+    "event_timestamp": "2026-11-24T06:05:04.765Z",
+    "latitude": 59.2108,
+    "longitude": 17.6923,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u684jb8",
+    "event_timestamp": "2026-11-24T06:05:04.765Z",
+    "latitude": 59.41784,
+    "longitude": 11.50403,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3yzqsm",
+    "event_timestamp": "2026-11-24T06:05:04.765Z",
+    "latitude": 56.14207,
+    "longitude": 21.03548,
+    "adsb_nic": 4,
+    "signal_integrity": 0.55,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6bdq1z",
+    "event_timestamp": "2026-11-24T06:05:04.765Z",
+    "latitude": 60.87391,
+    "longitude": 12.2265,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9u1s67",
+    "event_timestamp": "2026-11-24T05:05:04.763Z",
+    "latitude": 55.12115,
+    "longitude": 28.3164,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6t4mu4",
+    "event_timestamp": "2026-11-24T05:05:04.763Z",
+    "latitude": 59.48113,
+    "longitude": 18.53797,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6k2w3c",
+    "event_timestamp": "2026-11-24T05:05:04.763Z",
+    "latitude": 57.75446,
+    "longitude": 17.50272,
+    "adsb_nic": 6,
+    "signal_integrity": 0.68,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3frjcn",
+    "event_timestamp": "2026-11-24T05:05:04.763Z",
+    "latitude": 56.08076,
+    "longitude": 14.67553,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6mek51",
+    "event_timestamp": "2026-11-24T05:05:04.763Z",
+    "latitude": 58.24413,
+    "longitude": 19.16211,
+    "adsb_nic": 6,
+    "signal_integrity": 0.74,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6dx5hr",
+    "event_timestamp": "2026-11-24T04:05:04.761Z",
+    "latitude": 60.3167,
+    "longitude": 14.90787,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u38v9sx",
+    "event_timestamp": "2026-11-24T04:05:04.761Z",
+    "latitude": 54.42946,
+    "longitude": 12.38158,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u38bszf",
+    "event_timestamp": "2026-11-24T04:05:04.761Z",
+    "latitude": 53.56825,
+    "longitude": 12.51741,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9e871d",
+    "event_timestamp": "2026-11-24T04:05:04.761Z",
+    "latitude": 53.49065,
+    "longitude": 27.55678,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6qxhk9",
+    "event_timestamp": "2026-11-24T04:05:04.761Z",
+    "latitude": 58.91166,
+    "longitude": 20.57907,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u68nvhp",
+    "event_timestamp": "2026-11-24T03:05:04.768Z",
+    "latitude": 60.27149,
+    "longitude": 11.48071,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6t01vx",
+    "event_timestamp": "2026-11-24T03:05:04.768Z",
+    "latitude": 59.09285,
+    "longitude": 18.36803,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6w4b2d",
+    "event_timestamp": "2026-11-24T03:05:04.768Z",
+    "latitude": 59.54939,
+    "longitude": 19.70259,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3qzxgg",
+    "event_timestamp": "2026-11-24T03:05:04.768Z",
+    "latitude": 53.37125,
+    "longitude": 21.08771,
+    "adsb_nic": 4,
+    "signal_integrity": 0.52,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6h0fhz",
+    "event_timestamp": "2026-11-24T03:05:04.768Z",
+    "latitude": 56.40911,
+    "longitude": 16.97287,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u980v50",
+    "event_timestamp": "2026-11-24T02:05:04.761Z",
+    "latitude": 53.58633,
+    "longitude": 22.72002,
+    "adsb_nic": 7,
+    "signal_integrity": 0.89,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6hxv89",
+    "event_timestamp": "2026-11-24T02:05:04.761Z",
+    "latitude": 57.61588,
+    "longitude": 17.82237,
+    "adsb_nic": 4,
+    "signal_integrity": 0.48,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6p8cd0",
+    "event_timestamp": "2026-11-24T02:05:04.761Z",
+    "latitude": 56.39392,
+    "longitude": 21.8634,
+    "adsb_nic": 6,
+    "signal_integrity": 0.78,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6ptydg",
+    "event_timestamp": "2026-11-24T02:05:04.761Z",
+    "latitude": 57.27691,
+    "longitude": 22.08742,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4pk1ge",
+    "event_timestamp": "2026-11-24T02:05:04.761Z",
+    "latitude": 56.97318,
+    "longitude": 10.2769,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud3hyc4",
+    "event_timestamp": "2026-11-24T01:05:04.766Z",
+    "latitude": 58.49677,
+    "longitude": 24.20591,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u92ys0q",
+    "event_timestamp": "2026-11-24T01:05:04.766Z",
+    "latitude": 53.17529,
+    "longitude": 23.74003,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1w35x",
+    "event_timestamp": "2026-11-24T01:05:04.766Z",
+    "latitude": 57.36873,
+    "longitude": 24.66316,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u63vqrf",
+    "event_timestamp": "2026-11-24T01:05:04.766Z",
+    "latitude": 58.62268,
+    "longitude": 13.98913,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u97wthc",
+    "event_timestamp": "2026-11-24T01:05:04.766Z",
+    "latitude": 53.20103,
+    "longitude": 27.6437,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9tr8qq",
+    "event_timestamp": "2026-11-24T00:05:04.759Z",
+    "latitude": 54.79045,
+    "longitude": 29.90321,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u60f4gn",
+    "event_timestamp": "2026-11-24T00:05:04.759Z",
+    "latitude": 56.61916,
+    "longitude": 12.43512,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6224r1",
+    "event_timestamp": "2026-11-24T00:05:04.759Z",
+    "latitude": 57.69528,
+    "longitude": 11.70306,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6de33k",
+    "event_timestamp": "2026-11-24T00:05:04.759Z",
+    "latitude": 59.64067,
+    "longitude": 14.82734,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9c8nf8",
+    "event_timestamp": "2026-11-24T00:05:04.759Z",
+    "latitude": 54.85809,
+    "longitude": 24.90711,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3wzu54",
+    "event_timestamp": "2026-11-23T23:05:04.760Z",
+    "latitude": 54.81723,
+    "longitude": 20.9213,
+    "adsb_nic": 1,
+    "signal_integrity": 0.16,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9sx9jw",
+    "event_timestamp": "2026-11-23T23:05:04.760Z",
+    "latitude": 54.78668,
+    "longitude": 28.88164,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud4ut7u",
+    "event_timestamp": "2026-11-23T23:05:04.760Z",
+    "latitude": 57.06234,
+    "longitude": 26.60432,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9dc099",
+    "event_timestamp": "2026-11-23T23:05:04.760Z",
+    "latitude": 53.6228,
+    "longitude": 26.39124,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9ub1zb",
+    "event_timestamp": "2026-11-23T23:05:04.760Z",
+    "latitude": 54.88768,
+    "longitude": 29.25733,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6tc4b6",
+    "event_timestamp": "2026-11-23T22:05:04.767Z",
+    "latitude": 59.24038,
+    "longitude": 19.46031,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udufx16",
+    "event_timestamp": "2026-11-23T22:05:04.767Z",
+    "latitude": 60.91634,
+    "longitude": 29.49098,
+    "adsb_nic": 3,
+    "signal_integrity": 0.39,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6nc8km",
+    "event_timestamp": "2026-11-23T22:05:04.767Z",
+    "latitude": 56.53804,
+    "longitude": 20.76071,
+    "adsb_nic": 5,
+    "signal_integrity": 0.67,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3gyjg7",
+    "event_timestamp": "2026-11-23T22:05:04.767Z",
+    "latitude": 55.91694,
+    "longitude": 16.78059,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud0c0m3",
+    "event_timestamp": "2026-11-23T22:05:04.767Z",
+    "latitude": 56.45488,
+    "longitude": 23.56799,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udf3em0",
+    "event_timestamp": "2026-11-23T21:05:04.767Z",
+    "latitude": 60.7609,
+    "longitude": 25.80773,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3qxzdm",
+    "event_timestamp": "2026-11-23T21:05:04.767Z",
+    "latitude": 53.40627,
+    "longitude": 20.72731,
+    "adsb_nic": 4,
+    "signal_integrity": 0.47,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u37qmwn",
+    "event_timestamp": "2026-11-23T21:05:04.767Z",
+    "latitude": 53.16413,
+    "longitude": 16.07149,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3fgm97",
+    "event_timestamp": "2026-11-23T21:05:04.767Z",
+    "latitude": 55.42292,
+    "longitude": 15.36392,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud66x3h",
+    "event_timestamp": "2026-11-23T21:05:04.767Z",
+    "latitude": 58.10232,
+    "longitude": 25.9887,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u61sguu",
+    "event_timestamp": "2026-11-23T20:05:04.763Z",
+    "latitude": 57.11126,
+    "longitude": 13.53,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udjm3x7",
+    "event_timestamp": "2026-11-23T20:05:04.763Z",
+    "latitude": 57.21404,
+    "longitude": 29.95293,
+    "adsb_nic": 7,
+    "signal_integrity": 0.81,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud0xpzr",
+    "event_timestamp": "2026-11-23T20:05:04.763Z",
+    "latitude": 57.52115,
+    "longitude": 23.55443,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3zmqry",
+    "event_timestamp": "2026-11-23T20:05:04.763Z",
+    "latitude": 55.81054,
+    "longitude": 21.72867,
+    "adsb_nic": 5,
+    "signal_integrity": 0.6,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u635nke",
+    "event_timestamp": "2026-11-23T20:05:04.763Z",
+    "latitude": 58.20924,
+    "longitude": 12.93519,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u38rdz8",
+    "event_timestamp": "2026-11-23T19:05:04.765Z",
+    "latitude": 54.79814,
+    "longitude": 11.72374,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud2k0c7",
+    "event_timestamp": "2026-11-23T19:05:04.765Z",
+    "latitude": 58.3668,
+    "longitude": 22.88934,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3zjyvs",
+    "event_timestamp": "2026-11-23T19:05:04.765Z",
+    "latitude": 55.88505,
+    "longitude": 21.39674,
+    "adsb_nic": 4,
+    "signal_integrity": 0.53,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9cm0zw",
+    "event_timestamp": "2026-11-23T19:05:04.765Z",
+    "latitude": 55.76407,
+    "longitude": 24.30008,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6tdhn9",
+    "event_timestamp": "2026-11-23T19:05:04.765Z",
+    "latitude": 59.45044,
+    "longitude": 19.16283,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud7cwwr",
+    "event_timestamp": "2026-11-23T18:05:04.767Z",
+    "latitude": 57.9545,
+    "longitude": 28.06952,
+    "adsb_nic": 7,
+    "signal_integrity": 0.89,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3rzddz",
+    "event_timestamp": "2026-11-23T18:05:04.767Z",
+    "latitude": 53.36487,
+    "longitude": 22.26917,
+    "adsb_nic": 7,
+    "signal_integrity": 0.8,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3wvghf",
+    "event_timestamp": "2026-11-23T18:05:04.767Z",
+    "latitude": 54.47498,
+    "longitude": 20.87688,
+    "adsb_nic": 1,
+    "signal_integrity": 0.16,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3wng9w",
+    "event_timestamp": "2026-11-23T18:05:04.767Z",
+    "latitude": 54.63286,
+    "longitude": 19.85089,
+    "adsb_nic": 2,
+    "signal_integrity": 0.23,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u33td7w",
+    "event_timestamp": "2026-11-23T18:05:04.767Z",
+    "latitude": 53.01847,
+    "longitude": 13.46664,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udezvpx",
+    "event_timestamp": "2026-11-23T17:05:04.767Z",
+    "latitude": 60.46642,
+    "longitude": 28.00362,
+    "adsb_nic": 6,
+    "signal_integrity": 0.71,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3y7ujt",
+    "event_timestamp": "2026-11-23T17:05:04.767Z",
+    "latitude": 55.53418,
+    "longitude": 20.22201,
+    "adsb_nic": 2,
+    "signal_integrity": 0.32,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u93wc0s",
+    "event_timestamp": "2026-11-23T17:05:04.767Z",
+    "latitude": 53.22097,
+    "longitude": 24.66017,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3gmtk8",
+    "event_timestamp": "2026-11-23T17:05:04.767Z",
+    "latitude": 55.8362,
+    "longitude": 16.05202,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u68qv2d",
+    "event_timestamp": "2026-11-23T17:05:04.767Z",
+    "latitude": 60.25286,
+    "longitude": 11.83587,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u37metz",
+    "event_timestamp": "2026-11-23T16:05:04.765Z",
+    "latitude": 53.03001,
+    "longitude": 15.98436,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udh9mz0",
+    "event_timestamp": "2026-11-23T16:05:04.765Z",
+    "latitude": 56.50869,
+    "longitude": 29.08105,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6m9b0h",
+    "event_timestamp": "2026-11-23T16:05:04.765Z",
+    "latitude": 57.96406,
+    "longitude": 18.99084,
+    "adsb_nic": 4,
+    "signal_integrity": 0.54,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6sdgrr",
+    "event_timestamp": "2026-11-23T16:05:04.765Z",
+    "latitude": 59.58609,
+    "longitude": 17.73133,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud88knz",
+    "event_timestamp": "2026-11-23T16:05:04.765Z",
+    "latitude": 59.14355,
+    "longitude": 23.38978,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u38yem9",
+    "event_timestamp": "2026-11-23T15:05:04.760Z",
+    "latitude": 54.6111,
+    "longitude": 12.44964,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1vy6g",
+    "event_timestamp": "2026-11-23T15:05:04.760Z",
+    "latitude": 57.27592,
+    "longitude": 25.24063,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6qk3zy",
+    "event_timestamp": "2026-11-23T15:05:04.760Z",
+    "latitude": 58.4468,
+    "longitude": 20.12498,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud14369",
+    "event_timestamp": "2026-11-23T15:05:04.760Z",
+    "latitude": 56.66003,
+    "longitude": 23.96387,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u68ktuu",
+    "event_timestamp": "2026-11-23T15:05:04.760Z",
+    "latitude": 59.88023,
+    "longitude": 11.86096,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6et67e",
+    "event_timestamp": "2026-11-23T14:05:45.305Z",
+    "latitude": 60.00585,
+    "longitude": 16.2762,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u64f80u",
+    "event_timestamp": "2026-11-23T14:05:45.305Z",
+    "latitude": 56.69373,
+    "longitude": 15.12401,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udfb3sf",
+    "event_timestamp": "2026-11-23T14:05:45.305Z",
+    "latitude": 60.53894,
+    "longitude": 26.43644,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3z64d4",
+    "event_timestamp": "2026-11-23T14:05:45.305Z",
+    "latitude": 55.20653,
+    "longitude": 21.55926,
+    "adsb_nic": 3,
+    "signal_integrity": 0.42,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4xpjur",
+    "event_timestamp": "2026-11-23T14:05:45.305Z",
+    "latitude": 60.31687,
+    "longitude": 10.10709,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6pw8ec",
+    "event_timestamp": "2026-11-23T13:38:35.076Z",
+    "latitude": 57.41408,
+    "longitude": 21.82048,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1tu9t",
+    "event_timestamp": "2026-11-23T13:38:35.076Z",
+    "latitude": 57.26986,
+    "longitude": 24.81525,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6p62bp",
+    "event_timestamp": "2026-11-23T13:38:35.076Z",
+    "latitude": 56.64633,
+    "longitude": 21.48873,
+    "adsb_nic": 6,
+    "signal_integrity": 0.79,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1uvug",
+    "event_timestamp": "2026-11-23T13:38:35.076Z",
+    "latitude": 57.11155,
+    "longitude": 25.21853,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3e09yb",
+    "event_timestamp": "2026-11-23T13:38:35.076Z",
+    "latitude": 53.56305,
+    "longitude": 15.5465,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3cw3bb",
+    "event_timestamp": "2026-11-23T12:38:35.081Z",
+    "latitude": 55.94682,
+    "longitude": 13.43729,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9ssuvk",
+    "event_timestamp": "2026-11-23T12:38:35.081Z",
+    "latitude": 54.30172,
+    "longitude": 29.04323,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u39j1yz",
+    "event_timestamp": "2026-11-23T12:38:35.081Z",
+    "latitude": 54.35385,
+    "longitude": 12.74326,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3v3ys2",
+    "event_timestamp": "2026-11-23T12:38:35.081Z",
+    "latitude": 55.17514,
+    "longitude": 18.91959,
+    "adsb_nic": 5,
+    "signal_integrity": 0.59,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6e2qj3",
+    "event_timestamp": "2026-11-23T12:38:35.081Z",
+    "latitude": 59.13639,
+    "longitude": 16.08595,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u32q39k",
+    "event_timestamp": "2026-11-23T11:38:35.081Z",
+    "latitude": 53.13685,
+    "longitude": 11.67318,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9g6j0u",
+    "event_timestamp": "2026-11-23T11:38:35.081Z",
+    "latitude": 55.19962,
+    "longitude": 27.29565,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6v6mbe",
+    "event_timestamp": "2026-11-23T11:38:35.081Z",
+    "latitude": 60.86803,
+    "longitude": 18.89091,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3d93w6",
+    "event_timestamp": "2026-11-23T11:38:35.081Z",
+    "latitude": 53.69282,
+    "longitude": 14.83503,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udsq3px",
+    "event_timestamp": "2026-11-23T11:38:35.081Z",
+    "latitude": 60.20347,
+    "longitude": 28.53139,
+    "adsb_nic": 4,
+    "signal_integrity": 0.54,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "uds5pqk",
+    "event_timestamp": "2026-11-23T10:38:35.078Z",
+    "latitude": 59.62524,
+    "longitude": 28.4497,
+    "adsb_nic": 4,
+    "signal_integrity": 0.56,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u1z8dy9",
+    "event_timestamp": "2026-11-23T10:38:35.078Z",
+    "latitude": 54.96801,
+    "longitude": 10.67044,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u60w277",
+    "event_timestamp": "2026-11-23T10:38:35.078Z",
+    "latitude": 57.36665,
+    "longitude": 11.9689,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud7tcdg",
+    "event_timestamp": "2026-11-23T10:38:35.078Z",
+    "latitude": 58.68293,
+    "longitude": 27.49195,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udd33dg",
+    "event_timestamp": "2026-11-23T10:38:35.078Z",
+    "latitude": 59.29811,
+    "longitude": 25.73517,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3tw1cv",
+    "event_timestamp": "2026-11-23T09:38:35.077Z",
+    "latitude": 54.50244,
+    "longitude": 19.06847,
+    "adsb_nic": 4,
+    "signal_integrity": 0.52,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6bbmwj",
+    "event_timestamp": "2026-11-23T09:38:35.077Z",
+    "latitude": 60.54684,
+    "longitude": 12.55352,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9c75mt",
+    "event_timestamp": "2026-11-23T09:38:35.077Z",
+    "latitude": 55.40142,
+    "longitude": 24.4082,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6erkef",
+    "event_timestamp": "2026-11-23T09:38:35.077Z",
+    "latitude": 60.35816,
+    "longitude": 16.02103,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3bredy",
+    "event_timestamp": "2026-11-23T09:38:35.077Z",
+    "latitude": 56.17746,
+    "longitude": 11.76469,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6h6rym",
+    "event_timestamp": "2026-11-23T08:38:35.079Z",
+    "latitude": 56.68001,
+    "longitude": 17.57408,
+    "adsb_nic": 5,
+    "signal_integrity": 0.64,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9e1w53",
+    "event_timestamp": "2026-11-23T08:38:35.079Z",
+    "latitude": 53.71989,
+    "longitude": 26.98397,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udu63tf",
+    "event_timestamp": "2026-11-23T08:38:35.079Z",
+    "latitude": 60.89593,
+    "longitude": 28.5466,
+    "adsb_nic": 5,
+    "signal_integrity": 0.6,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6xnsxn",
+    "event_timestamp": "2026-11-23T08:38:35.079Z",
+    "latitude": 60.24368,
+    "longitude": 21.30095,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6xuw2h",
+    "event_timestamp": "2026-11-23T08:38:35.079Z",
+    "latitude": 59.85447,
+    "longitude": 22.42901,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud6rend",
+    "event_timestamp": "2026-11-23T07:39:10.665Z",
+    "latitude": 59.01111,
+    "longitude": 25.79926,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9cz1vq",
+    "event_timestamp": "2026-11-23T07:39:10.665Z",
+    "latitude": 56.10399,
+    "longitude": 25.0467,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3vhhnt",
+    "event_timestamp": "2026-11-23T07:39:10.665Z",
+    "latitude": 55.58367,
+    "longitude": 18.4651,
+    "adsb_nic": 7,
+    "signal_integrity": 0.8,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3vgtcr",
+    "event_timestamp": "2026-11-23T07:39:10.665Z",
+    "latitude": 55.46657,
+    "longitude": 19.5986,
+    "adsb_nic": 3,
+    "signal_integrity": 0.43,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9d7jk5",
+    "event_timestamp": "2026-11-23T07:39:10.665Z",
+    "latitude": 53.98755,
+    "longitude": 25.89914,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udkuhsf",
+    "event_timestamp": "2026-11-23T07:29:13.875Z",
+    "latitude": 58.38668,
+    "longitude": 29.38101,
+    "adsb_nic": 4,
+    "signal_integrity": 0.53,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6dmvhc",
+    "event_timestamp": "2026-11-23T07:29:13.875Z",
+    "latitude": 60.10014,
+    "longitude": 14.63544,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6qc9tk",
+    "event_timestamp": "2026-11-23T07:29:13.875Z",
+    "latitude": 57.9495,
+    "longitude": 20.81374,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udeb570",
+    "event_timestamp": "2026-11-23T07:29:13.875Z",
+    "latitude": 59.07995,
+    "longitude": 27.91629,
+    "adsb_nic": 6,
+    "signal_integrity": 0.76,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6f4v7p",
+    "event_timestamp": "2026-11-23T07:29:13.875Z",
+    "latitude": 60.96961,
+    "longitude": 14.30406,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6r7rn5",
+    "event_timestamp": "2026-11-23T07:18:35.870Z",
+    "latitude": 58.26111,
+    "longitude": 21.75817,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9uqudf",
+    "event_timestamp": "2026-11-23T07:18:35.870Z",
+    "latitude": 56.04611,
+    "longitude": 28.67789,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6xpmkz",
+    "event_timestamp": "2026-11-23T07:18:35.870Z",
+    "latitude": 60.36349,
+    "longitude": 21.33494,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u66vzyw",
+    "event_timestamp": "2026-11-23T07:18:35.870Z",
+    "latitude": 58.70305,
+    "longitude": 15.46658,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6hv741",
+    "event_timestamp": "2026-11-23T07:18:35.870Z",
+    "latitude": 57.18484,
+    "longitude": 18.06296,
+    "adsb_nic": 2,
+    "signal_integrity": 0.26,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u67f97z",
+    "event_timestamp": "2026-11-23T06:18:35.870Z",
+    "latitude": 58.11707,
+    "longitude": 16.58882,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3yr5wm",
+    "event_timestamp": "2026-11-23T06:18:35.870Z",
+    "latitude": 56.10983,
+    "longitude": 20.20021,
+    "adsb_nic": 4,
+    "signal_integrity": 0.52,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6ssgg0",
+    "event_timestamp": "2026-11-23T06:18:35.870Z",
+    "latitude": 59.91427,
+    "longitude": 17.74363,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9kpscd",
+    "event_timestamp": "2026-11-23T06:18:35.870Z",
+    "latitude": 53.35846,
+    "longitude": 28.33781,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u699hs0",
+    "event_timestamp": "2026-11-23T06:18:35.870Z",
+    "latitude": 59.2615,
+    "longitude": 13.55727,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4x6qn7",
+    "event_timestamp": "2026-11-23T05:18:35.870Z",
+    "latitude": 59.4928,
+    "longitude": 10.4643,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4r0hj8",
+    "event_timestamp": "2026-11-23T05:18:35.870Z",
+    "latitude": 57.68721,
+    "longitude": 10.0197,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udekh8m",
+    "event_timestamp": "2026-11-23T05:18:35.870Z",
+    "latitude": 59.7675,
+    "longitude": 27.27611,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u1zg942",
+    "event_timestamp": "2026-11-23T05:18:35.870Z",
+    "latitude": 55.47175,
+    "longitude": 10.94321,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u96z1ft",
+    "event_timestamp": "2026-11-23T05:18:35.870Z",
+    "latitude": 53.27578,
+    "longitude": 26.45114,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud22bdg",
+    "event_timestamp": "2026-11-23T04:18:35.869Z",
+    "latitude": 57.80356,
+    "longitude": 22.87848,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3g9vsw",
+    "event_timestamp": "2026-11-23T04:18:35.869Z",
+    "latitude": 55.17728,
+    "longitude": 16.42197,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udmr1eu",
+    "event_timestamp": "2026-11-23T04:18:35.869Z",
+    "latitude": 58.90762,
+    "longitude": 29.95441,
+    "adsb_nic": 2,
+    "signal_integrity": 0.32,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3zpm8f",
+    "event_timestamp": "2026-11-23T04:18:35.869Z",
+    "latitude": 56.12325,
+    "longitude": 21.33912,
+    "adsb_nic": 5,
+    "signal_integrity": 0.59,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3w804q",
+    "event_timestamp": "2026-11-23T04:18:35.869Z",
+    "latitude": 53.45034,
+    "longitude": 20.39921,
+    "adsb_nic": 4,
+    "signal_integrity": 0.45,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud15q8p",
+    "event_timestamp": "2026-11-23T03:18:35.865Z",
+    "latitude": 56.82249,
+    "longitude": 24.20218,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9dnxk3",
+    "event_timestamp": "2026-11-23T03:18:35.865Z",
+    "latitude": 54.60348,
+    "longitude": 25.6329,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udbdt7n",
+    "event_timestamp": "2026-11-23T03:18:35.865Z",
+    "latitude": 60.92584,
+    "longitude": 23.44287,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udds35s",
+    "event_timestamp": "2026-11-23T03:18:35.865Z",
+    "latitude": 59.82919,
+    "longitude": 26.06638,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ududzh1",
+    "event_timestamp": "2026-11-23T03:18:35.865Z",
+    "latitude": 60.97501,
+    "longitude": 29.13794,
+    "adsb_nic": 4,
+    "signal_integrity": 0.47,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u65c2wj",
+    "event_timestamp": "2026-11-23T02:18:35.868Z",
+    "latitude": 56.50402,
+    "longitude": 16.55301,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3fp549",
+    "event_timestamp": "2026-11-23T02:18:35.868Z",
+    "latitude": 56.08817,
+    "longitude": 14.19587,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u98zcrr",
+    "event_timestamp": "2026-11-23T02:18:35.868Z",
+    "latitude": 54.83968,
+    "longitude": 23.62004,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udkdz1h",
+    "event_timestamp": "2026-11-23T02:18:35.868Z",
+    "latitude": 58.14543,
+    "longitude": 29.14195,
+    "adsb_nic": 5,
+    "signal_integrity": 0.63,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9sxjzs",
+    "event_timestamp": "2026-11-23T02:18:35.868Z",
+    "latitude": 54.70991,
+    "longitude": 29.08699,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6nhy6m",
+    "event_timestamp": "2026-11-23T01:18:35.872Z",
+    "latitude": 57.09827,
+    "longitude": 19.96911,
+    "adsb_nic": 7,
+    "signal_integrity": 0.88,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u99myc1",
+    "event_timestamp": "2026-11-23T01:18:35.872Z",
+    "latitude": 54.45449,
+    "longitude": 24.55593,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud95be6",
+    "event_timestamp": "2026-11-23T01:18:35.872Z",
+    "latitude": 59.74034,
+    "longitude": 23.9322,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9u5zyk",
+    "event_timestamp": "2026-11-23T01:18:35.872Z",
+    "latitude": 55.53796,
+    "longitude": 28.47159,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud2tzdk",
+    "event_timestamp": "2026-11-23T01:18:35.872Z",
+    "latitude": 58.67957,
+    "longitude": 23.5388,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3u3ex8",
+    "event_timestamp": "2026-11-23T00:18:35.868Z",
+    "latitude": 55.14893,
+    "longitude": 17.38156,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u389deg",
+    "event_timestamp": "2026-11-23T00:18:35.868Z",
+    "latitude": 53.72277,
+    "longitude": 12.06804,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u32rcu2",
+    "event_timestamp": "2026-11-23T00:18:35.868Z",
+    "latitude": 53.41719,
+    "longitude": 11.67976,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6sxk1x",
+    "event_timestamp": "2026-11-23T00:18:35.868Z",
+    "latitude": 60.34589,
+    "longitude": 17.76405,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9ev5mn",
+    "event_timestamp": "2026-11-23T00:18:35.868Z",
+    "latitude": 54.34393,
+    "longitude": 27.92583,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6d31c0",
+    "event_timestamp": "2026-11-22T23:18:35.868Z",
+    "latitude": 59.244,
+    "longitude": 14.4923,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3s6dj6",
+    "event_timestamp": "2026-11-22T23:18:35.868Z",
+    "latitude": 53.90658,
+    "longitude": 17.3184,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud4hb4s",
+    "event_timestamp": "2026-11-22T23:18:35.868Z",
+    "latitude": 57.09916,
+    "longitude": 25.31842,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u37nnb3",
+    "event_timestamp": "2026-11-22T23:18:35.868Z",
+    "latitude": 53.08732,
+    "longitude": 15.76739,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud7rkgn",
+    "event_timestamp": "2026-11-22T23:18:35.868Z",
+    "latitude": 58.94795,
+    "longitude": 27.28841,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u39px1h",
+    "event_timestamp": "2026-11-22T22:18:35.866Z",
+    "latitude": 54.76157,
+    "longitude": 12.97008,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3tbfnp",
+    "event_timestamp": "2026-11-22T22:18:35.866Z",
+    "latitude": 53.60365,
+    "longitude": 19.43462,
+    "adsb_nic": 4,
+    "signal_integrity": 0.55,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3bv661",
+    "event_timestamp": "2026-11-22T22:18:35.866Z",
+    "latitude": 55.77778,
+    "longitude": 12.40616,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9sw1uw",
+    "event_timestamp": "2026-11-22T22:18:35.866Z",
+    "latitude": 54.51775,
+    "longitude": 28.91435,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6svsf1",
+    "event_timestamp": "2026-11-22T22:18:35.866Z",
+    "latitude": 60.04088,
+    "longitude": 18.14103,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udsvh1b",
+    "event_timestamp": "2026-11-22T21:18:35.867Z",
+    "latitude": 59.95132,
+    "longitude": 29.35578,
+    "adsb_nic": 2,
+    "signal_integrity": 0.28,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1y0zh",
+    "event_timestamp": "2026-11-22T21:18:35.867Z",
+    "latitude": 57.34429,
+    "longitude": 24.99951,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "udkxqej",
+    "event_timestamp": "2026-11-22T21:18:35.867Z",
+    "latitude": 58.94734,
+    "longitude": 29.12097,
+    "adsb_nic": 4,
+    "signal_integrity": 0.45,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6eqzmw",
+    "event_timestamp": "2026-11-22T21:18:35.867Z",
+    "latitude": 60.27984,
+    "longitude": 16.14725,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3ewmtf",
+    "event_timestamp": "2026-11-22T21:18:35.867Z",
+    "latitude": 54.56866,
+    "longitude": 16.41666,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3w22bs",
+    "event_timestamp": "2026-11-22T20:19:10.845Z",
+    "latitude": 53.48544,
+    "longitude": 20.07753,
+    "adsb_nic": 4,
+    "signal_integrity": 0.46,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6ju17x",
+    "event_timestamp": "2026-11-22T20:19:10.845Z",
+    "latitude": 56.97372,
+    "longitude": 19.40066,
+    "adsb_nic": 4,
+    "signal_integrity": 0.56,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud3gm3n",
+    "event_timestamp": "2026-11-22T20:19:10.845Z",
+    "latitude": 58.23422,
+    "longitude": 25.2004,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6rsymg",
+    "event_timestamp": "2026-11-22T20:19:10.845Z",
+    "latitude": 58.52284,
+    "longitude": 22.07605,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4rfqug",
+    "event_timestamp": "2026-11-22T20:19:10.845Z",
+    "latitude": 58.07838,
+    "longitude": 11.19934,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u39wkp5",
+    "event_timestamp": "2026-11-22T19:57:52.627Z",
+    "latitude": 54.57501,
+    "longitude": 13.53937,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6dtjmx",
+    "event_timestamp": "2026-11-22T19:57:52.627Z",
+    "latitude": 59.97264,
+    "longitude": 15.00729,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6r6hfc",
+    "event_timestamp": "2026-11-22T19:57:52.627Z",
+    "latitude": 58.02421,
+    "longitude": 21.65632,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3bny26",
+    "event_timestamp": "2026-11-22T19:57:52.627Z",
+    "latitude": 56.033,
+    "longitude": 11.52804,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6pze45",
+    "event_timestamp": "2026-11-22T19:57:52.627Z",
+    "latitude": 57.58065,
+    "longitude": 22.28535,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u9dj8fj",
+    "event_timestamp": "2026-11-22T19:21:17.482Z",
+    "latitude": 54.41533,
+    "longitude": 25.35367,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6jcmbr",
+    "event_timestamp": "2026-11-22T19:21:17.482Z",
+    "latitude": 56.47134,
+    "longitude": 19.59931,
+    "adsb_nic": 6,
+    "signal_integrity": 0.72,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u3s9pmk",
+    "event_timestamp": "2026-11-22T19:21:17.482Z",
+    "latitude": 53.64215,
+    "longitude": 17.90282,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "uddsssc",
+    "event_timestamp": "2026-11-22T19:21:17.482Z",
+    "latitude": 59.88006,
+    "longitude": 26.21518,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6kbsz4",
+    "event_timestamp": "2026-11-22T19:21:17.482Z",
+    "latitude": 57.78374,
+    "longitude": 18.14225,
+    "adsb_nic": 3,
+    "signal_integrity": 0.41,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u69bnmf",
+    "event_timestamp": "2026-11-22T18:21:58.545Z",
+    "latitude": 59.09509,
+    "longitude": 13.98901,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u617vf7",
+    "event_timestamp": "2026-11-22T18:21:58.545Z",
+    "latitude": 56.92236,
+    "longitude": 13.26509,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u62dktx",
+    "event_timestamp": "2026-11-22T18:21:58.545Z",
+    "latitude": 58.08302,
+    "longitude": 12.16079,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6jp8bt",
+    "event_timestamp": "2026-11-22T18:21:58.545Z",
+    "latitude": 57.57213,
+    "longitude": 18.32137,
+    "adsb_nic": 2,
+    "signal_integrity": 0.25,
+    "jamming_indicator": true,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud5px2v",
+    "event_timestamp": "2026-11-22T18:21:58.545Z",
+    "latitude": 57.57262,
+    "longitude": 27.04461,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud3emc6",
+    "event_timestamp": "2026-11-22T17:33:16.011Z",
+    "latitude": 58.23463,
+    "longitude": 24.86515,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6wk98z",
+    "event_timestamp": "2026-11-22T17:33:16.011Z",
+    "latitude": 59.85836,
+    "longitude": 20.11522,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6rvmtn",
+    "event_timestamp": "2026-11-22T17:33:16.011Z",
+    "latitude": 58.60705,
+    "longitude": 22.39893,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6dhrpk",
+    "event_timestamp": "2026-11-22T17:33:16.011Z",
+    "latitude": 59.84948,
+    "longitude": 14.37582,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u69t1tx",
+    "event_timestamp": "2026-11-22T17:33:16.011Z",
+    "latitude": 59.97227,
+    "longitude": 13.43621,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6zbjsj",
+    "event_timestamp": "2026-11-22T16:33:16.006Z",
+    "latitude": 60.49079,
+    "longitude": 22.39822,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud353wn",
+    "event_timestamp": "2026-11-22T16:33:16.006Z",
+    "latitude": 58.26094,
+    "longitude": 23.98072,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u6dm1tz",
+    "event_timestamp": "2026-11-22T16:33:16.006Z",
+    "latitude": 59.9743,
+    "longitude": 14.48968,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "u4xgc4w",
+    "event_timestamp": "2026-11-22T16:33:16.006Z",
+    "latitude": 59.7357,
+    "longitude": 10.95138,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  },
+  {
+    "geohash": "ud1wpwx",
+    "event_timestamp": "2026-11-22T16:33:16.006Z",
+    "latitude": 57.34128,
+    "longitude": 24.94942,
+    "adsb_nic": 8,
+    "signal_integrity": 0.9,
+    "jamming_indicator": false,
+    "event_type": "gps_jammer_event"
+  }
+]

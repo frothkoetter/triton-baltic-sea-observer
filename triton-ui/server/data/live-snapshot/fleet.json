@@ -1,0 +1,394 @@
+[
+  {
+    "class": "Flottendienstboote",
+    "name": "A50 Oker",
+    "mmsi": "MAR123435",
+    "jahr_in_dienst": 1988,
+    "besatzung": 36
+  },
+  {
+    "class": "Flottendienstboote",
+    "name": "A52 Oste",
+    "mmsi": "MAR123434",
+    "jahr_in_dienst": 1988,
+    "besatzung": 36
+  },
+  {
+    "class": "Flottendienstboote",
+    "name": "A53 Alster",
+    "mmsi": "MAR123436",
+    "jahr_in_dienst": 1989,
+    "besatzung": 36
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Baden-Württemberg",
+    "mmsi": "MAR123407",
+    "jahr_in_dienst": 2019,
+    "besatzung": 120
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Bayern",
+    "mmsi": "MAR123402",
+    "jahr_in_dienst": 1996,
+    "besatzung": 219
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Brandenburg",
+    "mmsi": "MAR123400",
+    "jahr_in_dienst": 1994,
+    "besatzung": 219
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Hamburg",
+    "mmsi": "MAR123405",
+    "jahr_in_dienst": 2004,
+    "besatzung": 238
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Hessen",
+    "mmsi": "MAR123406",
+    "jahr_in_dienst": 2006,
+    "besatzung": 238
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Mecklenburg-Vorpommern",
+    "mmsi": "MAR123403",
+    "jahr_in_dienst": 1996,
+    "besatzung": 219
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Nordrhein-Westfalen",
+    "mmsi": "MAR123408",
+    "jahr_in_dienst": 2020,
+    "besatzung": 120
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Rheinland-Pfalz",
+    "mmsi": "MAR123410",
+    "jahr_in_dienst": 2022,
+    "besatzung": 120
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Sachsen",
+    "mmsi": "MAR123404",
+    "jahr_in_dienst": 2003,
+    "besatzung": 238
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Sachsen-Anhalt",
+    "mmsi": "MAR123409",
+    "jahr_in_dienst": 2021,
+    "besatzung": 120
+  },
+  {
+    "class": "Fregatten",
+    "name": "FGS Schleswig-Holstein",
+    "mmsi": "MAR123401",
+    "jahr_in_dienst": 1995,
+    "besatzung": 219
+  },
+  {
+    "class": "Korvetten",
+    "name": "FGS Braunschweig",
+    "mmsi": "MAR123411",
+    "jahr_in_dienst": 2008,
+    "besatzung": 65
+  },
+  {
+    "class": "Korvetten",
+    "name": "FGS Erfurt",
+    "mmsi": "MAR123413",
+    "jahr_in_dienst": 2013,
+    "besatzung": 65
+  },
+  {
+    "class": "Korvetten",
+    "name": "FGS Ludwigshafen am Rhein",
+    "mmsi": "MAR123415",
+    "jahr_in_dienst": 2013,
+    "besatzung": 65
+  },
+  {
+    "class": "Korvetten",
+    "name": "FGS Magdeburg",
+    "mmsi": "MAR123412",
+    "jahr_in_dienst": 2008,
+    "besatzung": 65
+  },
+  {
+    "class": "Korvetten",
+    "name": "FGS Oldenburg",
+    "mmsi": "MAR123414",
+    "jahr_in_dienst": 2013,
+    "besatzung": 65
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Auerbach/Oberpfalz",
+    "mmsi": "MAR123428",
+    "jahr_in_dienst": 1998,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Dillingen",
+    "mmsi": "MAR123425",
+    "jahr_in_dienst": 1997,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Ensdorf",
+    "mmsi": "MAR123432",
+    "jahr_in_dienst": 1990,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Fulda",
+    "mmsi": "MAR123422",
+    "jahr_in_dienst": 1998,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Homburg",
+    "mmsi": "MAR123426",
+    "jahr_in_dienst": 1998,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Kühlungsborn",
+    "mmsi": "MAR123433",
+    "jahr_in_dienst": 1990,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Passau",
+    "mmsi": "MAR123430",
+    "jahr_in_dienst": 1990,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Pegnitz",
+    "mmsi": "MAR123429",
+    "jahr_in_dienst": 1998,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Siegburg",
+    "mmsi": "MAR123427",
+    "jahr_in_dienst": 1990,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Sulzbach-Rosenberg",
+    "mmsi": "MAR123424",
+    "jahr_in_dienst": 1996,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Weiden",
+    "mmsi": "MAR123431",
+    "jahr_in_dienst": 1991,
+    "besatzung": 38
+  },
+  {
+    "class": "Minenabwehreinheiten",
+    "name": "FGS Weilheim",
+    "mmsi": "MAR123423",
+    "jahr_in_dienst": 1998,
+    "besatzung": 38
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Baltrum",
+    "mmsi": "MAR123451",
+    "jahr_in_dienst": 1984,
+    "besatzung": 25
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Borkum",
+    "mmsi": "MAR123452",
+    "jahr_in_dienst": 1985,
+    "besatzung": 25
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Gorch Fock",
+    "mmsi": "MAR123448",
+    "jahr_in_dienst": 1958,
+    "besatzung": 70
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Juist",
+    "mmsi": "MAR123454",
+    "jahr_in_dienst": 1985,
+    "besatzung": 25
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Langeoog",
+    "mmsi": "MAR123455",
+    "jahr_in_dienst": 1987,
+    "besatzung": 25
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Norderney",
+    "mmsi": "MAR123453",
+    "jahr_in_dienst": 1985,
+    "besatzung": 25
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Planet",
+    "mmsi": "MAR123449",
+    "jahr_in_dienst": 2005,
+    "besatzung": 23
+  },
+  {
+    "class": "Sonstige",
+    "name": "FGS Wangerooge",
+    "mmsi": "MAR123450",
+    "jahr_in_dienst": 1984,
+    "besatzung": 25
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-31",
+    "mmsi": "MAR123416",
+    "jahr_in_dienst": 2005,
+    "besatzung": 28
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-32",
+    "mmsi": "MAR123417",
+    "jahr_in_dienst": 2006,
+    "besatzung": 28
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-33",
+    "mmsi": "MAR123418",
+    "jahr_in_dienst": 2006,
+    "besatzung": 28
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-34",
+    "mmsi": "MAR123419",
+    "jahr_in_dienst": 2007,
+    "besatzung": 28
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-35",
+    "mmsi": "MAR123420",
+    "jahr_in_dienst": 2015,
+    "besatzung": 28
+  },
+  {
+    "class": "U-Boote",
+    "name": "U-36",
+    "mmsi": "MAR123421",
+    "jahr_in_dienst": 2016,
+    "besatzung": 28
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A1411 Berlin",
+    "mmsi": "MAR123437",
+    "jahr_in_dienst": 2001,
+    "besatzung": 169
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A1412 Frankfurt am Main",
+    "mmsi": "MAR123438",
+    "jahr_in_dienst": 2002,
+    "besatzung": 169
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A1413 Bonn",
+    "mmsi": "MAR123439",
+    "jahr_in_dienst": 2013,
+    "besatzung": 169
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A1442 Spessart",
+    "mmsi": "MAR123446",
+    "jahr_in_dienst": 1977,
+    "besatzung": 42
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A1443 Rhön",
+    "mmsi": "MAR123447",
+    "jahr_in_dienst": 1977,
+    "besatzung": 42
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A511 Elbe",
+    "mmsi": "MAR123440",
+    "jahr_in_dienst": 1993,
+    "besatzung": 35
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A512 Mosel",
+    "mmsi": "MAR123441",
+    "jahr_in_dienst": 1993,
+    "besatzung": 35
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A513 Rhein",
+    "mmsi": "MAR123442",
+    "jahr_in_dienst": 1993,
+    "besatzung": 35
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A514 Werra",
+    "mmsi": "MAR123443",
+    "jahr_in_dienst": 1993,
+    "besatzung": 35
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A515 Main",
+    "mmsi": "MAR123444",
+    "jahr_in_dienst": 1994,
+    "besatzung": 35
+  },
+  {
+    "class": "Versorgungsschiffe/Tender",
+    "name": "A516 Donau",
+    "mmsi": "MAR123445",
+    "jahr_in_dienst": 1994,
+    "besatzung": 35
+  }
+]
