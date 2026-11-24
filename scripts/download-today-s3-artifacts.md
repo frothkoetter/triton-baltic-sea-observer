@@ -12,6 +12,7 @@ Downloads objects whose **S3 `LastModified`** falls on the chosen calendar day i
 
 ## Prerequisites
 
+- Bash 3.2+ (including macOS default `/bin/bash`; no `mapfile` required)
 - AWS CLI v2 (`aws`)
 - **AWS SSO** profile (`aws sso login --profile …`) that can list/read your bucket — **no `S3_ENDPOINT_URL` needed** when the profile already reaches object store
 - **Or** CDP workload keys (`S3_WORKLOAD_*` / `AWS_ACCESS_KEY_ID`) — often need **`S3_ENDPOINT_URL`** with keys only (see below)

@@ -12,6 +12,8 @@
 #   ./scripts/download-today-s3-artifacts.sh --profile cdw-dev
 #   ./scripts/download-today-s3-artifacts.sh --date 2026-11-24 --out ./artifacts-heute
 #
+# macOS /bin/bash is 3.2 — this script avoids bash 4-only features (e.g. mapfile).
+#
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -307,7 +309,11 @@ download_category() {
   mkdir -p "$dest"
   echo "== $label: s3://${bucket}/${prefix} (day ${TARGET_DATE} ${ARTIFACT_TZ}) =="
   progress_line "  Listing objects…"
-  mapfile -t keys < <(list_today_keys "$bucket" "$prefix" "$@" || true)
+  local keys=()
+  local line
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && keys+=("$line")
+  done < <(list_today_keys "$bucket" "$prefix" "$@" || true)
   local n=${#keys[@]}
   SUMMARY_LABELS+=("$label")
   SUMMARY_COUNTS+=("$n")
