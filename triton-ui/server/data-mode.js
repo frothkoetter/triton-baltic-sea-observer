@@ -74,6 +74,10 @@ export function getSampleReason() {
   }
   const mode = getEffectiveDataMode();
   if (mode === "sample") {
+    const snap = snapshotStatus();
+    if (snap.available) {
+      return `Demo-Modus (Live-Snapshot ${snap.capturedAt ?? ""})`;
+    }
     return "Demo-Modus gewählt (Cookie/Header)";
   }
   if (!trinoConfigured()) {
