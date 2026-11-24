@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -36,11 +36,11 @@ import {
 
 const TABS = [
   { id: "fleet", label: BLUE_FLEET_LABEL },
-  { id: "buoys", label: "Buoys" },
   { id: "rus", label: RED_FLEET_LABEL },
   { id: "ais", label: "AIS" },
   { id: "outliers", label: "AIS Outliers" },
   { id: "sanctions", label: "Sanctions" },
+  { id: "buoys", label: "Buoys" },
   { id: "restricted", label: "Restricted Areas" },
 ] as const;
 
@@ -179,8 +179,49 @@ function provocateurBars(rows: Record<string, unknown>[] | undefined) {
 
 type AnalysenPageProps = { filters: LagebildFilters };
 
+type AnalysenLoadProgress = {
+  active: boolean;
+  completed: number;
+  total: number;
+  phase: "core" | "ais";
+};
+
+function AnalysenLoadBar({ progress }: { progress: AnalysenLoadProgress }) {
+  if (!progress.active || progress.total <= 0) return null;
+  const pct = Math.min(100, Math.round((progress.completed / progress.total) * 100));
+  const phaseLabel =
+    progress.phase === "ais" ? "AIS-Filter" : "Trino-Analysen";
+  return (
+    <div className="analysen-load-banner" role="status" aria-busy="true" aria-live="polite">
+      <p className="analysen-load-title">
+        Load detailed data — <span className="mono">{phaseLabel}</span>
+      </p>
+      <div className="analysen-load-track">
+        <div className="analysen-load-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="analysen-load-meta mono">
+        {progress.completed}/{progress.total} · {pct}%
+      </span>
+    </div>
+  );
+}
+
 export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [tab, setTab] = useState<TabId>("fleet");
+  const [coreLoad, setCoreLoad] = useState<AnalysenLoadProgress>({
+    active: false,
+    completed: 0,
+    total: 0,
+    phase: "core",
+  });
+  const [aisLoad, setAisLoad] = useState<AnalysenLoadProgress>({
+    active: false,
+    completed: 0,
+    total: 0,
+    phase: "ais",
+  });
+  const coreLoadGen = useRef(0);
+  const aisLoadGen = useRef(0);
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
   const [fleetRegistry, setFleetRegistry] = useState<QueryResult | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
@@ -196,49 +237,134 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
   const filterQs = aisAnalyticsQuery(filters);
 
   useEffect(() => {
-    void (async () => {
-      const [fa, fr, bu, ru, rfr, vo, s, rz, areas] = await Promise.all([
-        fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
-        fetchJson<QueryResult>("/api/analyses/fleet"),
-        fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
-        fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
-        fetchJson<QueryResult>("/api/analyses/rus-fleet"),
-        fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
-        fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
-        fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
-        fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
-      ]);
-      setFleetAnalytics(fa);
-      setFleetRegistry(fr);
-      setBuoyAnalytics(bu);
-      setRusFleetAnalytics(ru);
-      setRusFleetRegistry(rfr);
-      setOutlierAnalytics(vo);
-      setSanctionedAnalytics(s);
-      setRestrictedAnalytics(rz);
-      setObservationAreas((areas.rows ?? []) as ObservationArea[]);
-    })();
+    const gen = ++coreLoadGen.current;
+    const jobs: { run: () => Promise<unknown>; apply: (r: unknown) => void }[] = [
+      {
+        run: () => fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
+        apply: (r) => setFleetAnalytics(r as FleetAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<QueryResult>("/api/analyses/fleet"),
+        apply: (r) => setFleetRegistry(r as QueryResult),
+      },
+      {
+        run: () => fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
+        apply: (r) => setBuoyAnalytics(r as BuoyAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
+        apply: (r) => setRusFleetAnalytics(r as RusFleetAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<QueryResult>("/api/analyses/rus-fleet"),
+        apply: (r) => setRusFleetRegistry(r as QueryResult),
+      },
+      {
+        run: () => fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
+        apply: (r) => setOutlierAnalytics(r as VesselOutlierAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
+        apply: (r) => setSanctionedAnalytics(r as SanctionedAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
+        apply: (r) => setRestrictedAnalytics(r as RestrictedAnalyticsPayload),
+      },
+      {
+        run: () => fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
+        apply: (r) =>
+          setObservationAreas(((r as QueryResult & { rows?: ObservationArea[] }).rows ?? []) as ObservationArea[]),
+      },
+    ];
+    const total = jobs.length;
+    setCoreLoad({ active: true, completed: 0, total, phase: "core" });
+    void Promise.all(
+      jobs.map(async (job) => {
+        try {
+          const result = await job.run();
+          if (gen !== coreLoadGen.current) return;
+          job.apply(result);
+        } finally {
+          if (gen !== coreLoadGen.current) return;
+          setCoreLoad((prev) => {
+            const completed = prev.completed + 1;
+            return {
+              active: completed < prev.total,
+              completed,
+              total: prev.total,
+              phase: "core",
+            };
+          });
+        }
+      })
+    );
   }, []);
 
   useEffect(() => {
-    void (async () => {
-      const [aa, a] = await Promise.all([
-        fetchJson<AisAnalyticsPayload>(`/api/analyses/ais-analytics${filterQs}`),
-        fetchJson<QueryResult>(`/api/ais${filterQs}`),
-      ]);
-      setAisAnalytics(aa);
-      setAis(a);
-    })();
+    const gen = ++aisLoadGen.current;
+    const jobs = [
+      {
+        run: () => fetchJson<AisAnalyticsPayload>(`/api/analyses/ais-analytics${filterQs}`),
+        apply: (r: AisAnalyticsPayload) => setAisAnalytics(r),
+      },
+      {
+        run: () => fetchJson<QueryResult>(`/api/ais${filterQs}`),
+        apply: (r: QueryResult) => setAis(r),
+      },
+    ];
+    const total = jobs.length;
+    setAisLoad({ active: true, completed: 0, total, phase: "ais" });
+    void Promise.all(
+      jobs.map(async (job) => {
+        try {
+          const result = await job.run();
+          if (gen !== aisLoadGen.current) return;
+          job.apply(result);
+        } finally {
+          if (gen !== aisLoadGen.current) return;
+          setAisLoad((prev) => {
+            const completed = prev.completed + 1;
+            return {
+              active: completed < prev.total,
+              completed,
+              total: prev.total,
+              phase: "ais",
+            };
+          });
+        }
+      })
+    );
   }, [filterQs]);
 
   const p = fleetAnalytics?.panels;
   const bp = buoyAnalytics?.panels;
-  const geoClusters = (bp?.geoClusters?.rows ?? []).map((r) => ({
-    geo_position_lat: Number(r.geo_position_lat),
-    geo_position_lon: Number(r.geo_position_lon),
-    record_count: Number(r.record_count ?? 0),
-    sum_altitude: Number(r.sum_altitude ?? 0),
-  }));
+  const geoClusterRows =
+    bp?.geoClusters?.rows ??
+    (bp as { geo?: { rows?: Record<string, unknown>[] } })?.geo?.rows ??
+    [];
+  const geoClusters = geoClusterRows
+    .map((r) => {
+      const lat = Number(
+        r.geo_position_lat ?? r.Geo_Position_Lat ?? r.latitude ?? r.Latitude
+      );
+      const lon = Number(
+        r.geo_position_lon ?? r.Geo_Position_Lon ?? r.longitude ?? r.Longitude
+      );
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      return {
+        geo_position_lat: lat,
+        geo_position_lon: lon,
+        record_count: Number(r.record_count ?? r.Record_Count ?? 0),
+        sum_altitude: Number(r.sum_altitude ?? r.Sum_Altitude ?? 0),
+      };
+    })
+    .filter(Boolean) as {
+    geo_position_lat: number;
+    geo_position_lon: number;
+    record_count: number;
+    sum_altitude: number;
+  }[];
   const rp = rusFleetAnalytics?.panels;
   const rusUnits = rp?.unitDisposition?.rows ?? [];
   const rusKpis = {
@@ -276,6 +402,10 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
 
   return (
     <div>
+      <div className="analysen-load-stack">
+        {coreLoad.active ? <AnalysenLoadBar progress={coreLoad} /> : null}
+        {aisLoad.active ? <AnalysenLoadBar progress={aisLoad} /> : null}
+      </div>
       <div className="analyses-tabs">
         {TABS.map((t) => (
           <button
@@ -389,12 +519,24 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             <section className="panel buoy-map-panel">
               <h2 className="panel-title">Detektionen — Karte</h2>
               <p className="panel-subtitle">GROUP BY geo_position_lat, geo_position_lon — sum(altitude)</p>
+              {geoClusters.length === 0 ? (
+                <p className="text-muted" style={{ fontSize: 12, margin: "0 0 8px" }} role="status">
+                  Keine Karteneinträge — prüfen Sie <code>defense.buoy_near_harbours</code> (Geo-Cluster-Abfrage
+                  leer oder Panel <code>geoClusters</code> fehlt in der API-Antwort).
+                </p>
+              ) : null}
               <BuoyAnalyticsMap clusters={geoClusters} />
             </section>
             <section className="panel buoy-scatter-panel">
               <h2 className="panel-title">Typ × Klassifikation</h2>
               <p className="panel-subtitle">avg(payload_object_confidence) · Bubble = record_count</p>
-              <ChartClassificationGrid rows={bp?.classificationGrid?.rows ?? []} />
+              <ChartClassificationGrid
+                rows={
+                  bp?.classificationGrid?.rows ??
+                  (bp as { grid?: { rows?: Record<string, unknown>[] } })?.grid?.rows ??
+                  []
+                }
+              />
             </section>
           </div>
         </div>

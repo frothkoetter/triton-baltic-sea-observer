@@ -608,9 +608,44 @@ const BUOY_ANALYTICS_KEYS = [
   ["geoClusters", "buoyAnalyticsGeoClusters"],
 ];
 
+function buoyPanelRows(panel) {
+  return panel?.rows ?? [];
+}
+
+/** Legacy sample JSON used panels.geo / panels.grid — UI expects geoClusters / classificationGrid. */
+function normalizeBuoyPanels(panels) {
+  if (!panels || typeof panels !== "object") return panels;
+  const classificationGrid =
+    panels.classificationGrid ??
+    (panels.grid
+      ? { columns: panels.grid.columns ?? [], rows: buoyPanelRows(panels.grid) }
+      : undefined);
+  const geoClusters =
+    panels.geoClusters ??
+    (panels.geo ? { columns: panels.geo.columns ?? [], rows: buoyPanelRows(panels.geo) } : undefined);
+  return {
+    ...panels,
+    ...(classificationGrid ? { classificationGrid } : {}),
+    ...(geoClusters ? { geoClusters } : {}),
+  };
+}
+
+function normalizeBuoyAnalytics(bundle) {
+  const base = bundle?.panels ? bundle : { panels: bundle };
+  return {
+    ...base,
+    panels: normalizeBuoyPanels(base.panels),
+  };
+}
+
 export async function getBuoyAnalytics() {
   if (forceSample()) {
-    return { ok: true, source: "sample", ...getSample().buoyAnalytics };
+    const normalized = normalizeBuoyAnalytics(getSample().buoyAnalytics);
+    return {
+      ok: true,
+      source: sampleResponseSource(getSample()),
+      ...normalized,
+    };
   }
   const results = await Promise.all(
     BUOY_ANALYTICS_KEYS.map(([, sqlKey]) => queryWarehouse(PREDEFINED[sqlKey]))
@@ -628,14 +663,15 @@ export async function getBuoyAnalytics() {
   const source = results.find((r) => r.ok && r.source)?.source ?? "sample";
   const allOk = results.every((r) => r.ok);
   if (!allOk) {
+    const normalized = normalizeBuoyAnalytics(getSample().buoyAnalytics);
     return {
       ok: true,
-      source: "sample",
-      ...getSample().buoyAnalytics,
+      source: sampleResponseSource(getSample()),
+      ...normalized,
       fallbackReason: results.find((r) => !r.ok)?.error,
     };
   }
-  return { ok: true, source, panels };
+  return { ok: true, source, panels: normalizeBuoyPanels(panels) };
 }
 
 export async function getFleetAnalytics() {
