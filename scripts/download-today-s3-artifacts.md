@@ -74,6 +74,15 @@ export SITREP_S3_PREFIX='s3a://triton-buk-ab3b8c81/data/user/frothkoetter/report
 ./scripts/download-today-s3-artifacts.sh --profile YOUR_PROFILE --out /tmp/heute --no-archive
 ```
 
+## Progress output
+
+The script prints:
+
+- **Listing:** S3 list pages (`scanned` / `matched` for the target day)
+- **Download:** `[i/n] downloading …` per file (stderr for list lines)
+- **Summary:** counts per category, folder size, archive size
+- **`--verbose-aws`:** native AWS CLI transfer bars (default hides them with `--no-progress`)
+
 ## Notes
 
 - Large LAS/HDF5 files can take time and disk; use `--dry-run` first.
