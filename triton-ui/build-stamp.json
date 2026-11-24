@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.27-demo-snapshot-overlay",
+  "build": "0.2.28-nav-ttyd-coa-artifacts",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

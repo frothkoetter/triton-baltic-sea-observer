@@ -342,7 +342,7 @@ export function LagebildPage({ filters }: Props) {
                 <button
                   type="button"
                   className="kpi-nba-count"
-                  title="nba_incidents · Tab NBA HITL"
+                  title="nba_incidents · Tab COA HITL"
                   onClick={() => {
                     window.location.hash = "nba";
                     window.dispatchEvent(new HashChangeEvent("hashchange"));

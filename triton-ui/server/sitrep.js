@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { shouldUseSampleData } from "./data-mode.js";
+import { loadSnapshotDataset } from "./sample-snapshot-loader.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.join(__dirname, "sitrep-bridge.py");
@@ -39,6 +41,12 @@ function runBridge(args) {
 }
 
 export async function listSitrepReports() {
+  if (shouldUseSampleData()) {
+    const rows = loadSnapshotDataset("sitrepReports");
+    if (Array.isArray(rows) && rows.length > 0) {
+      return { ok: true, source: "sample-snapshot", rows };
+    }
+  }
   return runBridge(["list"]);
 }
 

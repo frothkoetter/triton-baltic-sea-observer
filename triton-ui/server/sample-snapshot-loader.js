@@ -65,6 +65,14 @@ function loadDataset(filename) {
   }
 }
 
+/** Read one manifest dataset file by key (e.g. sitrepReports). */
+export function loadSnapshotDataset(key) {
+  const manifest = readSnapshotManifest();
+  const filename = manifest?.datasets?.[key];
+  if (!filename) return null;
+  return loadDataset(filename);
+}
+
 /** Overlay live snapshot onto embedded sample exports. */
 export function resolveSampleData(embedded) {
   const manifest = readSnapshotManifest();
@@ -118,6 +126,21 @@ export function resetResolvedSampleCache() {
 
 export function sampleResponseSource(bundle) {
   return bundle?.meta?.snapshot ? "sample-snapshot" : "sample";
+}
+
+/** Demo mode: Trino catalog from snapshot; LiDAR LAS / DAS HDF5 / SITREP PDF still from S3. */
+export function demoArtifactStatus() {
+  const snap = snapshotStatus();
+  const counts = snap.rowCounts ?? {};
+  return {
+    snapshotAvailable: snap.available,
+    capturedAt: snap.capturedAt ?? null,
+    lidarScans: counts.lidarScans ?? null,
+    dasCableSegments: counts.dasCableSegments ?? null,
+    sitrepReports: counts.sitrepReports ?? null,
+    note:
+      "Demo: LiDAR/DAS rows and SITREP index from live-snapshot when present; preview/PDF/LAS/HDF5 bytes use S3 (or LAGEBILD_ARTIFACTS_DIR) via hadoop_file_url / pdf name.",
+  };
 }
 
 export function computeKpisFromBundle(bundle) {

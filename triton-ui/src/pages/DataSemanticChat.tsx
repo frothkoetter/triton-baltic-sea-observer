@@ -194,7 +194,7 @@ export function DataSemanticChatPage() {
       <header className="dsc-header panel">
         <div>
           <h1 className="panel-title" style={{ marginBottom: 4 }}>
-            Talk to your Data
+            Agent TTYD — Talk to your Data
           </h1>
           <p className="text-muted" style={{ fontSize: 12, margin: 0 }}>
             Semantica-Workflow: Ontologie → KG → validiertes SQL → Trino live · Prototyp wie MCP{" "}

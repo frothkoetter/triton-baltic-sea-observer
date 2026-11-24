@@ -49,6 +49,7 @@ export function SitrepPage() {
       <div className="sitrep-toolbar">
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>
           NATO SITREP · situation-awareness · source: {source}
+          {source === "sample-snapshot" ? " · PDF from S3/local artifacts" : ""}
         </span>
         {latest?.dtg ? (
           <span className="mono" style={{ fontSize: 11 }}>

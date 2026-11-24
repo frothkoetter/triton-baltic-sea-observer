@@ -119,7 +119,7 @@ export function NbaHitlPage() {
   return (
     <div className="nba-hitl">
       <header className="panel-head">
-        <h1>NBA — Course of Action (HITL)</h1>
+        <h1>COA — Course of Action (HITL)</h1>
         <p className="text-muted">
           Data: <strong>{source}</strong> · Trino <code>nba_incidents</code> / <code>nba_coa_runs</code> ·
           artifacts <code>decision_record.json</code>

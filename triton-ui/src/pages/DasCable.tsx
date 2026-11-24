@@ -83,6 +83,11 @@ export function DasCablePage() {
   return (
     <div className="lidar-page">
       <div className="lidar-toolbar">
+        {source === "sample-snapshot" ? (
+          <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+            Demo catalog from live-snapshot · HDF5 preview/audio from S3 (<code>hadoop_file_url</code>)
+          </span>
+        ) : null}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>
           das_cable_spectrogram_metadata · Data: {source} · Karte/Filter:{" "}
           {threatLabelMode === "ground_truth" ? "threat_class (GT)" : "predicted_threat_type (ML)"}
