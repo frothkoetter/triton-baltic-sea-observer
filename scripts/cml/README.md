@@ -58,4 +58,14 @@ Prefer the Python script to **merge** many keys from `triton-project.env.local`.
 
 - `*.local.env` and `*cml-secrets*` under this folder are **gitignored**.
 - Do not paste production passwords into git, chat, or `triton-project.env.example`.
+
+## Download today’s S3 artifacts (SITREP / LiDAR / DAS)
+
+After prefixes and workload keys are in `triton-project.env.local`:
+
+```bash
+./scripts/download-today-s3-artifacts.sh --env-file scripts/cml/triton-project.env.local
+```
+
+See [`../download-today-s3-artifacts.md`](../download-today-s3-artifacts.md).
 - Applications must **inherit** project environment (or set the same vars on each Application).
