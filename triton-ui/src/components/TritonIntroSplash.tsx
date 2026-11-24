@@ -77,16 +77,26 @@ export function TritonIntroSplash({ onEnter }: Props) {
         >
           <div className="triton-intro-orbit" aria-hidden />
           <div className="triton-intro-orbit triton-intro-orbit--inner" aria-hidden />
-          <motionPlate reducedMotion={reducedMotion}>
+          <div className="triton-intro-hero-row">
             <img
-              src="/images/triton-showcase-3d.jpg"
-              alt="TRITON Show Case — Baltic Sea Observing Platform"
-              className="triton-intro-hero"
-              width={480}
-              height={480}
+              src="/images/cloudera_logo_WHITE.png"
+              alt="Cloudera"
+              className="triton-intro-cloudera-logo"
+              width={200}
+              height={40}
               draggable={false}
             />
-          </motionPlate>
+            <motionPlate reducedMotion={reducedMotion}>
+              <img
+                src="/images/triton-showcase-3d.jpg"
+                alt="TRITON Baltic Sea Observer"
+                className="triton-intro-hero"
+                width={480}
+                height={480}
+                draggable={false}
+              />
+            </motionPlate>
+          </div>
           <motionShadow reducedMotion={reducedMotion} tilt={tilt} />
         </div>
 
@@ -145,7 +155,7 @@ function motionTitle({ id, reducedMotion }: { id: string; reducedMotion: boolean
   return (
     <motionText id={id} className={`triton-intro-copy ${reducedMotion ? "" : "triton-intro-fade-in"}`}>
       <span className="triton-intro-kicker">BALTIC SEA OBSERVING PLATFORM</span>
-      <span className="triton-intro-brand">TRITON SHOW CASE</span>
+      <span className="triton-intro-brand">TRITON BALTIC SEA OBSERVER</span>
     </motionText>
   );
 }

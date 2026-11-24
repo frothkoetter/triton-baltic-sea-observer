@@ -73,6 +73,16 @@ a {
   min-width: 0;
 }
 
+.app-partner-logo {
+  display: block;
+  height: 22px;
+  width: auto;
+  max-width: 96px;
+  object-fit: contain;
+  opacity: 0.92;
+  flex-shrink: 0;
+}
+
 .app-logo {
   display: block;
   height: 40px;
@@ -2024,6 +2034,25 @@ body.lagebild-map-fs-active {
   filter: blur(20px);
   z-index: -1;
   pointer-events: none;
+}
+
+.triton-intro-hero-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 3vw, 20px);
+  transform-style: preserve-3d;
+}
+
+.triton-intro-cloudera-logo {
+  display: block;
+  height: clamp(22px, 4vw, 32px);
+  width: auto;
+  max-width: min(22vw, 120px);
+  object-fit: contain;
+  opacity: 0.94;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.45));
+  user-select: none;
 }
 
 .triton-intro-hero {

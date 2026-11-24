@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.32-ais-cte-where-fix",
+  "build": "0.2.33-intro-cloudera-logo",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

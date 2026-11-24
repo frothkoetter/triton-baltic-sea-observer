@@ -162,6 +162,13 @@ export default function App() {
       <header className="app-header">
         <div className="app-brand">
           <img
+            className="app-partner-logo"
+            src="/images/cloudera_logo_WHITE.png"
+            alt="Cloudera"
+            width={120}
+            height={24}
+          />
+          <img
             className="app-logo"
             src="/images/tritonLogo.jpg"
             alt="Triton"
