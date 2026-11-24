@@ -29,19 +29,41 @@ sso_role_name = YourRole
 region = eu-central-1
 ```
 
-## Example — AWS SSO
+## Bucket layout (`triton-buk-ab3b8c81`)
+
+Under `s3a://triton-buk-ab3b8c81/data/user/frothkoetter/` the three folders map to env vars (and **triton-ui**):
+
+| S3 folder | Download script env | UI env (same prefix) |
+|-----------|---------------------|----------------------|
+| `reports/` | `SITREP_S3_PREFIX` or `LAGEBILD_S3_PREFIX` | `SITREP_S3_PREFIX`, `LAGEBILD_S3_PREFIX` |
+| `lidar/` | `S3_LIDAR_ALLOWED_PREFIX` | `S3_LIDAR_ALLOWED_PREFIX` |
+| `das/` | `S3_DAS_ALLOWED_PREFIX` | `S3_DAS_ALLOWED_PREFIX` |
+
+Local output dirs are always `sitrep/`, `lidar/`, `das/` under `--out` (independent of the S3 folder names).
+
+## Example — AWS SSO (`triton-buk`)
 
 ```bash
 aws sso login --profile triton-cdp
 
-export S3_ENDPOINT_URL='https://...'   # CDP object store endpoint
-export SITREP_S3_PREFIX='s3a://your-bucket/data/user/you/reports/'
-export S3_LIDAR_ALLOWED_PREFIX='s3a://your-bucket/data/geospatial/transformer/'
-export S3_DAS_ALLOWED_PREFIX='s3a://your-bucket/data/acoustic/'
+export AWS_DEFAULT_REGION=us-east-1
+export S3_ENDPOINT_URL='https://...'   # same gateway as CML "S3 Object Store"
+
+export SITREP_S3_PREFIX='s3a://triton-buk-ab3b8c81/data/user/frothkoetter/reports/'
+export S3_LIDAR_ALLOWED_PREFIX='s3a://triton-buk-ab3b8c81/data/user/frothkoetter/lidar/'
+export S3_DAS_ALLOWED_PREFIX='s3a://triton-buk-ab3b8c81/data/user/frothkoetter/das/'
 
 ./scripts/download-today-s3-artifacts.sh --profile triton-cdp
 # or one-shot login + download:
 ./scripts/download-today-s3-artifacts.sh --profile triton-cdp --sso-login
+```
+
+Generic bucket (other paths):
+
+```bash
+export SITREP_S3_PREFIX='s3a://your-bucket/data/user/you/reports/'
+export S3_LIDAR_ALLOWED_PREFIX='s3a://your-bucket/data/user/you/lidar/'
+export S3_DAS_ALLOWED_PREFIX='s3a://your-bucket/data/user/you/das/'
 ```
 
 ## Example — workload keys (CML session)
