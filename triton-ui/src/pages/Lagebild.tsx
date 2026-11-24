@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchJson, type NbaIncident } from "../api";
-import { DataTable } from "../components/DataTable";
 import { RouteTrackTimeline } from "../components/RouteTrackTimeline";
 import {
   TacticalMap,
@@ -8,16 +7,9 @@ import {
   type ObservationArea,
   type OstseeInfraRow,
   type OstseePipelineRow,
-  type GpsJammerMapEvent,
   type OutlierRow,
 } from "../components/TacticalMap";
 import { normalizeOstseeInfra, normalizeOstseePipeline } from "../lib/ostsee-infra-map";
-import {
-  collapseGpsJammerByGeohash,
-  filterGpsJammerEvents,
-  normalizeGpsJammerRow,
-  type GpsJammingFilter,
-} from "../lib/gps-jammer";
 import {
   filterAisRows,
   filterFleetUnits,
@@ -118,8 +110,6 @@ export function LagebildPage({ filters }: Props) {
   const [source, setSource] = useState("…");
   const [trackSource, setTrackSource] = useState("…");
   const [outliers, setOutliers] = useState<OutlierRow[]>([]);
-  const [gpsJammerEvents, setGpsJammerEvents] = useState<GpsJammerMapEvent[]>([]);
-  const [gpsJammerSource, setGpsJammerSource] = useState("…");
   const [germanFleet, setGermanFleet] = useState<FleetPosition[]>([]);
   const [russianFleet, setRussianFleet] = useState<FleetPosition[]>([]);
   const [tracks, setTracks] = useState<PositionTrack[]>([]);
@@ -134,15 +124,12 @@ export function LagebildPage({ filters }: Props) {
     infrastructure: false,
     sanctions: false,
     outliers: false,
-    gpsJammer: false,
     germanFleet: true,
     russianFleet: true,
     nba: false,
     routeTracks: false,
   });
   const [mapFullscreen, setMapFullscreen] = useState(false);
-  const [gpsJammingFilter, setGpsJammingFilter] = useState<GpsJammingFilter>("jamming");
-  const [gpsMaxSignalIntegrity, setGpsMaxSignalIntegrity] = useState(1);
 
   useEffect(() => {
     if (!mapFullscreen) return;
@@ -157,14 +144,6 @@ export function LagebildPage({ filters }: Props) {
     document.body.classList.toggle("lagebild-map-fs-active", mapFullscreen);
     return () => document.body.classList.remove("lagebild-map-fs-active");
   }, [mapFullscreen]);
-
-  const filteredGpsJammer = useMemo(() => {
-    const narrowed = filterGpsJammerEvents(gpsJammerEvents, {
-      jamming: gpsJammingFilter,
-      maxSignalIntegrity: gpsMaxSignalIntegrity,
-    });
-    return collapseGpsJammerByGeohash(narrowed);
-  }, [gpsJammerEvents, gpsJammingFilter, gpsMaxSignalIntegrity]);
 
   const nbaOnMap = useMemo(
     () =>
@@ -196,7 +175,7 @@ export function LagebildPage({ filters }: Props) {
 
   useEffect(() => {
     void (async () => {
-      const [aisRes, areaRes, infraRes, outlierRes, gpsJamRes, fleetRes, kpiRes, nbaRes] = await Promise.all([
+      const [aisRes, areaRes, infraRes, outlierRes, fleetRes, kpiRes, nbaRes] = await Promise.all([
         fetchJson<{ rows?: AisRow[]; source?: string }>("/api/ais"),
         fetchJson<{ rows?: ObservationArea[]; source?: string }>("/api/observation-areas"),
         fetchJson<{
@@ -205,7 +184,6 @@ export function LagebildPage({ filters }: Props) {
           source?: string;
         }>("/api/ostsee-infrastructure"),
         fetchJson<{ rows?: OutlierRow[]; source?: string }>("/api/vessel-outliers"),
-        fetchJson<{ rows?: Record<string, unknown>[]; source?: string }>("/api/gps-jammer-events"),
         fetchJson<{
           german?: Record<string, unknown>[];
           russian?: Record<string, unknown>[];
@@ -234,12 +212,6 @@ export function LagebildPage({ filters }: Props) {
         (outlierRes.rows ?? [])
           .map((r) => normalizeOutlier(r as Record<string, unknown>))
           .filter((r): r is OutlierRow => r != null)
-      );
-      setGpsJammerSource(gpsJamRes.source ?? "…");
-      setGpsJammerEvents(
-        (gpsJamRes.rows ?? [])
-          .map((r) => normalizeGpsJammerRow(r))
-          .filter((r): r is GpsJammerMapEvent => r != null)
       );
       setGermanFleet(
         (fleetRes.german ?? [])
@@ -369,7 +341,6 @@ export function LagebildPage({ filters }: Props) {
             "germanFleet",
             "russianFleet",
             "outliers",
-            "gpsJammer",
             "routeTracks",
             "areas",
             "infrastructure",
@@ -391,9 +362,7 @@ export function LagebildPage({ filters }: Props) {
                   ? `${RED_FLEET_LABEL} (${filteredRussian.length})`
                   : key === "outliers"
                     ? `AIS Outliers (${filteredOutliers.length})`
-                    : key === "gpsJammer"
-                      ? `GPS jammer (${filteredGpsJammer.length})`
-                      : key === "routeTracks"
+                    : key === "routeTracks"
                       ? `Route tracks 24h (${trackLegend.total})`
                       : key === "areas"
                         ? `Restricted Areas (${areas.length})`
@@ -406,7 +375,6 @@ export function LagebildPage({ filters }: Props) {
         ))}
         <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)", alignSelf: "center" }}>
           Data: {source}
-          {layers.gpsJammer ? ` · GPS jammer: ${gpsJammerSource}` : ""}
           {layers.nba ? ` · NBA: ${nbaSource}` : ""}
         </span>
       </div>
@@ -432,8 +400,6 @@ export function LagebildPage({ filters }: Props) {
           infrastruktur={ostseeInfra}
           pipelines={ostseePipelines}
           outliers={layers.outliers ? filteredOutliers : []}
-          gpsJammerEvents={layers.gpsJammer ? filteredGpsJammer : []}
-          showGpsJammer={layers.gpsJammer}
           germanFleet={layers.germanFleet ? filteredGerman : []}
           russianFleet={layers.russianFleet ? filteredRussian : []}
           nbaIncidents={nbaOnMap}
@@ -476,63 +442,6 @@ export function LagebildPage({ filters }: Props) {
         {layers.routeTracks && (
           <RouteTrackTimeline tracks={tracks} loading={tracksLoading} truncated={tracksTruncated} />
         )}
-      </section>
-
-      <section className="panel" style={{ marginTop: 8 }}>
-        <h2 className="panel-title">GPS jammer events (defense.gps_jammer_events)</h2>
-        <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
-          Geohash-Kacheln (keine Punkt-Marker) · source {gpsJammerSource}
-        </p>
-        <div className="socmint-gps-filters mono" style={{ marginBottom: 10 }}>
-          <label>
-            jamming_indicator
-            <select
-              value={gpsJammingFilter}
-              onChange={(e) => setGpsJammingFilter(e.target.value as GpsJammingFilter)}
-              aria-label="GPS jamming indicator filter"
-            >
-              <option value="all">Alle</option>
-              <option value="jamming">Jamming (true)</option>
-              <option value="monitor">Monitor (false)</option>
-            </select>
-          </label>
-          <label className="socmint-range">
-            signal_integrity ≤{" "}
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(gpsMaxSignalIntegrity * 100)}
-              onChange={(e) => setGpsMaxSignalIntegrity(Number(e.target.value) / 100)}
-              aria-label="Maximum signal integrity"
-            />
-            <span>{gpsMaxSignalIntegrity.toFixed(2)}</span>
-          </label>
-        </div>
-        <DataTable
-          columns={[
-            "geohash",
-            "event_timestamp",
-            "latitude",
-            "longitude",
-            "adsb_nic",
-            "signal_integrity",
-            "jamming_indicator",
-            "harbour_name",
-            "reason",
-          ]}
-          rows={
-            filteredGpsJammer.slice(0, 50) as unknown as Record<string, unknown>[]
-          }
-        />
-      </section>
-
-      <section className="panel" style={{ marginTop: 8 }}>
-        <h2 className="panel-title">AIS Positions (102)</h2>
-        <DataTable
-          columns={["mmsi", "ship_name", "vessel_type", "flag", "latitude", "longitude", "speed", "event_timestamp"]}
-          rows={filteredAis.slice(0, 50) as unknown as Record<string, unknown>[]}
-        />
       </section>
     </div>
   );

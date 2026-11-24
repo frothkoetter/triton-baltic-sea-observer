@@ -1,10 +1,9 @@
 {
   "version": "0.2.4",
-  "build": "0.2.31-analysen-load-progress",
+  "build": "0.2.32-lagebild-trim-panels",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
-    "dasSpectrogramAudio": true,
-    "gpsJammerLagebild": true
+    "dasSpectrogramAudio": true
   }
 }
