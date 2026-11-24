@@ -13,31 +13,53 @@ Downloads objects whose **S3 `LastModified`** falls on the chosen calendar day i
 ## Prerequisites
 
 - AWS CLI v2 (`aws`)
-- CDP workload credentials: `S3_WORKLOAD_USER` / `S3_WORKLOAD_PASSWORD` (or `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`)
-- `S3_ENDPOINT_URL` for Ozone / CDP object store (same as **triton-ui** Application)
+- **Auth (pick one):**
+  - **AWS SSO** (recommended on laptop): profile in `~/.aws/config`, `aws sso login --profile …`
+  - **CDP workload keys:** `S3_WORKLOAD_USER` / `S3_WORKLOAD_PASSWORD` or `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+- **`S3_ENDPOINT_URL`** for CDP / Ozone object store (required for private cloud buckets; same idea as **triton-ui**)
 
-## Example (CML project session)
+### SSO profile (`~/.aws/config` sketch)
+
+```ini
+[profile triton-cdp]
+sso_start_url = https://your-org.awsapps.com/start
+sso_region = eu-central-1
+sso_account_id = 123456789012
+sso_role_name = YourRole
+region = eu-central-1
+```
+
+## Example — AWS SSO
 
 ```bash
-cd /home/cdsw/triton-baltic-sea-observer   # or your clone path
+aws sso login --profile triton-cdp
 
+export S3_ENDPOINT_URL='https://...'   # CDP object store endpoint
+export SITREP_S3_PREFIX='s3a://your-bucket/data/user/you/reports/'
+export S3_LIDAR_ALLOWED_PREFIX='s3a://your-bucket/data/geospatial/transformer/'
+export S3_DAS_ALLOWED_PREFIX='s3a://your-bucket/data/acoustic/'
+
+./scripts/download-today-s3-artifacts.sh --profile triton-cdp
+# or one-shot login + download:
+./scripts/download-today-s3-artifacts.sh --profile triton-cdp --sso-login
+```
+
+## Example — workload keys (CML session)
+
+```bash
 export S3_WORKLOAD_USER='...'
 export S3_WORKLOAD_PASSWORD='...'
-export S3_ENDPOINT_URL='https://...'     # from CDP object store docs
-
-export SITREP_S3_PREFIX='s3a://goes-se-sandbox/data/user/you/reports/'
-export S3_LIDAR_ALLOWED_PREFIX='s3a://goes-se-sandbox/data/geospatial/transformer/'
-export S3_DAS_ALLOWED_PREFIX='s3a://goes-se-sandbox/data/acoustic/'
-
-chmod +x scripts/download-today-s3-artifacts.sh
+export S3_ENDPOINT_URL='https://...'
+# ... prefixes as above
 ./scripts/download-today-s3-artifacts.sh
 ```
 
-Or load project env:
+Or load non-secret prefixes from project env (still use SSO profile or keys for auth):
 
 ```bash
 ./scripts/download-today-s3-artifacts.sh \
-  --env-file scripts/cml/triton-project.env.local
+  --env-file scripts/cml/triton-project.env.local \
+  --profile triton-cdp
 ```
 
 Output default: `triton-s3-artifacts-YYYYMMDD/` plus **`triton-s3-artifacts-YYYYMMDD.tar.gz`** in the repo root (override with `--out`).
@@ -45,8 +67,8 @@ Output default: `triton-s3-artifacts-YYYYMMDD/` plus **`triton-s3-artifacts-YYYY
 ## Options
 
 ```bash
-./scripts/download-today-s3-artifacts.sh --date 2026-11-24 --dry-run
-./scripts/download-today-s3-artifacts.sh --out /tmp/heute --no-archive
+./scripts/download-today-s3-artifacts.sh --profile triton-cdp --date 2026-11-24 --dry-run
+./scripts/download-today-s3-artifacts.sh --profile triton-cdp --out /tmp/heute --no-archive
 ```
 
 ## Notes

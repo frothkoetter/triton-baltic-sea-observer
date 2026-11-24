@@ -3,12 +3,12 @@
 # Download today's SITREP PDFs, LiDAR (LAS/LAZ), and DAS (HDF5/WAV) from S3 with AWS CLI,
 # store under a local directory, and compress to .tar.gz.
 #
-# Auth (same as triton-ui): S3_WORKLOAD_USER/PASSWORD or AWS_ACCESS_KEY_ID/SECRET + S3_ENDPOINT_URL.
+# Auth: AWS SSO (recommended) via --profile / AWS_PROFILE, or workload keys (S3_WORKLOAD_*).
 # Prefixes: SITREP_S3_PREFIX or LAGEBILD_S3_PREFIX, S3_LIDAR_ALLOWED_PREFIX, S3_DAS_ALLOWED_PREFIX.
 #
 # Usage:
-#   source scripts/cml/triton-project.env.local   # optional
-#   ./scripts/download-today-s3-artifacts.sh
+#   aws sso login --profile cdw-dev
+#   ./scripts/download-today-s3-artifacts.sh --profile cdw-dev
 #   ./scripts/download-today-s3-artifacts.sh --date 2026-11-24 --out ./artifacts-heute
 #
 set -euo pipefail
@@ -18,14 +18,18 @@ ARTIFACT_TZ="${ARTIFACT_TZ:-Europe/Berlin}"
 OUT_DIR=""
 TARGET_DATE=""
 ENV_FILE=""
+AWS_PROFILE_ARG=""
 DRY_RUN=0
 SKIP_ARCHIVE=0
+SSO_LOGIN=0
 
 usage() {
   sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
   echo ""
   echo "Options:"
   echo "  --env-file PATH   shell-source KEY=VALUE file before run"
+  echo "  --profile NAME    AWS CLI profile (SSO or static); sets AWS_PROFILE"
+  echo "  --sso-login       run 'aws sso login' for --profile / AWS_PROFILE first"
   echo "  --date YYYY-MM-DD calendar day in ARTIFACT_TZ (default: today)"
   echo "  --out DIR         output directory (default: ./triton-s3-artifacts-YYYYMMDD)"
   echo "  --tz ZONE         IANA tz for --date (default: Europe/Berlin)"
@@ -39,6 +43,14 @@ while [[ $# -gt 0 ]]; do
     --env-file)
       ENV_FILE="$2"
       shift 2
+      ;;
+    --profile)
+      AWS_PROFILE_ARG="$2"
+      shift 2
+      ;;
+    --sso-login)
+      SSO_LOGIN=1
+      shift
       ;;
     --date)
       TARGET_DATE="$2"
@@ -88,6 +100,44 @@ if ! command -v aws >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ -n "$AWS_PROFILE_ARG" ]]; then
+  export AWS_PROFILE="$AWS_PROFILE_ARG"
+fi
+
+AWS_ARGS=()
+if [[ -n "${AWS_PROFILE:-}" ]]; then
+  AWS_ARGS+=(--profile "$AWS_PROFILE")
+fi
+if [[ -n "${S3_ENDPOINT_URL:-}" ]]; then
+  AWS_ARGS+=(--endpoint-url "$S3_ENDPOINT_URL")
+elif [[ -n "${AWS_ENDPOINT_URL:-}" ]]; then
+  AWS_ARGS+=(--endpoint-url "$AWS_ENDPOINT_URL")
+fi
+
+aws_cli() {
+  aws "${AWS_ARGS[@]}" "$@"
+}
+
+ensure_aws_credentials() {
+  if [[ "$SSO_LOGIN" == 1 ]]; then
+    if [[ -z "${AWS_PROFILE:-}" ]]; then
+      echo "Option --sso-login requires --profile or AWS_PROFILE" >&2
+      exit 1
+    fi
+    echo "== AWS SSO login (profile: $AWS_PROFILE) =="
+    aws sso login --profile "$AWS_PROFILE"
+  fi
+  if ! aws_cli sts get-caller-identity --output text >/dev/null 2>&1; then
+    echo "AWS credentials not valid. For SSO run:" >&2
+    echo "  aws sso login --profile YOUR_PROFILE" >&2
+    echo "  $0 --profile YOUR_PROFILE [--sso-login]" >&2
+    exit 1
+  fi
+  local who
+  who="$(aws_cli sts get-caller-identity --query Arn --output text 2>/dev/null || true)"
+  echo "AWS identity: ${who:-ok}"
+}
+
 if [[ -z "$TARGET_DATE" ]]; then
   TARGET_DATE="$(TZ="$ARTIFACT_TZ" date +%F)"
 fi
@@ -102,14 +152,9 @@ SITREP_PREFIX="${SITREP_S3_PREFIX:-${LAGEBILD_S3_PREFIX:-}}"
 LIDAR_PREFIX="${S3_LIDAR_ALLOWED_PREFIX:-}"
 DAS_PREFIX="${S3_DAS_ALLOWED_PREFIX:-}"
 
-AWS_ARGS=()
-if [[ -n "${S3_ENDPOINT_URL:-}" ]]; then
-  AWS_ARGS+=(--endpoint-url "$S3_ENDPOINT_URL")
-elif [[ -n "${AWS_ENDPOINT_URL:-}" ]]; then
-  AWS_ARGS+=(--endpoint-url "$AWS_ENDPOINT_URL")
-fi
+export ARTIFACT_TZ TARGET_DATE OUT_DIR DRY_RUN AWS_PROFILE
 
-export ARTIFACT_TZ TARGET_DATE OUT_DIR DRY_RUN
+ensure_aws_credentials
 
 parse_s3_uri() {
   local uri="$1"
@@ -149,9 +194,13 @@ start = datetime.fromisoformat(f"{day}T00:00:00").replace(tzinfo=tz)
 end = datetime.fromisoformat(f"{day}T23:59:59.999999").replace(tzinfo=tz)
 
 aws_cmd = ["aws", "s3api", "list-objects-v2", "--bucket", bucket, "--prefix", prefix, "--output", "json"]
+profile = (os.environ.get("AWS_PROFILE") or "").strip()
+if profile:
+    aws_cmd[1:1] = ["--profile", profile]
 endpoint = os.environ.get("S3_ENDPOINT_URL") or os.environ.get("AWS_ENDPOINT_URL")
 if endpoint:
-    aws_cmd[1:1] = ["--endpoint-url", endpoint]
+    insert = 3 if profile else 1
+    aws_cmd[insert:insert] = ["--endpoint-url", endpoint]
 
 token = None
 while True:
@@ -192,7 +241,7 @@ download_key() {
     echo "  would cp s3://${bucket}/${key} -> $dest"
     return 0
   fi
-  aws s3 cp "s3://${bucket}/${key}" "$dest" "${AWS_ARGS[@]}" --only-show-errors
+  aws_cli s3 cp "s3://${bucket}/${key}" "$dest" --only-show-errors
   echo "  OK ${rel}"
 }
 
@@ -237,7 +286,7 @@ fetch_sitrep_index() {
     echo "  would cp s3://${bucket}/${prefix}index.json"
     return 0
   fi
-  if aws s3 cp "s3://${bucket}/${prefix}index.json" "$dest" "${AWS_ARGS[@]}" --only-show-errors 2>/dev/null; then
+  if aws_cli s3 cp "s3://${bucket}/${prefix}index.json" "$dest" --only-show-errors 2>/dev/null; then
     echo "  OK sitrep/index.json"
   fi
 }
@@ -250,6 +299,7 @@ MANIFEST="${OUT_DIR}/manifest.txt"
   echo "sitrep_prefix=${SITREP_PREFIX:-}"
   echo "lidar_prefix=${LIDAR_PREFIX:-}"
   echo "das_prefix=${DAS_PREFIX:-}"
+  echo "aws_profile=${AWS_PROFILE:-}"
 } >"$MANIFEST"
 
 echo "Output: $OUT_DIR"

@@ -64,7 +64,10 @@ Prefer the Python script to **merge** many keys from `triton-project.env.local`.
 After prefixes and workload keys are in `triton-project.env.local`:
 
 ```bash
-./scripts/download-today-s3-artifacts.sh --env-file scripts/cml/triton-project.env.local
+aws sso login --profile triton-cdp
+./scripts/download-today-s3-artifacts.sh \
+  --env-file scripts/cml/triton-project.env.local \
+  --profile triton-cdp
 ```
 
 See [`../download-today-s3-artifacts.md`](../download-today-s3-artifacts.md).
