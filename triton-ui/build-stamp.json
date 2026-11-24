@@ -1,10 +1,9 @@
 {
   "version": "0.2.4",
-  "build": "0.2.36-filter-rail-default-mini",
+  "build": "0.2.37-lagebild-trim-panels",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
-    "dasSpectrogramAudio": true,
-    "gpsJammerLagebild": true
+    "dasSpectrogramAudio": true
   }
 }
