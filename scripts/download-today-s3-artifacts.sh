@@ -23,6 +23,11 @@ AWS_PROFILE_ARG=""
 DRY_RUN=0
 SKIP_ARCHIVE=0
 SSO_LOGIN=0
+QUIET_AWS=1
+
+# download summary (label -> count)
+declare -a SUMMARY_LABELS=()
+declare -a SUMMARY_COUNTS=()
 
 usage() {
   sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
@@ -36,6 +41,7 @@ usage() {
   echo "  --tz ZONE         IANA tz for --date (default: Europe/Berlin)"
   echo "  --dry-run         list objects only, no download"
   echo "  --no-archive      skip .tar.gz"
+  echo "  --verbose-aws     show AWS CLI transfer progress per file (noisy)"
   echo "  -h, --help"
 }
 
@@ -71,6 +77,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-archive)
       SKIP_ARCHIVE=1
+      shift
+      ;;
+    --verbose-aws)
+      QUIET_AWS=0
       shift
       ;;
     -h | --help)
@@ -139,6 +149,19 @@ ensure_aws_credentials() {
   echo "AWS identity: ${who:-ok}"
 }
 
+progress_line() {
+  printf '%s\n' "$*" >&2
+}
+
+human_bytes() {
+  local n="${1:-0}"
+  if command -v numfmt >/dev/null 2>&1; then
+    numfmt --to=iec-i --suffix=B "$n" 2>/dev/null || echo "${n}B"
+  else
+    echo "${n} bytes"
+  fi
+}
+
 if [[ -z "$TARGET_DATE" ]]; then
   TARGET_DATE="$(TZ="$ARTIFACT_TZ" date +%F)"
 fi
@@ -204,7 +227,11 @@ if endpoint:
     aws_cmd[insert:insert] = ["--endpoint-url", endpoint]
 
 token = None
+page = 0
+scanned = 0
+matched = 0
 while True:
+    page += 1
     cmd = list(aws_cmd)
     if token:
         cmd.extend(["--continuation-token", token])
@@ -213,7 +240,9 @@ while True:
         sys.stderr.write(proc.stderr or proc.stdout)
         sys.exit(proc.returncode)
     data = json.loads(proc.stdout or "{}")
-    for obj in data.get("Contents") or []:
+    batch = data.get("Contents") or []
+    scanned += len(batch)
+    for obj in batch:
         key = obj.get("Key") or ""
         if exts:
             low = key.lower()
@@ -224,7 +253,13 @@ while True:
             continue
         dt = datetime.fromisoformat(lm.replace("Z", "+00:00"))
         if start <= dt.astimezone(tz) <= end:
+            matched += 1
             print(key)
+    print(
+        f"  … list page {page}: scanned {scanned}, matched {matched} for {day}",
+        file=sys.stderr,
+        flush=True,
+    )
     if not data.get("IsTruncated"):
         break
     token = data.get("NextContinuationToken")
@@ -235,15 +270,23 @@ download_key() {
   local bucket="$1"
   local key="$2"
   local dest_dir="$3"
-  local rel="${key#"${4:-}"}"
+  local key_prefix="$4"
+  local index="$5"
+  local total="$6"
+  local rel="${key#"${key_prefix:-}"}"
   local dest="${dest_dir}/${rel}"
   mkdir -p "$(dirname "$dest")"
   if [[ "$DRY_RUN" == 1 ]]; then
-    echo "  would cp s3://${bucket}/${key} -> $dest"
+    progress_line "  [${index}/${total}] would download ${rel}"
     return 0
   fi
-  aws_cli s3 cp "s3://${bucket}/${key}" "$dest" --only-show-errors
-  echo "  OK ${rel}"
+  progress_line "  [${index}/${total}] downloading ${rel} …"
+  local -a cp_flags=()
+  if [[ "$QUIET_AWS" == 1 ]]; then
+    cp_flags+=(--only-show-errors --no-progress)
+  fi
+  aws_cli s3 cp "s3://${bucket}/${key}" "$dest" "${cp_flags[@]}"
+  progress_line "  [${index}/${total}] OK ${rel}"
 }
 
 download_category() {
@@ -263,14 +306,22 @@ download_category() {
   local dest="${OUT_DIR}/${subdir}"
   mkdir -p "$dest"
   echo "== $label: s3://${bucket}/${prefix} (day ${TARGET_DATE} ${ARTIFACT_TZ}) =="
+  progress_line "  Listing objects…"
   mapfile -t keys < <(list_today_keys "$bucket" "$prefix" "$@" || true)
-  if [[ ${#keys[@]} -eq 0 ]]; then
+  local n=${#keys[@]}
+  SUMMARY_LABELS+=("$label")
+  SUMMARY_COUNTS+=("$n")
+  if [[ "$n" -eq 0 ]]; then
     echo "  (no objects for this day)"
     return 0
   fi
+  echo "  Found $n file(s) to download"
+  local i=0
   for key in "${keys[@]}"; do
-    download_key "$bucket" "$key" "$dest" "$prefix"
+    i=$((i + 1))
+    download_key "$bucket" "$key" "$dest" "$prefix" "$i" "$n"
   done
+  echo "  Done $label: $n file(s)"
 }
 
 # SITREP index: also pull index.json when any PDF matches (for metadata)
@@ -316,11 +367,29 @@ fi
 
 find "$OUT_DIR" -type f ! -name manifest.txt | sort >>"$MANIFEST"
 
+total_files=0
+for c in "${SUMMARY_COUNTS[@]}"; do
+  total_files=$((total_files + c))
+done
+
+OUT_BYTES=0
+if command -v du >/dev/null 2>&1; then
+  OUT_BYTES=$(du -sb "$OUT_DIR" 2>/dev/null | cut -f1 || echo 0)
+fi
+
+echo "== Summary (${TARGET_DATE}) =="
+for idx in "${!SUMMARY_LABELS[@]}"; do
+  echo "  ${SUMMARY_LABELS[$idx]}: ${SUMMARY_COUNTS[$idx]} file(s)"
+done
+echo "  Total: ${total_files} file(s), $(human_bytes "$OUT_BYTES") under $(basename "$OUT_DIR")"
+
 ARCHIVE="${OUT_DIR}.tar.gz"
 if [[ "$SKIP_ARCHIVE" == 0 ]]; then
   echo "== Compress: $ARCHIVE =="
+  progress_line "  Packing ${total_files} artifact file(s)…"
   tar -czf "$ARCHIVE" -C "$(dirname "$OUT_DIR")" "$(basename "$OUT_DIR")"
-  echo "Done: $ARCHIVE ($(du -h "$ARCHIVE" | cut -f1))"
+  arch_size=$(du -h "$ARCHIVE" 2>/dev/null | cut -f1 || echo "?")
+  echo "Done: $ARCHIVE ($arch_size)"
 else
   echo "Done: $OUT_DIR (no archive)"
 fi
