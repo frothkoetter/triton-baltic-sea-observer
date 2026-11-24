@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.34-intro-cloudera-above",
+  "build": "0.2.36-filter-rail-default-mini",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
