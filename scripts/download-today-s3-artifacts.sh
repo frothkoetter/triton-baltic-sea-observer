@@ -128,7 +128,12 @@ elif [[ -n "${AWS_ENDPOINT_URL:-}" ]]; then
 fi
 
 aws_cli() {
-  aws "${AWS_ARGS[@]}" "$@"
+  # bash 3.2 + set -u: expanding empty "${AWS_ARGS[@]}" is an error
+  if [[ ${#AWS_ARGS[@]} -gt 0 ]]; then
+    aws "${AWS_ARGS[@]}" "$@"
+  else
+    aws "$@"
+  fi
 }
 
 ensure_aws_credentials() {
@@ -283,11 +288,11 @@ download_key() {
     return 0
   fi
   progress_line "  [${index}/${total}] downloading ${rel} …"
-  local -a cp_flags=()
   if [[ "$QUIET_AWS" == 1 ]]; then
-    cp_flags+=(--only-show-errors --no-progress)
+    aws_cli s3 cp "s3://${bucket}/${key}" "$dest" --only-show-errors --no-progress
+  else
+    aws_cli s3 cp "s3://${bucket}/${key}" "$dest"
   fi
-  aws_cli s3 cp "s3://${bucket}/${key}" "$dest" "${cp_flags[@]}"
   progress_line "  [${index}/${total}] OK ${rel}"
 }
 
@@ -374,9 +379,12 @@ fi
 find "$OUT_DIR" -type f ! -name manifest.txt | sort >>"$MANIFEST"
 
 total_files=0
-for c in "${SUMMARY_COUNTS[@]}"; do
-  total_files=$((total_files + c))
+_summary_i=0
+while [[ $_summary_i -lt ${#SUMMARY_COUNTS[@]} ]]; do
+  total_files=$((total_files + SUMMARY_COUNTS[_summary_i]))
+  _summary_i=$((_summary_i + 1))
 done
+unset _summary_i
 
 OUT_BYTES=0
 if command -v du >/dev/null 2>&1; then
