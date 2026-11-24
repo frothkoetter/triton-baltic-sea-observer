@@ -223,7 +223,7 @@ export function TacticalMap({
           >
             <Tooltip>
               <span className="mono">
-                <strong>DEU · {u.unit_name ?? u.mmsi}</strong>
+                <strong>Blue · {u.unit_name ?? u.mmsi}</strong>
                 <br />
                 {u.unit_class}
                 {u.operational_status ? ` · ${u.operational_status}` : ""}
@@ -247,7 +247,7 @@ export function TacticalMap({
           >
             <Tooltip>
               <span className="mono">
-                <strong>RUS · {u.unit_name ?? u.mmsi}</strong>
+                <strong>Red · {u.unit_name ?? u.mmsi}</strong>
                 <br />
                 {u.unit_class}
                 {u.home_base ? ` · ${u.home_base}` : ""}

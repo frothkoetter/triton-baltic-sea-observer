@@ -1,13 +1,14 @@
 import { Fragment } from "react";
 import { CircleMarker, MapContainer, Polyline, Tooltip } from "react-leaflet";
+import { TRACK_KIND_LABEL } from "../lib/fleet-labels";
 import type { PositionTrack, TrackKind } from "../lib/position-tracks";
 import { trackPathUpToTime } from "../lib/track-timeline";
 import { BasemapTileLayer } from "./BasemapTileLayer";
 
 const KIND_STYLE: Record<TrackKind, { line: string; dot: string; label: string }> = {
-  ais: { line: "#3DDC84", dot: "#2E7D4E", label: "AIS" },
-  deu_fleet: { line: "#42A5F5", dot: "#0D47A1", label: "DEU Fleet" },
-  rus_fleet: { line: "#CE93D8", dot: "#4A148C", label: "RUS Fleet" },
+  ais: { line: "#3DDC84", dot: "#2E7D4E", label: TRACK_KIND_LABEL.ais },
+  deu_fleet: { line: "#42A5F5", dot: "#0D47A1", label: TRACK_KIND_LABEL.deu_fleet },
+  rus_fleet: { line: "#CE93D8", dot: "#4A148C", label: TRACK_KIND_LABEL.rus_fleet },
 };
 
 type Props = {

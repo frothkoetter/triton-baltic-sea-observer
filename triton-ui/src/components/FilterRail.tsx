@@ -1,4 +1,5 @@
 import type { LagebildFilters } from "../lib/lagebild-filters";
+import { BLUE_FLEET_LABEL, RED_FLEET_LABEL } from "../lib/fleet-labels";
 
 function activeFilterCount(f: LagebildFilters): number {
   return (
@@ -173,7 +174,7 @@ export function FilterRail({
       />
       <MultiFilterField
         id="deu-fleet"
-        label="DEU Fleet (Mehrfach)"
+        label={`${BLUE_FLEET_LABEL} (Mehrfach)`}
         options={germanUnits}
         selected={filters.germanUnits}
         onToggle={(v) => patch({ germanUnits: toggleValue(filters.germanUnits, v) })}
@@ -182,7 +183,7 @@ export function FilterRail({
       />
       <MultiFilterField
         id="rus-fleet"
-        label="RUS Fleet (Mehrfach)"
+        label={`${RED_FLEET_LABEL} (Mehrfach)`}
         options={russianUnits}
         selected={filters.russianUnits}
         onToggle={(v) => patch({ russianUnits: toggleValue(filters.russianUnits, v) })}

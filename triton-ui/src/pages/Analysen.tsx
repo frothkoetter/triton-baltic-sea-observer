@@ -27,11 +27,17 @@ import {
   confidenceColor,
   type ScatterPoint,
 } from "../lib/buoy-analytics";
+import {
+  BLUE_FLEET_LABEL,
+  BLUE_FLEET_STAMMDATEN,
+  RED_FLEET_LABEL,
+  RED_FLEET_STAMMDATEN,
+} from "../lib/fleet-labels";
 
 const TABS = [
-  { id: "fleet", label: "Fleet" },
+  { id: "fleet", label: BLUE_FLEET_LABEL },
   { id: "buoys", label: "Buoys" },
-  { id: "rus", label: "RUS Fleet" },
+  { id: "rus", label: RED_FLEET_LABEL },
   { id: "ais", label: "AIS" },
   { id: "outliers", label: "AIS Outliers" },
   { id: "sanctions", label: "Sanctions" },
@@ -249,8 +255,8 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
     filters.flags.length ? `Flag: ${filters.flags.join(", ")}` : "",
     filters.vesselTypes.length ? `Typ: ${filters.vesselTypes.join(", ")}` : "",
     filters.shipNames.length ? `AIS: ${filters.shipNames.join(", ")}` : "",
-    filters.germanUnits.length ? `DEU: ${filters.germanUnits.join(", ")}` : "",
-    filters.russianUnits.length ? `RUS: ${filters.russianUnits.join(", ")}` : "",
+    filters.germanUnits.length ? `Blue: ${filters.germanUnits.join(", ")}` : "",
+    filters.russianUnits.length ? `Red: ${filters.russianUnits.join(", ")}` : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -286,7 +292,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
       {tab === "fleet" && (
         <div className="analyses-fleet">
           <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
-            DE Flotte:{" "}
+            {BLUE_FLEET_LABEL}:{" "}
             <code>german_navy_fleet</code> ⋈ <code>marine_messages</code> (
             <code>message_from</code>) ⋈ <code>marine_vessel_status</code> (MMSI). Daten:{" "}
             {fleetAnalytics?.source ?? "…"}
@@ -294,7 +300,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
             {fleetRegistry?.deduped ? " · Stammdaten dedupliziert (MMSI)" : ""}
           </p>
           <section className="panel" style={{ marginBottom: 12 }}>
-            <h2 className="panel-title">Stammdaten — german_navy_fleet</h2>
+            <h2 className="panel-title">Stammdaten — {BLUE_FLEET_STAMMDATEN}</h2>
             <p className="panel-subtitle">
               Eine Zeile pro MMSI (Versorgungsschiffe/Tender u. a.). Quelle: {fleetRegistry?.source ?? "…"}
             </p>
@@ -352,7 +358,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
               />
             </section>
             <section className="panel" style={{ gridColumn: "1 / -1" }}>
-              <h2 className="panel-title">Letzte STANAG-Meldungen (DE-Einheiten)</h2>
+              <h2 className="panel-title">Letzte STANAG-Meldungen ({BLUE_FLEET_LABEL})</h2>
               <DataTable
                 columns={p?.recentMessages?.columns ?? []}
                 rows={p?.recentMessages?.rows ?? []}
@@ -397,16 +403,16 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
       {tab === "rus" && (
         <div className="analyses-rus">
           <p className="kpi-source-line mono" style={{ marginTop: 0 }}>
-            <code>rus_fleet</code> ⋈ <code>rus_naval_fleet_positions</code> — letzte Lage, 24h-Bewegung (
+            {RED_FLEET_LABEL}: <code>rus_fleet</code> ⋈ <code>rus_naval_fleet_positions</code> — letzte Lage, 24h-Bewegung (
             max SOG), Heimathafen-Distanz, <code>observation_areas</code> (ST_Within). Quelle:{" "}
             {rusFleetAnalytics?.source ?? "…"}
             {rusFleetAnalytics?.fallbackReason ? ` — fallback (${rusFleetAnalytics.fallbackReason})` : ""}
             {rusFleetRegistry?.deduped ? " · Stammdaten dedupliziert (MMSI)" : ""}
           </p>
           <section className="panel" style={{ marginBottom: 12 }}>
-            <h2 className="panel-title">Stammdaten — rus_fleet</h2>
+            <h2 className="panel-title">Stammdaten — {RED_FLEET_STAMMDATEN}</h2>
             <p className="panel-subtitle">
-              Eine Zeile pro MMSI (Russische Ostseeflotte). Quelle: {rusFleetRegistry?.source ?? "…"}
+              Eine Zeile pro MMSI (Red Fleet). Quelle: {rusFleetRegistry?.source ?? "…"}
             </p>
             <DataTable
               columns={[

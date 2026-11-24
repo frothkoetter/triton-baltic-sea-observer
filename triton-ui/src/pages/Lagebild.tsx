@@ -26,6 +26,7 @@ import {
   type LagebildFilters,
 } from "../lib/lagebild-filters";
 import { LAGEBILD_KPI_DEFS } from "../lib/lagebild-kpis";
+import { BLUE_FLEET_LABEL, RED_FLEET_LABEL, TRACK_KIND_SHORT } from "../lib/fleet-labels";
 import { buildTracksQueryString, rowsToTracks, type PositionTrack } from "../lib/position-tracks";
 
 export type AisRow = {
@@ -303,7 +304,8 @@ export function LagebildPage({ filters }: Props) {
       {filtersActive(filters) && (
         <div className="filter-active-banner" role="status">
           Filter Rail aktiv — Karte, Tabelle und 24h-Tracks (
-          {filteredAis.length} AIS · {filteredGerman.length} DEU · {filteredRussian.length} RUS)
+          {filteredAis.length} AIS · {filteredGerman.length} {TRACK_KIND_SHORT.deu_fleet} ·{" "}
+          {filteredRussian.length} {TRACK_KIND_SHORT.rus_fleet})
         </div>
       )}
 
@@ -369,9 +371,9 @@ export function LagebildPage({ filters }: Props) {
             {key === "ais"
               ? `AIS Live (${filteredAis.length})`
               : key === "germanFleet"
-                ? `DEU Fleet (${filteredGerman.length})`
+                ? `${BLUE_FLEET_LABEL} (${filteredGerman.length})`
                 : key === "russianFleet"
-                  ? `RUS Fleet (${filteredRussian.length})`
+                  ? `${RED_FLEET_LABEL} (${filteredRussian.length})`
                   : key === "outliers"
                     ? `AIS Outliers (${filteredOutliers.length})`
                     : key === "gpsJammer"
@@ -417,14 +419,15 @@ export function LagebildPage({ filters }: Props) {
 
       <section className="panel" style={{ marginTop: 8 }}>
         <h2 className="panel-title">
-          Routen · Zeitachse (24h) — AIS, DEU &amp; RUS Fleet
+          Routen · Zeitachse (24h) — AIS, {BLUE_FLEET_LABEL} &amp; {RED_FLEET_LABEL}
         </h2>
         <p className="panel-sub" style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
           {layers.routeTracks ? (
             <>
               {tracksLoading ? "Loading tracks…" : `${trackLegend.total} routes`}
               {" · "}
-              AIS {trackLegend.aisN} · DEU {trackLegend.deN} · RUS {trackLegend.ruN}
+              AIS {trackLegend.aisN} · {TRACK_KIND_SHORT.deu_fleet} {trackLegend.deN} ·{" "}
+              {TRACK_KIND_SHORT.rus_fleet} {trackLegend.ruN}
               {" · "}
               source {trackSource}
             </>
@@ -438,8 +441,8 @@ export function LagebildPage({ filters }: Props) {
             {tracksRowCount != null ? ` (${tracksRowCount.toLocaleString("de-DE")} Zeilen)` : ""}
             — die Brücke stoppt am SQL-
             <code>LIMIT</code> bzw. <code>TRINO_MAX_ROWS</code>. Es können weniger Schiffe/Routen erscheinen
-            als in der Filter Rail gewählt. RUS: ohne frische{" "}
-            <span className="mono">rus_naval_fleet_positions</span> (NiFi) bleibt RUS 0.
+            als in der Filter Rail gewählt. {RED_FLEET_LABEL}: ohne frische{" "}
+            <span className="mono">rus_naval_fleet_positions</span> (NiFi) bleibt die Anzahl 0.
           </p>
         )}
         {layers.routeTracks && (

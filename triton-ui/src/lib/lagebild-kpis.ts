@@ -15,14 +15,14 @@ export const LAGEBILD_KPI_DEFS: LagebildKpiDef[] = [
   {
     key: "fleetUnits",
     title: "Flotte",
-    hint: "DE Marine — registrierte Einheiten",
+    hint: "Blue Fleet — registrierte Einheiten",
     detail:
-      "Anzahl Zeilen in defense.german_navy_fleet (Fregatten, Korvetten, U-Boote, …). Nicht identisch mit AIS- oder Karteneinheiten.",
+      "Anzahl Zeilen in defense.german_navy_fleet (Blue Fleet / Übung). Nicht identisch mit AIS- oder Karteneinheiten.",
   },
   {
     key: "personnel",
     title: "Personal",
-    hint: "Summe Besatzungsstärken (DE)",
+    hint: "Summe Besatzungsstärken (Blue Fleet)",
     detail:
       "SUM(besatzung) über german_navy_fleet — typische Crew pro Schiff laut Flottenstammdaten, kein Live-Bordpersonal.",
   },
