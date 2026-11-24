@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import {
   Bar,
   BarChart,
@@ -179,49 +179,106 @@ function provocateurBars(rows: Record<string, unknown>[] | undefined) {
 
 type AnalysenPageProps = { filters: LagebildFilters };
 
+type AnalysenLoadStep = {
+  key: string;
+  label: string;
+  done: boolean;
+};
+
 type AnalysenLoadProgress = {
   active: boolean;
-  completed: number;
-  total: number;
-  phase: "core" | "ais";
+  steps: AnalysenLoadStep[];
 };
 
 function AnalysenLoadBar({ progress }: { progress: AnalysenLoadProgress }) {
-  if (!progress.active || progress.total <= 0) return null;
-  const pct = Math.min(100, Math.round((progress.completed / progress.total) * 100));
-  const phaseLabel =
-    progress.phase === "ais" ? "AIS-Filter" : "Trino-Analysen";
+  if (!progress.active || progress.steps.length === 0) return null;
+  const completed = progress.steps.filter((s) => s.done).length;
+  const total = progress.steps.length;
+  const pct = Math.min(100, Math.round((completed / total) * 100));
+  const pending = progress.steps.filter((s) => !s.done).map((s) => s.label);
+  const currentLabel = pending[0] ?? progress.steps[progress.steps.length - 1]?.label ?? "";
   return (
     <div className="analysen-load-banner" role="status" aria-busy="true" aria-live="polite">
       <p className="analysen-load-title">
-        Load detailed data — <span className="mono">{phaseLabel}</span>
+        Load detailed data
+        {currentLabel ? (
+          <>
+            {" "}
+            — <span className="mono">{completed < total ? `Loading: ${currentLabel}` : "Complete"}</span>
+          </>
+        ) : null}
       </p>
       <div className="analysen-load-track">
         <div className="analysen-load-fill" style={{ width: `${pct}%` }} />
       </div>
+      <ul className="analysen-load-steps" aria-label="Load steps">
+        {progress.steps.map((step) => (
+          <li
+            key={step.key}
+            className={`analysen-load-step${step.done ? " analysen-load-step--done" : ""}`}
+          >
+            <span className="analysen-load-step-mark" aria-hidden>
+              {step.done ? "✓" : "·"}
+            </span>
+            {step.label}
+          </li>
+        ))}
+      </ul>
       <span className="analysen-load-meta mono">
-        {progress.completed}/{progress.total} · {pct}%
+        {completed}/{total} · {pct}%
       </span>
     </div>
   );
 }
 
+type LoadJob = {
+  key: string;
+  label: string;
+  run: () => Promise<unknown>;
+  apply: (r: unknown) => void;
+};
+
+async function runAnalysenLoadBatch(
+  gen: number,
+  loadGen: MutableRefObject<number>,
+  jobs: LoadJob[],
+  setLoad: Dispatch<SetStateAction<AnalysenLoadProgress>>
+) {
+  setLoad({
+    active: true,
+    steps: jobs.map((j) => ({ key: j.key, label: j.label, done: false })),
+  });
+  await Promise.all(
+    jobs.map(async (job) => {
+      try {
+        const result = await job.run();
+        if (gen !== loadGen.current) return;
+        job.apply(result);
+      } finally {
+        if (gen !== loadGen.current) return;
+        setLoad((prev) => {
+          const steps = prev.steps.map((s) =>
+            s.key === job.key ? { ...s, done: true } : s
+          );
+          const doneCount = steps.filter((s) => s.done).length;
+          return {
+            active: doneCount < steps.length,
+            steps,
+          };
+        });
+      }
+    })
+  );
+}
+
 export function AnalysenPage({ filters }: AnalysenPageProps) {
   const [tab, setTab] = useState<TabId>("fleet");
-  const [coreLoad, setCoreLoad] = useState<AnalysenLoadProgress>({
+  const [loadProgress, setLoadProgress] = useState<AnalysenLoadProgress>({
     active: false,
-    completed: 0,
-    total: 0,
-    phase: "core",
+    steps: [],
   });
-  const [aisLoad, setAisLoad] = useState<AnalysenLoadProgress>({
-    active: false,
-    completed: 0,
-    total: 0,
-    phase: "ais",
-  });
-  const coreLoadGen = useRef(0);
-  const aisLoadGen = useRef(0);
+  const loadGen = useRef(0);
+  const skipFilterAisLoad = useRef(true);
   const [fleetAnalytics, setFleetAnalytics] = useState<FleetAnalyticsPayload | null>(null);
   const [fleetRegistry, setFleetRegistry] = useState<QueryResult | null>(null);
   const [ais, setAis] = useState<QueryResult | null>(null);
@@ -236,105 +293,91 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
 
   const filterQs = aisAnalyticsQuery(filters);
 
+  const buildAisJobs = (qs: string): LoadJob[] => [
+    {
+      key: "ais-analytics",
+      label: "AIS analytics",
+      run: () => fetchJson<AisAnalyticsPayload>(`/api/analyses/ais-analytics${qs}`),
+      apply: (r) => setAisAnalytics(r as AisAnalyticsPayload),
+    },
+    {
+      key: "ais-live",
+      label: "AIS positions (latest)",
+      run: () => fetchJson<QueryResult>(`/api/ais${qs}`),
+      apply: (r) => setAis(r as QueryResult),
+    },
+  ];
+
   useEffect(() => {
-    const gen = ++coreLoadGen.current;
-    const jobs: { run: () => Promise<unknown>; apply: (r: unknown) => void }[] = [
+    const gen = ++loadGen.current;
+    const jobs: LoadJob[] = [
       {
+        key: "fleet-analytics",
+        label: `${BLUE_FLEET_LABEL} analytics`,
         run: () => fetchJson<FleetAnalyticsPayload>("/api/analyses/fleet-analytics"),
         apply: (r) => setFleetAnalytics(r as FleetAnalyticsPayload),
       },
       {
+        key: "fleet-registry",
+        label: `${BLUE_FLEET_LABEL} registry`,
         run: () => fetchJson<QueryResult>("/api/analyses/fleet"),
         apply: (r) => setFleetRegistry(r as QueryResult),
       },
       {
+        key: "buoy-analytics",
+        label: "Buoy analytics",
         run: () => fetchJson<BuoyAnalyticsPayload>("/api/analyses/buoy-analytics"),
         apply: (r) => setBuoyAnalytics(r as BuoyAnalyticsPayload),
       },
       {
+        key: "rus-fleet-analytics",
+        label: `${RED_FLEET_LABEL} analytics`,
         run: () => fetchJson<RusFleetAnalyticsPayload>("/api/analyses/rus-fleet-analytics"),
         apply: (r) => setRusFleetAnalytics(r as RusFleetAnalyticsPayload),
       },
       {
+        key: "rus-fleet-registry",
+        label: `${RED_FLEET_LABEL} registry`,
         run: () => fetchJson<QueryResult>("/api/analyses/rus-fleet"),
         apply: (r) => setRusFleetRegistry(r as QueryResult),
       },
       {
+        key: "outlier-analytics",
+        label: "AIS outlier analytics",
         run: () => fetchJson<VesselOutlierAnalyticsPayload>("/api/analyses/vessel-outlier-analytics"),
         apply: (r) => setOutlierAnalytics(r as VesselOutlierAnalyticsPayload),
       },
       {
+        key: "sanctioned-analytics",
+        label: "Sanctions analytics",
         run: () => fetchJson<SanctionedAnalyticsPayload>("/api/analyses/sanctioned-analytics"),
         apply: (r) => setSanctionedAnalytics(r as SanctionedAnalyticsPayload),
       },
       {
+        key: "restricted-analytics",
+        label: "Restricted areas analytics",
         run: () => fetchJson<RestrictedAnalyticsPayload>("/api/analyses/restricted-analytics"),
         apply: (r) => setRestrictedAnalytics(r as RestrictedAnalyticsPayload),
       },
       {
+        key: "observation-areas",
+        label: "Observation areas",
         run: () => fetchJson<QueryResult & { rows?: ObservationArea[] }>("/api/observation-areas"),
         apply: (r) =>
           setObservationAreas(((r as QueryResult & { rows?: ObservationArea[] }).rows ?? []) as ObservationArea[]),
       },
+      ...buildAisJobs(filterQs),
     ];
-    const total = jobs.length;
-    setCoreLoad({ active: true, completed: 0, total, phase: "core" });
-    void Promise.all(
-      jobs.map(async (job) => {
-        try {
-          const result = await job.run();
-          if (gen !== coreLoadGen.current) return;
-          job.apply(result);
-        } finally {
-          if (gen !== coreLoadGen.current) return;
-          setCoreLoad((prev) => {
-            const completed = prev.completed + 1;
-            return {
-              active: completed < prev.total,
-              completed,
-              total: prev.total,
-              phase: "core",
-            };
-          });
-        }
-      })
-    );
+    void runAnalysenLoadBatch(gen, loadGen, jobs, setLoadProgress);
   }, []);
 
   useEffect(() => {
-    const gen = ++aisLoadGen.current;
-    const jobs = [
-      {
-        run: () => fetchJson<AisAnalyticsPayload>(`/api/analyses/ais-analytics${filterQs}`),
-        apply: (r: AisAnalyticsPayload) => setAisAnalytics(r),
-      },
-      {
-        run: () => fetchJson<QueryResult>(`/api/ais${filterQs}`),
-        apply: (r: QueryResult) => setAis(r),
-      },
-    ];
-    const total = jobs.length;
-    setAisLoad({ active: true, completed: 0, total, phase: "ais" });
-    void Promise.all(
-      jobs.map(async (job) => {
-        try {
-          const result = await job.run();
-          if (gen !== aisLoadGen.current) return;
-          job.apply(result);
-        } finally {
-          if (gen !== aisLoadGen.current) return;
-          setAisLoad((prev) => {
-            const completed = prev.completed + 1;
-            return {
-              active: completed < prev.total,
-              completed,
-              total: prev.total,
-              phase: "ais",
-            };
-          });
-        }
-      })
-    );
+    if (skipFilterAisLoad.current) {
+      skipFilterAisLoad.current = false;
+      return;
+    }
+    const gen = ++loadGen.current;
+    void runAnalysenLoadBatch(gen, loadGen, buildAisJobs(filterQs), setLoadProgress);
   }, [filterQs]);
 
   const p = fleetAnalytics?.panels;
@@ -402,10 +445,7 @@ export function AnalysenPage({ filters }: AnalysenPageProps) {
 
   return (
     <div>
-      <div className="analysen-load-stack">
-        {coreLoad.active ? <AnalysenLoadBar progress={coreLoad} /> : null}
-        {aisLoad.active ? <AnalysenLoadBar progress={aisLoad} /> : null}
-      </div>
+      {loadProgress.active ? <AnalysenLoadBar progress={loadProgress} /> : null}
       <div className="analyses-tabs">
         {TABS.map((t) => (
           <button

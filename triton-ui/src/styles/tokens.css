@@ -1200,6 +1200,35 @@ body.lagebild-map-fs-active {
   color: var(--text-muted);
 }
 
+.analysen-load-steps {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  max-height: 72px;
+  overflow-y: auto;
+}
+
+.analysen-load-step {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.analysen-load-step--done {
+  color: var(--status-friendly);
+}
+
+.analysen-load-step-mark {
+  width: 1ch;
+  text-align: center;
+  opacity: 0.85;
+}
+
 .analyses-tabs {
   display: flex;
   gap: 4px;
