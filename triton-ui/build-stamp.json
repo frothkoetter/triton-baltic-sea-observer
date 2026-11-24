@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.21-ttyd-result-charts",
+  "build": "0.2.22-triton-intro-3d",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,

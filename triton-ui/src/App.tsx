@@ -11,6 +11,7 @@ import { LidarPage } from "./pages/Lidar";
 import { DasCablePage } from "./pages/DasCable";
 import { SitrepPage } from "./pages/Sitrep";
 import { SocmintPage } from "./pages/Socmint";
+import { introAlreadySeen, TritonIntroSplash } from "./components/TritonIntroSplash";
 
 type Zone = "lagebild" | "analysen" | "lidar" | "das" | "socmint" | "sitrep" | "agents" | "nba";
 
@@ -62,6 +63,7 @@ function isLiveFeed(source: string | undefined) {
 }
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(() => !introAlreadySeen());
   const [zone, setZone] = useState<Zone>(() => zoneFromHash());
 
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function App() {
 
   return (
     <div className="app-root">
+      {showIntro ? <TritonIntroSplash onEnter={() => setShowIntro(false)} /> : null}
       <div className="classification-banner">NATO UNCLASSIFIED // TRAINING — TRITON BALTIC SEA OBSERVER</div>
       <header className="app-header">
         <div className="app-brand">
