@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { PositionTrack, TrackKind } from "../lib/position-tracks";
 import { formatTrackTime, trackTimeRange } from "../lib/track-timeline";
+import { TRACK_KIND_LABEL } from "../lib/fleet-labels";
 import { RouteTrackMap } from "./RouteTrackMap";
 
 const MAX_OBJECTS = 10;
 
-const KIND_GROUP: Record<TrackKind, string> = {
-  ais: "AIS",
-  deu_fleet: "DEU Fleet",
-  rus_fleet: "RUS Fleet",
-};
+const KIND_GROUP: Record<TrackKind, string> = TRACK_KIND_LABEL;
 
 type Props = {
   tracks: PositionTrack[];
@@ -100,7 +97,7 @@ export function RouteTrackTimeline({ tracks, loading, truncated }: Props) {
   return (
     <div className="route-track-timeline">
       <p className="route-track-timeline-hint">
-        Bis zu {MAX_OBJECTS} Objekte aus AIS, DEU Fleet und RUS Fleet wählen. Mit dem Regler die Zeit
+        Bis zu {MAX_OBJECTS} Objekte aus AIS, Blue Fleet und Red Fleet wählen. Mit dem Regler die Zeit
         verschieben — die Route wird dynamisch bis zum gewählten Zeitpunkt gezeichnet.
         {truncated ? (
           <>

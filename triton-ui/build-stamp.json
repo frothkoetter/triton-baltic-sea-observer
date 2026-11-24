@@ -1,6 +1,6 @@
 {
   "version": "0.2.4",
-  "build": "0.2.24-live-snapshot-demo",
+  "build": "0.2.25-blue-red-fleet-labels",
   "features": {
     "dataModeFooterToggle": true,
     "agentConsole": true,
