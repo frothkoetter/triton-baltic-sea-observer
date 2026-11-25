@@ -7,6 +7,7 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `ShipSimulationRoutesGemini.py` | AIS — `ShipSimulationProcessor` |
 | `MarineShipSimulator.py` | German Navy AIS (`german_navy_missions` — base patrol return) |
 | `german_navy_mission_engine.py` | Mission logic for MarineShipSimulator |
+| `mission_target_track.py` | Dynamic target track, buoy formations, STANAG Einsatz tags |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
 | `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.3.1**) |

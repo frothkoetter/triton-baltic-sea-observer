@@ -71,6 +71,8 @@ DDL (einmalig auf bestehenden Tabellen): `cdw-analyse/sql/nba_schema_phase4_hitl
 
 Operator-Freigabe: [triton-ui](../../triton-ui/) → Tab **NBA HITL** → Approve schreibt `approved_coa_id`. Neue Incidents setzen `sitrep_link` für FLASH / SITREP-ESCALATED.
 
+**Mission Einsatz (Plan):** Nach Approve → `src/mission_dispatch.py` + [`data/mission_nato_playbook.json`](./data/mission_nato_playbook.json) (COA A–D Bojenformation, dynamische Zielverfolgung, STANAG-Tags). Details: [`../../docs/IMPLEMENTIERUNGSPLAN_MISSION_EINSATZ_SIMULATION.md`](../../docs/IMPLEMENTIERUNGSPLAN_MISSION_EINSATZ_SIMULATION.md) §4.4–4.6.
+
 ## Phase 5 — Decision record → Trino
 
 DDL: `cdw-analyse/sql/nba_schema_phase5_decision.sql`

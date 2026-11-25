@@ -111,7 +111,7 @@ flowchart TB
 
 ### 4.3 Auftrag aus COA + Incident
 
-Mapping (Version 1, in `mission_coa_mapping.json`):
+Mapping (Version 1, in `mission_nato_playbook.json` — siehe §4.5):
 
 | COA | Default `mission_type` | Parameter |
 | :---- | :---- | :---- |
@@ -129,10 +129,97 @@ target_longitude := nba_incidents.longitude
 
 Fallback: `alert_payload` JSON `$.geometry` oder Decision Record §3 `incident_location`.
 
+### 4.4 Dynamische Zielverfolgung (Target Track)
+
+**Problem:** Viele Ostsee-Alerts sind **bewegliche Kontakte** (Dark Vessel, Referenz-MMSI, Sonar-Korrelation) — ein statischer Incident-Punkt reicht für realistische Anfahrt nicht.
+
+| `target_mode` | Quelle | NiFi/CML-Verhalten |
+| :---- | :---- | :---- |
+| `STATIC_POINT` | `nba_incidents.latitude/longitude` | Einmalige Route / fester Bojenring |
+| `VESSEL_MMSI` | `alert_payload.target_mmsi` + Trino `ais_events_ice` | **Jeder Tick:** letzte Position → neu `intercept_tick` / Formation |
+| `CORRELATED_OBJECT` | `alert_payload.correlation_id` / Sonar-ID | Track über Bojen-`payload_object_correlationId` + Dead Reckon Fallback |
+
+**Zeitfenster:** `track_duration_min` aus NATO-Playbook pro COA (z. B. A=240 min, D=360 min). Nach Ablauf: `COMPLETING` → `COMPLETED`.
+
+**Implementierung:**
+
+| Modul | Pfad | Aufgabe |
+| :---- | :---- | :---- |
+| Track-Engine | `nifi-processors/upload/mission_target_track.py` | Dead Reckon, `formation_slots`, `intercept_tick`, STANAG-Footer |
+| Dispatch | `cai-workbench/next-best-action/src/mission_dispatch.py` | Order aus Incident + Playbook |
+| Samples | `nba_mission_track_samples` | Zeitreihe für Mission-Control-Karte |
+
+**Ablauf pro Simulator-Tick:**
+
+```mermaid
+sequenceDiagram
+  participant T as Trino ais_events_ice
+  participant E as MissionOrderExecutor
+  participant M as MarineShipSimulator
+  participant B as BojenSensorSimulator
+  participant S as STANAGSimulator
+  E->>T: SELECT lat/lon/cog/sog WHERE mmsi=target (optional)
+  E->>E: INSERT nba_mission_track_samples
+  E->>M: intercept_tick → RouteWaypoints
+  E->>B: formation_slots + Detections auf correlationId
+  E->>S: POSREP/SPOT mit Einsatz-Tag
+```
+
+**Anfahrt (Surface):** `approach` aus Playbook — `INTERCEPT` (COA A/C), `DELAYED_INTERCEPT` (B, größerer Standoff), `SHALLOW_INTERCEPT` (C, niedrige Fahrt). Geschwindigkeit `speed_cap_kn`; On-Station-Abstand `standoff_on_station_km`.
+
+**Bojen:** Physische Positionen werden beim **Deploy** gesetzt; während **TRACK** ändern sich `payload_object_*` und `correlationId` zur **aktuellen Zielschätzung** (MDA-konform: verteilte Sensoren melden denselben Contact).
+
+### 4.5 NATO-Playbook: Bojen-Deployment pro COA A–D
+
+**Quelle:** [`cai-workbench/next-best-action/data/mission_nato_playbook.json`](../cai-workbench/next-best-action/data/mission_nato_playbook.json) — verknüpft mit [`rules_playbook.json`](../cai-workbench/next-best-action/data/rules_playbook.json) (`playbook_rule_ids`).
+
+| COA | Formation | Bojen | Sensorprofil | Surface | STANAG-Profil |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| **A** | `LEADING_SEMICIRCLE` | 6 | Multidomain MAD + acoustic proxy | 1× K130, INTERCEPT 6 km | `watch_section` |
+| **B** | `STANDOFF_RING` | 4 | EO-Cue MAD, großer Ring | 2× Fregatte, DELAYED 15 km | `routine_patrol` |
+| **C** | `SHALLOW_TRAIL` | 5 | MAD trail + ALB-Korrelation | 1× K130, SHALLOW 4 km | `snap_exercise` |
+| **D** | `PASSIVE_DENSE_RING` | 8 | Nur passive MAD (MC 362) | **keine** Einheit | `hq_pulse` |
+
+`expand_buoy_roles(coa_id)` liefert Slots mit `deployment_role`, `payload_object_type`, STANAG-Flag pro Slot.
+
+**NiFi `BojenSensorSimulator` Erweiterung (Phase 1b):**
+
+- Modus `MISSION_PLAYBOOK`: liest `parameters_json.buoys` + live Target → `formation_slots()`
+- FlowFile-Attribute: `mission.id`, `mission.buoy.role`, `mission.playbook.profile`
+- Jeder Datensatz: `buoyid` = `MAD-{einsatz_short}-{seq}`, Spalten `mission_id`, `einsatz_id`, `deployment_role`, `playbook_sensor_profile` (DDL §5)
+
+### 4.6 STANAG-Meldungen mit Einsatz-ID und Bojen-Sensor
+
+**Anforderung:** Jede missionsbezogene Meldung ist in CDW filterbar und im Volltext nachvollziehbar.
+
+| Feld | `maritime_surveillance_reports` | Inhalt |
+| :---- | :---- | :---- |
+| `mission_id` / `einsatz_id` | neu (DDL) | Gleicher UUID wie `nba_mission_orders` |
+| `buoy_id` | neu | `MAD-MSN-…` bei SPOT/INTREP aus Bojen |
+| `target_correlation_id` | neu | Sonar/MDA-Kette |
+| `message_id` | bestehend | Präfix optional `NBA-MSN/` |
+| `message_text` / `body` | bestehend + Footer | `// EINSATZ {mission_id} BUOY {buoy_id} CORR {correlation_id}` |
+
+**Engine:** `stanag_message_engine.py` / `mission_target_track.tag_stanag_message_body()` — bei Traffic Profile `nba_mission` oder FlowFile-Attribut `mission.id`:
+
+- `message_subject`: `NBA-MSN/{mission_id_short} — SPOT …`
+- Footer in `message_text` (View `marine_messages` parst DTG unverändert)
+
+**NiFi `STANAGSimulator.py`:** Properties `Mission ID`, `Buoy ID`, `Correlation ID` (optional aus upstream Mission-PG).
+
+**Events:** `nba_mission_events.event_type = STANAG_SENT` mit `payload_json.message_id`, `buoy_id`.
+
+### 4.7 Verknüpfung Playbook ↔ HITL
+
+1. Operator wählt COA **A–D** in HITL (bereits `approved_coa_id`).
+2. `build_mission_order(incident)` mergt Playbook + `alert_payload` (MMSI, COG, SOG).
+3. Decision Record **§11_mission_execution** enthält: `playbook_version`, `target_mode`, `track_duration_min`, `buoy_roles[]`, `stanag_profile`.
+4. Bei Widerspruch Playbook vs. `rules_playbook` (z. B. FLASH + COA B schwer): UI-Warnung, kein Auto-Deploy ohne Override.
+
 ## 5. Trino-Schema (Neu)
 
-**Datei:** `cdw-analyse/sql/nba_schema_mission_execution.sql`  
-**Anwenden:** `python3 run_trino_ddl.py sql/nba_schema_mission_execution.sql --continue`
+**Dateien:** `cdw-analyse/sql/nba_schema_mission_tracking.sql` (inkl. Track-Samples + STANAG/Buoy-Tags)  
+**Anwenden:** `python3 run_trino_ddl.py sql/nba_schema_mission_tracking.sql --continue`
 
 ### 5.1 `nba_mission_orders` (Aufträge)
 
@@ -293,7 +380,7 @@ Empfehlung Showcase: **A** (Audit klarer); Demo-Video: **B**.
 
 | Aufgabe | Ort |
 | :---- | :---- |
-| COA → mission_type | `cai-workbench/next-best-action/src/mission_dispatch.py` (neu) |
+| COA + Playbook + Target | `cai-workbench/next-best-action/src/mission_dispatch.py` |
 | Nach Approve (optional) | `hitl.py` / Webhook in `triton-ui/server/nba.js` |
 | Decision Record §11 | `decision_record.py`: `11_mission_execution` mit `mission_id`, geplantem Typ |
 | Tests | `tests/test_mission_dispatch.py`, `tests/test_greifswald_scenario.py` erweitern |
@@ -309,23 +396,24 @@ Empfehlung Showcase: **A** (Audit klarer); Demo-Video: **B**.
 | 0.3 | UI Mission Control read-only (Liste + Karte Sample) | `#mission` lädt |
 | 0.4 | Doku-Verlinkung README | — |
 
-### Phase 1 — UI-Auslösung + Bojenring
+### Phase 1 — UI-Auslösung + Playbook-Bojen + Track-Samples
 
 | # | Aufgabe | Akzeptanz |
 | :-- | :---- | :---- |
-| 1.1 | `POST /api/missions/activate` nach Approved Incident | Zeile in `nba_mission_orders` |
-| 1.2 | `BojenSensorSimulator` MISSION_RING | ≥3 Zeilen `buoy_data` um Target |
-| 1.3 | `MissionOrderExecutor` MVP (nur BUOY) | Status ACTIVE → COMPLETED |
-| 1.4 | Events `BUOY_DEPLOYED`, `COMPLETED` | UI-Zeitleiste |
+| 1.1 | `POST /api/missions/activate` → `build_mission_order` | COA A–D korrektes `parameters_json` |
+| 1.2 | `BojenSensorSimulator` `MISSION_PLAYBOOK` | Formation je COA; `mission_id` auf `buoy_data` |
+| 1.3 | `MissionOrderExecutor` MVP + `mission_target_track` | `nba_mission_track_samples` bei MMSI-Track |
+| 1.4 | Events `BUOY_DEPLOYED`, `TARGET_REFRESH` | UI-Zeitleiste |
+| 1.5 | Unit `test_mission_dispatch`, `test_mission_target_track` | grün |
 
-### Phase 2 — Marineschiff + STANAG
+### Phase 2 — Marineschiff + STANAG-Tags
 
 | # | Aufgabe | Akzeptanz |
 | :-- | :---- | :---- |
-| 2.1 | `mission_goto` in Mission Engine | MMSI bewegt sich auf Wasser zum Target |
-| 2.2 | `ON_STATION` + STANAG-Burst | Einträge in `marine_messages` |
-| 2.3 | UI Live-Geo Schiff | Marker folgt Trino |
-| 2.4 | COA-Mapping COMBINED für A | Bojen + Schiff parallel |
+| 2.1 | `intercept_tick` in Marine-State | Schiff folgt beweglichem Target auf Wasser |
+| 2.2 | STANAG Footer + Spalten `mission_id`, `buoy_id` | Filter in Trino auf Einsatz |
+| 2.3 | UI Live-Geo: Target-Trail + Schiff + Bojen | Mission Control Karte |
+| 2.4 | COA A `COMBINED` + `track_duration_min` | Ende nach Playbook-Zeit |
 
 ### Phase 3 — Härtung & Integration
 
