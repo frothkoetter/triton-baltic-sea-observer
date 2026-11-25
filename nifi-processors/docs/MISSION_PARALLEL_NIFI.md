@@ -19,7 +19,7 @@ Trino is authoritative for order status; runtime JSON holds **bindings** (MMSI/b
 |-----------|----------------|------|
 | `MissionOrderExecutor.py` | **Yes** | Iterates all `ACTIVE` records; cap `Max Active Missions` |
 | `mission_parallel.py` | **Yes** | MMSI/buoy allocation sets; no global single-mission flag |
-| `BojenSensorSimulator.py` | **Was: No** | Global `buoy_counter` → use `mission.buoy.ids` / `buoy_id_for_mission()` on FlowFile |
+| `BojenSensorSimulator.py` | **Yes** (v1.3.0) | `Deployment Mode=MISSION_PLAYBOOK`; mission-scoped IDs via runtime store |
 | `MarineShipSimulator.py` | **Partial** | One state file; parallel via distinct MMSI per mission (`allocate_surface_units`) |
 | `german_navy_mission_engine.py` | **Partial** | Default patrol unrelated; NBA sets `activeMissionIds` per ship |
 | `STANAGSimulator.py` | **Yes** | One batch per FlowFile; pass `mission.id` + `mission.buoy.ids` attributes |
@@ -28,14 +28,17 @@ Trino is authoritative for order status; runtime JSON holds **bindings** (MMSI/b
 ## Recommended flow pattern
 
 ```text
-GenerateFlowFile / QueryDatabaseTable (QUEUED orders)
-  → MissionOrderExecutor  (updates runtime, emits missions[])
-  → SplitJson / ExecuteScript per mission
-      → RouteOnAttribute (mission_type)
-         → BojenSensorSimulator (MISSION_PLAYBOOK, attrs mission.id)
-         → MarineShipSimulator (patch via sidecar or pre-step)
-         → STANAGSimulator (mission.id, buoy id)
+GenerateFlowFile / QueryDatabaseTable (QUEUED orders JSON array)
+  → MissionOrderExecutor  (runtime store; bundle {missions:[]})
+  → MissionBundleSplit  (NDJSON one line per mission)
+  → SplitText (\\n)  → **N parallel paths**
+      ├→ UpdateAttribute (copy attrs from JSON — optional)
+      ├→ BojenSensorSimulator (Deployment Mode=MISSION_PLAYBOOK)
+      ├→ MarineShipSimulator (NBA intercept from runtime store)
+      └→ STANAGSimulator (tags mission.id from incoming attrs)
 ```
+
+**Processors:** `MissionOrderExecutor.py`, `MissionBundleSplit.py`, `BojenSensorSimulator.py` 1.3.0, `MarineShipSimulator.py` 1.8.0, `STANAGSimulator.py` 2.1.0.
 
 **Do not** merge all missions into one attribute set on a single FlowFile unless downstream splits by `mission.id`.
 

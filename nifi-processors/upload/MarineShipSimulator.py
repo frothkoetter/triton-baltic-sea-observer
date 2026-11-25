@@ -21,6 +21,8 @@ from german_navy_mission_engine import (
     update_german_navy_movements,
 )
 from marine_fleet_registry import MARINESHIP_STATE_FILE, MARINE_POSITION_DECIMALS, NAME_BY_MMSI
+from mission_marine_nba import apply_nba_intercept_ticks
+from mission_parallel import apply_mission_bindings_to_ships, load_runtime_store
 
 STATE_FILE = MARINESHIP_STATE_FILE
 VERSION_STATE_FILE = "/tmp/marineship_version_state.json"
@@ -62,7 +64,7 @@ class MarineShipSimulator(FlowFileTransform):
         implements = ["org.apache.nifi.python.processor.FlowFileTransform"]
 
     class ProcessorDetails:
-        version = "1.7.0"
+        version = "1.8.0"
         description = (
             "German Navy (german_navy_fleet): depart naval bases (Kiel, Wilhelmshaven, "
             "Eckernförde, Warnemünde), patrol Baltic / German coast 1–4 weeks, "
@@ -119,7 +121,10 @@ class MarineShipSimulator(FlowFileTransform):
                 operational_status_options=OPERATIONAL_STATUS_OPTIONS,
                 system_status_options=SYSTEM_STATUS_OPTIONS,
             )
+            mission_store = load_runtime_store()
             ships = update_german_navy_movements(ships, rng=random.Random())
+            ships = apply_mission_bindings_to_ships(ships, mission_store)
+            ships = apply_nba_intercept_ticks(ships, mission_store)
             save_german_navy_state(ships)
 
             output_content = io.StringIO()

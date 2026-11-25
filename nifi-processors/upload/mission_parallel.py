@@ -299,6 +299,26 @@ def tick_runtime_elapsed(store: MissionRuntimeStore, tick_minutes: float = 1.0) 
             rec.status = "COMPLETING"
 
 
+def bundle_to_ndjson_lines(bundle: dict[str, Any]) -> list[str]:
+    """Split executor bundle into NDJSON lines (one mission per line)."""
+    missions = bundle.get("missions") or []
+    lines: list[str] = []
+    for m in missions:
+        if isinstance(m, dict):
+            lines.append(
+                json.dumps(
+                    {
+                        "mission_id": m.get("mission.id", ""),
+                        "attrs": m,
+                        "target_lat": m.get("mission.target.lat"),
+                        "target_lon": m.get("mission.target.lon"),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+    return lines
+
+
 def orders_to_flowfile_attributes(record: MissionRuntimeRecord) -> dict[str, str]:
     """NiFi downstream attributes — one FlowFile per mission per dispatch tick."""
     return {

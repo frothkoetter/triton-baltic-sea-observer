@@ -17,6 +17,10 @@ from faker import Faker # Importiert die Faker-Bibliothek
 
 from baltic_water_placement import is_baltic_water, sample_water_near_harbor
 
+from mission_buoy_playbook import build_mission_buoy_records, records_to_ndjson
+from mission_nifi_flowfile import flowfile_attr_map, parse_mission_context
+from mission_parallel import load_runtime_store
+
 # --- Liste der NATO Marine Häfen aus der Quelle [12-14] ---
 HARBORS = [
     {"name": "Kiel", "Latitude": 54.3233, "Longitude": 10.1228},
@@ -199,10 +203,10 @@ class BuoySensorSimulator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '1.2.8'
+        version = '1.3.0'
         description = (
-            'Simulierte MAD-Bojen-Sensordaten; Bojenpositionen auf Ostsee-Wasser '
-            '(baltic_water_placement), nahe NATO-Häfen.'
+            'Simulierte MAD-Bojen-Sensordaten; RANDOM_HARBORS oder MISSION_PLAYBOOK '
+            '(NBA parallel missions, mission-scoped buoy IDs).'
         )
         dependencies = ['Faker==25.0.0', 'numpy', 'pyproj>=3.6.0']
 
@@ -215,10 +219,18 @@ class BuoySensorSimulator(FlowFileTransform):
         required=False
     )
 
+    DEPLOYMENT_MODE = PropertyDescriptor(
+        name="Deployment Mode",
+        description="RANDOM_HARBORS: legacy demo; MISSION_PLAYBOOK: NBA mission attrs / runtime store.",
+        allowable_values=["RANDOM_HARBORS", "MISSION_PLAYBOOK"],
+        default_value="RANDOM_HARBORS",
+        required=True,
+    )
+
     def __init__(self, **kwargs):
         kwargs.pop("jvm", None)
         super().__init__(**kwargs)
-        self.descriptors = [self.NUM_RECORDS]
+        self.descriptors = [self.NUM_RECORDS, self.DEPLOYMENT_MODE]
         self.fake = Faker()
         self.buoy_counter = 0
 
@@ -301,12 +313,67 @@ class BuoySensorSimulator(FlowFileTransform):
 
         return obj_data, obj_example
 
+    def _transform_mission_playbook(self, context, flowFile):
+        ctx = parse_mission_context(flowFile)
+        mission_id = ctx.get("mission_id") or flowfile_attr_map(flowFile).get("mission.id")
+        if not mission_id:
+            raise ValueError("MISSION_PLAYBOOK requires mission.id on FlowFile or JSON body")
+
+        store = load_runtime_store()
+        rec = store.missions.get(mission_id)
+        buoy_ids = ctx.get("buoy_ids") or (rec.buoy_ids() if rec else [])
+        if not buoy_ids:
+            num_records_str = context.getProperty(self.NUM_RECORDS.name).getValue()
+            count = int(num_records_str) if num_records_str and num_records_str.isdigit() else 1
+            from mission_parallel import buoy_id_for_mission
+
+            buoy_ids = [buoy_id_for_mission(mission_id, i) for i in range(1, count + 1)]
+
+        params = (rec.parameters_json if rec else {}) or {}
+        buoys_cfg = params.get("buoys") or {}
+        formation_key = buoys_cfg.get("formation", "PASSIVE_DENSE_RING")
+        formations = params.get("formations") or {}
+
+        target_lat = float(ctx.get("target_lat") or (rec.target_latitude if rec else 54.5))
+        target_lon = float(ctx.get("target_lon") or (rec.target_longitude if rec else 11.0))
+
+        output_records = build_mission_buoy_records(
+            mission_id=mission_id,
+            target_lat=target_lat,
+            target_lon=target_lon,
+            buoy_ids=buoy_ids,
+            formations_spec=formations,
+            formation_key=formation_key,
+            buoy_roles=None,
+            object_examples=OBJECT_TYPES_EXAMPLES,
+            correlation_id=rec.target_correlation_id if rec else None,
+            sensor_profile=str(buoys_cfg.get("sensor_profile", "MAD")),
+        )
+
+        attrs = {
+            "format": "json",
+            "mad.simulation": "true",
+            "mad.deployment.mode": "MISSION_PLAYBOOK",
+            "mission.id": mission_id,
+            "mission.buoy.ids": ",".join(buoy_ids),
+            "mission.buoy.count": str(len(output_records)),
+        }
+        return FlowFileTransformResult(
+            contents=records_to_ndjson(output_records).encode("utf-8"),
+            attributes=attrs,
+            relationship="success",
+        )
+
     def transform(self, context, flowFile):
         """
         Die Hauptmethode des NiFi-Prozessors. Sie ignoriert das eingehende FlowFile
         und generiert eine konfigurierbare Anzahl von neuen MAD-Bojen-Datensätzen.
         """
         try:
+            mode = context.getProperty(self.DEPLOYMENT_MODE.name).getValue() or "RANDOM_HARBORS"
+            if mode == "MISSION_PLAYBOOK":
+                return self._transform_mission_playbook(context, flowFile)
+
             output_records = []
 
             num_records_str = context.getProperty(self.NUM_RECORDS.name).getValue()

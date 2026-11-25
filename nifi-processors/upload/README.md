@@ -10,6 +10,10 @@ Sync **this entire directory** to Cloudera Data Flow / NiFi `python/extensions/`
 | `mission_target_track.py` | Dynamic target track, buoy formations, STANAG Einsatz tags |
 | `mission_parallel.py` | Multi-mission runtime, MMSI/buoy allocation |
 | `MissionOrderExecutor.py` | NiFi: activate parallel QUEUED orders, fan-out per mission |
+| `MissionBundleSplit.py` | NiFi: bundle → NDJSON lines for SplitText parallel routes |
+| `mission_buoy_playbook.py` | MAD buoy record builder (playbook formations) |
+| `mission_marine_nba.py` | Intercept tick for allocated MMSIs |
+| `mission_nifi_flowfile.py` | FlowFile attribute helpers |
 | `LidarSimulator.py` | LiDAR LAS generator |
 | `BojenSensorSimulator.py` | Buoy / MAD sensor sim |
 | `DasCableAcousticSimulator.py` | DAS Seekabel-Akustik — HDF5 Spektrogramme (**1.3.1**) |

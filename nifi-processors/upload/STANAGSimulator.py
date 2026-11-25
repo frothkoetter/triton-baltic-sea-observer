@@ -18,12 +18,16 @@ from marine_fleet_registry import (
 from stanag_message_engine import (
     DEFAULT_EXERCISE_NAMES,
     TRAFFIC_PROFILES,
+    StanagMessage,
     batch_summary_attributes,
     generate_stanag_batch,
     render_ndjson,
     render_text_bundle,
     resolve_message_count,
 )
+from mission_nifi_flowfile import flowfile_attr_map
+from mission_target_track import tag_stanag_message_body
+from dataclasses import replace
 
 
 class StanagMessageGenerator(FlowFileTransform):
@@ -36,7 +40,7 @@ class StanagMessageGenerator(FlowFileTransform):
         implements = ['org.apache.nifi.python.processor.FlowFileTransform']
 
     class ProcessorDetails:
-        version = '2.0.0'
+        version = '2.1.0'
         description = (
             'NATO-style operational messaging (SITREP, POSREP, FRAGO, WMSG, SPOT, '
             'SOCINT/INTREP, LOGREQ, MEDREP, inter-unit PIM). SOCINT lines reuse '
@@ -209,6 +213,25 @@ class StanagMessageGenerator(FlowFileTransform):
                 legacy_simple=legacy_simple,
             )
 
+            ff_attrs = flowfile_attr_map(flowFile)
+            mission_id = ff_attrs.get("mission.id", "")
+            buoy_id = (ff_attrs.get("mission.buoy.ids") or "").split(",")[0].strip()
+            if mission_id:
+                tagged: list[StanagMessage] = []
+                for m in messages:
+                    new_text = tag_stanag_message_body(
+                        m.message_text,
+                        mission_id=mission_id,
+                        buoy_id=buoy_id or None,
+                    )
+                    new_subject = m.message_subject
+                    if not new_subject.startswith("NBA-MSN"):
+                        new_subject = f"NBA-MSN/{mission_id[:8]} {new_subject}"
+                    tagged.append(
+                        replace(m, message_text=new_text, message_subject=new_subject, body=m.body)
+                    )
+                messages = tagged
+
             position_source = "registry_fallback"
             if prefer_ndjson and content:
                 text = content.decode("utf-8", errors="replace")
@@ -230,12 +253,16 @@ class StanagMessageGenerator(FlowFileTransform):
             attrs = {
                 "format": fmt,
                 "message.type": "stanag_report",
-                "stanag.version": "2.0.0",
+                "stanag.version": "2.1.0",
                 "stanag.output.format": output_format,
                 "stanag.traffic.profile": profile,
                 "marine.position.source": position_source,
                 "marine.mmsi.list": ",".join(mmsi_list),
             }
+            if mission_id:
+                attrs["mission.id"] = mission_id
+                if buoy_id:
+                    attrs["mission.buoy.id"] = buoy_id
             attrs.update(batch_summary_attributes(messages))
 
             return FlowFileTransformResult(
