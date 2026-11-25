@@ -118,6 +118,7 @@ Simulation-backed **Next Best Action** on the same `defense` schema and NiFi sim
 | Implementation plan | [`cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md`](./cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) |
 | Mission Planning + SAP D&S | [`docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) |
 | NiFi Simulator-Steuerung | [`docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md`](./docs/IMPLEMENTIERUNGSPLAN_SIM_CONTROL.md) |
+| Mission Einsatz (NBA → NiFi → Mission Control UI) | [`docs/IMPLEMENTIERUNGSPLAN_MISSION_EINSATZ_SIMULATION.md`](./docs/IMPLEMENTIERUNGSPLAN_MISSION_EINSATZ_SIMULATION.md) |
 | C2SIM (SISO-STD-019) + Triton | [`docs/IMPLEMENTIERUNGSPLAN_C2SIM_TRITON.md`](./docs/IMPLEMENTIERUNGSPLAN_C2SIM_TRITON.md) |
 | Business rules + Trino | [`docs/ONTOLOGY_BUSINESS_RULES.md`](./docs/ONTOLOGY_BUSINESS_RULES.md) |
 | Iceberg snapshots (Trino) | [`cdw-analyse/README_iceberg_snapshots_trino.md`](./cdw-analyse/README_iceberg_snapshots_trino.md) |

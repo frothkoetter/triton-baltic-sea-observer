@@ -1,7 +1,7 @@
 # Implementierungsplan: Aktive Steuerung der NiFi-Simulatoren (Simulation Control)
 
 Stand: November 2026 · Repository: **Triton Baltic Sea Observer**  
-Verwandt: [NiFi Processors](../nifi-processors/README.md) · [NBA UC2](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) · [SAP MP](IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) · [LiDAR Disk](../nifi-processors/docs/LIDAR_NIFI_DISK.md)
+Verwandt: [NiFi Processors](../nifi-processors/README.md) · [NBA UC2](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) · [Mission Einsatz (NBA → NiFi)](IMPLEMENTIERUNGSPLAN_MISSION_EINSATZ_SIMULATION.md) · [SAP MP](IMPLEMENTIERUNGSPLAN_MISSION_SAP.md) · [LiDAR Disk](../nifi-processors/docs/LIDAR_NIFI_DISK.md)
 
 ## 1. Ziele und Abgrenzung
 
