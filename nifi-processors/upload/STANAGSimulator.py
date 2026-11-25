@@ -227,8 +227,18 @@ class StanagMessageGenerator(FlowFileTransform):
                     new_subject = m.message_subject
                     if not new_subject.startswith("NBA-MSN"):
                         new_subject = f"NBA-MSN/{mission_id[:8]} {new_subject}"
+                    new_body = tag_stanag_message_body(
+                        m.body,
+                        mission_id=mission_id,
+                        buoy_id=buoy_id or None,
+                    )
                     tagged.append(
-                        replace(m, message_text=new_text, message_subject=new_subject, body=m.body)
+                        replace(
+                            m,
+                            message_text=new_text,
+                            message_subject=new_subject,
+                            body=new_body,
+                        )
                     )
                 messages = tagged
 
