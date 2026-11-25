@@ -58,3 +58,12 @@ ALTER TABLE maritime_surveillance_reports ADD COLUMN IF NOT EXISTS mission_id va
 ALTER TABLE maritime_surveillance_reports ADD COLUMN IF NOT EXISTS einsatz_id varchar;
 ALTER TABLE maritime_surveillance_reports ADD COLUMN IF NOT EXISTS buoy_id varchar;
 ALTER TABLE maritime_surveillance_reports ADD COLUMN IF NOT EXISTS target_correlation_id varchar;
+
+CREATE TABLE IF NOT EXISTS nba_mission_asset_allocations (
+    mission_id varchar COMMENT 'NBA mission UUID',
+    asset_type varchar COMMENT 'surface_unit, buoy_slot',
+    asset_key varchar COMMENT 'MMSI or buoy_id',
+    role varchar COMMENT 'Korvetten, MAD_LEAD, …',
+    bound_at timestamp(6) COMMENT 'UTC bind time',
+    released_at timestamp(6) COMMENT 'UTC when mission ended'
+) COMMENT 'Prevents double-booking assets across parallel missions';

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import unittest
 
-from src.mission_dispatch import build_mission_order, expand_buoy_roles, resolve_target_from_incident
+from src.mission_dispatch import (
+    build_mission_order,
+    expand_buoy_roles,
+    resolve_target_from_incident,
+    validate_order_against_active,
+)
 
 
 class TestMissionDispatch(unittest.TestCase):
@@ -34,6 +39,19 @@ class TestMissionDispatch(unittest.TestCase):
         self.assertEqual(order.mission_type, "BUOY_TRACK_ONLY")
         self.assertEqual(order.parameters_json["surface"]["dispatch_units"], 0)
         self.assertEqual(len(expand_buoy_roles("D")), 8)
+
+    def test_parallel_cap_same_flow_uuid(self):
+        incident = {
+            "flow_uuid": "same-flow",
+            "latitude": 54.0,
+            "longitude": 11.0,
+            "approved_coa_id": "A",
+        }
+        order = build_mission_order(incident)
+        active = [{"flow_uuid": "same-flow", "status": "ACTIVE", "parameters_json": order.parameters_json}]
+        ok, reasons = validate_order_against_active(order, active)
+        self.assertFalse(ok)
+        self.assertTrue(any("incident" in r for r in reasons))
 
     def test_static_fallback_without_mmsi(self):
         from src.mission_dispatch import load_playbook

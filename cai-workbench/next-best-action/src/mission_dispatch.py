@@ -6,7 +6,7 @@ import json
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 _DATA = Path(__file__).resolve().parent.parent / "data" / "mission_nato_playbook.json"
 
@@ -196,3 +196,59 @@ def expand_buoy_roles(coa_id: str, playbook: dict[str, Any] | None = None) -> li
                 }
             )
     return out
+
+
+def parallelism_limits(playbook: dict[str, Any] | None = None) -> dict[str, int | bool]:
+    pb = playbook or load_playbook()
+    par = pb.get("parallelism") or {}
+    return {
+        "max_active_missions": int(par.get("max_active_missions", 8)),
+        "max_surface_units_total": int(par.get("max_surface_units_total", 4)),
+        "max_buoy_slots_total": int(par.get("max_buoy_slots_total", 32)),
+        "allow_same_flow_uuid_parallel": bool(par.get("allow_same_flow_uuid_parallel", False)),
+    }
+
+
+def estimate_resource_needs(order: MissionOrderDraft) -> tuple[int, int]:
+    surface = int((order.parameters_json.get("surface") or {}).get("dispatch_units") or 0)
+    buoys = int((order.parameters_json.get("buoys") or {}).get("count") or 0)
+    return surface, buoys
+
+
+def validate_order_against_active(
+    order: MissionOrderDraft,
+    active_orders: Iterable[dict[str, Any]],
+    playbook: dict[str, Any] | None = None,
+) -> tuple[bool, list[str]]:
+    """UI/CML check before INSERT — mirrors NiFi mission_parallel caps."""
+    limits = parallelism_limits(playbook)
+    reasons: list[str] = []
+    active = [
+        o
+        for o in active_orders
+        if str(o.get("status", "")).upper() not in ("COMPLETED", "ABORTED", "FAILED")
+    ]
+    if len(active) >= int(limits["max_active_missions"]):
+        reasons.append("max_active_missions reached")
+
+    surface = buoys = 0
+    for o in active:
+        p = o.get("parameters_json")
+        if isinstance(p, str):
+            p = json.loads(p)
+        surface += int((p or {}).get("surface", {}).get("dispatch_units") or 0)
+        buoys += int((p or {}).get("buoys", {}).get("count") or 0)
+
+    need_s, need_b = estimate_resource_needs(order)
+    if surface + need_s > int(limits["max_surface_units_total"]):
+        reasons.append("max_surface_units_total exceeded")
+    if buoys + need_b > int(limits["max_buoy_slots_total"]):
+        reasons.append("max_buoy_slots_total exceeded")
+
+    if not limits["allow_same_flow_uuid_parallel"]:
+        for o in active:
+            if o.get("flow_uuid") == order.flow_uuid:
+                reasons.append("incident already has active mission")
+                break
+
+    return (not reasons, reasons)

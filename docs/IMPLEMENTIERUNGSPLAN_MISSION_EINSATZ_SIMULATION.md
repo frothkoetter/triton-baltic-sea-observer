@@ -11,6 +11,7 @@ Verwandt: [NBA UC2](../cai-workbench/next-best-action/IMPLEMENTIERUNGSPLAN.md) �
 | **Zwei Einsatzprofile (Showcase)** | **(1)** Bojen-/Sensorcluster im Umkreis des Ziels · **(2)** Marineschiff-Einheit fährt zum Auftragsziel |
 | **Beobachtbarkeit** | Ereignisse landen in bekannten **CDW-Tabellen** (`buoy_data`, `ais_events_ice` / `marine_vessel_status`, ggf. `maritime_surveillance_reports` / STANAG) und in neuen **Mission-Control-Tabellen** in **Trino/Iceberg** |
 | **UI Mission Control** | Neuer Tab: Missionen listen, Status/Zeitleiste, Karte mit Bojen- oder Schiffspositionen |
+| **Parallele Einsätze** | Mehrere `mission_id` gleichzeitig `ACTIVE` — getrennte Assets, getrennte CDW-Tags, NiFi-Fan-out pro Mission |
 
 | Nicht in Scope (Phase 0–2) | Begründung |
 | :---- | :---- |
@@ -81,7 +82,7 @@ flowchart TB
 **Prinzipien**
 
 1. **Trino ist Auftragsspeicher** (Order of Record), nicht `/tmp` allein.
-2. **Ein `mission_id` pro aktivierter Einsatz**; Verknüpfung `flow_uuid` (NBA-Incident) bleibt 1:n möglich (Re-Deploy).
+2. **Eine `mission_id` pro Einsatz**; **mehrere** Missionen dürfen parallel `ACTIVE` sein; `flow_uuid` → 1:n nur nach `COMPLETED` (siehe §4.8).
 3. **Mission Target** = WGS84 aus Incident; optional `target_radius_km` und `coa_id` bestimmen **mission_type** und Parameter.
 4. NiFi **pollt** neue Orders (`status = QUEUED`) oder empfängt **HTTP POST** (Ingress) — Produktion: Poll + Iceberg.
 
@@ -216,6 +217,49 @@ sequenceDiagram
 3. Decision Record **§11_mission_execution** enthält: `playbook_version`, `target_mode`, `track_duration_min`, `buoy_roles[]`, `stanag_profile`.
 4. Bei Widerspruch Playbook vs. `rules_playbook` (z. B. FLASH + COA B schwer): UI-Warnung, kein Auto-Deploy ohne Override.
 
+### 4.8 Parallele Missionen (Multi-Mission)
+
+**Anforderung:** Mehrere Incidents können **gleichzeitig** einen laufenden Einsatz haben (verschiedene `flow_uuid` / `mission_id`).
+
+| Ebene | Mechanismus |
+| :---- | :---- |
+| **Trino** | Viele Zeilen `nba_mission_orders` mit `status IN (ACTIVE, ON_STATION)`; Zuordnung `nba_mission_asset_allocations` (MMSI/Boje) |
+| **CML/UI** | `validate_order_against_active()` vor `INSERT` — Caps aus `mission_nato_playbook.json` → `parallelism` |
+| **NiFi** | `mission_parallel.py` + `MissionOrderExecutor.py`: Runtime-Map `missions:{id}`; **ein Downstream-FlowFile pro Mission** |
+| **Marine** | Pro Mission eigene MMSI aus `allocate_surface_units` — kein doppeltes Booking |
+| **Bojen** | IDs `MAD-{mission_short}-{seq}` — **kein** globaler `buoy_counter` im Missionsmodus |
+| **STANAG** | `mission_id` / `buoy_id` Pflicht auf missionsbezogenen Meldungen |
+
+**Caps (Default Showcase):**
+
+| Parameter | Wert |
+| :---- | :---- |
+| `max_active_missions` | 8 |
+| `max_surface_units_total` | 4 (geteilte Marine-Flotte) |
+| `max_buoy_slots_total` | 32 |
+| `allow_same_flow_uuid_parallel` | false (Re-Deploy erst nach `COMPLETED`) |
+
+**NiFi-Audit:** [`nifi-processors/docs/MISSION_PARALLEL_NIFI.md`](../nifi-processors/docs/MISSION_PARALLEL_NIFI.md)
+
+**Lücke `nba_incidents.active_mission_id`:** Ein einzelnes Feld reicht nicht — UI listet aktive Missionen via `SELECT … FROM nba_mission_orders WHERE flow_uuid=? AND status NOT IN (…)` oder später `active_mission_ids` JSON.
+
+**Multi-Node:** `/tmp/triton_mission_runtime.json` ist **pro Pod** — `MissionOrderExecutor` nur auf **einer** NiFi-Rolle oder Bindings ausschließlich in Trino pflegen.
+
+```mermaid
+flowchart LR
+  Q[QUEUED orders N]
+  E[MissionOrderExecutor]
+  R[(runtime.json)]
+  S1[Mission A FlowFile]
+  S2[Mission B FlowFile]
+  Q --> E
+  E --> R
+  E --> S1
+  E --> S2
+  S1 --> BuoyA[Booys + STANAG A]
+  S2 --> BuoyB[Booys + STANAG B]
+```
+
 ## 5. Trino-Schema (Neu)
 
 **Dateien:** `cdw-analyse/sql/nba_schema_mission_tracking.sql` (inkl. Track-Samples + STANAG/Buoy-Tags)  
@@ -277,8 +321,8 @@ Für `SURFACE_DISPATCH` zusätzlich Zeile in `simulation_control` (Phase 1 SIM_C
 | :---- | :---- | :---- |
 | Trino JDBC | Parameter Context | Lesen/Schreiben Orders |
 | Poll Interval | 30 s | `SELECT … WHERE status = 'QUEUED'` |
-| Max Active Missions | 3 | Demo-Schutz |
-| State File | `/tmp/mission_executor_state.json` | aktive mission_id → Phase |
+| Max Active Missions | 8 (Playbook) | Parallele NBA-Einsätze; hartes Cap |
+| State File | `/tmp/triton_mission_runtime.json` | `missions:{mission_id}` Map |
 
 **Ablauf pro Order:**
 

@@ -8,6 +8,14 @@
   "target_modes": ["STATIC_POINT", "VESSEL_MMSI", "CORRELATED_OBJECT"],
   "stanag_footer_template": "// EINSATZ {mission_id} BUOY {buoy_id} CORR {correlation_id}",
   "stanag_subject_prefix": "NBA-MSN",
+  "parallelism": {
+    "max_active_missions": 8,
+    "max_surface_units_total": 4,
+    "max_buoy_slots_total": 32,
+    "allow_same_flow_uuid_parallel": false,
+    "nifi_emit_one_flowfile_per_mission": true,
+    "state_file": "/tmp/triton_mission_runtime.json"
+  },
   "formations": {
     "LEADING_SEMICIRCLE": {
       "description_de": "MDA-Bogen voraus der Fahrtachse (passiv/multidomän)",
