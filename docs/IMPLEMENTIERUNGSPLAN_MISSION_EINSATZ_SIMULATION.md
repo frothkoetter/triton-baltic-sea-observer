@@ -489,7 +489,9 @@ Empfehlung Showcase: **A** (Audit klarer); Demo-Video: **B**.
 | NiFi ohne Trino | Orders QUEUED bleiben; UI zeigt Warnung |
 | Bojen id-Kollision | Präfix `MSN-*` |
 | Schiff nicht auf Wasser Route | `build_sea_route` wie Marine-Simulator |
-| Demo-Last | `Max Active Missions` |
+| Demo-Last | Playbook-Caps + `validate_order_against_active` |
+| MMSI-Doppelbuchung | `nba_mission_asset_allocations` + `allocated_mmsis()` |
+| Multi-Node `/tmp` | Executor auf einer Rolle oder Trino-only bindings |
 
 ## 13. Environment
 
