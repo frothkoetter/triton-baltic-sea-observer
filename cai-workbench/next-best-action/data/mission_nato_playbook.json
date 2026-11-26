@@ -1,0 +1,143 @@
+{
+  "version": "2026-11-nato-mda",
+  "references": [
+    "STANAG 5525 (MDA) — distributed sensor cueing",
+    "MC 362/2 Collective OPSEC",
+    "rules_playbook.json (NBA legal layer)"
+  ],
+  "target_modes": ["STATIC_POINT", "VESSEL_MMSI", "CORRELATED_OBJECT"],
+  "stanag_footer_template": "// EINSATZ {mission_id} BUOY {buoy_id} CORR {correlation_id}",
+  "stanag_subject_prefix": "NBA-MSN",
+  "parallelism": {
+    "max_active_missions": 8,
+    "max_surface_units_total": 4,
+    "max_buoy_slots_total": 32,
+    "allow_same_flow_uuid_parallel": false,
+    "nifi_emit_one_flowfile_per_mission": true,
+    "state_file": "/tmp/triton_mission_runtime.json"
+  },
+  "formations": {
+    "LEADING_SEMICIRCLE": {
+      "description_de": "MDA-Bogen voraus der Fahrtachse (passiv/multidomän)",
+      "arc_degrees": 120,
+      "offset_bearing": "ahead",
+      "standoff_km_min": 8,
+      "standoff_km_max": 14
+    },
+    "STANDOFF_RING": {
+      "description_de": "Großer Sicherheitsring — schwere Einheiten / EO",
+      "arc_degrees": 360,
+      "offset_bearing": "omnidirectional",
+      "standoff_km_min": 12,
+      "standoff_km_max": 22
+    },
+    "SHALLOW_TRAIL": {
+      "description_de": "Flaches Wasser — MAD-Linie achtern (K130/ALB)",
+      "arc_degrees": 60,
+      "offset_bearing": "astern",
+      "standoff_km_min": 3,
+      "standoff_km_max": 8
+    },
+    "PASSIVE_DENSE_RING": {
+      "description_de": "Dichter passiver Ring (MC 362-konform)",
+      "arc_degrees": 360,
+      "offset_bearing": "omnidirectional",
+      "standoff_km_min": 5,
+      "standoff_km_max": 10
+    }
+  },
+  "coa_deployments": {
+    "A": {
+      "playbook_rule_ids": ["LAGEBILD_BASELINE"],
+      "mission_type": "COMBINED",
+      "track_duration_min": 240,
+      "target_mode_default": "VESSEL_MMSI",
+      "surface": {
+        "dispatch_units": 1,
+        "unit_class": "Korvetten",
+        "approach": "INTERCEPT",
+        "speed_cap_kn": 22,
+        "standoff_on_station_km": 6
+      },
+      "buoys": {
+        "formation": "LEADING_SEMICIRCLE",
+        "count": 6,
+        "sensor_profile": "MULTIDOMAIN_MAD",
+        "roles": [
+          {"role": "MAD_LEAD", "object_type": "SUBMARINE", "count": 2},
+          {"role": "MAD_FLANK", "object_type": "VESSEL", "count": 2},
+          {"role": "ACOUSTIC_PROXY", "object_type": "SUBMARINE", "classification": "POSSIBLE_SUBMARINE", "count": 2}
+        ],
+        "stanag_on_deploy": true
+      },
+      "stanag_profile": "watch_section"
+    },
+    "B": {
+      "playbook_rule_ids": ["PIPELINE_SOVEREIGN_SENSITIVE"],
+      "mission_type": "COMBINED",
+      "track_duration_min": 180,
+      "target_mode_default": "STATIC_POINT",
+      "surface": {
+        "dispatch_units": 2,
+        "unit_class": "Fregatten",
+        "approach": "DELAYED_INTERCEPT",
+        "speed_cap_kn": 18,
+        "standoff_on_station_km": 15
+      },
+      "buoys": {
+        "formation": "STANDOFF_RING",
+        "count": 4,
+        "sensor_profile": "EO_CUE_MAD",
+        "roles": [
+          {"role": "STANDOFF_MAD", "object_type": "VESSEL", "count": 4}
+        ],
+        "stanag_on_deploy": false
+      },
+      "stanag_profile": "routine_patrol"
+    },
+    "C": {
+      "playbook_rule_ids": ["LAGEBILD_BASELINE"],
+      "mission_type": "COMBINED",
+      "track_duration_min": 200,
+      "target_mode_default": "VESSEL_MMSI",
+      "surface": {
+        "dispatch_units": 1,
+        "unit_class": "Korvetten",
+        "approach": "SHALLOW_INTERCEPT",
+        "speed_cap_kn": 16,
+        "standoff_on_station_km": 4
+      },
+      "buoys": {
+        "formation": "SHALLOW_TRAIL",
+        "count": 5,
+        "sensor_profile": "ALB_MAD_CORR",
+        "roles": [
+          {"role": "MAD_TRAIL", "object_type": "SUBMARINE", "count": 3},
+          {"role": "LIDAR_CORR", "object_type": "VESSEL", "classification": "SMALL_FAST", "count": 2}
+        ],
+        "stanag_on_deploy": true
+      },
+      "stanag_profile": "snap_exercise"
+    },
+    "D": {
+      "playbook_rule_ids": ["JAMMER_PASSIVE_BIAS", "RUS_FLEET_DEESCALATION"],
+      "mission_type": "BUOY_TRACK_ONLY",
+      "track_duration_min": 360,
+      "target_mode_default": "CORRELATED_OBJECT",
+      "surface": {
+        "dispatch_units": 0,
+        "approach": "NONE"
+      },
+      "buoys": {
+        "formation": "PASSIVE_DENSE_RING",
+        "count": 8,
+        "sensor_profile": "PASSIVE_MAD_ONLY",
+        "roles": [
+          {"role": "PASSIVE_MAD", "object_type": "VESSEL", "count": 8}
+        ],
+        "stanag_on_deploy": true
+      },
+      "stanag_profile": "hq_pulse"
+    }
+  }
+}
