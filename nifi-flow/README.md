@@ -8,6 +8,7 @@ Import these JSON exports into a DF **Flow** or NiFi Registry version.
 | `proj_triton-version-11.json` | `proj_triton` | Earlier full project export |
 | `proj_triton-version-2.json` | Triton Data Simulator | Legacy simulator-focused export |
 | `Triton_Data_Simulator_V2.json` | Triton Data Simulator | Simulator variant |
+| **`Mission_Execution-version-1.json`** | **Mission Execution** | NBA parallel missions (executor, split, buoy/STANAG/marine) — see [`MISSION_EXECUTION.md`](./MISSION_EXECUTION.md) |
 
 Supporting files:
 

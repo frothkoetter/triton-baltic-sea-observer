@@ -1,0 +1,875 @@
+{
+  "flowContents": {
+    "identifier": "a0704f11-e1f8-428a-b87f-1126c258081f",
+    "instanceIdentifier": null,
+    "name": "Mission_Execution",
+    "comments": "Import as standalone flow or drag PG into proj_triton_showcase",
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "processGroups": [
+      {
+        "identifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+        "instanceIdentifier": null,
+        "name": "Mission Execution",
+        "comments": "NBA parallel missions: executor \u2192 split \u2192 buoy / marine / STANAG. Sync nifi-processors/upload first.",
+        "position": {
+          "x": 3200.0,
+          "y": 520.0
+        },
+        "processGroups": [],
+        "remoteProcessGroups": [],
+        "processors": [
+          {
+            "identifier": "ccdd9156-8ee6-49ab-83e8-aa3c98ccdddd",
+            "instanceIdentifier": null,
+            "name": "Load demo QUEUED orders",
+            "comments": "",
+            "position": {
+              "x": -1200,
+              "y": 0
+            },
+            "type": "org.apache.nifi.processors.standard.GenerateFlowFile",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "character-set": "UTF-8",
+              "File Size": "0B",
+              "Batch Size": "1",
+              "Unique FlowFiles": "false",
+              "Data Format": "Text",
+              "Custom Text": "[{\"mission_id\": \"00000000-1111-2222-3333-444444444441\", \"flow_uuid\": \"demo-mission-flow-a\", \"status\": \"QUEUED\", \"approved_coa_id\": \"A\", \"target_mode\": \"STATIC_POINT\", \"target_latitude\": 54.55, \"target_longitude\": 13.45, \"parameters_json\": {\"surface\": {\"dispatch_units\": 1, \"unit_class\": \"Korvetten\", \"speed_cap_kn\": 22}, \"buoys\": {\"formation\": \"LEADING_SEMICIRCLE\", \"count\": 6, \"sensor_profile\": \"MULTIDOMAIN_MAD\"}, \"formations\": {\"LEADING_SEMICIRCLE\": {\"arc_degrees\": 120, \"offset_bearing\": \"ahead\", \"standoff_km_min\": 8, \"standoff_km_max\": 14}}}}, {\"mission_id\": \"00000000-1111-2222-3333-444444444444\", \"flow_uuid\": \"demo-mission-flow-b\", \"status\": \"QUEUED\", \"approved_coa_id\": \"D\", \"target_mode\": \"STATIC_POINT\", \"target_latitude\": 55.1, \"target_longitude\": 15.2, \"parameters_json\": {\"surface\": {\"dispatch_units\": 0}, \"buoys\": {\"formation\": \"PASSIVE_DENSE_RING\", \"count\": 4, \"sensor_profile\": \"PASSIVE_MAD_ONLY\"}, \"formations\": {\"PASSIVE_DENSE_RING\": {\"arc_degrees\": 360, \"offset_bearing\": \"omnidirectional\", \"standoff_km_min\": 5, \"standoff_km_max\": 10}}}}]"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "77e81d58-65ac-4942-99c0-737ad7e39a81",
+            "instanceIdentifier": null,
+            "name": "MissionOrderExecutor",
+            "comments": "",
+            "position": {
+              "x": -800,
+              "y": 0
+            },
+            "type": "MissionOrderExecutor",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "python-extensions",
+              "version": "1.1.0"
+            },
+            "properties": {
+              "Max Active Missions": "8",
+              "Tick Minutes": "5",
+              "Process Queued Orders": "true"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "e7409f75-ebe7-4a6c-a20d-507edae77d96",
+            "instanceIdentifier": null,
+            "name": "MissionBundleSplit",
+            "comments": "",
+            "position": {
+              "x": -400,
+              "y": 0
+            },
+            "type": "MissionBundleSplit",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "python-extensions",
+              "version": "1.1.0"
+            },
+            "properties": {},
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "3fc6fa33-2ec0-4ae5-ad84-adc6813201fc",
+            "instanceIdentifier": null,
+            "name": "SplitText missions (parallel)",
+            "comments": "",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "type": "org.apache.nifi.processors.standard.SplitText",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "Line Split Count": "1",
+              "Header Line Count": "0",
+              "Remove Trailing Newlines": "true"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "9e340d1f-c7d2-46b1-b3b7-4c452cbcce9f",
+            "instanceIdentifier": null,
+            "name": "BuoySensorSimulator MISSION_PLAYBOOK",
+            "comments": "",
+            "position": {
+              "x": 400,
+              "y": -200
+            },
+            "type": "BuoySensorSimulator",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "python-extensions",
+              "version": "1.1.0"
+            },
+            "properties": {
+              "Number of Records per FlowFile": "1",
+              "Deployment Mode": "MISSION_PLAYBOOK"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [
+              "failure"
+            ],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "551180db-745f-407e-b635-1c9972778a4d",
+            "instanceIdentifier": null,
+            "name": "Marine tick",
+            "comments": "",
+            "position": {
+              "x": -1200,
+              "y": 280
+            },
+            "type": "org.apache.nifi.processors.standard.GenerateFlowFile",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "character-set": "UTF-8",
+              "File Size": "0B",
+              "Batch Size": "1",
+              "Unique FlowFiles": "false",
+              "Data Format": "Text"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "be6ecd87-acf5-406d-b382-3eafb6379914",
+            "instanceIdentifier": null,
+            "name": "MarineShipSimulator (NBA runtime)",
+            "comments": "",
+            "position": {
+              "x": -800,
+              "y": 280
+            },
+            "type": "MarineShipSimulator",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "python-extensions",
+              "version": "1.1.0"
+            },
+            "properties": {
+              "Number of Ships": "5"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "2d8c6b3a-e159-4610-b955-acc224123b54",
+            "instanceIdentifier": null,
+            "name": "StanagMessageGenerator (mission tags)",
+            "comments": "",
+            "position": {
+              "x": 400,
+              "y": 360
+            },
+            "type": "StanagMessageGenerator",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "python-extensions",
+              "version": "1.1.0"
+            },
+            "properties": {
+              "Number of Messages": "6",
+              "Traffic Profile": "watch_section",
+              "Output Format": "ndjson",
+              "Require Marine Ship Positions": "true"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [
+              "failure"
+            ],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "b8dade18-26ca-42c4-b834-5598e31e7a93",
+            "instanceIdentifier": null,
+            "name": "Log buoy success",
+            "comments": "",
+            "position": {
+              "x": 800,
+              "y": -200
+            },
+            "type": "org.apache.nifi.processors.standard.LogAttribute",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "Log Level": "info",
+              "Attributes to Log": "mission.id,mission.buoy.count"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [
+              "success"
+            ],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "a9cd178c-c2b3-4cd1-9e87-1437371a51cd",
+            "instanceIdentifier": null,
+            "name": "Log STANAG mission.id",
+            "comments": "",
+            "position": {
+              "x": 800,
+              "y": 360
+            },
+            "type": "org.apache.nifi.processors.standard.LogAttribute",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "Log Level": "info",
+              "Attributes to Log": "mission.id,stanag.message.count"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [
+              "success"
+            ],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "67ab2f58-6d47-4af2-ae7a-c30cad070157",
+            "instanceIdentifier": null,
+            "name": "Log marine tick",
+            "comments": "",
+            "position": {
+              "x": -400,
+              "y": 280
+            },
+            "type": "org.apache.nifi.processors.standard.LogAttribute",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-standard-nar",
+              "version": "2.6.0.4.12.0.2-1"
+            },
+            "properties": {
+              "Log Level": "info",
+              "Attributes to Log": "ship.simulation"
+            },
+            "propertyDescriptors": {},
+            "style": {},
+            "annotationData": null,
+            "schedulingPeriod": "0 sec",
+            "schedulingStrategy": "EVENT_DRIVEN",
+            "executionNode": "ALL",
+            "penaltyDuration": "30 sec",
+            "yieldDuration": "1 sec",
+            "bulletinLevel": "WARN",
+            "runDurationMillis": 0,
+            "concurrentlySchedulableTaskCount": 1,
+            "autoTerminatedRelationships": [
+              "success"
+            ],
+            "scheduledState": "ENABLED",
+            "retryCount": 0,
+            "retriedRelationships": [],
+            "backoffMechanism": "PENALIZE_FLOWFILE",
+            "maxBackoffPeriod": "10 mins",
+            "componentType": "PROCESSOR",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          }
+        ],
+        "connections": [
+          {
+            "identifier": "e0cc046b-400b-4056-9dfe-f13bf6464e3d",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "ccdd9156-8ee6-49ab-83e8-aa3c98ccdddd",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "Load demo QUEUED orders",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "77e81d58-65ac-4942-99c0-737ad7e39a81",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MissionOrderExecutor",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "22cb2383-7f8a-42bb-9734-fb9a33654e13",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "77e81d58-65ac-4942-99c0-737ad7e39a81",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MissionOrderExecutor",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "e7409f75-ebe7-4a6c-a20d-507edae77d96",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MissionBundleSplit",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "140a7f7f-43a4-4cc5-83c3-2308131bedf7",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "e7409f75-ebe7-4a6c-a20d-507edae77d96",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MissionBundleSplit",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "3fc6fa33-2ec0-4ae5-ad84-adc6813201fc",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "SplitText missions (parallel)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "2d8f078c-11be-41b0-be1c-108e6c41ad8e",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "551180db-745f-407e-b635-1c9972778a4d",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "Marine tick",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "be6ecd87-acf5-406d-b382-3eafb6379914",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MarineShipSimulator (NBA runtime)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "0251dfc9-e39f-48d9-b946-ce87f48a4ca3",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "3fc6fa33-2ec0-4ae5-ad84-adc6813201fc",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "SplitText missions (parallel)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "9e340d1f-c7d2-46b1-b3b7-4c452cbcce9f",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "BuoySensorSimulator MISSION_PLAYBOOK",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "splits"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [
+              {
+                "x": 200,
+                "y": -80
+              }
+            ],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "0cb785de-eea4-438c-be2c-e6ad50ae9bdf",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "3fc6fa33-2ec0-4ae5-ad84-adc6813201fc",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "SplitText missions (parallel)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "2d8c6b3a-e159-4610-b955-acc224123b54",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "StanagMessageGenerator (mission tags)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "splits"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [
+              {
+                "x": 200,
+                "y": 200
+              }
+            ],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "d5204d4d-4f10-42fa-b0e8-2c969891f0c5",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "9e340d1f-c7d2-46b1-b3b7-4c452cbcce9f",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "BuoySensorSimulator MISSION_PLAYBOOK",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "b8dade18-26ca-42c4-b834-5598e31e7a93",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "Log buoy success",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "9bd7225c-4213-416f-a70f-799a0e26d7d7",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "2d8c6b3a-e159-4610-b955-acc224123b54",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "StanagMessageGenerator (mission tags)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "a9cd178c-c2b3-4cd1-9e87-1437371a51cd",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "Log STANAG mission.id",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          },
+          {
+            "identifier": "12208ebf-14bc-48e2-984d-6e3cc88b31e9",
+            "instanceIdentifier": null,
+            "name": "",
+            "comments": null,
+            "position": null,
+            "source": {
+              "id": "be6ecd87-acf5-406d-b382-3eafb6379914",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "MarineShipSimulator (NBA runtime)",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "destination": {
+              "id": "67ab2f58-6d47-4af2-ae7a-c30cad070157",
+              "type": "PROCESSOR",
+              "groupId": "6c2a1d81-ba26-481b-a90d-4ac79696c40c",
+              "name": "Log marine tick",
+              "comments": null,
+              "instanceIdentifier": null
+            },
+            "labelIndex": 0,
+            "zIndex": 0,
+            "selectedRelationships": [
+              "success"
+            ],
+            "backPressureObjectThreshold": 10000,
+            "backPressureDataSizeThreshold": "1 GB",
+            "flowFileExpiration": "0 seconds",
+            "prioritizers": [],
+            "bends": [],
+            "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+            "partitioningAttribute": null,
+            "loadBalanceCompression": "DO_NOT_COMPRESS",
+            "componentType": "CONNECTION",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          }
+        ],
+        "inputPorts": [],
+        "outputPorts": [],
+        "labels": [
+          {
+            "identifier": "f40d5939-a8e0-469e-ae63-9176208dfd90",
+            "instanceIdentifier": null,
+            "position": {
+              "x": -1220,
+              "y": -120
+            },
+            "size": {
+              "height": 80,
+              "width": 400
+            },
+            "style": {
+              "font-size": "14px"
+            },
+            "value": "Mission Execution (NiFi2 / Python 1.1.0)\nParallel paths after SplitText",
+            "componentType": "LABEL",
+            "groupIdentifier": "6c2a1d81-ba26-481b-a90d-4ac79696c40c"
+          }
+        ],
+        "funnels": [],
+        "controllerServices": [],
+        "defaultFlowFileExpiration": "0 sec",
+        "defaultBackPressureObjectThreshold": 10000,
+        "defaultBackPressureDataSizeThreshold": "1 GB",
+        "componentType": "PROCESS_GROUP",
+        "flowFileConcurrency": "UNBOUNDED",
+        "flowFileOutboundPolicy": "STREAM_WHEN_AVAILABLE",
+        "parameterContextName": null,
+        "parameterContext": null,
+        "logFileSuffix": ""
+      }
+    ],
+    "remoteProcessGroups": [],
+    "processors": [],
+    "connections": [],
+    "inputPorts": [],
+    "outputPorts": [],
+    "labels": [],
+    "funnels": [],
+    "controllerServices": [],
+    "defaultFlowFileExpiration": "0 sec",
+    "defaultBackPressureObjectThreshold": 10000,
+    "defaultBackPressureDataSizeThreshold": "1 GB",
+    "componentType": "PROCESS_GROUP",
+    "flowFileConcurrency": "UNBOUNDED",
+    "flowFileOutboundPolicy": "STREAM_WHEN_AVAILABLE"
+  }
+}

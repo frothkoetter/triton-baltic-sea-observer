@@ -25,7 +25,7 @@ from stanag_message_engine import (
     render_text_bundle,
     resolve_message_count,
 )
-from mission_nifi_flowfile import flowfile_attr_map
+from mission_nifi_flowfile import flowfile_attr_map, parse_mission_context
 from mission_target_track import tag_stanag_message_body
 from dataclasses import replace
 
@@ -214,8 +214,10 @@ class StanagMessageGenerator(FlowFileTransform):
             )
 
             ff_attrs = flowfile_attr_map(flowFile)
-            mission_id = ff_attrs.get("mission.id", "")
-            buoy_id = (ff_attrs.get("mission.buoy.ids") or "").split(",")[0].strip()
+            mctx = parse_mission_context(flowFile)
+            mission_id = ff_attrs.get("mission.id") or str(mctx.get("mission_id") or "")
+            buoy_ids = ff_attrs.get("mission.buoy.ids") or ",".join(mctx.get("buoy_ids") or [])
+            buoy_id = buoy_ids.split(",")[0].strip() if buoy_ids else ""
             if mission_id:
                 tagged: list[StanagMessage] = []
                 for m in messages:
